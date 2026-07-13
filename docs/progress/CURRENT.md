@@ -2,14 +2,17 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / implementation handoff
+- Execution mode: Review / awaiting independent review
 - Current requirement: REQ-KERNEL-001
 - Issue: #13
-- Pull request: not yet opened
+- Pull request: Draft #14
 - Branch: `codex/req-kernel-001-kernel-metadata-capabilities`
 
 ## Completed in this run
 
+- Committed and pushed the isolated implementation as `18b9e6f`, opened Draft
+  PR #14, and advanced REQ-KERNEL-001 to `documented`. Integration remains
+  forbidden until independent review, green CI, and merge are complete.
 - Confirmed clean synchronized `main` at `332deeb`, no open Issue or PR, no
   tags, and green three-platform CI; confirmed REQ-DIM-001 and REQ-KCALC-001
   are integrated; created Issue #13 and the isolated REQ-KERNEL-001 branch.
@@ -170,10 +173,11 @@ complete.
 
 ## Next atomic task
 
-Commit and push the isolated REQ-KERNEL-001 implementation, open its Draft PR,
-record the PR identifier, and let a separate session perform the mandatory
-independent API, definiteness/CPD-order, dimension, capability, parameter,
-allocation, and test review. Do not begin concrete kernel families,
+In a separate session, inspect Draft PR #14 and perform the mandatory
+independent API, definiteness/CPD-order, dimension, derivative-capability,
+parameter, compact-support, allocation, and test review. Record the evidence in
+`docs/reviews/PR-14-INDEPENDENT-REVIEW.md` and repair every actionable finding
+before marking the PR ready. Do not begin concrete kernel families,
 orientation, anisotropy, polynomial, functional, assembly, or solver work
 before REQ-KERNEL-001 is reviewed and integrated.
 
