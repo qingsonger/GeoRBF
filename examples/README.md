@@ -17,3 +17,11 @@ gradient back to original coordinates. Run it with:
 ```text
 cargo run -p georbf --example coordinate_normalization
 ```
+
+`REQ-KCALC-001` adds `crates/georbf/examples/radial_kernel_calculus.rs`,
+which expands caller-supplied radial derivatives through third order into
+Cartesian kernel derivatives. Run it with:
+
+```text
+cargo run -p georbf --example radial_kernel_calculus
+```

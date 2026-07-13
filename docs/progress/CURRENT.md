@@ -2,14 +2,55 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / next atomic requirement
+- Execution mode: Review / ready for maintainer review
 - Current requirement: REQ-KCALC-001
-- Issue: not yet created
-- Pull request: not yet opened
-- Branch: not yet created
+- Issue: #10
+- Pull request: #11 (ready for review)
+- Branch: `codex/req-kcalc-001-radial-kernel-calculus`
 
 ## Completed in this run
 
+- Confirmed review-repair head `462dca7` passed GitHub Actions run 29259163954
+  on Windows, Ubuntu, and macOS, including the benchmark smoke and all 58
+  requirement checks. Updated the PR evidence and marked PR #11 ready only
+  after the repaired head was green.
+- Completed the independent mathematical, numerical, safety, API, allocation,
+  benchmark, and test review of PR #11. Repaired catastrophic near-center
+  cancellation in mixed third derivatives by requiring stable D=2/D=3 radial
+  expansion coefficients, preserved quotient-free D=1 behavior, added
+  near-center analytic and rotation-covariance regressions, and recorded the
+  evidence in `docs/reviews/PR-11-INDEPENDENT-REVIEW.md`.
+- Repeated the full benchmark four times after the repair. D=1/D=2/D=3 median
+  times were 36.54, 51.86, and 106.40 ns/iteration with identical checksums;
+  the observed ranges and environment are recorded in
+  `benches/REQ-KCALC-001.md`.
+- Committed and pushed the complete isolated implementation as `c690c73`,
+  opened Draft PR #11, and advanced REQ-KCALC-001 to `documented`. Integration
+  remains forbidden until the independent review is recorded and the PR is
+  merged.
+- Confirmed PR #11 head `bcdc736` passed GitHub Actions run 29253691069 on
+  Windows, Ubuntu, and macOS, including the new benchmark smoke step. The first
+  macOS attempt failed before checkout in runner setup; rerunning the failed job
+  completed every repository step successfully.
+- Confirmed `main` at `da7634e` is clean, synchronized, and green on Windows,
+  Ubuntu, and macOS; confirmed REQ-DIM-001 is integrated and no Repair or
+  Review work is pending; created Issue #10 and the isolated REQ-KCALC-001
+  branch.
+- Added a geology-free radial calculus for exactly D=1/D=2/D=3. Stable
+  max-component-scaled separation and caller-supplied finite radial jets expand
+  to fixed-array value, gradient, Hessian, and third derivative tensors without
+  allocation, dependencies, dynamic dispatch, unsafe code, or core output.
+- Added the explicit smooth-center path `value`, zero gradient,
+  `phi''(0) I`, and zero third tensor without radial quotients. Query/center
+  derivatives use one exact minus sign per center argument, and non-finite or
+  non-representable states return indexed structured errors.
+- Added independent `r^6` polynomial truth, Gaussian finite differences,
+  center-limit, exchange-sign, exact tensor-symmetry, extreme separation,
+  structured-error, thread-safety, and unsupported-dimension tests.
+- Added rustdoc, synchronized mathematical and architectural contracts, a
+  runnable Rust example, a change record, and a deterministic dependency-free
+  D=1/D=2/D=3 benchmark with a recorded single-thread baseline and CI smoke
+  coverage.
 - Created Issue #7 and the REQ-COORD-001 feature branch after confirming that
   REQ-DIM-001 is integrated, `main` CI is green, and no Repair or Review work
   is pending. Fixed the scope at metadata and affine coordinate transforms;
@@ -103,17 +144,16 @@
 
 ## Current blockers
 
-None. REQ-COORD-001 is integrated. REQ-KCALC-001 has no unfinished dependency
-and is the highest-priority remaining M1 requirement.
+Integration remains blocked only by merge. The independent review, repaired-
+head CI, implementation, test, documentation, example, and benchmark
+obligations are complete.
 
 ## Next atomic task
 
-Create the REQ-KCALC-001 Issue with explicit radial-jet and derivative
-acceptance criteria, then create `codex/req-kcalc-001-radial-kernel-calculus`.
-Implement only dimension-generic radial jets and the required zero-through-third
-spatial derivative calculus, including documented center limits and exchange
-symmetries. Do not begin kernel families, metadata, orientation, polynomial, or
-solver work in the same run.
+Await maintainer disposition of PR #11. After merge, update REQ-KCALC-001 to
+`integrated` only after confirming the merged commit and post-merge main CI.
+Do not begin kernel families, metadata, orientation, polynomial, or solver work
+before REQ-KCALC-001 is integrated.
 
 ## Latest full test result
 
@@ -122,17 +162,24 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 35 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 46 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 7 doctests, including five
+- `cargo test --doc --workspace`: passed; 9 doctests, including seven
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 21 integration tests
-  and 7 doctests, 0 failures.
+- `cargo test -p georbf --release --all-features`: passed; 32 integration tests
+  and 9 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
 - `cargo xtask requirements check`: passed; 58 requirements.
 - `cargo metadata --format-version 1 --no-deps`: passed.
 - `cargo tree --workspace --duplicates`: passed; no duplicates.
+- `cargo bench -p georbf --bench radial_kernel_calculus -- --smoke`: passed
+  for deterministic D=1/D=2/D=3 workloads. Four full 1,000,000-iteration local
+  review runs had medians of 36.54, 51.86, and 106.40 ns/iteration
+  respectively with identical checksums; see `benches/REQ-KCALC-001.md` for
+  the environment and observed ranges.
+- `cargo run -p georbf --example radial_kernel_calculus`: passed.
+- Scoped forbidden-pattern and core allocation/dynamic-dispatch scans: passed.
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
@@ -143,12 +190,27 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
   commit `2292a54`: passed on `windows-latest`, `ubuntu-latest`, and
   `macos-latest`; formatting, Clippy, workspace tests, doctests, and all 58
   requirement checks passed in every job.
+- Latest `main` GitHub Actions run 29251067778 for commit `da7634e`: passed on
+  `windows-latest`, `ubuntu-latest`, and `macos-latest`.
+- REQ-KCALC-001 PR #11 GitHub Actions run 29253691069 for implementation and
+  registry head `bcdc736`: passed on `windows-latest`, `ubuntu-latest`, and
+  `macos-latest`, including formatting, Clippy, workspace tests, doctests,
+  benchmark smoke, and all 58 requirement checks. The initial macOS runner
+  setup failure passed on the failed-job retry without a code change.
+- Pre-review PR #11 GitHub Actions run 29254116500 for head `70a8339` passed on
+  Windows, Ubuntu, and macOS, including formatting, Clippy, workspace tests,
+  doctests, benchmark smoke, and all 58 requirement checks.
+- Review-repair PR #11 GitHub Actions run 29259163954 for head `462dca7` passed
+  on Windows, Ubuntu, and macOS with the same complete job set. PR #11 was then
+  marked ready for maintainer review.
 
 ## Checks not yet available
 
-`cargo-nextest`, `cargo-deny`, `cargo-audit`, `cargo-semver-checks`, Miri,
-sanitizers, fuzzing, mutation testing, API/ABI/schema snapshot checks, and
-benchmark smoke tooling are not installed or not yet implemented. A second
+`cargo-nextest`, `cargo-deny`, `cargo-audit`, and `cargo-semver-checks` are not
+installed. The `cargo-miri` launcher is installed, but the pinned Rust 1.96.1
+toolchain does not provide its Miri component. Sanitizers, executable fuzz
+targets, mutation testing, allocation instrumentation, and API/ABI/schema
+snapshot checks are not yet implemented. A second
 full-YAML-parser check was not run because PyYAML, Ruby/YAML, and PowerShell
 `ConvertFrom-Yaml` are unavailable; the dependency-free strict registry checker
 did run. Stage 0 has no runtime mathematical path, so its benchmark obligation
