@@ -2,10 +2,10 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / independent review complete
+- Execution mode: Review / complete and ready for maintainer review
 - Current requirement: REQ-KERNEL-001
 - Issue: #13
-- Pull request: Draft #14
+- Pull request: Ready #14
 - Branch: `codex/req-kernel-001-kernel-metadata-capabilities`
 
 ## Completed in this run
@@ -23,6 +23,9 @@
   `178bf1c` passed GitHub Actions run 29264468028 on Windows, Ubuntu, and
   macOS, including formatting, Clippy, workspace tests, doctests, benchmark
   smoke, and all 58 requirement checks.
+- Review-evidence commit `fb085fa` passed the same complete three-platform
+  matrix in GitHub Actions run 29264718581. PR #14 was then marked ready for
+  maintainer review; REQ-KERNEL-001 correctly remains `documented` until merge.
 - Committed and pushed the isolated implementation as `18b9e6f`, opened Draft
   PR #14, and advanced REQ-KERNEL-001 to `documented`. Integration remains
   forbidden until independent review, green CI, and merge are complete.
@@ -189,11 +192,10 @@ example, interface applicability, and benchmark disposition are complete.
 
 ## Next atomic task
 
-After the review-evidence head passes pull-request CI, mark PR #14 ready for
-maintainer review. After merge, verify `main` CI and only then advance
-REQ-KERNEL-001 to `integrated`. Do not begin concrete kernel families,
-orientation, anisotropy, polynomial, functional, assembly, or solver work
-before REQ-KERNEL-001 is integrated.
+Maintain PR #14 in ready-for-review state. After maintainer merge, verify
+`main` CI and only then advance REQ-KERNEL-001 to `integrated`. Do not begin
+concrete kernel families, orientation, anisotropy, polynomial, functional,
+assembly, or solver work before REQ-KERNEL-001 is integrated.
 
 ## Latest full test result
 
@@ -257,6 +259,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
   passed on Windows, Ubuntu, and macOS with the complete job set.
 - REQ-KERNEL-001 review-repair GitHub Actions run 29264468028 for commit
   `178bf1c` passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-001 review-evidence GitHub Actions run 29264718581 for commit
+  `fb085fa` passed on Windows, Ubuntu, and macOS with the complete job set; PR
+  #14 was then marked ready for maintainer review.
 
 ## Checks not yet available
 

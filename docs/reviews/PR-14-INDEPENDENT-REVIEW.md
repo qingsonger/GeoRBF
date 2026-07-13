@@ -6,6 +6,7 @@
 - Branch: `codex/req-kernel-001-kernel-metadata-capabilities`
 - Reviewed pre-repair head: `8ffd00c`
 - Review-repair commit: `178bf1c`
+- Review-evidence commit: `fb085fa`
 - Review date: 2026-07-13
 - Mode: Independent review and repair
 
@@ -138,7 +139,9 @@ Passed locally on Windows with Rust 1.96.1 after the repairs:
 Pre-review GitHub Actions run 29262615142 passed for `8ffd00c` on Windows,
 Ubuntu, and macOS. Review-repair run 29264468028 then passed for `178bf1c` on
 all three platforms. Every job passed formatting, Clippy, workspace tests,
-doctests, benchmark smoke, and all 58 requirement checks.
+doctests, benchmark smoke, and all 58 requirement checks. Review-evidence run
+29264718581 passed the same complete matrix for `fb085fa`, after which PR #14
+was marked ready for maintainer review.
 
 ## Checks not run
 
