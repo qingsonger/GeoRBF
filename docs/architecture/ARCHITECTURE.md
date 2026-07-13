@@ -14,13 +14,14 @@ reimplements constraint compilation, assembly, solving, or evaluation.
 
 ## Core layers
 
-The planned core modules are dimension, geometry, units, orientation,
-transform, kernel, kernel calculus, polynomial, functional, observation,
-levels, anisotropy, problem, semantic and canonical IR, basis, assembly,
-solver, model, contour, I/O, diagnostics, and structured errors. They remain in
-one strong crate until evidence justifies a split.
+The planned core modules are dimension, geometry, units, coordinates,
+orientation, transform, kernel, kernel calculus, polynomial, functional,
+observation, levels, anisotropy, problem, semantic and canonical IR, basis,
+assembly, solver, model, contour, I/O, diagnostics, and structured errors. They
+remain in one strong crate until evidence justifies a split.
 
 Dependencies point inward: geometry and kernel calculus know no geology;
+coordinate metadata and transforms depend only on validated geometry and units;
 problem compilation depends on functionals and semantic concepts; assembly
 depends on the canonical representation; solvers know only numerical forms;
 models own immutable coefficients and transforms; adapters depend on public

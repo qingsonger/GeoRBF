@@ -2,14 +2,43 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / next atomic requirement
+- Execution mode: Review / independent REQ-COORD-001 review completed
 - Current requirement: REQ-COORD-001
-- Issue: not yet created
-- Pull request: not yet opened
-- Branch: not yet created
+- Issue: https://github.com/qingsonger/GeoRBF/issues/7
+- Pull request: https://github.com/qingsonger/GeoRBF/pull/8 (Ready for review)
+- Branch: `codex/req-coord-001-coordinate-metadata-normalization`
 
 ## Completed in this run
 
+- Created Issue #7 and the REQ-COORD-001 feature branch after confirming that
+  REQ-DIM-001 is integrated, `main` CI is green, and no Repair or Review work
+  is pending. Fixed the scope at metadata and affine coordinate transforms;
+  reprojection, orientation, anisotropy, kernels, schemas, and bindings remain
+  excluded.
+- Added exact length-unit and opaque EPSG/WKT metadata, validated axis
+  permutations, vertical direction, handedness, angle units, and deterministic
+  compatibility errors that prevent silent coordinate mixing.
+- Added finite, invertible affine normalization with exact zero-pivot partial
+  pivoting and no tolerance, jitter, regularization, pseudoinverse, dependency,
+  or hidden adjustment.
+- Added point round trips plus analytic `S^-T` gradient and
+  `S^-T H_tilde S^-1` Hessian transforms, including structured errors for
+  singular matrices, non-representable inverses, invalid Hessians, and
+  non-finite results.
+- Added D=1/D=2/D=3, rotation, shear, near-singular, extreme-value, metadata,
+  error-path, and unsupported-dimension coverage; synchronized the mathematical
+  and model-format contracts, rustdoc, example, and change record.
+- Completed the independent mathematical, numerical, safety, API, allocation,
+  and test review of PR #8. Repaired scale-sensitive inversion, strengthened
+  independent extreme-value truth and every-field metadata mismatch coverage,
+  defined the vertical canonical axis, and recorded the evidence in
+  `docs/reviews/PR-8-INDEPENDENT-REVIEW.md`.
+- Confirmed the review-repair head passed GitHub Actions on Windows, Ubuntu,
+  and macOS, updated the PR evidence, and marked PR #8 ready for maintainer
+  review.
+- Committed and pushed the implementation, opened Draft PR #8, and advanced
+  REQ-COORD-001 to `documented`; integration remains forbidden until the
+  independent review is recorded, CI is green, and the PR is merged.
 - Created Issue #4 and the REQ-DIM-001 feature branch after confirming that
   bootstrap is integrated, `main` CI is green, and no Repair or Review work is
   pending.
@@ -71,16 +100,14 @@
 
 ## Current blockers
 
-None. REQ-DIM-001 is integrated, so REQ-COORD-001 has no unfinished
-dependency.
+Maintainer review and merge of PR #8 remain pending. No code, CI, allocation,
+or dependency blocker remains.
 
 ## Next atomic task
 
-Create the REQ-COORD-001 Issue with explicit acceptance criteria, then create
-`codex/req-coord-001-coordinate-metadata-normalization`. Implement only units,
-axis conventions, CRS metadata, invertible affine coordinate normalization,
-and correct gradient and Hessian transformations back to original coordinates.
-Do not begin orientation or kernel work in the same run.
+Obtain maintainer review and merge PR #8. Do not mark REQ-COORD-001
+`integrated` or begin orientation, anisotropy, or kernel work until PR #8 is
+merged.
 
 ## Latest full test result
 
@@ -89,20 +116,27 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 23 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 35 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 3 geometry doctests, including two
+- `cargo test --doc --workspace`: passed; 7 doctests, including five
   unsupported-dimension compile-fail cases, 0 failures.
+- `cargo test -p georbf --release --all-features`: passed; 21 integration tests
+  and 7 doctests, 0 failures.
+- `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
+  passed.
 - `cargo xtask requirements check`: passed; 58 requirements.
 - `cargo metadata --format-version 1 --no-deps`: passed.
 - `cargo tree --workspace --duplicates`: passed; no duplicates.
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
-- REQ-DIM-001 post-merge `main` GitHub Actions run 29246177488 for merge commit
-  `7dfdb18`: passed on `windows-latest`, `ubuntu-latest`, and `macos-latest`;
-  formatting, Clippy, workspace tests, doctests, and all 58 requirement checks
-  passed in every job.
+- Baseline `main` GitHub Actions run 29246462335 for commit `34468a3`: passed on
+  `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
+  workspace tests, doctests, and all 58 requirement checks passed in every job.
+- REQ-COORD-001 GitHub Actions run 29250161102 for review-repair head
+  `c37b09e`: passed on
+  `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
+  workspace tests, doctests, and all 58 requirement checks passed in every job.
 
 ## Checks not yet available
 
@@ -114,4 +148,6 @@ full-YAML-parser check was not run because PyYAML, Ruby/YAML, and PowerShell
 did run. Stage 0 has no runtime mathematical path, so its benchmark obligation
 is explicitly N/A. REQ-DIM-001 fixed-size validation and normalization are
 constant-time and add no dependency, so its benchmark obligation is also N/A.
+REQ-COORD-001 construction and transforms are also constant-bounded for D at
+most three and introduce no batch path, so its benchmark obligation is N/A.
 These later checks are tracked by requirements and the release checklist.
