@@ -2,14 +2,17 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / complete and ready for maintainer review
-- Current requirement: REQ-KERNEL-001
-- Issue: #13
-- Pull request: Ready #14
-- Branch: `codex/req-kernel-001-kernel-metadata-capabilities`
+- Execution mode: Implement / next atomic requirement
+- Current requirement: REQ-KERNEL-002
+- Issue: not yet created
+- Pull request: not yet opened
+- Branch: not yet created
 
 ## Completed in this run
 
+- Squash-merged PR #14 as commit `d83e2d2`; Issue #13 closed automatically,
+  and post-merge `main` CI run 29289145369 passed on Windows, Ubuntu, and
+  macOS. REQ-KERNEL-001 now satisfies every integration gate.
 - Completed the independent API, definiteness/CPD-order, dimension,
   capability, parameter, compact-support, allocation, safety, and test review
   of PR #14. The complete evidence is recorded in
@@ -186,16 +189,18 @@
 
 ## Current blockers
 
-Integration remains blocked by maintainer review and merge. The independent
-review, repairs, local checks, three-platform repair CI, documentation,
-example, interface applicability, and benchmark disposition are complete.
+None. REQ-KERNEL-001 is integrated. REQ-KERNEL-002 has no unfinished
+dependency and is the next remaining M1 requirement in registry order.
 
 ## Next atomic task
 
-Maintain PR #14 in ready-for-review state. After maintainer merge, verify
-`main` CI and only then advance REQ-KERNEL-001 to `integrated`. Do not begin
-concrete kernel families, orientation, anisotropy, polynomial, functional,
-assembly, or solver work before REQ-KERNEL-001 is integrated.
+Create the REQ-KERNEL-002 Issue with explicit polyharmonic and surface-spline
+acceptance criteria, then create an isolated feature branch. Implement only
+dimension-valid families without a redundant shape parameter, their CPD
+classification, center derivative limits, independent truth tests,
+documentation, applicable interfaces, diagnostics, and benchmark evidence.
+Do not begin smooth global-support or compact-support kernels, orientation,
+anisotropy, polynomial, functional, assembly, or solver work in the same run.
 
 ## Latest full test result
 
@@ -262,6 +267,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - REQ-KERNEL-001 review-evidence GitHub Actions run 29264718581 for commit
   `fb085fa` passed on Windows, Ubuntu, and macOS with the complete job set; PR
   #14 was then marked ready for maintainer review.
+- REQ-KERNEL-001 post-merge `main` GitHub Actions run 29289145369 for merge
+  commit `d83e2d2` passed on Windows, Ubuntu, and macOS with the complete job
+  set.
 
 ## Checks not yet available
 

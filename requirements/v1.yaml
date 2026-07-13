@@ -112,7 +112,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust metadata types"
     python_api: "N/A: no concrete kernel object exists to expose through the future Python binding"
     benchmark: "N/A: metadata construction is configuration-time over short borrowed parameter lists; derivative, dimension, and support access are constant-time and no runtime numerical path is introduced"
-    status: documented
+    status: integrated
 
   - id: REQ-KERNEL-002
     title: Polyharmonic and surface-spline kernels
