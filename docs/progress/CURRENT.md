@@ -12,8 +12,12 @@
 
 - Committed and pushed the complete isolated implementation as `c690c73`,
   opened Draft PR #11, and advanced REQ-KCALC-001 to `documented`. Integration
-  remains forbidden until the independent review is recorded, CI is green, and
-  the PR is merged.
+  remains forbidden until the independent review is recorded and the PR is
+  merged.
+- Confirmed PR #11 head `bcdc736` passed GitHub Actions run 29253691069 on
+  Windows, Ubuntu, and macOS, including the new benchmark smoke step. The first
+  macOS attempt failed before checkout in runner setup; rerunning the failed job
+  completed every repository step successfully.
 - Confirmed `main` at `da7634e` is clean, synchronized, and green on Windows,
   Ubuntu, and macOS; confirmed REQ-DIM-001 is integrated and no Repair or
   Review work is pending; created Issue #10 and the isolated REQ-KCALC-001
@@ -127,7 +131,7 @@
 ## Current blockers
 
 Integration remains blocked by the mandatory independent mathematical and
-numerical review, green pull-request CI, and merge. The local implementation,
+numerical review and merge. Pull-request CI is green; the local implementation,
 tests, documentation, example, and benchmark obligations are complete.
 
 ## Next atomic task
@@ -175,6 +179,11 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
   requirement checks passed in every job.
 - Latest `main` GitHub Actions run 29251067778 for commit `da7634e`: passed on
   `windows-latest`, `ubuntu-latest`, and `macos-latest`.
+- REQ-KCALC-001 PR #11 GitHub Actions run 29253691069 for implementation and
+  registry head `bcdc736`: passed on `windows-latest`, `ubuntu-latest`, and
+  `macos-latest`, including formatting, Clippy, workspace tests, doctests,
+  benchmark smoke, and all 58 requirement checks. The initial macOS runner
+  setup failure passed on the failed-job retry without a code change.
 
 ## Checks not yet available
 
