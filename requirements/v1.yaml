@@ -22,7 +22,7 @@ requirements:
     cpp_api: "N/A: C ABI does not yet exist"
     python_api: "N/A: stage 0 exports no Python module"
     benchmark: "N/A: specification and build scaffolding are not performance-sensitive"
-    status: documented
+    status: integrated
 
   - id: REQ-DIM-001
     title: Dimension-safe geometry primitives
