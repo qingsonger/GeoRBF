@@ -48,6 +48,14 @@ stable expansion coefficients. Metadata does not implement polynomial spaces,
 SPD/CPD proofs, anisotropy, functionals, assembly, fitting, schemas, or adapter
 bindings.
 
+Concrete kernel submodules sit beside, not inside, the calculus. The
+polyharmonic submodule owns its signed radial formulas, dimension/order
+validation, CPD metadata pairing, center capability, and direct stable
+expansion coefficients. It delegates Cartesian tensor expansion and
+query/center signs to kernel calculus. Concrete kernels remain independent of
+geology, observations, polynomial construction, CPD rank enforcement,
+assembly, solvers, and adapters.
+
 ## Runtime behavior
 
 Long operations accept cancellation, progress, explicit thread count, and

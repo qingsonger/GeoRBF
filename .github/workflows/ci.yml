@@ -40,5 +40,7 @@ jobs:
         run: cargo test --doc --workspace
       - name: Smoke-test radial kernel calculus benchmark
         run: cargo bench -p georbf --bench radial_kernel_calculus -- --smoke
+      - name: Smoke-test polyharmonic spline benchmark
+        run: cargo bench -p georbf --bench polyharmonic_spline -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check

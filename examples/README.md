@@ -34,3 +34,12 @@ concrete radial formula. Run it with:
 ```text
 cargo run -p georbf --example kernel_metadata
 ```
+
+`REQ-KERNEL-002` adds `crates/georbf/examples/polyharmonic_spline.rs`, which
+constructs the D=2 order-two surface spline, evaluates its concrete radial
+formula through the shared Cartesian calculus, and prints its value and query
+gradient. Run it with:
+
+```text
+cargo run -p georbf --example polyharmonic_spline
+```

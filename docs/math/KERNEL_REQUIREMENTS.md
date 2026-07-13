@@ -62,6 +62,65 @@ Classic polyharmonic splines have no redundant shape parameter. Other kernels
 use explicit names such as length scale, support radius, core radius,
 smoothness, power, or range; there is no generic `shape_parameter`.
 
+## Polyharmonic and surface splines
+
+For an integer power `p >= 1`, the CPD-positive polyharmonic normalization is
+
+```text
+s_p = (-1)^(floor(p / 2) + 1)
+
+phi_p(0) = 0
+phi_p(r) = s_p r^p          for r > 0 and odd p
+phi_p(r) = s_p r^p log(r)   for r > 0 and even p.
+```
+
+`PolyharmonicSpline(p)` supports D=1, D=2, and D=3 and declares the minimal
+CPD order `floor(p/2)+1`. The integer power selects a family member; it is not
+a tunable scalar parameter, has no physical parameter unit, and is never
+represented as a redundant shape parameter.
+
+Here `r` is the numeric radius in the active coordinate representation. For
+an even power, `log(r)` therefore uses one active coordinate unit as its fixed
+reference; it does not introduce a tunable length scale. Coordinate metadata
+and any normalization are preserved separately by the coordinate contract.
+
+`SurfaceSpline<D>(m)` is the dimension-specific Sobolev parameterization. It
+is valid exactly when `2m > D`, selects `p = 2m-D`, supports only its
+compile-time dimension, and declares CPD order `m`. Thus its later side space
+is the complete polynomials through total degree `m-1`, even where the same
+signed radial formula could also satisfy a lower-order generic PHS side
+condition. Zero or insufficient order and overflow while forming `2m` are
+structured construction errors.
+
+Every positive radius supplies derivatives through third order. For odd `p`,
+
+```text
+phi'   = s_p p r^(p-1)
+phi''  = s_p p(p-1) r^(p-2)
+phi''' = s_p p(p-1)(p-2) r^(p-3)
+a      = s_p p r^(p-2)
+b      = s_p p(p-2) r^(p-3).
+```
+
+For even `p`, with `L = log(r)`,
+
+```text
+phi'   = s_p r^(p-1) [p L + 1]
+phi''  = s_p r^(p-2) [p(p-1) L + 2p - 1]
+phi''' = s_p r^(p-3) [p(p-1)(p-2) L + 3p^2 - 6p + 2]
+a      = s_p r^(p-2) [p L + 1]
+b      = s_p r^(p-3) [p(p-2) L + 2(p-1)].
+```
+
+The implementation evaluates `a` and `b` from these closed forms; it never
+reconstructs `b` by subtracting rounded values. At the origin the Euclidean
+spatial capability is exact through `min(p-1, 3)`: value only for `p=1`, first
+order for `p=2`, second order for `p=3`, and third order for `p>=4`. A finite
+one-sided radial derivative does not widen this spatial center capability.
+Requests for a complete third-order center jet below `p=4` fail explicitly.
+Negative or non-finite radii and non-representable derivatives or expansion
+coefficients also return structured errors.
+
 Before exposure, every kernel documents its formula, parameter dimensions,
 definiteness, CPD order, origin limit, required derivatives, and dimension
 range. Tests use high-precision or independent finite differences, origin and

@@ -15,3 +15,7 @@ workspace = true
 [[bench]]
 name = "radial_kernel_calculus"
 harness = false
+
+[[bench]]
+name = "polyharmonic_spline"
+harness = false

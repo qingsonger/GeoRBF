@@ -25,6 +25,13 @@ use std::fmt;
 
 use crate::dimension::{Dim, SupportedDimension};
 
+mod polyharmonic;
+
+pub use polyharmonic::{
+    PolyharmonicSpline, PolyharmonicSplineConstructionError, PolyharmonicSplineEvaluationError,
+    SurfaceSpline, SurfaceSplineConstructionError,
+};
+
 /// Positive conditional-positive-definiteness order.
 ///
 /// For CPD order `m`, `GeoRBF`'s later polynomial side space is the complete
