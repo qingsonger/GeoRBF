@@ -126,7 +126,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Baseline `main` GitHub Actions run 29246462335 for commit `34468a3`: passed on
   `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
   workspace tests, doctests, and all 58 requirement checks passed in every job.
-- REQ-COORD-001 GitHub Actions: awaiting the final pushed metadata commit.
+- REQ-COORD-001 GitHub Actions run 29248062499 for commit `3bba729`: passed on
+  `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
+  workspace tests, doctests, and all 58 requirement checks passed in every job.
 
 ## Checks not yet available
 
