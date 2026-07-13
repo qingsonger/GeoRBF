@@ -28,6 +28,20 @@ An observation functional `L_i` produces the matrix action
 A_ij = L_i^(x) M_j^(y) k(x_i, c_j).
 ```
 
+`DirectionalDerivative(x, u)` means `u^T grad_x` for a validated unit
+direction `u`; the same definition is applied in the center variable for
+`M_j^(y)`. No adapter or assembly path inserts an additional sign. For a
+stationary symmetric kernel, this convention gives
+
+```text
+grad_x k(x, y) = -grad_y k(x, y).
+```
+
+Kernel calculus must use analytic center limits rather than evaluate formulas
+containing `1/r` at `r=0`. Exchange-identity tests cover value/derivative and
+derivative/derivative actions, and an all-representer matrix must be symmetric
+to its scale-derived numerical tolerance.
+
 Observations and center representers are separate collections. This distinction
 is retained even when an all-representer strategy initially gives them the same
 points and functionals.
@@ -63,7 +77,9 @@ The matrix derivative demand is observation order plus center-functional order.
 The query demand is requested output order plus center-functional order. A
 model reports value, gradient, and Hessian capability as supported everywhere,
 supported only away from centers, or unsupported. Kernel smoothness and center
-limits decide the result; Hessian support is never unconditional.
+limits decide the result; Hessian support is never unconditional. A local
+mixture additionally requires the corresponding derivatives of every spatial
+weight, including all product-rule terms.
 
 ## Correctness policy
 

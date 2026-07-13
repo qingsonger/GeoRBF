@@ -14,8 +14,8 @@ requirements:
     priority: P0
     issue: 1
     pull_request: 2
-    tests: [workspace-checks, requirements-checker-tests]
-    docs: [V1_SCOPE.md, docs/MASTER_PLAN.md, docs/math, docs/architecture, docs/adr]
+    tests: [workspace-checks, requirements-checker-tests, cli-bootstrap-tests]
+    docs: [V1_SCOPE.md, docs/MASTER_PLAN.md, docs/math, docs/architecture, docs/adr, docs/progress/CURRENT.md, docs/reviews/PR-2-INDEPENDENT-REVIEW.md]
     rust_api: "N/A: repository bootstrap exposes no mathematical API"
     cli: "N/A: bootstrap binary exposes only honest help and version metadata"
     c_api: "N/A: stage 0 exports no ABI symbols"
@@ -86,7 +86,7 @@ requirements:
     priority: P0
     issue: null
     pull_request: null
-    tests: [high-precision, finite-difference, center-limits, symmetry]
+    tests: [high-precision, finite-difference, center-limits, exchange-signs, symmetry]
     docs: [docs/math/KERNEL_REQUIREMENTS.md, rustdoc]
     rust_api: planned
     cli: "N/A: internal kernel calculus has no standalone command"
@@ -248,7 +248,7 @@ requirements:
     priority: P0
     issue: null
     pull_request: null
-    tests: [polynomial-reproduction, nullspace, degeneracy-1d-2d-3d, kkt-equivalence]
+    tests: [polynomial-reproduction, nullspace, degeneracy-1d-2d-3d, scale-invariance, rank-threshold, kkt-equivalence]
     docs: [docs/math/CPD_AND_POLYNOMIALS.md, docs/architecture/SOLVER_POLICY.md]
     rust_api: planned
     cli: planned
@@ -320,7 +320,7 @@ requirements:
     priority: P0
     issue: null
     pull_request: null
-    tests: [solver-truth, rank-failure, condition-diagnostics, explicit-regularization]
+    tests: [solver-truth, rank-failure, scale-invariance, condition-diagnostics, original-unit-residuals, explicit-regularization]
     docs: [docs/architecture/SOLVER_POLICY.md, rustdoc]
     rust_api: planned
     cli: planned
@@ -494,13 +494,13 @@ requirements:
 
   - id: REQ-NORMAL-001
     title: Normal observation modes
-    description: Implement GradientVector, DirectionOnly, DirectionWithPolarity, AngularCone, and AxialDirection using orthogonal-complement constraints and honest nonzero-gradient diagnostics.
+    description: Implement GradientVector, DirectionOnly, DirectionWithPolarity, AngularCone, and AxialDirection using orthogonal-complement constraints, validated convex angle domains, explicit D=1 rejection of vacuous or angle-insensitive modes, and honest nonzero-gradient diagnostics.
     dependencies: [REQ-ORIENT-001, REQ-CONVEX-001]
     milestone: M5-v0.5.0
     priority: P0
     issue: null
     pull_request: null
-    tests: [analytic-gradients, polarity, axial-sign, cone-rotation, small-gradient]
+    tests: [analytic-gradients, polarity, axial-sign, cone-rotation, invalid-angle, dimension-boundaries, small-gradient]
     docs: [docs/math/NORMAL_AND_TANGENT.md, rustdoc]
     rust_api: planned
     cli: planned
@@ -584,13 +584,13 @@ requirements:
 
   - id: REQ-ANISO-002
     title: Robust orientation tensor estimation
-    description: Estimate sign-invariant principal directions with weighted orientation tensors, bounded axis-ratio selection, cross-validation, confidence gaps, outlier influence, and isotropy diagnostics.
+    description: Estimate sign-invariant principal directions with finite nonnegative weighted orientation tensors, bounded axis-ratio selection, cross-validation, confidence gaps, outlier influence, and isotropy diagnostics.
     dependencies: [REQ-ORIENT-001, REQ-ANISO-001]
     milestone: M6-v0.6.0
     priority: P1
     issue: null
     pull_request: null
-    tests: [sign-invariance, rotations, isotropy, outliers, bounded-search]
+    tests: [sign-invariance, rotations, weight-validation, isotropy, outliers, bounded-search]
     docs: [docs/architecture/ANISOTROPY.md, rustdoc]
     rust_api: planned
     cli: planned
@@ -602,14 +602,14 @@ requirements:
 
   - id: REQ-TREND-001
     title: Positive-definite local trend mixtures
-    description: Mix fixed SPD anisotropic kernels with smooth spatial basis products, a background component, and all product-rule derivative terms; reject CPD mixtures explicitly.
+    description: Mix fixed SPD anisotropic kernels with capability-smooth spatial basis products, a strictly PD background whose finite weight is nowhere zero and policy-bounded on the operational domain, and all product-rule derivative terms; reject CPD mixtures explicitly.
     dependencies: [REQ-KERNEL-003, REQ-ANISO-001, REQ-MODEL-001]
     milestone: M6-v0.6.0
     priority: P0
     issue: null
     pull_request: null
-    tests: [random-spd, derivative-product-rule, coverage, cpd-rejection]
-    docs: [docs/architecture/ANISOTROPY.md, docs/adr/ADR-0005-positive-definite-local-trends.md]
+    tests: [random-spd, strict-background, derivative-product-rule, hessian-capability, coverage, cpd-rejection]
+    docs: [docs/architecture/ANISOTROPY.md, docs/adr/ADR-0005-positive-definite-local-trends.md, docs/adr/ADR-0008-strict-local-mixture-background.md]
     rust_api: planned
     cli: planned
     c_api: planned
@@ -962,7 +962,7 @@ requirements:
 
   - id: REQ-VERIFY-001
     title: Full safety and mathematical regression
-    description: Complete independent truth, property, fuzz, serialization fuzz, FFI fuzz, Miri, ASan or UBSan, mutation, 1D or 2D or 3D, SPD or CPD, invariance, contour, and infeasibility suites.
+    description: Complete independent truth, property, fuzz, serialization fuzz, FFI fuzz, Miri, ASan or UBSan, mutation, D=1, D=2, D=3, SPD, CPD, invariance, contour, and infeasibility suites.
     dependencies: [REQ-ARTIFACT-001, REQ-PERF-001]
     milestone: M10-v1.0.0
     priority: P0

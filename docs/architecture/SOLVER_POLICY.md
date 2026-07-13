@@ -23,6 +23,14 @@ polynomial rank and kernel capability checks, anisotropy validation, memory
 estimation, symmetry checks, conditioning estimation, iterative refinement, and
 residual review in original units.
 
+Rank and condition decisions use an explicitly recorded dimensionless
+equilibration. Diagnostics retain row and column scales, matrix norms, rank
+thresholds, effective rank, condition estimates, and both scaled and
+original-unit residuals. Unit changes and equivalent nonzero row scaling must
+not change feasibility or rank classification. A large condition estimate may
+trigger a warning or an explicit policy error, but never an unrequested change
+to the mathematical problem.
+
 Regularization is None, Explicit(value), or AutomaticWithin(maximum). Any
 automatic choice records requested and actual solver, amount added, original
 and effective rank, condition estimates, and trigger. No pseudoinverse, jitter,

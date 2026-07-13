@@ -3,6 +3,11 @@
 All input directions are validated and normalized. Orientation conversions
 preserve polarity metadata and use radians internally.
 
+For a unit normal `n`, the complement basis is
+`T in R^(D x (D-1))` with `T^T T = I`, `T^T n = 0`, and
+`T T^T = I - n n^T`. Basis construction is deterministic up to signs that do
+not change the compiled constraints.
+
 ## Normal modes
 
 - GradientVector imposes `grad f(x) = g`.
@@ -16,7 +21,15 @@ preserve polarity metadata and use radians internally.
 - AxialDirection or UnknownPolarity uses only the complement equations and is
   invariant under `n -> -n`.
 
-In 2D the complement has one column; in 3D it has two independent columns.
+For oriented modes, `g_min` is finite and nonnegative. An angular cone requires
+`0 <= theta < pi/2`; this domain is what makes the displayed cone convex and
+prevents an undefined or sign-reversing tangent. In 2D the complement has one
+column; in 3D it has two independent columns.
+
+In 1D the complement has zero columns. `DirectionOnly` and `AxialDirection`
+would therefore add no constraint, while `AngularCone` would be independent of
+`theta`; the compiler rejects all three as semantically empty or misleading in
+D=1. `GradientVector` and `DirectionWithPolarity` remain valid in D=1.
 Unknown polarity does not justify the non-convex claim
 `|n^T grad f| >= g_min`. A fitted near-zero gradient is reported as a
 diagnostic, not prevented by a fictitious convex constraint.

@@ -8,7 +8,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-const REQUIRED_FIELDS: [&str; 15] = [
+const REQUIRED_FIELDS: [&str; 17] = [
     "id",
     "title",
     "description",
@@ -24,6 +24,8 @@ const REQUIRED_FIELDS: [&str; 15] = [
     "c_api",
     "cpp_api",
     "python_api",
+    "benchmark",
+    "status",
 ];
 
 const VALID_STATUSES: [&str; 8] = [
@@ -89,6 +91,7 @@ fn check_requirements() -> Result<String, String> {
     let requirements = parse_requirements(&source)?;
     validate_requirements(&requirements)?;
     reject_production_placeholders(&root)?;
+    reject_publishable_prerelease_packages(&root)?;
     Ok(format!(
         "requirements check passed: {} v1 requirements",
         requirements.len()
@@ -96,10 +99,29 @@ fn check_requirements() -> Result<String, String> {
 }
 
 fn validate_registry_header(source: &str) -> Result<(), String> {
-    for required_line in ["schema_version: 1", "target_version: \"1.0.0\""] {
-        if !source.lines().any(|line| line.trim() == required_line) {
+    const HEADERS: [&str; 4] = [
+        "schema_version: 1",
+        "target_version: \"1.0.0\"",
+        "source_of_truth: true",
+        "requirements:",
+    ];
+    for required_line in HEADERS {
+        let count = source.lines().filter(|line| *line == required_line).count();
+        if count != 1 {
             return Err(format!(
-                "requirements registry must contain `{required_line}`"
+                "requirements registry must contain exactly one top-level `{required_line}`"
+            ));
+        }
+    }
+    for (index, line) in source.lines().enumerate() {
+        let trimmed = line.trim();
+        if line == "requirements:" {
+            break;
+        }
+        if !trimmed.is_empty() && !trimmed.starts_with('#') && !HEADERS.contains(&line) {
+            return Err(format!(
+                "line {}: unknown or misindented registry header `{trimmed}`",
+                index + 1
             ));
         }
     }
@@ -117,14 +139,19 @@ fn parse_requirements(source: &str) -> Result<Vec<Requirement>, String> {
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-        if trimmed == "requirements:" {
+        if raw_line == "requirements:" {
             in_requirements = true;
             continue;
         }
         if !in_requirements {
             continue;
         }
-        if let Some(rest) = trimmed.strip_prefix("- id:") {
+        if let Some(rest) = raw_line.strip_prefix("  - id:") {
+            if !valid_scalar_quotes(rest) {
+                return Err(format!(
+                    "line {line_number}: requirement id has mismatched quotes"
+                ));
+            }
             if let Some(requirement) = current.take() {
                 requirements.push(requirement);
             }
@@ -136,6 +163,11 @@ fn parse_requirements(source: &str) -> Result<Vec<Requirement>, String> {
             });
             continue;
         }
+        if !raw_line.starts_with("    ") {
+            return Err(format!(
+                "line {line_number}: requirement fields must use four-space indentation"
+            ));
+        }
         let Some(requirement) = current.as_mut() else {
             return Err(format!(
                 "line {line_number}: requirement fields must follow `- id:`"
@@ -144,6 +176,9 @@ fn parse_requirements(source: &str) -> Result<Vec<Requirement>, String> {
         let Some((key, value)) = trimmed.split_once(':') else {
             return Err(format!("line {line_number}: expected `key: value`"));
         };
+        if !valid_scalar_quotes(value) {
+            return Err(format!("line {line_number}: `{key}` has mismatched quotes"));
+        }
         if requirement
             .fields
             .insert(key.to_owned(), scalar(value))
@@ -166,6 +201,14 @@ fn parse_requirements(source: &str) -> Result<Vec<Requirement>, String> {
 
 fn scalar(value: &str) -> String {
     value.trim().trim_matches('"').trim_matches('\'').to_owned()
+}
+
+fn valid_scalar_quotes(value: &str) -> bool {
+    let value = value.trim();
+    match (value.chars().next(), value.chars().last()) {
+        (Some(first @ ('"' | '\'')), Some(last)) => first == last && value.len() >= 2,
+        _ => true,
+    }
 }
 
 fn validate_requirements(requirements: &[Requirement]) -> Result<(), String> {
@@ -213,7 +256,12 @@ fn collect_requirement_ids(
 
 fn validate_requirement_fields(requirement: &Requirement, failures: &mut Vec<String>) {
     let id = requirement.id();
-    for field in REQUIRED_FIELDS.into_iter().chain(["benchmark", "status"]) {
+    for field in requirement.fields.keys() {
+        if !REQUIRED_FIELDS.contains(&field.as_str()) {
+            failures.push(format!("{id}: unknown field `{field}`"));
+        }
+    }
+    for field in REQUIRED_FIELDS {
         match requirement.fields.get(field) {
             None => failures.push(format!("{id}: missing required field `{field}`")),
             Some(value)
@@ -223,6 +271,22 @@ fn validate_requirement_fields(requirement: &Requirement, failures: &mut Vec<Str
                 failures.push(format!("{id}: required field `{field}` is empty"));
             }
             Some(_) => {}
+        }
+    }
+    if !valid_requirement_id(id) {
+        failures.push(format!(
+            "line {}: invalid requirement id `{id}`",
+            requirement.line
+        ));
+    }
+    for field in ["dependencies", "tests", "docs"] {
+        let value = requirement.value(field);
+        if !valid_inline_list(value) {
+            failures.push(format!(
+                "{id}: `{field}` must be a bracketed inline list without empty items"
+            ));
+        } else if matches!(field, "tests" | "docs") && is_empty_list(value) {
+            failures.push(format!("{id}: `{field}` must not be empty"));
         }
     }
     if !matches!(requirement.value("priority"), "P0" | "P1" | "P2") {
@@ -278,11 +342,18 @@ fn validate_requirement_fields(requirement: &Requirement, failures: &mut Vec<Str
 
 fn validate_integrated_requirement(requirement: &Requirement, failures: &mut Vec<String>) {
     let id = requirement.id();
-    for interface in ["rust_api", "cli", "c_api", "cpp_api", "python_api"] {
-        let value = requirement.value(interface);
+    for obligation in [
+        "rust_api",
+        "cli",
+        "c_api",
+        "cpp_api",
+        "python_api",
+        "benchmark",
+    ] {
+        let value = requirement.value(obligation);
         if value != "implemented" && !valid_not_applicable(value) {
             failures.push(format!(
-                "{id}: integrated interface `{interface}` must be implemented or `N/A: reason`"
+                "{id}: integrated obligation `{obligation}` must be implemented or `N/A: reason`"
             ));
         }
     }
@@ -346,11 +417,36 @@ fn valid_positive_integer(value: &str) -> bool {
     value.parse::<u64>().is_ok_and(|identifier| identifier > 0)
 }
 
+fn valid_requirement_id(value: &str) -> bool {
+    let Some(body) = value.strip_prefix("REQ-") else {
+        return false;
+    };
+    let Some((name, sequence)) = body.rsplit_once('-') else {
+        return false;
+    };
+    name.split('-').all(|part| {
+        !part.is_empty()
+            && part
+                .bytes()
+                .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit())
+    }) && valid_positive_integer(sequence)
+}
+
+fn valid_inline_list(value: &str) -> bool {
+    let Some(inner) = value
+        .strip_prefix('[')
+        .and_then(|value| value.strip_suffix(']'))
+    else {
+        return false;
+    };
+    inner.trim().is_empty() || inner.split(',').all(|item| !item.trim().is_empty())
+}
+
 fn dependency_cycle_members(
     requirements: &[Requirement],
     known_ids: &BTreeSet<String>,
 ) -> Vec<String> {
-    let mut remaining = requirements
+    let graph = requirements
         .iter()
         .map(|requirement| {
             let dependencies = list_items(requirement.value("dependencies"))
@@ -361,26 +457,34 @@ fn dependency_cycle_members(
         })
         .collect::<BTreeMap<_, _>>();
 
-    loop {
-        let ready = remaining
-            .iter()
-            .filter(|(_, dependencies)| dependencies.is_empty())
-            .map(|(id, _)| id.clone())
-            .collect::<Vec<_>>();
-        if ready.is_empty() {
-            break;
-        }
-        for id in &ready {
-            remaining.remove(id);
-        }
-        for dependencies in remaining.values_mut() {
-            for id in &ready {
-                dependencies.remove(id);
+    graph
+        .keys()
+        .filter(|candidate| {
+            let mut visited = BTreeSet::new();
+            let mut pending = graph
+                .get(*candidate)
+                .into_iter()
+                .flat_map(BTreeSet::iter)
+                .cloned()
+                .collect::<Vec<_>>();
+            while let Some(current) = pending.pop() {
+                if current == **candidate {
+                    return true;
+                }
+                if visited.insert(current.clone()) {
+                    pending.extend(
+                        graph
+                            .get(&current)
+                            .into_iter()
+                            .flat_map(BTreeSet::iter)
+                            .cloned(),
+                    );
+                }
             }
-        }
-    }
-
-    remaining.into_keys().collect()
+            false
+        })
+        .cloned()
+        .collect()
 }
 
 fn status_rank_of(status: &str) -> usize {
@@ -426,6 +530,40 @@ fn reject_production_placeholders(root: &Path) -> Result<(), String> {
     }
 }
 
+fn reject_publishable_prerelease_packages(root: &Path) -> Result<(), String> {
+    for relative in [
+        "crates/georbf/Cargo.toml",
+        "crates/georbf-cli/Cargo.toml",
+        "crates/georbf-ffi/Cargo.toml",
+        "crates/georbf-python/Cargo.toml",
+        "xtask/Cargo.toml",
+    ] {
+        let path = root.join(relative);
+        let source = fs::read_to_string(&path)
+            .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+        if !manifest_disables_publication(&source) {
+            return Err(format!(
+                "{}: prerelease workspace package must set `publish = false`",
+                path.display()
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn manifest_disables_publication(source: &str) -> bool {
+    let mut in_package = false;
+    for line in source.lines() {
+        let line = line.trim();
+        if line.starts_with('[') {
+            in_package = line == "[package]";
+        } else if in_package && line == "publish = false" {
+            return true;
+        }
+    }
+    false
+}
+
 fn scan_rust_sources(path: &Path, failures: &mut Vec<String>) -> Result<(), String> {
     for entry in
         fs::read_dir(path).map_err(|error| format!("failed to scan {}: {error}", path.display()))?
@@ -460,9 +598,38 @@ fn scan_rust_sources(path: &Path, failures: &mut Vec<String>) -> Result<(), Stri
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeSet;
+    use std::collections::{BTreeMap, BTreeSet};
 
-    use super::{dependency_cycle_members, list_items, parse_requirements, scalar};
+    use super::{
+        Requirement, dependency_cycle_members, list_items, manifest_disables_publication,
+        parse_requirements, scalar, validate_registry_header, validate_requirements,
+    };
+
+    fn valid_requirement() -> Requirement {
+        let fields = [
+            ("id", "REQ-TEST-001"),
+            ("title", "Test requirement"),
+            ("description", "Exercise registry validation"),
+            ("dependencies", "[]"),
+            ("milestone", "M0-v0.0.1"),
+            ("priority", "P0"),
+            ("issue", "1"),
+            ("pull_request", "2"),
+            ("tests", "[unit]"),
+            ("docs", "[test-doc]"),
+            ("rust_api", "N/A: test-only requirement"),
+            ("cli", "N/A: test-only requirement"),
+            ("c_api", "N/A: test-only requirement"),
+            ("cpp_api", "N/A: test-only requirement"),
+            ("python_api", "N/A: test-only requirement"),
+            ("benchmark", "N/A: test-only requirement"),
+            ("status", "documented"),
+        ]
+        .into_iter()
+        .map(|(key, value)| (key.to_owned(), value.to_owned()))
+        .collect::<BTreeMap<_, _>>();
+        Requirement { line: 1, fields }
+    }
 
     #[test]
     fn parses_scalar_quotes() {
@@ -483,8 +650,75 @@ mod tests {
     }
 
     #[test]
+    fn requires_unique_top_level_registry_headers() {
+        let source =
+            "schema_version: 1\ntarget_version: \"1.0.0\"\nsource_of_truth: true\nrequirements:\n";
+        assert!(validate_registry_header(source).is_ok());
+        assert!(validate_registry_header(&format!("{source}source_of_truth: true\n")).is_err());
+        let unknown = source.replace("requirements:\n", "owner: GeoRBF\nrequirements:\n");
+        assert!(validate_registry_header(&unknown).is_err());
+    }
+
+    #[test]
+    fn rejects_misindented_requirement_fields() {
+        let source = "requirements:\n  - id: REQ-A-001\n  dependencies: []\n";
+        assert!(parse_requirements(source).is_err());
+    }
+
+    #[test]
+    fn rejects_mismatched_scalar_quotes() {
+        let source = "requirements:\n  - id: \"REQ-A-001'\n    dependencies: []\n";
+        assert!(parse_requirements(source).is_err());
+    }
+
+    #[test]
+    fn prerelease_manifests_must_disable_publication() {
+        assert!(manifest_disables_publication(
+            "[package]\nname = \"georbf\"\npublish = false\n"
+        ));
+        assert!(!manifest_disables_publication(
+            "[package]\nname = \"georbf\"\n"
+        ));
+        assert!(!manifest_disables_publication(
+            "[package]\nname = \"georbf\"\n[package.metadata]\npublish = false\n"
+        ));
+    }
+
+    #[test]
+    fn rejects_unknown_fields_and_malformed_lists() {
+        let mut requirement = valid_requirement();
+        requirement
+            .fields
+            .insert("unknown".to_owned(), "value".to_owned());
+        requirement
+            .fields
+            .insert("tests".to_owned(), "unit".to_owned());
+        let result = validate_requirements(&[requirement]);
+        assert!(result.as_ref().is_err_and(|message| {
+            message.contains("unknown field") && message.contains("bracketed inline list")
+        }));
+    }
+
+    #[test]
+    fn integrated_requirements_cannot_defer_benchmarks() {
+        let mut requirement = valid_requirement();
+        requirement
+            .fields
+            .insert("status".to_owned(), "integrated".to_owned());
+        requirement
+            .fields
+            .insert("benchmark".to_owned(), "planned".to_owned());
+        let result = validate_requirements(&[requirement]);
+        assert!(
+            result
+                .as_ref()
+                .is_err_and(|message| { message.contains("integrated obligation `benchmark`") })
+        );
+    }
+
+    #[test]
     fn detects_dependency_cycles() {
-        let source = "requirements:\n  - id: REQ-A\n    dependencies: [REQ-B]\n  - id: REQ-B\n    dependencies: [REQ-A]\n";
+        let source = "requirements:\n  - id: REQ-A\n    dependencies: [REQ-B]\n  - id: REQ-B\n    dependencies: [REQ-A]\n  - id: REQ-C\n    dependencies: [REQ-A]\n";
         let requirements = parse_requirements(source);
         assert!(requirements.is_ok());
         let requirements = requirements.unwrap_or_default();
