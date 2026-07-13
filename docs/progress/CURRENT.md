@@ -2,14 +2,18 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / implementation handoff
+- Execution mode: Review / awaiting independent review
 - Current requirement: REQ-KCALC-001
 - Issue: #10
-- Pull request: not yet opened
+- Pull request: Draft #11
 - Branch: `codex/req-kcalc-001-radial-kernel-calculus`
 
 ## Completed in this run
 
+- Committed and pushed the complete isolated implementation as `c690c73`,
+  opened Draft PR #11, and advanced REQ-KCALC-001 to `documented`. Integration
+  remains forbidden until the independent review is recorded, CI is green, and
+  the PR is merged.
 - Confirmed `main` at `da7634e` is clean, synchronized, and green on Windows,
   Ubuntu, and macOS; confirmed REQ-DIM-001 is integrated and no Repair or
   Review work is pending; created Issue #10 and the isolated REQ-KCALC-001
@@ -128,12 +132,12 @@ tests, documentation, example, and benchmark obligations are complete.
 
 ## Next atomic task
 
-Commit and push the isolated REQ-KCALC-001 implementation, open its Draft PR,
-record the PR identifier in the requirement registry, and let a separate
-session perform the mandatory independent mathematical, numerical, safety,
-API, allocation, benchmark, and test review. Do not begin kernel families,
-metadata, orientation, polynomial, or solver work before REQ-KCALC-001 is
-reviewed and integrated.
+In a separate session, inspect Draft PR #11 and perform the mandatory
+independent mathematical, numerical, safety, API, allocation, benchmark, and
+test review. Record the evidence in `docs/reviews/PR-11-INDEPENDENT-REVIEW.md`
+and repair every actionable finding before marking the PR ready. Do not begin
+kernel families, metadata, orientation, polynomial, or solver work before
+REQ-KCALC-001 is reviewed and integrated.
 
 ## Latest full test result
 
