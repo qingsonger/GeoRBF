@@ -105,7 +105,7 @@ requirements:
     issue: 13
     pull_request: 14
     tests: [metadata-consistency, cpd-order-validation, dimension-boundaries, capability-boundaries, combined-derivative-demand, invalid-parameters, compact-support-consistency, dimension-compile-fail]
-    docs: [docs/math/KERNEL_REQUIREMENTS.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, rustdoc, crates/georbf/examples/kernel_metadata.rs]
+    docs: [docs/math/KERNEL_REQUIREMENTS.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, docs/reviews/PR-14-INDEPENDENT-REVIEW.md, rustdoc, crates/georbf/examples/kernel_metadata.rs]
     rust_api: implemented
     cli: "N/A: no concrete kernel can be selected or inspected by a standalone command yet"
     c_api: "N/A: formula-free Rust metadata is not an ABI surface before the kernel catalog and API freeze"

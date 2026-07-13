@@ -2,7 +2,7 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / awaiting independent review
+- Execution mode: Review / independent review complete
 - Current requirement: REQ-KERNEL-001
 - Issue: #13
 - Pull request: Draft #14
@@ -10,6 +10,19 @@
 
 ## Completed in this run
 
+- Completed the independent API, definiteness/CPD-order, dimension,
+  capability, parameter, compact-support, allocation, safety, and test review
+  of PR #14. The complete evidence is recorded in
+  `docs/reviews/PR-14-INDEPENDENT-REVIEW.md`.
+- Repaired the ambiguous CPD-order contract by binding order `m` to complete
+  polynomial degree `m-1`, made compact support an exact zero extension whose
+  boundary smoothness is part of away capability, and corrected the metadata
+  complexity declaration.
+- Added an independent exhaustive combined-order table, D=0 compile failure,
+  and parameter-name and floating-point boundary regressions. Repair commit
+  `178bf1c` passed GitHub Actions run 29264468028 on Windows, Ubuntu, and
+  macOS, including formatting, Clippy, workspace tests, doctests, benchmark
+  smoke, and all 58 requirement checks.
 - Committed and pushed the isolated implementation as `18b9e6f`, opened Draft
   PR #14, and advanced REQ-KERNEL-001 to `documented`. Integration remains
   forbidden until independent review, green CI, and merge are complete.
@@ -170,20 +183,17 @@
 
 ## Current blockers
 
-Integration remains blocked by the mandatory independent API and mathematical
-review, green pull-request CI, and merge. The local implementation, tests,
-documentation, example, interface applicability, and benchmark disposition are
-complete.
+Integration remains blocked by maintainer review and merge. The independent
+review, repairs, local checks, three-platform repair CI, documentation,
+example, interface applicability, and benchmark disposition are complete.
 
 ## Next atomic task
 
-In a separate session, inspect Draft PR #14 and perform the mandatory
-independent API, definiteness/CPD-order, dimension, derivative-capability,
-parameter, compact-support, allocation, and test review. Record the evidence in
-`docs/reviews/PR-14-INDEPENDENT-REVIEW.md` and repair every actionable finding
-before marking the PR ready. Do not begin concrete kernel families,
+After the review-evidence head passes pull-request CI, mark PR #14 ready for
+maintainer review. After merge, verify `main` CI and only then advance
+REQ-KERNEL-001 to `integrated`. Do not begin concrete kernel families,
 orientation, anisotropy, polynomial, functional, assembly, or solver work
-before REQ-KERNEL-001 is reviewed and integrated.
+before REQ-KERNEL-001 is integrated.
 
 ## Latest full test result
 
@@ -192,12 +202,12 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 55 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 56 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 10 doctests, including eight
+- `cargo test --doc --workspace`: passed; 11 doctests, including nine
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 41 integration tests
-  and 10 doctests, 0 failures.
+- `cargo test -p georbf --release --all-features`: passed; 42 integration tests
+  and 11 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
 - `cargo xtask requirements check`: passed; 58 requirements.
@@ -243,6 +253,10 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
   job set.
 - REQ-KERNEL-001 Draft PR #14 GitHub Actions run 29262474106 for head
   `34b84e0`: passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-001 pre-review GitHub Actions run 29262615142 for head `8ffd00c`
+  passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-001 review-repair GitHub Actions run 29264468028 for commit
+  `178bf1c` passed on Windows, Ubuntu, and macOS with the complete job set.
 
 ## Checks not yet available
 
@@ -258,7 +272,8 @@ is explicitly N/A. REQ-DIM-001 fixed-size validation and normalization are
 constant-time and add no dependency, so its benchmark obligation is also N/A.
 REQ-COORD-001 construction and transforms are also constant-bounded for D at
 most three and introduce no batch path, so its benchmark obligation is N/A.
-REQ-KERNEL-001 stores borrowed static descriptions and performs fixed-size or
-short linear metadata queries rather than a runtime numerical path, so its
-benchmark obligation is N/A.
+REQ-KERNEL-001 stores borrowed descriptions and performs configuration-time
+`O(P^2)` duplicate checks or `O(P)` lookup over short parameter slices, while
+fixed derivative, dimension, and support access is constant-time. It adds no
+runtime numerical path, so its benchmark obligation is N/A.
 These later checks are tracked by requirements and the release checklist.
