@@ -1,0 +1,30 @@
+[workspace]
+members = [
+    "crates/georbf",
+    "crates/georbf-cli",
+    "crates/georbf-ffi",
+    "crates/georbf-python",
+    "xtask",
+]
+resolver = "3"
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.96.1"
+license = "MIT"
+repository = "https://github.com/qingsonger/GeoRBF"
+authors = ["GeoRBF contributors"]
+
+[workspace.lints.rust]
+missing_docs = "warn"
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unwrap_used = "deny"

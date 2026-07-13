@@ -1,0 +1,50 @@
+name: Atomic requirement
+description: Propose or execute one requirement-scoped increment.
+title: "[REQ-ID] "
+labels: []
+body:
+  - type: input
+    id: requirement
+    attributes:
+      label: Requirement ID
+      description: Existing ID from requirements/v1.yaml.
+      placeholder: REQ-DIM-001
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal and acceptance criteria
+      description: State observable behavior and independent correctness evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Integrated dependencies
+      description: List dependency IDs and evidence that each is integrated.
+    validations:
+      required: true
+  - type: textarea
+    id: interfaces
+    attributes:
+      label: Interface and documentation impact
+      description: Cover Rust, CLI, C, C++, Python, schemas, examples, and justified N/A cases.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Include independent truth, error paths, dimensions, invariance, and benchmarks where applicable.
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope confirmation
+      options:
+        - label: This issue covers one atomic requirement and does not cross a milestone.
+          required: true
+        - label: This issue introduces no Surfe compatibility or five-model architecture.
+          required: true
