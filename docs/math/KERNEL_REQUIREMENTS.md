@@ -9,6 +9,41 @@ radial value/derivative implementation and metadata covering:
 - compact support radius when applicable; and
 - named, unit-documented parameters.
 
+The shared metadata model represents strict positive definiteness separately
+from conditional positive definiteness. A CPD declaration carries a positive
+integer order; order zero is rejected rather than used as an alias for SPD.
+This requirement records the order only. Construction of the complete
+polynomial space and enforcement of CPD side conditions belong to later
+requirements.
+
+Dimension support is a nonempty subset of D=1, D=2, and D=3 and can only be
+queried through the sealed compile-time dimension bound. Derivative support is
+hierarchical and records a maximum away-from-center order plus an optional
+maximum smooth-center order. The center maximum cannot exceed the away maximum.
+For any demanded order, the result is exactly one of:
+
+```text
+SupportedEverywhere
+SupportedAwayFromCenters
+Unsupported.
+```
+
+Matrix demand is observation order plus center-functional order. Query demand
+is requested output order plus center-functional order. A sum above the
+zero-through-third calculus range is unsupported. This classification is
+metadata, not permission to fabricate a center limit or an unconditional
+fitted-model Hessian.
+
+Family parameter definitions use unique lower-snake-case names, a nonempty
+description, a physical dimension (`Dimensionless`, `CoordinateLength`, or
+`InverseCoordinateLength`), and an explicit finite, nonnegative, or positive
+scalar constraint. The ambiguous generic name `shape_parameter` is forbidden.
+Configured values are separate from static family metadata and must be finite
+and satisfy their definition before a concrete kernel accepts them. Global
+support has no radius. Compact support references a declared, strictly
+positive coordinate-length radius parameter, so the configured support radius
+is validated by that definition.
+
 The v1 catalog includes polyharmonic/surface-spline families, Gaussian, inverse
 multiquadric, a multiquadric only after its sign and CPD classification are
 verified, supported Matérn smoothness levels, and Wendland C2, C4, and C6.

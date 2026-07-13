@@ -25,3 +25,12 @@ Cartesian kernel derivatives. Run it with:
 ```text
 cargo run -p georbf --example radial_kernel_calculus
 ```
+
+`REQ-KERNEL-001` adds `crates/georbf/examples/kernel_metadata.rs`, which
+constructs an illustrative static family descriptor, validates a configured
+parameter value, and queries a derivative capability without implementing a
+concrete radial formula. Run it with:
+
+```text
+cargo run -p georbf --example kernel_metadata
+```

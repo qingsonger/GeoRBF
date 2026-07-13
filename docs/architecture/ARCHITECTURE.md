@@ -38,6 +38,16 @@ metadata, anisotropy, geological concepts, functionals, assembly, or fitting
 policy. Its D=1/D=2/D=3 outputs are fixed arrays with no allocation,
 dependency, dynamic dispatch, or unsafe code.
 
+The adjacent kernel-metadata layer is formula-free. It describes
+definiteness/CPD order, supported dimensions, derivative and center limits,
+global or parameterized compact support, and explicit unit-aware parameter
+definitions. Static descriptions borrow their parameter slices and use only
+scalar values and fixed flags; configured values remain separate. Concrete
+kernel requirements will pair these descriptions with radial formulas and
+stable expansion coefficients. Metadata does not implement polynomial spaces,
+SPD/CPD proofs, anisotropy, functionals, assembly, fitting, schemas, or adapter
+bindings.
+
 ## Runtime behavior
 
 Long operations accept cancellation, progress, explicit thread count, and

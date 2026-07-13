@@ -2,14 +2,30 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / next atomic requirement
+- Execution mode: Implement / implementation handoff
 - Current requirement: REQ-KERNEL-001
-- Issue: not yet created
+- Issue: #13
 - Pull request: not yet opened
-- Branch: not yet created
+- Branch: `codex/req-kernel-001-kernel-metadata-capabilities`
 
 ## Completed in this run
 
+- Confirmed clean synchronized `main` at `332deeb`, no open Issue or PR, no
+  tags, and green three-platform CI; confirmed REQ-DIM-001 and REQ-KCALC-001
+  are integrated; created Issue #13 and the isolated REQ-KERNEL-001 branch.
+- Added formula-free metadata for strict positive definiteness versus positive
+  CPD order, nonempty D=1/D=2/D=3 support sets, hierarchical away/center
+  derivative orders, and explicit everywhere/away/unsupported classification.
+- Added matrix and query capability calculations that include center-functional
+  derivative demand and reject sums beyond third order without widening
+  Hessian support.
+- Added borrowed, allocation-free parameter definitions with deterministic
+  names, unit dimensions, descriptions, finite value constraints, uniqueness,
+  and compact-radius reference consistency. The generic `shape_parameter` name
+  and zero/non-length compact radii are rejected structurally.
+- Added metadata, CPD, dimension, capability, parameter, compact-support,
+  compile-fail, and thread-safety coverage; synchronized rustdoc, mathematical
+  and architectural contracts, a runnable example, and the change record.
 - Squash-merged PR #11 as commit `10f5a4d`; Issue #10 closed automatically,
   and post-merge `main` CI run 29260593600 passed on Windows, Ubuntu, and
   macOS. REQ-KCALC-001 now satisfies every integration gate.
@@ -147,17 +163,19 @@
 
 ## Current blockers
 
-None. REQ-KCALC-001 is integrated. REQ-KERNEL-001 has no unfinished dependency
-and is the highest-priority remaining M1 requirement.
+Integration remains blocked by the mandatory independent API and mathematical
+review, green pull-request CI, and merge. The local implementation, tests,
+documentation, example, interface applicability, and benchmark disposition are
+complete.
 
 ## Next atomic task
 
-Create the REQ-KERNEL-001 Issue with explicit metadata and capability-model
-acceptance criteria, then create an isolated feature branch. Implement only
-definiteness/CPD-order metadata, derivative and center capabilities, dimension
-restrictions, compact-support metadata, and explicit parameter definitions.
-Do not begin concrete kernel families, orientation, anisotropy, polynomial,
-functional, assembly, or solver work in the same run.
+Commit and push the isolated REQ-KERNEL-001 implementation, open its Draft PR,
+record the PR identifier, and let a separate session perform the mandatory
+independent API, definiteness/CPD-order, dimension, capability, parameter,
+allocation, and test review. Do not begin concrete kernel families,
+orientation, anisotropy, polynomial, functional, assembly, or solver work
+before REQ-KERNEL-001 is reviewed and integrated.
 
 ## Latest full test result
 
@@ -166,12 +184,12 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 46 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 55 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 9 doctests, including seven
+- `cargo test --doc --workspace`: passed; 10 doctests, including eight
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 32 integration tests
-  and 9 doctests, 0 failures.
+- `cargo test -p georbf --release --all-features`: passed; 41 integration tests
+  and 10 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
 - `cargo xtask requirements check`: passed; 58 requirements.
@@ -183,6 +201,7 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
   respectively with identical checksums; see `benches/REQ-KCALC-001.md` for
   the environment and observed ranges.
 - `cargo run -p georbf --example radial_kernel_calculus`: passed.
+- `cargo run -p georbf --example kernel_metadata`: passed.
 - Scoped forbidden-pattern and core allocation/dynamic-dispatch scans: passed.
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
@@ -211,6 +230,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
   commit `10f5a4d`: passed on Windows, Ubuntu, and macOS, including formatting,
   Clippy, workspace tests, doctests, benchmark smoke, and all 58 requirement
   checks.
+- REQ-KCALC-001 final integration-state `main` GitHub Actions run 29261006123
+  for commit `332deeb`: passed on Windows, Ubuntu, and macOS with the complete
+  job set.
 
 ## Checks not yet available
 
@@ -226,4 +248,7 @@ is explicitly N/A. REQ-DIM-001 fixed-size validation and normalization are
 constant-time and add no dependency, so its benchmark obligation is also N/A.
 REQ-COORD-001 construction and transforms are also constant-bounded for D at
 most three and introduce no batch path, so its benchmark obligation is N/A.
+REQ-KERNEL-001 stores borrowed static descriptions and performs fixed-size or
+short linear metadata queries rather than a runtime numerical path, so its
+benchmark obligation is N/A.
 These later checks are tracked by requirements and the release checklist.
