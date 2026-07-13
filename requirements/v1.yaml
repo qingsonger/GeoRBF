@@ -58,7 +58,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the C ABI rather than Rust coordinate types"
     python_api: "N/A: the future Python binding delegates coordinate validation to the Rust core after API freeze"
     benchmark: "N/A: fixed-size D<=3 construction and transforms are constant-bounded; batch paths are not introduced"
-    status: documented
+    status: integrated
 
   - id: REQ-ORIENT-001
     title: Geological orientation conversions
