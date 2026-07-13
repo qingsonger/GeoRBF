@@ -92,8 +92,9 @@ Passed locally on Windows with Rust 1.96.1 against reviewed code head
 
 GitHub Actions run 29243260972 passed for the reviewed code head on Windows,
 Ubuntu, and macOS. Each job passed formatting, Clippy, workspace tests,
-doctests, and all 58 requirement checks. The review-record commit must pass the
-same matrix before the Draft PR is marked ready.
+doctests, and all 58 requirement checks. After this record was committed,
+three-platform run 29244426487 also passed for review-record head `3eaf97f`;
+PR #5 was then marked ready for maintainer review.
 
 ## Checks not run
 

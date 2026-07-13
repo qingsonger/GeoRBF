@@ -5,7 +5,7 @@
 - Execution mode: Review / independent REQ-DIM-001 review completed
 - Current requirement: REQ-DIM-001
 - Issue: https://github.com/qingsonger/GeoRBF/issues/4
-- Pull request: https://github.com/qingsonger/GeoRBF/pull/5 (Draft)
+- Pull request: https://github.com/qingsonger/GeoRBF/pull/5 (Ready for review)
 - Branch: `codex/req-dim-001-dimension-safe-geometry`
 
 ## Completed in this run
@@ -29,6 +29,8 @@
   and test review of PR #5. No runtime-code defect was found. Repaired the stale
   CI reference in this handoff and recorded the evidence in
   `docs/reviews/PR-5-INDEPENDENT-REVIEW.md`.
+- Confirmed the review-record head passed GitHub Actions on Windows, Ubuntu, and
+  macOS, then marked PR #5 ready for maintainer review.
 - Committed and pushed the implementation, opened Draft PR #5, and advanced
   the registry status to `documented`; integration remains forbidden until an
   independent review is complete and the PR is merged.
@@ -66,14 +68,13 @@
 
 ## Current blockers
 
-The review-record commit must pass the three-platform GitHub Actions matrix
-before Draft PR #5 is marked ready. No code or dependency blocker remains.
+Maintainer review and merge of PR #5 remain pending. No code, CI, or dependency
+blocker remains.
 
 ## Next atomic task
 
-Confirm the review-record commit passes the three-platform matrix, then mark
-PR #5 ready for maintainer review. Do not mark REQ-DIM-001 `integrated` or
-start REQ-COORD-001 until PR #5 is merged.
+Obtain maintainer review and merge PR #5. Do not mark REQ-DIM-001 `integrated`
+or start REQ-COORD-001 until PR #5 is merged.
 
 ## Latest full test result
 
@@ -92,7 +93,7 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
-- REQ-DIM-001 GitHub Actions run 29243260972 for reviewed code head `6db7097`:
+- REQ-DIM-001 GitHub Actions run 29244426487 for review-record head `3eaf97f`:
   passed on
   `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
   workspace tests, doctests, and all 58 requirement checks passed in every job.
