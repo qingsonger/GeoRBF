@@ -2,14 +2,17 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / ready for maintainer review
-- Current requirement: REQ-KCALC-001
-- Issue: #10
-- Pull request: #11 (ready for review)
-- Branch: `codex/req-kcalc-001-radial-kernel-calculus`
+- Execution mode: Implement / next atomic requirement
+- Current requirement: REQ-KERNEL-001
+- Issue: not yet created
+- Pull request: not yet opened
+- Branch: not yet created
 
 ## Completed in this run
 
+- Squash-merged PR #11 as commit `10f5a4d`; Issue #10 closed automatically,
+  and post-merge `main` CI run 29260593600 passed on Windows, Ubuntu, and
+  macOS. REQ-KCALC-001 now satisfies every integration gate.
 - Confirmed review-repair head `462dca7` passed GitHub Actions run 29259163954
   on Windows, Ubuntu, and macOS, including the benchmark smoke and all 58
   requirement checks. Updated the PR evidence and marked PR #11 ready only
@@ -144,16 +147,17 @@
 
 ## Current blockers
 
-Integration remains blocked only by merge. The independent review, repaired-
-head CI, implementation, test, documentation, example, and benchmark
-obligations are complete.
+None. REQ-KCALC-001 is integrated. REQ-KERNEL-001 has no unfinished dependency
+and is the highest-priority remaining M1 requirement.
 
 ## Next atomic task
 
-Await maintainer disposition of PR #11. After merge, update REQ-KCALC-001 to
-`integrated` only after confirming the merged commit and post-merge main CI.
-Do not begin kernel families, metadata, orientation, polynomial, or solver work
-before REQ-KCALC-001 is integrated.
+Create the REQ-KERNEL-001 Issue with explicit metadata and capability-model
+acceptance criteria, then create an isolated feature branch. Implement only
+definiteness/CPD-order metadata, derivative and center capabilities, dimension
+restrictions, compact-support metadata, and explicit parameter definitions.
+Do not begin concrete kernel families, orientation, anisotropy, polynomial,
+functional, assembly, or solver work in the same run.
 
 ## Latest full test result
 
@@ -203,6 +207,10 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Review-repair PR #11 GitHub Actions run 29259163954 for head `462dca7` passed
   on Windows, Ubuntu, and macOS with the same complete job set. PR #11 was then
   marked ready for maintainer review.
+- REQ-KCALC-001 post-merge `main` GitHub Actions run 29260593600 for merge
+  commit `10f5a4d`: passed on Windows, Ubuntu, and macOS, including formatting,
+  Clippy, workspace tests, doctests, benchmark smoke, and all 58 requirement
+  checks.
 
 ## Checks not yet available
 
