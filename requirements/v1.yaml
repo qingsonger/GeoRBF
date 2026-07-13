@@ -1,0 +1,1051 @@
+schema_version: 1
+target_version: "1.0.0"
+source_of_truth: true
+
+# Interface values are `planned`, `implemented`, or `N/A: <reason>`.
+# A requirement may become integrated only after its PR is merged and every
+# applicable interface, test, document, and benchmark obligation is complete.
+requirements:
+  - id: REQ-BOOTSTRAP-001
+    title: Bootstrap specification and workspace baseline
+    description: Establish the stage-0 workspace, persistent contracts, CI, repository templates, and requirement validation without mathematical implementation.
+    dependencies: []
+    milestone: M0-v0.0.1
+    priority: P0
+    issue: 1
+    pull_request: null
+    tests: [workspace-checks, requirements-checker-tests]
+    docs: [V1_SCOPE.md, docs/MASTER_PLAN.md, docs/math, docs/architecture, docs/adr]
+    rust_api: "N/A: repository bootstrap exposes no mathematical API"
+    cli: "N/A: bootstrap binary exposes only honest help and version metadata"
+    c_api: "N/A: stage 0 exports no ABI symbols"
+    cpp_api: "N/A: C ABI does not yet exist"
+    python_api: "N/A: stage 0 exports no Python module"
+    benchmark: "N/A: specification and build scaffolding are not performance-sensitive"
+    status: in_progress
+
+  - id: REQ-DIM-001
+    title: Dimension-safe geometry primitives
+    description: Provide const-generic Point, Vector, Direction, and UnitDirection types for exactly D=1, D=2, and D=3 with finite-value validation.
+    dependencies: [REQ-BOOTSTRAP-001]
+    milestone: M1-v0.1.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [unit, compile-fail, property]
+    docs: [docs/math/MATH_SPEC.md, rustdoc]
+    rust_api: planned
+    cli: "N/A: primitive construction is not a standalone command"
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: "N/A: fixed-size primitive validation is constant-time"
+    status: planned
+
+  - id: REQ-COORD-001
+    title: Coordinate metadata and normalization
+    description: Define units, axis conventions, CRS metadata, affine normalization, and correct gradient and Hessian transformations back to original coordinates.
+    dependencies: [REQ-DIM-001]
+    milestone: M1-v0.1.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [translation, scaling, round-trip, unit-errors]
+    docs: [docs/math/MATH_SPEC.md, docs/architecture/MODEL_FORMAT.md]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: "N/A: coordinate transforms are linear in point count"
+    status: planned
+
+  - id: REQ-ORIENT-001
+    title: Geological orientation conversions
+    description: Convert normal components, strike/dip, dip-direction/dip, azimuth/plunge, polarity, and lineation into validated radian-based directions.
+    dependencies: [REQ-DIM-001, REQ-COORD-001]
+    milestone: M1-v0.1.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [analytic-directions, polarity, rotation-invariance, invalid-input]
+    docs: [docs/math/NORMAL_AND_TANGENT.md]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: "N/A: orientation conversion is constant-time per observation"
+    status: planned
+
+  - id: REQ-KCALC-001
+    title: Radial kernel derivative calculus
+    description: Implement dimension-generic radial jets and the required zero through third spatial derivatives with documented center limits and exchange symmetries.
+    dependencies: [REQ-DIM-001]
+    milestone: M1-v0.1.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [high-precision, finite-difference, center-limits, symmetry]
+    docs: [docs/math/KERNEL_REQUIREMENTS.md, rustdoc]
+    rust_api: planned
+    cli: "N/A: internal kernel calculus has no standalone command"
+    c_api: "N/A: internal kernel calculus is not an ABI surface"
+    cpp_api: "N/A: internal kernel calculus is not an ABI surface"
+    python_api: "N/A: internal kernel calculus is not a Python surface"
+    benchmark: planned
+    status: planned
+
+  - id: REQ-KERNEL-001
+    title: Kernel metadata and capability model
+    description: Define definiteness, CPD order, derivative order, support radius, dimension restrictions, explicit parameter units, and output capability classification.
+    dependencies: [REQ-DIM-001, REQ-KCALC-001]
+    milestone: M1-v0.1.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [metadata-consistency, invalid-parameters, capability-boundaries]
+    docs: [docs/math/KERNEL_REQUIREMENTS.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: "N/A: metadata queries are constant-time"
+    status: planned
+
+  - id: REQ-KERNEL-002
+    title: Polyharmonic and surface-spline kernels
+    description: Implement dimension-valid polyharmonic and surface-spline families without a redundant shape parameter, including CPD classification and center derivative limits.
+    dependencies: [REQ-KERNEL-001]
+    milestone: M1-v0.1.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [high-precision, finite-difference, random-cpd, pathological-input]
+    docs: [docs/math/KERNEL_REQUIREMENTS.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-KERNEL-003
+    title: Smooth global-support kernels
+    description: Implement Gaussian, inverse multiquadric, validated multiquadric, and supported Matérn smoothness levels with explicit physical parameters.
+    dependencies: [REQ-KERNEL-001]
+    milestone: M1-v0.1.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [high-precision, finite-difference, random-spd-cpd, pathological-input]
+    docs: [docs/math/KERNEL_REQUIREMENTS.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-KERNEL-004
+    title: Wendland compact-support kernels
+    description: Implement Wendland C2, C4, and C6 kernels with support-boundary continuity, derivative capability metadata, and SPD verification.
+    dependencies: [REQ-KERNEL-001]
+    milestone: M1-v0.1.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [support-boundary, finite-difference, random-spd, pathological-input]
+    docs: [docs/math/KERNEL_REQUIREMENTS.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-ANISO-001
+    title: Global anisotropy metrics
+    description: Provide isotropic, spheroidal, ellipsoidal, and user-metric invertible transforms in 1D, 2D, and 3D with chain-rule derivatives.
+    dependencies: [REQ-COORD-001, REQ-KCALC-001]
+    milestone: M1-v0.1.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [rotation, scaling, spd-validation, chain-rule]
+    docs: [docs/architecture/ANISOTROPY.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-POLY-001
+    title: Dimension-generic polynomial spaces
+    description: Generate multi-indices and complete polynomial bases through arbitrary implemented CPD order with exact term counts in D=1, D=2, and D=3.
+    dependencies: [REQ-DIM-001]
+    milestone: M2-v0.2.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [term-counts, analytic-values, derivatives, reproduction]
+    docs: [docs/math/CPD_AND_POLYNOMIALS.md, rustdoc]
+    rust_api: planned
+    cli: "N/A: polynomial basis generation is internal"
+    c_api: "N/A: polynomial basis generation is internal"
+    cpp_api: "N/A: polynomial basis generation is internal"
+    python_api: "N/A: polynomial basis generation is internal"
+    benchmark: planned
+    status: planned
+
+  - id: REQ-FUNC-001
+    title: Atomic functionals and linear expressions
+    description: Implement Value and DirectionalDerivative atoms plus finite FunctionalExpr combinations, keeping observations separate from center representers.
+    dependencies: [REQ-DIM-001, REQ-KCALC-001, REQ-POLY-001]
+    milestone: M2-v0.2.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [analytic-action, linearity, derivative-signs, provenance]
+    docs: [docs/math/MATH_SPEC.md, docs/architecture/PROBLEM_IR.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-SPIKE-002
+    title: Rank-revealing QR and SVD backend spike
+    description: Evaluate maintenance, licensing, MSRV, safety, rank behavior, scaling, and platform support before selecting QR and SVD dependencies.
+    dependencies: [REQ-BOOTSTRAP-001]
+    milestone: M2-v0.2.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [rank-spike-cases, platform-build]
+    docs: [docs/adr, docs/architecture/SOLVER_POLICY.md]
+    rust_api: "N/A: dependency spike exposes no user API"
+    cli: "N/A: dependency spike exposes no command"
+    c_api: "N/A: dependency spike exposes no ABI"
+    cpp_api: "N/A: dependency spike exposes no C++ API"
+    python_api: "N/A: dependency spike exposes no Python API"
+    benchmark: planned
+    status: planned
+
+  - id: REQ-CPD-001
+    title: CPD rank checks and null-space projection
+    description: Assemble center-polynomial actions, diagnose scaled rank with RRQR and SVD review, construct Q null spaces, and preserve Q-transpose-w equals zero provenance.
+    dependencies: [REQ-KERNEL-002, REQ-POLY-001, REQ-FUNC-001, REQ-SPIKE-002]
+    milestone: M2-v0.2.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [polynomial-reproduction, nullspace, degeneracy-1d-2d-3d, kkt-equivalence]
+    docs: [docs/math/CPD_AND_POLYNOMIALS.md, docs/architecture/SOLVER_POLICY.md]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-SPIKE-001
+    title: Dense factorization backend spike
+    description: Evaluate dense Cholesky, pivoted symmetric-indefinite LDLT, iterative refinement, licensing, safety, MSRV, and three-platform behavior.
+    dependencies: [REQ-BOOTSTRAP-001]
+    milestone: M3-v0.3.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [spd-cases, indefinite-cases, ill-conditioned-cases, platform-build]
+    docs: [docs/adr, docs/architecture/SOLVER_POLICY.md]
+    rust_api: "N/A: dependency spike exposes no user API"
+    cli: "N/A: dependency spike exposes no command"
+    c_api: "N/A: dependency spike exposes no ABI"
+    cpp_api: "N/A: dependency spike exposes no C++ API"
+    python_api: "N/A: dependency spike exposes no Python API"
+    benchmark: planned
+    status: planned
+
+  - id: REQ-IR-001
+    title: Semantic and canonical problem IR
+    description: Preserve observation provenance in SemanticProblemIR and compile it to solver-neutral equality, linear-bound, and second-order-cone canonical forms.
+    dependencies: [REQ-FUNC-001]
+    milestone: M3-v0.3.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [provenance, deterministic-compilation, invalid-paths]
+    docs: [docs/architecture/PROBLEM_IR.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-FIELD-001
+    title: Unified hard-equality field assembly
+    description: Build FieldProblem and separate center and observation representations into symmetric dense systems for mixed value and directional-derivative hard equalities.
+    dependencies: [REQ-CPD-001, REQ-IR-001, REQ-ANISO-001]
+    milestone: M3-v0.3.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [analytic-fields, mixed-functionals, symmetry, invalid-capabilities]
+    docs: [docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-SOLVE-001
+    title: Dense equality solvers and numerical policy
+    description: Select Cholesky, pivoted LDLT, RRQR, or SVD explicitly, estimate conditioning, refine solutions, and reject rank failure without hidden regularization.
+    dependencies: [REQ-SPIKE-001, REQ-SPIKE-002, REQ-FIELD-001]
+    milestone: M3-v0.3.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [solver-truth, rank-failure, condition-diagnostics, explicit-regularization]
+    docs: [docs/architecture/SOLVER_POLICY.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-MODEL-001
+    title: Immutable fitted field evaluation
+    description: Produce Send and Sync immutable FittedField models with value, gradient, conditional Hessian, capabilities, deterministic serialization inputs, and original-coordinate outputs.
+    dependencies: [REQ-SOLVE-001, REQ-COORD-001]
+    milestone: M3-v0.3.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [analytic-value-gradient-hessian, capability-boundaries, multithread-read]
+    docs: [docs/architecture/ARCHITECTURE.md, docs/architecture/MODEL_FORMAT.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-EXEC-001
+    title: Deterministic execution controls
+    description: Add cancellation tokens, progress sinks, explicit thread counts, deterministic mode, and structured cancellation without core stdout or stderr output.
+    dependencies: [REQ-FIELD-001]
+    milestone: M3-v0.3.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [cancellation, progress-events, deterministic-repeat, thread-count]
+    docs: [docs/architecture/ARCHITECTURE.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: "N/A: execution controls are verified through behavior and later performance baselines"
+    status: planned
+
+  - id: REQ-DIAG-001
+    title: Structured errors and numerical diagnostics
+    description: Define non-panicking errors for input, capability, rank, gauge, contrast, infeasibility, conditioning, memory, cancellation, and version failures with source identifiers.
+    dependencies: [REQ-IR-001]
+    milestone: M3-v0.3.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [error-variants, observation-level-paths, no-core-output]
+    docs: [docs/architecture/ARCHITECTURE.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: "N/A: diagnostic construction is not a hot path"
+    status: planned
+
+  - id: REQ-LEVEL-001
+    title: Explicit level variables and order DAG
+    description: Implement fixed, unknown, and prior level variables; membership constraints; acyclic order gaps; isolated-level, gauge, fixed-conflict, and contrast checks.
+    dependencies: [REQ-IR-001, REQ-MODEL-001]
+    milestone: M4-v0.4.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [fixed-unknown-prior, cycle, conflict, gauge, contrast]
+    docs: [docs/math/CONSTRAINT_SEMANTICS.md, docs/adr/ADR-0003-explicit-level-variables.md]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-SOFT-001
+    title: Per-constraint soft losses
+    description: Add independently scaled SquaredL2, AbsoluteL1, and Huber enforcement while preserving hard constraints in the same field problem.
+    dependencies: [REQ-IR-001, REQ-SOLVE-001]
+    milestone: M4-v0.4.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [l2-l1-huber, mixed-hard-soft, scale-policy]
+    docs: [docs/math/CONSTRAINT_SEMANTICS.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-LINEQ-001
+    title: Linear bounds, intervals, and monotonicity
+    description: Compile lower, upper, interval, inside/outside, scalar-gap, layer-order, and directional monotonicity constraints into canonical linear bounds.
+    dependencies: [REQ-IR-001, REQ-LEVEL-001]
+    milestone: M4-v0.4.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [lower-upper-interval, order-gap, monotonicity, infeasible]
+    docs: [docs/math/CONSTRAINT_SEMANTICS.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-SPIKE-004
+    title: Convex QP and SOCP backend spike
+    description: Evaluate mature QP and SOCP backends for canonical mapping, licensing, safety, MSRV, infeasibility certificates, deterministic behavior, and three-platform delivery.
+    dependencies: [REQ-BOOTSTRAP-001]
+    milestone: M4-v0.4.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [qp-socp-spike-cases, infeasibility, platform-build]
+    docs: [docs/adr, docs/architecture/SOLVER_POLICY.md]
+    rust_api: "N/A: dependency spike exposes no user API"
+    cli: "N/A: dependency spike exposes no command"
+    c_api: "N/A: dependency spike exposes no ABI"
+    cpp_api: "N/A: dependency spike exposes no C++ API"
+    python_api: "N/A: dependency spike exposes no Python API"
+    benchmark: planned
+    status: planned
+
+  - id: REQ-CONVEX-001
+    title: QP and SOCP canonical solver integration
+    description: Solve linear inequalities, epigraph L1 and Huber losses, angular cones, and local thickness cones through an approved backend without implementing a production interior-point method.
+    dependencies: [REQ-SOFT-001, REQ-LINEQ-001, REQ-SPIKE-004]
+    milestone: M4-v0.4.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [qp-truth, socp-truth, mixed-constraints, deterministic-repeat]
+    docs: [docs/architecture/SOLVER_POLICY.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-INFEAS-001
+    title: Constraint conflict and infeasibility diagnostics
+    description: Detect duplicate, near-duplicate, conflicting, and infeasible constraints and report source-aware diagnostics without deletion or hard-to-soft fallback.
+    dependencies: [REQ-CONVEX-001, REQ-DIAG-001]
+    milestone: M4-v0.4.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [duplicate, near-duplicate, conflict, infeasible-certificate]
+    docs: [docs/math/CONSTRAINT_SEMANTICS.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-NORMAL-001
+    title: Normal observation modes
+    description: Implement GradientVector, DirectionOnly, DirectionWithPolarity, AngularCone, and AxialDirection using orthogonal-complement constraints and honest nonzero-gradient diagnostics.
+    dependencies: [REQ-ORIENT-001, REQ-CONVEX-001]
+    milestone: M5-v0.5.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [analytic-gradients, polarity, axial-sign, cone-rotation, small-gradient]
+    docs: [docs/math/NORMAL_AND_TANGENT.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-TANGENT-001
+    title: Tangent and derivative-only constraints
+    description: Support multiple exact or soft tangent constraints per point and require or explicitly record a gauge anchor for derivative-only fields.
+    dependencies: [REQ-FUNC-001, REQ-SOFT-001, REQ-DIAG-001]
+    milestone: M5-v0.5.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [analytic-tangents, multiple-tangents, soft-tangent, missing-gauge]
+    docs: [docs/math/NORMAL_AND_TANGENT.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-THICK-001
+    title: Scalar-gap and local normal-thickness constraints
+    description: Keep minimum level gaps distinct from sampled local first-order SOCP thickness constraints and label their limited geometric guarantee in diagnostics.
+    dependencies: [REQ-LEVEL-001, REQ-NORMAL-001, REQ-CONVEX-001]
+    milestone: M5-v0.5.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [scalar-gap, local-cone, analytic-thickness, diagnostic-kind]
+    docs: [docs/math/THICKNESS.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-THICK-002
+    title: Sampled geometric thickness validation
+    description: Search adjacent level sets along local normals, refine intersections, report distances, quantiles, violations, and optionally generate new local constraints for explicit refitting.
+    dependencies: [REQ-THICK-001, REQ-MODEL-001]
+    milestone: M5-v0.5.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [analytic-parallel-levels, curved-levels, no-intersection, quantiles]
+    docs: [docs/math/THICKNESS.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-PROJECT-001
+    title: Independent multi-field projects
+    description: Allow GeoProject to own multiple independent scalar fields using the same FieldProblem core and expose reference-field trend inputs without geological-body topology claims.
+    dependencies: [REQ-MODEL-001, REQ-LEVEL-001]
+    milestone: M5-v0.5.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [multi-field-independence, identifiers, reference-input]
+    docs: [docs/architecture/ARCHITECTURE.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: "N/A: projects delegate fitting and evaluation to individual fields"
+    status: planned
+
+  - id: REQ-ANISO-002
+    title: Robust orientation tensor estimation
+    description: Estimate sign-invariant principal directions with weighted orientation tensors, bounded axis-ratio selection, cross-validation, confidence gaps, outlier influence, and isotropy diagnostics.
+    dependencies: [REQ-ORIENT-001, REQ-ANISO-001]
+    milestone: M6-v0.6.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [sign-invariance, rotations, isotropy, outliers, bounded-search]
+    docs: [docs/architecture/ANISOTROPY.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-TREND-001
+    title: Positive-definite local trend mixtures
+    description: Mix fixed SPD anisotropic kernels with smooth spatial basis products, a background component, and all product-rule derivative terms; reject CPD mixtures explicitly.
+    dependencies: [REQ-KERNEL-003, REQ-ANISO-001, REQ-MODEL-001]
+    milestone: M6-v0.6.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [random-spd, derivative-product-rule, coverage, cpd-rejection]
+    docs: [docs/architecture/ANISOTROPY.md, docs/adr/ADR-0005-positive-definite-local-trends.md]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-TREND-002
+    title: Region and reference-field trend controls
+    description: Support local controls, spheroidal and ellipsoidal orientations, influence radii, strengths, smooth transitions, regions, and normalized gradients of fitted reference fields.
+    dependencies: [REQ-TREND-001, REQ-PROJECT-001, REQ-NORMAL-001]
+    milestone: M6-v0.6.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [control-coverage, smooth-transition, region-boundary, reference-gradient]
+    docs: [docs/architecture/ANISOTROPY.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-ANISO-003
+    title: Exportable anisotropy diagnostics
+    description: Export positions, local axes and lengths, weights, background weight, condition numbers, coverage, direction jumps, and low-confidence regions without GUI or VTK.
+    dependencies: [REQ-ANISO-002, REQ-TREND-002]
+    milestone: M6-v0.6.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [diagnostic-schema, low-confidence, direction-jump]
+    docs: [docs/architecture/ANISOTROPY.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: "N/A: diagnostics are explicit export operations"
+    status: planned
+
+  - id: REQ-SPIKE-003
+    title: Sparse assembly and solver backend spike
+    description: Evaluate spatial indices, CSC or CSR assembly, sparse factorization, licensing, safety, MSRV, deterministic behavior, and platform support for compact kernels.
+    dependencies: [REQ-KERNEL-004]
+    milestone: M7-v0.7.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [sparse-spike-cases, scaling, platform-build]
+    docs: [docs/adr, docs/architecture/SOLVER_POLICY.md]
+    rust_api: "N/A: dependency spike exposes no user API"
+    cli: "N/A: dependency spike exposes no command"
+    c_api: "N/A: dependency spike exposes no ABI"
+    cpp_api: "N/A: dependency spike exposes no C++ API"
+    python_api: "N/A: dependency spike exposes no Python API"
+    benchmark: planned
+    status: planned
+
+  - id: REQ-SPARSE-001
+    title: Compact-support sparse fitting and evaluation
+    description: Assemble only support-neighbor entries into sparse storage, solve without densification, evaluate through local centers, and diagnose nonzero rate and support coverage.
+    dependencies: [REQ-SPIKE-003, REQ-FIELD-001, REQ-KERNEL-004]
+    milestone: M7-v0.7.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [dense-sparse-parity, support-boundaries, memory-scaling, coverage]
+    docs: [docs/architecture/ARCHITECTURE.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-CENTER-001
+    title: Rank-safe center selection
+    description: Implement all-representer, user-provided, farthest-point, residual-greedy, and power-greedy strategies with deterministic seeds and hard-rank protection or explicit basis-rank errors.
+    dependencies: [REQ-SOLVE-001, REQ-MODEL-001]
+    milestone: M7-v0.7.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [strategy-truth, deterministic-seed, hard-rank, insufficient-basis]
+    docs: [docs/architecture/SOLVER_POLICY.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-TUNE-001
+    title: Deterministic parameter tuning
+    description: Implement fixed, distance-heuristic, cross-validation, generalized-cross-validation, and power-function tuning over bounded length, support, regularization, axis-ratio, and influence-radius candidates.
+    dependencies: [REQ-MODEL-001]
+    milestone: M7-v0.7.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [known-optimum, deterministic-search, bounds, explicit-seed]
+    docs: [docs/architecture/SOLVER_POLICY.md, rustdoc]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-PERF-001
+    title: Dense and sparse performance baseline
+    description: Add block assembly, symmetric evaluation, workspace reuse, no per-point batch allocation, deterministic benchmark data, memory estimates, thread scaling, and stable baseline reporting.
+    dependencies: [REQ-SPARSE-001, REQ-CENTER-001, REQ-TUNE-001]
+    milestone: M7-v0.7.0
+    priority: P1
+    issue: null
+    pull_request: null
+    tests: [allocation-check, complexity, thread-scaling, memory-estimate]
+    docs: [docs/MASTER_PLAN.md, benchmark-report]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-CONTOUR-001
+    title: One-dimensional level points
+    description: Detect intervals, refine analytic roots robustly, diagnose stationary and degenerate cases, and return level points in original coordinates.
+    dependencies: [REQ-MODEL-001]
+    milestone: M8-v0.8.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [analytic-roots, tangencies, degenerate-intervals]
+    docs: [rustdoc, user-guide]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-CONTOUR-002
+    title: Two-dimensional isolines
+    description: Provide marching-simplices reference and disambiguated marching-squares paths with refined intersections, deduplication, topology, and open-boundary diagnostics.
+    dependencies: [REQ-MODEL-001]
+    milestone: M8-v0.8.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [line, circle, saddle, ambiguous-cell, open-boundary]
+    docs: [rustdoc, user-guide]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-CONTOUR-003
+    title: Three-dimensional isosurfaces
+    description: Provide marching-simplices reference and topology-aware regular-grid paths with refined intersections, deduplication, degeneracy handling, and normals consistent with field gradients.
+    dependencies: [REQ-MODEL-001]
+    milestone: M8-v0.8.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [plane, sphere, saddle, topology, vertex-orientation, degenerate-grid]
+    docs: [rustdoc, user-guide]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-SCHEMA-001
+    title: Versioned project and model schemas
+    description: Define schemas without model_type for multi-field projects and deterministic models containing coordinates, normalization, kernel, anisotropy, centers, coefficients, levels, capabilities, diagnostics, build version, and checksums.
+    dependencies: [REQ-PROJECT-001, REQ-MODEL-001]
+    milestone: M8-v0.8.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [schema-snapshots, invalid-version, required-fields]
+    docs: [docs/architecture/MODEL_FORMAT.md, schemas]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: "N/A: schema validation is covered by correctness and size limits"
+    status: planned
+
+  - id: REQ-IO-001
+    title: Project data and model persistence
+    description: Read and validate CSV, JSON, and TOML project inputs; save and load deterministic versioned models; and export contours as pure data, PLY, OBJ, STL, or GeoJSON where applicable.
+    dependencies: [REQ-SCHEMA-001, REQ-CONTOUR-001, REQ-CONTOUR-002, REQ-CONTOUR-003]
+    milestone: M8-v0.8.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [round-trip, cross-platform-fixtures, corrupt-input, version-mismatch]
+    docs: [docs/architecture/MODEL_FORMAT.md, user-guide]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-CLI-001
+    title: Complete structured command-line interface
+    description: Implement init, validate, fit, tune, evaluate, contour, inspect, diagnose, anisotropy, kernels, convert, and completions with text or JSON, stable exits, dry-run, threads, determinism, cancellation, and field paths.
+    dependencies: [REQ-IO-001, REQ-PERF-001, REQ-ANISO-003]
+    milestone: M8-v0.8.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [command-integration, json-snapshots, exit-codes, cancellation]
+    docs: [cli-reference, examples]
+    rust_api: "N/A: command adapter uses the existing Rust core API"
+    cli: planned
+    c_api: "N/A: CLI commands are not C ABI functions"
+    cpp_api: "N/A: CLI commands are not C++ API functions"
+    python_api: "N/A: CLI commands are not Python API functions"
+    benchmark: planned
+    status: planned
+
+  - id: REQ-API-001
+    title: Rust API review and freeze
+    description: Review naming, ownership, errors, capabilities, dimensions, third-party type isolation, documentation, semver snapshots, and all v1 public Rust surfaces before freeze.
+    dependencies: [REQ-CLI-001]
+    milestone: M9-v0.9.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [api-snapshot, rustdoc, compile-examples]
+    docs: [rust-api-reference, migration-policy]
+    rust_api: planned
+    cli: "N/A: API freeze governs the Rust library"
+    c_api: "N/A: C API has a separate freeze requirement"
+    cpp_api: "N/A: C++ API has a separate freeze requirement"
+    python_api: "N/A: Python API has a separate freeze requirement"
+    benchmark: "N/A: API review does not alter runtime behavior"
+    status: planned
+
+  - id: REQ-FFI-001
+    title: Stable panic-contained C ABI
+    description: Implement opaque handles, status codes, explicit lengths, pointer validation, catch-unwind, thread-local errors, ABI versioning, caller buffers, JSON entry points, headers, safety invariants, and ABI snapshots.
+    dependencies: [REQ-API-001, REQ-SCHEMA-001]
+    milestone: M9-v0.9.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [c-integration, null-length, panic-containment, abi-snapshot, sanitizer]
+    docs: [docs/architecture/FFI_POLICY.md, c-api-reference, examples]
+    rust_api: "N/A: this requirement wraps the frozen core"
+    cli: "N/A: C ABI is independent of the CLI"
+    c_api: planned
+    cpp_api: "N/A: C++ wrapper has a separate requirement"
+    python_api: "N/A: Python binding has a separate requirement"
+    benchmark: planned
+    status: planned
+
+  - id: REQ-CPP-001
+    title: Header-only C++ RAII wrapper
+    description: Wrap only the C ABI with destruction, move semantics, spans, vectors, and a documented exception or expected policy without reimplementing mathematics.
+    dependencies: [REQ-FFI-001]
+    milestone: M9-v0.9.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [cpp-integration, ownership, error-policy, c-parity]
+    docs: [cpp-api-reference, examples]
+    rust_api: "N/A: wrapper consumes the C ABI"
+    cli: "N/A: C++ wrapper is independent of the CLI"
+    c_api: "N/A: C ABI is completed by REQ-FFI-001"
+    cpp_api: planned
+    python_api: "N/A: Python binding has a separate requirement"
+    benchmark: planned
+    status: planned
+
+  - id: REQ-PY-001
+    title: PyO3 and NumPy bindings
+    description: Add float64 batch arrays, shape and finite checks, Python exceptions, GIL release, model persistence, type stubs, py.typed, and exact delegation to the Rust core.
+    dependencies: [REQ-API-001, REQ-SCHEMA-001]
+    milestone: M9-v0.9.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [python-integration, numpy-shapes, exceptions, gil-release, wheel-install]
+    docs: [python-api-reference, examples, type-stubs]
+    rust_api: "N/A: binding consumes the frozen core"
+    cli: "N/A: Python API is independent of the CLI"
+    c_api: "N/A: Python binding uses PyO3 rather than the public C ABI"
+    cpp_api: "N/A: Python API is independent of C++"
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-PARITY-001
+    title: Cross-language numerical parity
+    description: Compare level values, evaluation, diagnostics, errors, and model round trips across Rust, CLI, C, C++, and Python under documented same-platform and cross-platform tolerances.
+    dependencies: [REQ-CLI-001, REQ-FFI-001, REQ-CPP-001, REQ-PY-001]
+    milestone: M9-v0.9.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [cross-language-fixtures, deterministic-same-platform, tolerance-cross-platform]
+    docs: [capability-matrix, examples]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: "N/A: parity is a correctness gate"
+    status: planned
+
+  - id: REQ-ARTIFACT-001
+    title: Three-platform prerelease artifacts
+    description: Build and install-test Windows, Linux, and macOS CLI binaries, C and C++ SDKs, and Python wheels with versioned manifests and checksums.
+    dependencies: [REQ-PARITY-001]
+    milestone: M9-v0.9.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [artifact-build, clean-install, wheel-install, sdk-link]
+    docs: [release-artifact-guide]
+    rust_api: "N/A: packaging consumes frozen APIs"
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: "N/A: packaging is validated through installation tests"
+    status: planned
+
+  - id: REQ-VERIFY-001
+    title: Full safety and mathematical regression
+    description: Complete independent truth, property, fuzz, serialization fuzz, FFI fuzz, Miri, ASan or UBSan, mutation, 1D or 2D or 3D, SPD or CPD, invariance, contour, and infeasibility suites.
+    dependencies: [REQ-ARTIFACT-001, REQ-PERF-001]
+    milestone: M10-v1.0.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [full-regression, property, fuzz, miri, sanitizer, mutation]
+    docs: [verification-report]
+    rust_api: "N/A: verification changes no public API"
+    cli: "N/A: verification changes no CLI contract"
+    c_api: "N/A: verification changes no C API contract"
+    cpp_api: "N/A: verification changes no C++ API contract"
+    python_api: "N/A: verification changes no Python API contract"
+    benchmark: planned
+    status: planned
+
+  - id: REQ-DOCS-001
+    title: Complete bilingual documentation and examples
+    description: Finish Chinese and English README content, user guide, Rust, CLI, C, C++, and Python references, mathematical contracts, diagnostics guidance, and cross-language examples.
+    dependencies: [REQ-PARITY-001]
+    milestone: M10-v1.0.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [doc-tests, link-check, example-build]
+    docs: [README, user-guide, api-references, examples]
+    rust_api: "N/A: documentation does not add API"
+    cli: "N/A: documentation does not add commands"
+    c_api: "N/A: documentation does not add ABI"
+    cpp_api: "N/A: documentation does not add C++ API"
+    python_api: "N/A: documentation does not add Python API"
+    benchmark: "N/A: documentation has no runtime impact"
+    status: planned
+
+  - id: REQ-SUPPLY-001
+    title: Dependency audit, licenses, and SBOM
+    description: Enforce cargo-deny, vulnerability auditing, duplicate review, third-party license inventory, reproducible SBOM generation, credential hygiene, and release checksums.
+    dependencies: [REQ-ARTIFACT-001]
+    milestone: M10-v1.0.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [deny, audit, sbom-validate, checksum-verify]
+    docs: [third-party-licenses, sbom, release-checklist]
+    rust_api: "N/A: supply-chain controls expose no API"
+    cli: "N/A: supply-chain controls expose no command"
+    c_api: "N/A: supply-chain controls expose no ABI"
+    cpp_api: "N/A: supply-chain controls expose no C++ API"
+    python_api: "N/A: supply-chain controls expose no Python API"
+    benchmark: "N/A: supply-chain checks do not affect runtime"
+    status: planned
+
+  - id: REQ-RELEASE-001
+    title: Release candidate rehearsal
+    description: Freeze APIs and schemas, close P0 and P1 issues, verify every v1 requirement and performance baseline, and complete a full v1.0.0-rc artifact and publication rehearsal.
+    dependencies: [REQ-VERIFY-001, REQ-DOCS-001, REQ-SUPPLY-001]
+    milestone: M10-v1.0.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [release-gates, artifact-install, rollback-drill]
+    docs: [docs/release/RELEASE_CHECKLIST.md, release-notes]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned
+
+  - id: REQ-RELEASE-002
+    title: Publish GeoRBF v1.0.0
+    description: Create the signed source tag and GitHub Release and publish verified crates.io, PyPI, CLI, C, and C++ artifacts only after every release gate is satisfied.
+    dependencies: [REQ-RELEASE-001]
+    milestone: M10-v1.0.0
+    priority: P0
+    issue: null
+    pull_request: null
+    tests: [post-publish-install, checksum-verify, registry-metadata]
+    docs: [release-notes, installation-guide]
+    rust_api: planned
+    cli: planned
+    c_api: planned
+    cpp_api: planned
+    python_api: planned
+    benchmark: planned
+    status: planned

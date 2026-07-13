@@ -1,0 +1,12 @@
+/target/
+/.idea/
+/.vscode/
+*.pdb
+*.py[cod]
+*.so
+*.dylib
+*.dll
+*.egg-info/
+/.pytest_cache/
+/dist/
+/wheelhouse/

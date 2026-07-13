@@ -1,0 +1,33 @@
+name: Defect or regression
+description: Report reproducible incorrect behavior, failed CI, or a safety issue.
+title: "[BUG] "
+labels: []
+body:
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: Include structured errors and exact output with secrets removed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior and basis
+      description: Link the mathematical specification, requirement, or API contract.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Include input, platform, version, command, and deterministic seed.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Note correctness, constraint, safety, performance, or compatibility consequences.
+    validations:
+      required: true
