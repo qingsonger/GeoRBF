@@ -2,11 +2,11 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / independent REQ-COORD-001 review completed
-- Current requirement: REQ-COORD-001
-- Issue: https://github.com/qingsonger/GeoRBF/issues/7
-- Pull request: https://github.com/qingsonger/GeoRBF/pull/8 (Ready for review)
-- Branch: `codex/req-coord-001-coordinate-metadata-normalization`
+- Execution mode: Implement / next atomic requirement
+- Current requirement: REQ-KCALC-001
+- Issue: not yet created
+- Pull request: not yet opened
+- Branch: not yet created
 
 ## Completed in this run
 
@@ -36,6 +36,9 @@
 - Confirmed the review-repair head passed GitHub Actions on Windows, Ubuntu,
   and macOS, updated the PR evidence, and marked PR #8 ready for maintainer
   review.
+- Squash-merged PR #8 as commit `2292a54`; Issue #7 closed automatically, and
+  post-merge `main` CI run 29250743578 passed on Windows, Ubuntu, and macOS.
+  REQ-COORD-001 now satisfies every integration gate.
 - Committed and pushed the implementation, opened Draft PR #8, and advanced
   REQ-COORD-001 to `documented`; integration remains forbidden until the
   independent review is recorded, CI is green, and the PR is merged.
@@ -100,14 +103,17 @@
 
 ## Current blockers
 
-Maintainer review and merge of PR #8 remain pending. No code, CI, allocation,
-or dependency blocker remains.
+None. REQ-COORD-001 is integrated. REQ-KCALC-001 has no unfinished dependency
+and is the highest-priority remaining M1 requirement.
 
 ## Next atomic task
 
-Obtain maintainer review and merge PR #8. Do not mark REQ-COORD-001
-`integrated` or begin orientation, anisotropy, or kernel work until PR #8 is
-merged.
+Create the REQ-KCALC-001 Issue with explicit radial-jet and derivative
+acceptance criteria, then create `codex/req-kcalc-001-radial-kernel-calculus`.
+Implement only dimension-generic radial jets and the required zero-through-third
+spatial derivative calculus, including documented center limits and exchange
+symmetries. Do not begin kernel families, metadata, orientation, polynomial, or
+solver work in the same run.
 
 ## Latest full test result
 
@@ -133,10 +139,10 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Baseline `main` GitHub Actions run 29246462335 for commit `34468a3`: passed on
   `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
   workspace tests, doctests, and all 58 requirement checks passed in every job.
-- REQ-COORD-001 GitHub Actions run 29250161102 for review-repair head
-  `c37b09e`: passed on
-  `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
-  workspace tests, doctests, and all 58 requirement checks passed in every job.
+- REQ-COORD-001 post-merge `main` GitHub Actions run 29250743578 for merge
+  commit `2292a54`: passed on `windows-latest`, `ubuntu-latest`, and
+  `macos-latest`; formatting, Clippy, workspace tests, doctests, and all 58
+  requirement checks passed in every job.
 
 ## Checks not yet available
 
