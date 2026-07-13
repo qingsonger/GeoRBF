@@ -2,10 +2,10 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / next atomic requirement
+- Execution mode: Review / independent REQ-DIM-001 review required
 - Current requirement: REQ-DIM-001
 - Issue: https://github.com/qingsonger/GeoRBF/issues/4
-- Pull request: not yet opened
+- Pull request: https://github.com/qingsonger/GeoRBF/pull/5 (Draft)
 - Branch: `codex/req-dim-001-dimension-safe-geometry`
 
 ## Completed in this run
@@ -25,6 +25,9 @@
   scale-invariance, sign, conversion, and thread-safety tests.
 - Added compile-fail doctests for D=0 and D=4, a runnable construction example,
   the precise normalization contract, and the REQ-DIM-001 change record.
+- Committed and pushed the implementation, opened Draft PR #5, and advanced
+  the registry status to `documented`; integration remains forbidden until an
+  independent review is complete and the PR is merged.
 - Confirmed that remote `main` contained only the MIT license and no open
   issues, pull requests, CI runs, or tags.
 - Created the stage-0 branch and Rust 2024 workspace skeleton with four adapter
@@ -64,10 +67,10 @@ completed bootstrap requirement.
 
 ## Next atomic task
 
-Commit and push REQ-DIM-001, open its Draft PR, and then perform the required
-independent mathematical, numerical, safety, API, and test review before the
-requirement may become integrated. Do not start REQ-COORD-001 while this review
-and merge gate is pending.
+Perform the required independent mathematical, numerical, safety, API, and
+test review of Draft PR #5. Repair any findings, rerun all applicable gates,
+and mark the PR ready only after the review is recorded. Do not start
+REQ-COORD-001 while this review and merge gate is pending.
 
 ## Latest full test result
 
@@ -86,7 +89,7 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
-- REQ-DIM-001 GitHub Actions: pending until the Draft PR is pushed.
+- REQ-DIM-001 GitHub Actions: awaiting the final pushed metadata commit.
 
 ## Checks not yet available
 
