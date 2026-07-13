@@ -48,17 +48,17 @@ requirements:
     dependencies: [REQ-DIM-001]
     milestone: M1-v0.1.0
     priority: P0
-    issue: null
+    issue: 7
     pull_request: null
-    tests: [translation, scaling, round-trip, unit-errors]
-    docs: [docs/math/MATH_SPEC.md, docs/architecture/MODEL_FORMAT.md]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: "N/A: coordinate transforms are linear in point count"
-    status: planned
+    tests: [coordinate-metadata, affine-round-trip, analytic-derivative-transform, transform-error-paths, coordinate-dimension-compile-fail]
+    docs: [docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, docs/architecture/MODEL_FORMAT.md, rustdoc, crates/georbf/examples/coordinate_normalization.rs]
+    rust_api: implemented
+    cli: "N/A: coordinate metadata has no standalone command before project input and schemas exist"
+    c_api: "N/A: the future C ABI consumes the frozen coordinate contract after REQ-API-001"
+    cpp_api: "N/A: the future C++ wrapper consumes the C ABI rather than Rust coordinate types"
+    python_api: "N/A: the future Python binding delegates coordinate validation to the Rust core after API freeze"
+    benchmark: "N/A: fixed-size D<=3 construction and transforms are constant-bounded; batch paths are not introduced"
+    status: in_progress
 
   - id: REQ-ORIENT-001
     title: Geological orientation conversions

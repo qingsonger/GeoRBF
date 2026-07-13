@@ -78,6 +78,14 @@ monotonicity, and polarity.
 
 ## Coordinates
 
+Coordinate metadata records an exact length-unit identifier, opaque optional
+EPSG and WKT values, a permutation from component positions to canonical axes,
+the positive vertical direction, handedness, and the external angle unit.
+Metadata is preserved and compared exactly. The core performs no unit aliasing,
+automatic unit conversion, CRS lookup, or reprojection; data with different
+metadata must be converted explicitly before it is combined. Internal angular
+mathematics uses radians.
+
 Fitting uses normalized coordinates
 
 ```text
@@ -85,16 +93,31 @@ x_tilde = S^-1 (x - mu),
 ```
 
 where `S` is invertible and carries the coordinate scaling policy. The model
-stores `mu` and `S`. With `g_tilde` and `H_tilde` evaluated in normalized
-coordinates, original-coordinate derivatives are
+stores finite `mu` and finite `S`; `S^-1` must also be representable with finite
+components. `S` is a general matrix and may contain scaling, rotation,
+permutation, or shear. Construction uses partial pivoting and exact zero-pivot
+decisions. It does not add a singularity tolerance, jitter, regularization, or
+pseudoinverse. Singular matrices and inverses that leave the finite `f64`
+domain are explicit errors.
+
+The inverse point transform is
+
+```text
+x = mu + S x_tilde.
+```
+
+With `g_tilde` and `H_tilde` evaluated in normalized coordinates,
+original-coordinate derivatives are
 
 ```text
 g = S^-T g_tilde
 H = S^-T H_tilde S^-1.
 ```
 
-Coordinate length units must be compatible. CRS metadata is preserved but the
-core does not reproject coordinates. All internal angles are radians.
+Finite inputs that overflow or otherwise produce a non-finite point, gradient,
+or Hessian are rejected rather than stored. These transforms introduce no
+orientation semantics or anisotropy metric; later requirements build those
+concepts on this coordinate contract.
 
 ## Derivative capability
 
