@@ -2,7 +2,7 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / independent REQ-DIM-001 review required
+- Execution mode: Review / independent REQ-DIM-001 review completed
 - Current requirement: REQ-DIM-001
 - Issue: https://github.com/qingsonger/GeoRBF/issues/4
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/5 (Draft)
@@ -25,6 +25,10 @@
   scale-invariance, sign, conversion, and thread-safety tests.
 - Added compile-fail doctests for D=0 and D=4, a runnable construction example,
   the precise normalization contract, and the REQ-DIM-001 change record.
+- Completed the independent mathematical, numerical, safety, API, performance,
+  and test review of PR #5. No runtime-code defect was found. Repaired the stale
+  CI reference in this handoff and recorded the evidence in
+  `docs/reviews/PR-5-INDEPENDENT-REVIEW.md`.
 - Committed and pushed the implementation, opened Draft PR #5, and advanced
   the registry status to `documented`; integration remains forbidden until an
   independent review is complete and the PR is merged.
@@ -62,15 +66,14 @@
 
 ## Current blockers
 
-None. Stage 0 is integrated, and REQ-DIM-001 has no dependency other than the
-completed bootstrap requirement.
+The review-record commit must pass the three-platform GitHub Actions matrix
+before Draft PR #5 is marked ready. No code or dependency blocker remains.
 
 ## Next atomic task
 
-Perform the required independent mathematical, numerical, safety, API, and
-test review of Draft PR #5. Repair any findings, rerun all applicable gates,
-and mark the PR ready only after the review is recorded. Do not start
-REQ-COORD-001 while this review and merge gate is pending.
+Confirm the review-record commit passes the three-platform matrix, then mark
+PR #5 ready for maintainer review. Do not mark REQ-DIM-001 `integrated` or
+start REQ-COORD-001 until PR #5 is merged.
 
 ## Latest full test result
 
@@ -89,7 +92,8 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
-- REQ-DIM-001 GitHub Actions run 29243178924 for commit `635327c`: passed on
+- REQ-DIM-001 GitHub Actions run 29243260972 for reviewed code head `6db7097`:
+  passed on
   `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
   workspace tests, doctests, and all 58 requirement checks passed in every job.
 
