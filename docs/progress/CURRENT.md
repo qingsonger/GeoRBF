@@ -2,14 +2,18 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / awaiting review-repair CI
+- Execution mode: Review / ready for maintainer review
 - Current requirement: REQ-KCALC-001
 - Issue: #10
-- Pull request: Draft #11
+- Pull request: #11 (ready for review)
 - Branch: `codex/req-kcalc-001-radial-kernel-calculus`
 
 ## Completed in this run
 
+- Confirmed review-repair head `462dca7` passed GitHub Actions run 29259163954
+  on Windows, Ubuntu, and macOS, including the benchmark smoke and all 58
+  requirement checks. Updated the PR evidence and marked PR #11 ready only
+  after the repaired head was green.
 - Completed the independent mathematical, numerical, safety, API, allocation,
   benchmark, and test review of PR #11. Repaired catastrophic near-center
   cancellation in mixed third derivatives by requiring stable D=2/D=3 radial
@@ -140,16 +144,16 @@
 
 ## Current blockers
 
-Integration remains blocked by review-repair CI and merge. The independent
-review and local implementation, test, documentation, example, and benchmark
+Integration remains blocked only by merge. The independent review, repaired-
+head CI, implementation, test, documentation, example, and benchmark
 obligations are complete.
 
 ## Next atomic task
 
-Commit and push the independent-review repairs, require green Windows, Ubuntu,
-and macOS CI for the repaired head, and only then mark PR #11 ready for
-maintainer review. Do not begin kernel families, metadata, orientation,
-polynomial, or solver work before REQ-KCALC-001 is integrated.
+Await maintainer disposition of PR #11. After merge, update REQ-KCALC-001 to
+`integrated` only after confirming the merged commit and post-merge main CI.
+Do not begin kernel families, metadata, orientation, polynomial, or solver work
+before REQ-KCALC-001 is integrated.
 
 ## Latest full test result
 
@@ -195,8 +199,10 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
   setup failure passed on the failed-job retry without a code change.
 - Pre-review PR #11 GitHub Actions run 29254116500 for head `70a8339` passed on
   Windows, Ubuntu, and macOS, including formatting, Clippy, workspace tests,
-  doctests, benchmark smoke, and all 58 requirement checks. Review-repair CI is
-  not yet recorded.
+  doctests, benchmark smoke, and all 58 requirement checks.
+- Review-repair PR #11 GitHub Actions run 29259163954 for head `462dca7` passed
+  on Windows, Ubuntu, and macOS with the same complete job set. PR #11 was then
+  marked ready for maintainer review.
 
 ## Checks not yet available
 

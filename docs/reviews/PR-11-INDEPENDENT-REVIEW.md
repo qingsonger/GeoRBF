@@ -5,6 +5,7 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/11
 - Branch: `codex/req-kcalc-001-radial-kernel-calculus`
 - Reviewed pre-repair head: `70a8339`
+- Review-repair head: `462dca7`
 - Review date: 2026-07-13
 - Mode: Independent review and repair
 
@@ -136,9 +137,10 @@ Passed locally on Windows with Rust 1.96.1 after the repairs:
 - scoped forbidden-code/allocation scans and `git diff --check`
 
 Pre-review GitHub Actions run 29254116500 passed for `70a8339` on Windows,
-Ubuntu, and macOS. Every job passed formatting, Clippy, workspace tests,
-doctests, benchmark smoke, and all 58 requirement checks. The review-repair
-head requires the same three-platform CI before PR #11 may leave Draft state.
+Ubuntu, and macOS. Review-repair run 29259163954 then passed for `462dca7` on
+all three platforms. Every job passed formatting, Clippy, workspace tests,
+doctests, benchmark smoke, and all 58 requirement checks. PR #11 was marked
+ready for maintainer review only after that repaired-head run completed.
 
 ## Checks not run
 
