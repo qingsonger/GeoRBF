@@ -27,6 +27,14 @@ depends on the canonical representation; solvers know only numerical forms;
 models own immutable coefficients and transforms; adapters depend on public
 core APIs.
 
+The kernel-calculus layer accepts validated point separations and a
+caller-supplied radial jet. It owns stable radius construction, analytic center
+dispatch, Cartesian tensor expansion, and query/center signs. It does not own
+concrete kernel formulas, parameters, definiteness or smoothness metadata,
+anisotropy, geological concepts, functionals, assembly, or fitting policy.
+Its D=1/D=2/D=3 outputs are fixed arrays with no allocation, dependency,
+dynamic dispatch, or unsafe code.
+
 ## Runtime behavior
 
 Long operations accept cancellation, progress, explicit thread count, and

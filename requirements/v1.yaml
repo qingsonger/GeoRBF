@@ -84,17 +84,17 @@ requirements:
     dependencies: [REQ-DIM-001]
     milestone: M1-v0.1.0
     priority: P0
-    issue: null
+    issue: 10
     pull_request: null
-    tests: [high-precision, finite-difference, center-limits, exchange-signs, symmetry]
-    docs: [docs/math/KERNEL_REQUIREMENTS.md, rustdoc]
-    rust_api: planned
+    tests: [independent-polynomial-truth, finite-difference, center-limits, exchange-signs, tensor-symmetry, numerical-extremes, structured-errors, dimension-compile-fail]
+    docs: [docs/math/KERNEL_REQUIREMENTS.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, rustdoc, crates/georbf/examples/radial_kernel_calculus.rs, benches/REQ-KCALC-001.md]
+    rust_api: implemented
     cli: "N/A: internal kernel calculus has no standalone command"
     c_api: "N/A: internal kernel calculus is not an ABI surface"
     cpp_api: "N/A: internal kernel calculus is not an ABI surface"
     python_api: "N/A: internal kernel calculus is not a Python surface"
-    benchmark: planned
-    status: planned
+    benchmark: implemented
+    status: in_progress
 
   - id: REQ-KERNEL-001
     title: Kernel metadata and capability model

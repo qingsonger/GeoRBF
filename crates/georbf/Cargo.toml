@@ -11,3 +11,7 @@ publish = false
 
 [lints]
 workspace = true
+
+[[bench]]
+name = "radial_kernel_calculus"
+harness = false
