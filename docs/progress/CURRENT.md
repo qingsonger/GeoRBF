@@ -13,6 +13,10 @@
 - Committed and pushed the isolated implementation as `18b9e6f`, opened Draft
   PR #14, and advanced REQ-KERNEL-001 to `documented`. Integration remains
   forbidden until independent review, green CI, and merge are complete.
+- Confirmed PR #14 implementation and registry head `34b84e0` passed GitHub
+  Actions run 29262474106 on Windows, Ubuntu, and macOS, including formatting,
+  Clippy, workspace tests, doctests, benchmark smoke, and all 58 requirement
+  checks.
 - Confirmed clean synchronized `main` at `332deeb`, no open Issue or PR, no
   tags, and green three-platform CI; confirmed REQ-DIM-001 and REQ-KCALC-001
   are integrated; created Issue #13 and the isolated REQ-KERNEL-001 branch.
@@ -237,6 +241,8 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - REQ-KCALC-001 final integration-state `main` GitHub Actions run 29261006123
   for commit `332deeb`: passed on Windows, Ubuntu, and macOS with the complete
   job set.
+- REQ-KERNEL-001 Draft PR #14 GitHub Actions run 29262474106 for head
+  `34b84e0`: passed on Windows, Ubuntu, and macOS with the complete job set.
 
 ## Checks not yet available
 
