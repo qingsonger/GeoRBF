@@ -23,19 +23,21 @@
   dependency existence and integration, dependency cycles, forbidden v1
   completion markers, and production-source placeholders.
 - Committed and pushed the complete bootstrap baseline and opened Draft PR #2.
+- Updated the pinned checkout action from v4 to v7.0.0 after CI reported the
+  retired Node.js 20 runtime; the replacement run passed on all three platforms.
 
 ## Current blockers
 
-No local implementation blocker. The bootstrap requirement is `documented`,
-not `integrated`; it still requires green three-platform CI, independent
-specification/repository review, and merge.
+No local or CI blocker. The bootstrap requirement is `documented`, not
+`integrated`; it still requires independent specification/repository review and
+merge.
 
 ## Next atomic task
 
-Inspect PR #2 CI. Repair any failure before new work. Once CI is green, perform
-an independent specification and repository-baseline review, address findings,
-mark the PR ready, and merge only when repository rules allow. Then update
-REQ-BOOTSTRAP-001 to `integrated`; do not begin REQ-DIM-001 before that state.
+Perform an independent specification and repository-baseline review of PR #2,
+address findings, mark the PR ready, and merge only when repository rules allow.
+Then update REQ-BOOTSTRAP-001 to `integrated`; do not begin REQ-DIM-001 before
+that state.
 
 ## Latest full test result
 
@@ -49,6 +51,8 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - `cargo xtask requirements check`: passed; 58 requirements.
 - `cargo metadata --format-version 1 --no-deps`: passed.
 - `git diff --check`: passed.
+- GitHub Actions run 29239753018 for commit `b9d241f`: passed on
+  `windows-latest`, `ubuntu-latest`, and `macos-latest`.
 
 ## Checks not yet available
 
