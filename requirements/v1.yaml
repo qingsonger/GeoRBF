@@ -30,17 +30,17 @@ requirements:
     dependencies: [REQ-BOOTSTRAP-001]
     milestone: M1-v0.1.0
     priority: P0
-    issue: null
+    issue: 4
     pull_request: null
-    tests: [unit, compile-fail, property]
-    docs: [docs/math/MATH_SPEC.md, rustdoc]
-    rust_api: planned
+    tests: [geometry-integration, dimension-compile-fail-doctests, normalization-properties]
+    docs: [docs/math/MATH_SPEC.md, rustdoc, crates/georbf/examples/dimension_safe_geometry.rs]
+    rust_api: implemented
     cli: "N/A: primitive construction is not a standalone command"
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
+    c_api: "N/A: the future C ABI accepts validated arrays and dimension tags rather than Rust geometry types"
+    cpp_api: "N/A: the future C++ wrapper consumes the C ABI rather than Rust geometry types"
+    python_api: "N/A: the future Python boundary validates NumPy shapes rather than exposing Rust geometry types"
     benchmark: "N/A: fixed-size primitive validation is constant-time"
-    status: planned
+    status: in_progress
 
   - id: REQ-COORD-001
     title: Coordinate metadata and normalization

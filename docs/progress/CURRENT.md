@@ -4,12 +4,27 @@
   orientation, and kernel calculus
 - Execution mode: Implement / next atomic requirement
 - Current requirement: REQ-DIM-001
-- Issue: not yet created
+- Issue: https://github.com/qingsonger/GeoRBF/issues/4
 - Pull request: not yet opened
-- Branch: not yet created
+- Branch: `codex/req-dim-001-dimension-safe-geometry`
 
 ## Completed in this run
 
+- Created Issue #4 and the REQ-DIM-001 feature branch after confirming that
+  bootstrap is integrated, `main` CI is green, and no Repair or Review work is
+  pending.
+- Fixed the scope at compile-time D=1/2/3 gating, finite geometry components,
+  nonzero directions, overflow/underflow-safe unit directions, tests, rustdoc,
+  and one Rust example; later coordinate, orientation, kernel, and binding work
+  remains excluded.
+- Added private-representation `Point`, `Vector`, `Direction`, and
+  `UnitDirection` types. Fallible constructors report indexed non-finite values
+  and reject zero directions without panicking.
+- Added maximum-component-scaled normalization, including coverage at
+  `f64::MAX` and the smallest positive subnormal value, plus deterministic
+  scale-invariance, sign, conversion, and thread-safety tests.
+- Added compile-fail doctests for D=0 and D=4, a runnable construction example,
+  the precise normalization contract, and the REQ-DIM-001 change record.
 - Confirmed that remote `main` contained only the MIT license and no open
   issues, pull requests, CI runs, or tags.
 - Created the stage-0 branch and Rust 2024 workspace skeleton with four adapter
@@ -49,11 +64,10 @@ completed bootstrap requirement.
 
 ## Next atomic task
 
-Create the REQ-DIM-001 Issue with explicit acceptance criteria, then create
-`codex/req-dim-001-dimension-safe-geometry`. Implement only the dimension-safe
-Point, Vector, Direction, and UnitDirection primitives for exactly D=1, D=2,
-and D=3 with finite-value validation, compile-fail coverage for unsupported
-dimensions, documentation, and the applicable interface status updates.
+Commit and push REQ-DIM-001, open its Draft PR, and then perform the required
+independent mathematical, numerical, safety, API, and test review before the
+requirement may become integrated. Do not start REQ-COORD-001 while this review
+and merge gate is pending.
 
 ## Latest full test result
 
@@ -62,19 +76,17 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 14 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 23 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 0 doctests, 0 failures.
+- `cargo test --doc --workspace`: passed; 3 geometry doctests, including two
+  unsupported-dimension compile-fail cases, 0 failures.
 - `cargo xtask requirements check`: passed; 58 requirements.
 - `cargo metadata --format-version 1 --no-deps`: passed.
 - `cargo tree --workspace --duplicates`: passed; no duplicates.
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
-- Review-repair GitHub Actions run 29241492408 for commit `38a39d4`: passed on
-  `windows-latest` with 14 tests and on `ubuntu-latest` and `macos-latest` with
-  15 tests; fmt, clippy, doc tests, and all 58 requirement checks passed in
-  every job.
+- REQ-DIM-001 GitHub Actions: pending until the Draft PR is pushed.
 
 ## Checks not yet available
 
@@ -84,5 +96,6 @@ benchmark smoke tooling are not installed or not yet implemented. A second
 full-YAML-parser check was not run because PyYAML, Ruby/YAML, and PowerShell
 `ConvertFrom-Yaml` are unavailable; the dependency-free strict registry checker
 did run. Stage 0 has no runtime mathematical path, so its benchmark obligation
-is explicitly N/A. These later checks are tracked by requirements and the
-release checklist.
+is explicitly N/A. REQ-DIM-001 fixed-size validation and normalization are
+constant-time and add no dependency, so its benchmark obligation is also N/A.
+These later checks are tracked by requirements and the release checklist.
