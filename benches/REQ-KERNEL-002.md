@@ -38,3 +38,19 @@ reported rather than hidden:
 These measurements establish a reproducible initial baseline, not a
 cross-machine performance promise. Regression decisions must compare identical
 inputs, build settings, hardware policy, and checksum.
+
+## Independent-review rerun
+
+The same four-run workload was repeated after the numerical review repair.
+The ordinary path now uses an integer power; the log-domain range fallback is
+not entered by this power-five workload. Checksums remained bit-for-bit
+identical to the initial baseline:
+
+| Dimension | Median ns/iteration | Observed range ns/iteration | Checksum |
+| --- | ---: | ---: | ---: |
+| D=1 | 135.28 | 112.09–182.53 | `-4.40079060999637544e7` |
+| D=2 | 215.09 | 177.49–291.32 | `6.52190543411652818e7` |
+| D=3 | 245.43 | 197.75–296.63 | `-7.78147375743490160e7` |
+
+The reviewed medians remain within the initial unpinned observed ranges; no
+performance regression is inferred from this noisy single-machine baseline.

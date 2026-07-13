@@ -22,7 +22,7 @@ Independent review found and repaired premature intermediate underflow in
 high-power derivatives and Cartesian expansion coefficients. Exact subnormal
 bit-pattern regressions cover both the algebraic and logarithmic branches, and
 an affine-annihilating stencil verifies that the even-power reference-length
-term lies in the declared CPD polynomial side space.
+term is annihilated by the declared CPD polynomial side conditions.
 
 No smooth global-support kernel, compact kernel, polynomial construction, CPD
 rank enforcement, anisotropy, functional, assembly, solver, schema, binding,

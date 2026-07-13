@@ -10,6 +10,19 @@
 
 ## Completed in this run
 
+- Completed the independent mathematical, numerical, safety, API, allocation,
+  performance, and test review of PR #17. The complete evidence is recorded
+  in `docs/reviews/PR-17-INDEPENDENT-REVIEW.md`.
+- Repaired premature intermediate underflow that silently zeroed
+  representable high-power derivatives and D=2/D=3 expansion coefficients.
+  Exact odd and logarithmic subnormal bit patterns now prevent regression.
+- Added independent `p=2` and `p=4` CPD projection stencils for the fixed
+  logarithmic reference-length contract. Four full post-repair benchmark runs
+  retained identical checksums with no performance regression.
+- Review-repair commit `bc320c5` passed GitHub Actions run 29292921933 on
+  Windows, Ubuntu, and macOS, including formatting, Clippy, 68 workspace
+  tests, 13 doctests, both benchmark smoke workloads, and all 58 requirement
+  checks.
 - Confirmed PR #17 implementation and registry head `8c3c38d` passed GitHub
   Actions run 29291234362 on Windows, Ubuntu, and macOS, including formatting,
   Clippy, 65 workspace tests, 13 doctests, both benchmark smoke workloads, and
@@ -211,20 +224,18 @@
 
 ## Current blockers
 
-Integration is blocked by three-platform PR CI, independent
-mathematical/numerical review, any resulting repairs, maintainer merge, and
-post-merge `main` CI. The implementation, local checks, documentation,
-example, interface applicability, and benchmark evidence are complete.
+Integration is blocked by three-platform review-evidence CI, maintainer merge,
+and post-merge `main` CI. The independent review, repairs, implementation,
+local checks, documentation, example, interface applicability, and benchmark
+evidence are complete.
 
 ## Next atomic task
 
-Maintain Draft PR #17 and verify its three-platform CI. Keep it Draft until an
-independent review covers formulae, signs, dimensions, CPD orders, polynomial
-side spaces, center limits, stable coefficients, projected energies,
-allocations, interfaces, and benchmarks. Repair every blocking finding and
-rerun the complete checks before marking it ready. Do not begin smooth
-global-support or compact-support kernels, orientation, anisotropy,
-polynomial, functional, assembly, or solver work in the same run.
+Push the PR #17 independent-review evidence and verify its complete
+three-platform CI. Mark the PR ready only after that evidence head is green,
+then await maintainer merge. Do not begin smooth global-support or
+compact-support kernels, orientation, anisotropy, polynomial, functional,
+assembly, or solver work in the same run.
 
 ## Latest full test result
 
@@ -233,11 +244,11 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 65 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 68 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
 - `cargo test --doc --workspace`: passed; 13 doctests, including eleven
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 51 integration tests
+- `cargo test -p georbf --release --all-features`: passed; 54 integration tests
   and 13 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
@@ -250,9 +261,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   respectively with identical checksums; see `benches/REQ-KCALC-001.md` for
   the environment and observed ranges.
 - `cargo bench -p georbf --bench polyharmonic_spline -- --smoke`: passed for
-  deterministic power-five D=1/D=2/D=3 workloads. Four full
-  1,000,000-iteration runs had medians of 148.70, 209.10, and 237.61
-  ns/iteration respectively with identical checksums; see
+  deterministic power-five D=1/D=2/D=3 workloads. Four full post-review
+  1,000,000-iteration runs had medians of 135.28, 215.09, and 245.43
+  ns/iteration respectively with bit-identical checksums; see
   `benches/REQ-KERNEL-002.md` for the environment and observed ranges.
 - `cargo run -p georbf --example radial_kernel_calculus`: passed.
 - `cargo run -p georbf --example kernel_metadata`: passed.
@@ -306,6 +317,8 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - REQ-KERNEL-002 Draft PR #17 GitHub Actions run 29291234362 for implementation
   and registry head `8c3c38d` passed on Windows, Ubuntu, and macOS with the
   complete job set, including both benchmark smoke workloads.
+- REQ-KERNEL-002 review-repair GitHub Actions run 29292921933 for commit
+  `bc320c5` passed on Windows, Ubuntu, and macOS with the complete job set.
 
 ## Checks not yet available
 

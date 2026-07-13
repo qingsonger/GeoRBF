@@ -245,25 +245,16 @@ fn logarithmic_derivative_scaling_preserves_representable_subnormal_results() ->
 }
 
 #[test]
-fn even_power_reference_length_changes_only_the_cpd_polynomial_term() -> TestResult {
-    // The second-difference stencil annihilates constants and linear terms.
-    // For phi(r)=r^2 log(r), changing coordinate scale by c introduces a
-    // c^2 log(c) r^2 polynomial term whose projected Gram energy is exactly
-    // zero. The remaining energy must scale by c^2.
-    let kernel = PolyharmonicSpline::try_new(2)?;
-    let points = [0.0_f64, 1.0, 2.0];
-    let weights = [1.0_f64, -2.0, 1.0];
-    assert_same_bits(weights.iter().sum(), 0.0);
-    assert_same_bits(
-        points
-            .iter()
-            .zip(weights)
-            .map(|(point, weight)| point * weight)
-            .sum(),
-        0.0,
-    );
-
-    let energy = |scale: f64| -> Result<f64, PolyharmonicSplineEvaluationError> {
+fn even_power_reference_length_terms_vanish_under_cpd_projection() -> TestResult {
+    // For even p, scaling coordinates by c adds
+    // s_p c^p log(c) ||x-y||^p to the scaled kernel. Once expanded in x and
+    // y, every monomial has degree at most p/2 in at least one argument, so
+    // the degree-p/2 CPD moment conditions make its projected energy zero.
+    let projected_energy = |kernel: PolyharmonicSpline,
+                            points: &[f64],
+                            weights: &[f64],
+                            scale: f64|
+     -> Result<f64, PolyharmonicSplineEvaluationError> {
         let mut result = 0.0;
         for (row, x) in points.iter().enumerate() {
             for (column, y) in points.iter().enumerate() {
@@ -273,10 +264,55 @@ fn even_power_reference_length_changes_only_the_cpd_polynomial_term() -> TestRes
         }
         Ok(result)
     };
-    let baseline = energy(1.0)?;
-    let scale = 3.5;
-    assert!(baseline > 0.0);
-    assert_close(energy(scale)?, scale * scale * baseline, 2.0e-15);
+
+    let quadratic_points = [0.0_f64, 1.0, 2.0];
+    let quadratic_weights = [1.0_f64, -2.0, 1.0];
+    assert_same_bits(quadratic_weights.iter().sum(), 0.0);
+    assert_same_bits(
+        quadratic_points
+            .iter()
+            .zip(quadratic_weights)
+            .map(|(point, weight)| point * weight)
+            .sum(),
+        0.0,
+    );
+    let quadratic = PolyharmonicSpline::try_new(2)?;
+    let quadratic_baseline =
+        projected_energy(quadratic, &quadratic_points, &quadratic_weights, 1.0)?;
+    let quadratic_scale = 3.5;
+    assert!(quadratic_baseline > 0.0);
+    assert_close(
+        projected_energy(
+            quadratic,
+            &quadratic_points,
+            &quadratic_weights,
+            quadratic_scale,
+        )?,
+        quadratic_scale.powi(2) * quadratic_baseline,
+        2.0e-15,
+    );
+
+    let quartic_points = [0.0_f64, 1.0, 2.0, 3.0];
+    let quartic_weights = [-1.0_f64, 3.0, -3.0, 1.0];
+    for degree in 0..=2 {
+        assert_same_bits(
+            quartic_points
+                .iter()
+                .zip(quartic_weights)
+                .map(|(point, weight)| point.powi(degree) * weight)
+                .sum(),
+            0.0,
+        );
+    }
+    let quartic = PolyharmonicSpline::try_new(4)?;
+    let quartic_baseline = projected_energy(quartic, &quartic_points, &quartic_weights, 1.0)?;
+    let quartic_scale = 2.25;
+    assert!(quartic_baseline > 0.0);
+    assert_close(
+        projected_energy(quartic, &quartic_points, &quartic_weights, quartic_scale)?,
+        quartic_scale.powi(4) * quartic_baseline,
+        4.0e-15,
+    );
     Ok(())
 }
 
