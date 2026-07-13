@@ -117,8 +117,9 @@ Passed locally on Windows with Rust 1.96.1 after the repairs:
 
 Pre-review GitHub Actions run 29248171268 passed for `634792b` on Windows,
 Ubuntu, and macOS. Each job passed formatting, Clippy, workspace tests,
-doctests, and all 58 requirement checks. The repair commit must pass the same
-matrix before Draft PR #8 is marked ready.
+doctests, and all 58 requirement checks. Three-platform run 29250161102 also
+passed for review-repair head `c37b09e`; PR #8 was then marked ready for
+maintainer review.
 
 ## Checks not run
 

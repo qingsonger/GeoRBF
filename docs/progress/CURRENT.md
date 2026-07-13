@@ -5,7 +5,7 @@
 - Execution mode: Review / independent REQ-COORD-001 review completed
 - Current requirement: REQ-COORD-001
 - Issue: https://github.com/qingsonger/GeoRBF/issues/7
-- Pull request: https://github.com/qingsonger/GeoRBF/pull/8 (Draft)
+- Pull request: https://github.com/qingsonger/GeoRBF/pull/8 (Ready for review)
 - Branch: `codex/req-coord-001-coordinate-metadata-normalization`
 
 ## Completed in this run
@@ -33,6 +33,9 @@
   independent extreme-value truth and every-field metadata mismatch coverage,
   defined the vertical canonical axis, and recorded the evidence in
   `docs/reviews/PR-8-INDEPENDENT-REVIEW.md`.
+- Confirmed the review-repair head passed GitHub Actions on Windows, Ubuntu,
+  and macOS, updated the PR evidence, and marked PR #8 ready for maintainer
+  review.
 - Committed and pushed the implementation, opened Draft PR #8, and advanced
   REQ-COORD-001 to `documented`; integration remains forbidden until the
   independent review is recorded, CI is green, and the PR is merged.
@@ -97,14 +100,14 @@
 
 ## Current blockers
 
-The review-repair commit must pass the three-platform GitHub Actions matrix
-before Draft PR #8 is marked ready. No dependency blocker remains.
+Maintainer review and merge of PR #8 remain pending. No code, CI, allocation,
+or dependency blocker remains.
 
 ## Next atomic task
 
-Confirm the review-repair commit passes the three-platform matrix, then mark
-PR #8 ready for maintainer review. Do not begin orientation, anisotropy, or
-kernel work while the review and merge gate remains pending.
+Obtain maintainer review and merge PR #8. Do not mark REQ-COORD-001
+`integrated` or begin orientation, anisotropy, or kernel work until PR #8 is
+merged.
 
 ## Latest full test result
 
@@ -130,8 +133,8 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Baseline `main` GitHub Actions run 29246462335 for commit `34468a3`: passed on
   `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
   workspace tests, doctests, and all 58 requirement checks passed in every job.
-- Pre-review REQ-COORD-001 GitHub Actions run 29248171268 for commit `634792b`:
-  passed on
+- REQ-COORD-001 GitHub Actions run 29250161102 for review-repair head
+  `c37b09e`: passed on
   `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
   workspace tests, doctests, and all 58 requirement checks passed in every job.
 
