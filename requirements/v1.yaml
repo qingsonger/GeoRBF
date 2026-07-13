@@ -94,7 +94,7 @@ requirements:
     cpp_api: "N/A: internal kernel calculus is not an ABI surface"
     python_api: "N/A: internal kernel calculus is not a Python surface"
     benchmark: implemented
-    status: documented
+    status: integrated
 
   - id: REQ-KERNEL-001
     title: Kernel metadata and capability model
