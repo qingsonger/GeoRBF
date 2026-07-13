@@ -21,3 +21,8 @@ dispatch.
 No concrete radial formula, SPD/CPD proof, polynomial space, anisotropy,
 orientation, functional, assembly, solver, schema, language binding, or Surfe
 compatibility is included.
+
+Independent review made the CPD-order-to-polynomial-degree mapping explicit,
+defined compact support as an exact zero extension whose boundary smoothness
+is included in away capability, corrected metadata complexity claims, and
+added exhaustive combined-order and numeric/name boundary regressions.

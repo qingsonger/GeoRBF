@@ -111,7 +111,7 @@ requirements:
     c_api: "N/A: formula-free Rust metadata is not an ABI surface before the kernel catalog and API freeze"
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust metadata types"
     python_api: "N/A: no concrete kernel object exists to expose through the future Python binding"
-    benchmark: "N/A: metadata queries are constant-time"
+    benchmark: "N/A: metadata construction is configuration-time over short borrowed parameter lists; derivative, dimension, and support access are constant-time and no runtime numerical path is introduced"
     status: documented
 
   - id: REQ-KERNEL-002

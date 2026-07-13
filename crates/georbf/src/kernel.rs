@@ -11,6 +11,14 @@
 //!     dimensions.supports::<4>()
 //! }
 //! ```
+//!
+//! ```compile_fail
+//! use georbf::KernelDimensions;
+//!
+//! fn unsupported(dimensions: KernelDimensions) -> bool {
+//!     dimensions.supports::<0>()
+//! }
+//! ```
 
 use std::error::Error;
 use std::fmt;
@@ -18,6 +26,11 @@ use std::fmt;
 use crate::dimension::{Dim, SupportedDimension};
 
 /// Positive conditional-positive-definiteness order.
+///
+/// For CPD order `m`, `GeoRBF`'s later polynomial side space is the complete
+/// space of total degree at most `m - 1`. Thus order one requires constants,
+/// order two requires constants and linear terms, and so on. This type records
+/// that contract without constructing the polynomial space.
 ///
 /// Strictly positive definite kernels use a distinct
 /// [`KernelDefiniteness`] variant, so a CPD order of zero is not represented.
@@ -44,6 +57,15 @@ impl CpdOrder {
     pub const fn get(self) -> usize {
         self.0
     }
+
+    /// Returns the maximum total degree of the required complete polynomial space.
+    ///
+    /// This subtraction cannot underflow because construction rejects order
+    /// zero and the representation is private.
+    #[must_use]
+    pub const fn maximum_polynomial_degree(self) -> usize {
+        self.0 - 1
+    }
 }
 
 /// Error returned when constructing a CPD order.
@@ -66,9 +88,11 @@ impl Error for CpdOrderError {}
 pub enum KernelDefiniteness {
     /// Strict positive definiteness in every declared supported dimension.
     StrictlyPositiveDefinite,
-    /// Conditional positive definiteness with the stated polynomial order.
+    /// Conditional positive definiteness with the stated polynomial order in
+    /// every declared supported dimension.
     ConditionallyPositiveDefinite {
-        /// Positive CPD order used by the later polynomial-space requirement.
+        /// Positive CPD order `m`, requiring complete polynomials through
+        /// total degree `m - 1` in the later polynomial-space requirement.
         order: CpdOrder,
     },
 }
@@ -106,9 +130,12 @@ impl KernelDerivativeOrder {
 /// Availability of a requested spatial derivative.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum KernelDerivativeCapability {
-    /// The derivative is defined both at centers and away from centers.
+    /// The derivative is defined at centers and at every positive separation.
     SupportedEverywhere,
-    /// The derivative is defined only for positive query-center separation.
+    /// The derivative is defined only for every positive query-center separation.
+    ///
+    /// For a compactly supported kernel, positive separations include its
+    /// support boundary and zero exterior branch.
     SupportedAwayFromCenters,
     /// The derivative is not supplied by the kernel.
     Unsupported,
@@ -118,7 +145,9 @@ pub enum KernelDerivativeCapability {
 ///
 /// Support is hierarchical: declaring an order also declares every lower
 /// order. Center support may be absent or lower than away support, but can
-/// never exceed it.
+/// never exceed it. Away support covers the whole strictly positive radial
+/// domain, including a compact kernel's support boundary; it is not merely an
+/// interior-formula capability.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[must_use]
 pub struct KernelDerivativeCapabilities {
@@ -484,13 +513,20 @@ impl fmt::Display for KernelParameterValueError {
 impl Error for KernelParameterValueError {}
 
 /// Whether a kernel has global or parameterized compact support.
+///
+/// For [`KernelSupport::Compact`] with configured radius `rho`, the radial
+/// kernel and its supported derivatives use the exact zero extension for
+/// `r >= rho`. The interior formula's one-sided derivatives at `rho` must
+/// match that zero extension through the declared away derivative order.
+/// Metadata records this promise but does not prove a concrete formula.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum KernelSupport<'a> {
     /// The radial formula is not compactly supported.
     Global,
     /// Compact support controlled by a named radius parameter.
     Compact {
-        /// Name of a positive [`KernelParameterUnit::CoordinateLength`] parameter.
+        /// Name of a positive [`KernelParameterUnit::CoordinateLength`]
+        /// parameter giving `rho` in the radial coordinate's active length unit.
         radius_parameter: &'a str,
     },
 }
@@ -517,6 +553,11 @@ impl<'a> KernelMetadata<'a> {
     ///
     /// Returns [`KernelMetadataError`] for an invalid kernel name, duplicate
     /// parameter name, or inconsistent compact-support radius declaration.
+    ///
+    /// # Complexity
+    ///
+    /// For `P` borrowed parameter definitions, construction uses `O(P^2)`
+    /// name comparisons to reject duplicates and performs no heap allocation.
     pub fn try_new(
         name: &'a str,
         definiteness: KernelDefiniteness,
@@ -574,6 +615,9 @@ impl<'a> KernelMetadata<'a> {
     }
 
     /// Finds a parameter definition by its exact name.
+    ///
+    /// This performs a linear scan of the borrowed parameter slice and does
+    /// not allocate.
     #[must_use]
     pub fn parameter(self, name: &str) -> Option<&'a KernelParameterDefinition<'a>> {
         self.parameters

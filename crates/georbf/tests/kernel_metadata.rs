@@ -40,8 +40,16 @@ fn third_order_everywhere() -> TestResult<KernelDerivativeCapabilities> {
 #[test]
 fn definiteness_keeps_spd_and_positive_cpd_order_distinct() -> TestResult {
     assert!(matches!(CpdOrder::try_new(0), Err(CpdOrderError::Zero)));
+    let order_one = CpdOrder::try_new(1)?;
+    assert_eq!(order_one.maximum_polynomial_degree(), 0);
+
     let order = CpdOrder::try_new(3)?;
     assert_eq!(order.get(), 3);
+    assert_eq!(order.maximum_polynomial_degree(), 2);
+
+    let largest_order = CpdOrder::try_new(usize::MAX)?;
+    assert_eq!(largest_order.get(), usize::MAX);
+    assert_eq!(largest_order.maximum_polynomial_degree(), usize::MAX - 1);
 
     let spd = KernelDefiniteness::StrictlyPositiveDefinite;
     let cpd = KernelDefiniteness::ConditionallyPositiveDefinite { order };
@@ -152,13 +160,60 @@ fn matrix_and_query_capabilities_include_center_derivative_demand() -> TestResul
 }
 
 #[test]
+fn combined_capability_matches_the_independent_total_order_table() -> TestResult {
+    use KernelDerivativeCapability::{
+        SupportedAwayFromCenters as Away, SupportedEverywhere as Everywhere, Unsupported,
+    };
+
+    let orders = [
+        KernelDerivativeOrder::Value,
+        KernelDerivativeOrder::First,
+        KernelDerivativeOrder::Second,
+        KernelDerivativeOrder::Third,
+    ];
+    // Independent truth for away-through third and center-through second.
+    // Each cell is classified by row order + column order, without consulting
+    // the implementation's private numeric representation.
+    let expected = [
+        [Everywhere, Everywhere, Everywhere, Away],
+        [Everywhere, Everywhere, Away, Unsupported],
+        [Everywhere, Away, Unsupported, Unsupported],
+        [Away, Unsupported, Unsupported, Unsupported],
+    ];
+    let capabilities = KernelDerivativeCapabilities::try_new(
+        KernelDerivativeOrder::Third,
+        Some(KernelDerivativeOrder::Second),
+    )?;
+
+    for (row, first) in orders.iter().copied().enumerate() {
+        for (column, second) in orders.iter().copied().enumerate() {
+            assert_eq!(
+                capabilities.matrix_capability(first, second),
+                expected[row][column],
+                "matrix capability mismatch at ({first:?}, {second:?})"
+            );
+            assert_eq!(
+                capabilities.query_capability(first, second),
+                expected[row][column],
+                "query capability mismatch at ({first:?}, {second:?})"
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn parameter_definitions_require_explicit_names_units_and_documentation() -> TestResult {
     for invalid_name in [
         "",
+        "1length_scale",
+        "_length_scale",
         "LengthScale",
         "length-scale",
+        "length scale",
         "length__scale",
         "length_",
+        "l\u{e9}ngth_scale",
     ] {
         assert!(matches!(
             KernelParameterDefinition::try_new(
@@ -194,6 +249,14 @@ fn parameter_definitions_require_explicit_names_units_and_documentation() -> Tes
     assert_eq!(definition.unit(), KernelParameterUnit::CoordinateLength);
     assert_eq!(definition.constraint(), KernelParameterConstraint::Positive);
     assert!(!definition.description().is_empty());
+
+    let indexed = KernelParameterDefinition::try_new(
+        "length_scale2",
+        KernelParameterUnit::CoordinateLength,
+        KernelParameterConstraint::Positive,
+        "A second explicit positive length scale.",
+    )?;
+    assert_eq!(indexed.name(), "length_scale2");
     Ok(())
 }
 
@@ -213,9 +276,10 @@ fn parameter_value_constraints_reject_nonfinite_and_out_of_domain_values() -> Te
     )?;
     let positive = length_scale_definition()?;
 
-    finite.validate_value(-2.0)?;
+    finite.validate_value(f64::MIN)?;
+    finite.validate_value(f64::MAX)?;
     nonnegative.validate_value(-0.0)?;
-    positive.validate_value(f64::MIN_POSITIVE)?;
+    positive.validate_value(f64::from_bits(1))?;
     assert!(matches!(
         finite.validate_value(f64::NAN),
         Err(KernelParameterValueError::NonFinite { .. })
@@ -235,7 +299,18 @@ fn parameter_value_constraints_reject_nonfinite_and_out_of_domain_values() -> Te
         })
     ));
     assert!(matches!(
+        positive.validate_value(-0.0),
+        Err(KernelParameterValueError::ViolatesConstraint {
+            constraint: KernelParameterConstraint::Positive,
+            ..
+        })
+    ));
+    assert!(matches!(
         positive.validate_value(f64::INFINITY),
+        Err(KernelParameterValueError::NonFinite { .. })
+    ));
+    assert!(matches!(
+        finite.validate_value(f64::NEG_INFINITY),
         Err(KernelParameterValueError::NonFinite { .. })
     ));
     Ok(())
