@@ -2,10 +2,10 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / next atomic requirement
+- Execution mode: Review / independent REQ-COORD-001 review required
 - Current requirement: REQ-COORD-001
 - Issue: https://github.com/qingsonger/GeoRBF/issues/7
-- Pull request: not yet opened
+- Pull request: https://github.com/qingsonger/GeoRBF/pull/8 (Draft)
 - Branch: `codex/req-coord-001-coordinate-metadata-normalization`
 
 ## Completed in this run
@@ -28,6 +28,9 @@
 - Added D=1/D=2/D=3, rotation, shear, near-singular, extreme-value, metadata,
   error-path, and unsupported-dimension coverage; synchronized the mathematical
   and model-format contracts, rustdoc, example, and change record.
+- Committed and pushed the implementation, opened Draft PR #8, and advanced
+  REQ-COORD-001 to `documented`; integration remains forbidden until the
+  independent review is recorded, CI is green, and the PR is merged.
 - Created Issue #4 and the REQ-DIM-001 feature branch after confirming that
   bootstrap is integrated, `main` CI is green, and no Repair or Review work is
   pending.
@@ -94,10 +97,10 @@ dependency.
 
 ## Next atomic task
 
-Finish the REQ-COORD-001 validation and scope audit, commit and push the feature
-branch, and open its Draft PR. Then perform the required independent
-mathematical, numerical, safety, API, and test review before integration. Do not
-begin orientation or kernel work while that gate is pending.
+Perform the required independent mathematical, numerical, safety, API,
+allocation, and test review of Draft PR #8. Repair any findings, rerun all
+applicable gates, and mark the PR ready only after the review is recorded. Do
+not begin orientation or kernel work while that gate is pending.
 
 ## Latest full test result
 
@@ -123,7 +126,7 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Baseline `main` GitHub Actions run 29246462335 for commit `34468a3`: passed on
   `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
   workspace tests, doctests, and all 58 requirement checks passed in every job.
-- REQ-COORD-001 GitHub Actions: pending until the Draft PR is pushed.
+- REQ-COORD-001 GitHub Actions: awaiting the final pushed metadata commit.
 
 ## Checks not yet available
 

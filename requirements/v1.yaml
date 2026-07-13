@@ -49,7 +49,7 @@ requirements:
     milestone: M1-v0.1.0
     priority: P0
     issue: 7
-    pull_request: null
+    pull_request: 8
     tests: [coordinate-metadata, affine-round-trip, analytic-derivative-transform, transform-error-paths, coordinate-dimension-compile-fail]
     docs: [docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, docs/architecture/MODEL_FORMAT.md, rustdoc, crates/georbf/examples/coordinate_normalization.rs]
     rust_api: implemented
@@ -58,7 +58,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the C ABI rather than Rust coordinate types"
     python_api: "N/A: the future Python binding delegates coordinate validation to the Rust core after API freeze"
     benchmark: "N/A: fixed-size D<=3 construction and transforms are constant-bounded; batch paths are not introduced"
-    status: in_progress
+    status: documented
 
   - id: REQ-ORIENT-001
     title: Geological orientation conversions
