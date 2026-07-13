@@ -10,6 +10,10 @@
 
 ## Completed in this run
 
+- Confirmed PR #17 implementation and registry head `8c3c38d` passed GitHub
+  Actions run 29291234362 on Windows, Ubuntu, and macOS, including formatting,
+  Clippy, 65 workspace tests, 13 doctests, both benchmark smoke workloads, and
+  all 58 requirement checks.
 - Committed and pushed the isolated implementation as `ed311a4`, opened Draft
   PR #17, and advanced REQ-KERNEL-002 to `documented`. Integration remains
   forbidden until independent review, green CI, and merge are complete.
@@ -299,6 +303,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - REQ-KERNEL-001 final integration-state `main` GitHub Actions run 29289556802
   for commit `0d0aede` passed on Windows, Ubuntu, and macOS with the complete
   job set.
+- REQ-KERNEL-002 Draft PR #17 GitHub Actions run 29291234362 for implementation
+  and registry head `8c3c38d` passed on Windows, Ubuntu, and macOS with the
+  complete job set, including both benchmark smoke workloads.
 
 ## Checks not yet available
 
