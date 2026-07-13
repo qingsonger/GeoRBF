@@ -5,11 +5,14 @@
 - Execution mode: Implement / next atomic requirement
 - Current requirement: REQ-KERNEL-002
 - Issue: #16
-- Pull request: not yet opened
+- Pull request: Draft #17
 - Branch: `codex/req-kernel-002-polyharmonic-surface-splines`
 
 ## Completed in this run
 
+- Committed and pushed the isolated implementation as `ed311a4`, opened Draft
+  PR #17, and advanced REQ-KERNEL-002 to `documented`. Integration remains
+  forbidden until independent review, green CI, and merge are complete.
 - Confirmed clean synchronized `main` at `0d0aede`, no open Issue or PR, no
   tags, and green three-platform CI; confirmed REQ-KERNEL-001 is integrated,
   then created Issue #16 and the isolated REQ-KERNEL-002 branch.
@@ -204,21 +207,20 @@
 
 ## Current blockers
 
-Integration is blocked by the intentionally unfinished publication gates:
-Draft PR creation, three-platform CI, independent mathematical/numerical
-review, any resulting repairs, maintainer merge, and post-merge `main` CI.
-The implementation, local checks, documentation, example, interface
-applicability, and benchmark evidence are complete.
+Integration is blocked by three-platform PR CI, independent
+mathematical/numerical review, any resulting repairs, maintainer merge, and
+post-merge `main` CI. The implementation, local checks, documentation,
+example, interface applicability, and benchmark evidence are complete.
 
 ## Next atomic task
 
-Commit and push the isolated REQ-KERNEL-002 implementation, open its Draft PR,
-record the PR identifier, and verify three-platform CI. Keep it Draft until an
+Maintain Draft PR #17 and verify its three-platform CI. Keep it Draft until an
 independent review covers formulae, signs, dimensions, CPD orders, polynomial
 side spaces, center limits, stable coefficients, projected energies,
-allocations, interfaces, and benchmarks. Do not begin smooth global-support or
-compact-support kernels, orientation, anisotropy, polynomial, functional,
-assembly, or solver work in the same run.
+allocations, interfaces, and benchmarks. Repair every blocking finding and
+rerun the complete checks before marking it ready. Do not begin smooth
+global-support or compact-support kernels, orientation, anisotropy,
+polynomial, functional, assembly, or solver work in the same run.
 
 ## Latest full test result
 

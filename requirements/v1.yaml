@@ -121,7 +121,7 @@ requirements:
     milestone: M1-v0.1.0
     priority: P1
     issue: 16
-    pull_request: null
+    pull_request: 17
     tests: [high-precision, finite-difference, random-cpd, center-limits, stable-expansion-coefficients, exchange-symmetry, pathological-input, dimension-compile-fail]
     docs: [docs/math/KERNEL_REQUIREMENTS.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, benches/REQ-KERNEL-002.md, rustdoc, crates/georbf/examples/polyharmonic_spline.rs]
     rust_api: implemented
@@ -130,7 +130,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust kernel types"
     python_api: "N/A: Python kernel objects wait for the reviewed Rust API and versioned schemas"
     benchmark: implemented
-    status: planned
+    status: documented
 
   - id: REQ-KERNEL-003
     title: Smooth global-support kernels
