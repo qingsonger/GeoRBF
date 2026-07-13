@@ -89,7 +89,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
-- REQ-DIM-001 GitHub Actions: awaiting the final pushed metadata commit.
+- REQ-DIM-001 GitHub Actions run 29243178924 for commit `635327c`: passed on
+  `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
+  workspace tests, doctests, and all 58 requirement checks passed in every job.
 
 ## Checks not yet available
 
