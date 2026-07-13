@@ -5,7 +5,8 @@ use std::hint::black_box;
 use std::time::{Duration, Instant};
 
 use georbf::{
-    Dim, KernelArgument, Point, RadialJet, RadialSeparation, SpatialKernelJet, SupportedDimension,
+    Dim, KernelArgument, Point, RadialExpansionCoefficients, RadialJet, RadialSeparation,
+    SpatialKernelJet, SupportedDimension,
 };
 
 struct Measurement {
@@ -29,11 +30,12 @@ where
         query[0] += perturbation;
         let separation = RadialSeparation::try_new(Point::try_new(query)?, center)?;
         let radius = separation.radius();
-        let radial = RadialJet::try_away(
+        let radial = RadialJet::try_away_with_expansion(
             radius.powi(6),
             6.0 * radius.powi(5),
             30.0 * radius.powi(4),
             120.0 * radius.powi(3),
+            RadialExpansionCoefficients::try_new(6.0 * radius.powi(4), 24.0 * radius.powi(3))?,
         )?;
         let jet = black_box(SpatialKernelJet::try_new(separation, radial)?);
         checksum += jet.value()

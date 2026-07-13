@@ -22,8 +22,8 @@ pub use coordinates::{
 pub use dimension::{Dim, SupportedDimension};
 pub use geometry::{Direction, GeometryError, Point, UnitDirection, Vector};
 pub use kernel_calculus::{
-    KernelArgument, KernelCalculusError, RadialDerivativeOrder, RadialJet, RadialJetLocation,
-    RadialSeparation, SpatialKernelJet,
+    KernelArgument, KernelCalculusError, RadialDerivativeOrder, RadialExpansionCoefficient,
+    RadialExpansionCoefficients, RadialJet, RadialJetLocation, RadialSeparation, SpatialKernelJet,
 };
 pub use transform::{AffineNormalization, TransformError, TransformOperation};
 pub use units::{AngleUnit, LengthUnit, UnitError};

@@ -70,10 +70,13 @@ to its scale-derived numerical tolerance.
 For a stationary radial kernel, calculus consumes an explicit finite radial
 jet rather than selecting a kernel family. Away from the center it expands
 `phi`, `phi'`, `phi''`, and `phi'''` into fixed-size Cartesian value, gradient,
-Hessian, and third-derivative tensors. A center jet instead promises a smooth
-Euclidean extension and expands directly to value `phi(0)`, zero gradient,
-`phi''(0) I`, and a zero third tensor. A center-argument derivative contributes
-exactly one minus sign, independent of derivative-axis ordering.
+Hessian, and third-derivative tensors. In D=2 and D=3 the away jet also carries
+stable closed forms for `phi'/r` and `(phi'' - phi'/r)/r`; the calculus does not
+reconstruct the second coefficient from nearly equal rounded derivatives near
+the center. D=1 needs neither radial quotient. A center jet instead promises a
+smooth Euclidean extension and expands directly to value `phi(0)`, zero
+gradient, `phi''(0) I`, and a zero third tensor. A center-argument derivative
+contributes exactly one minus sign, independent of derivative-axis ordering.
 
 Observations and center representers are separate collections. This distinction
 is retained even when an all-representer strategy initially gives them the same

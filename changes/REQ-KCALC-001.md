@@ -12,11 +12,19 @@ evaluating any radial quotient. Non-finite radial inputs, non-representable
 separations or tensor components, and center/away mismatches return structured
 errors.
 
-Independent polynomial truth, finite differences, center limits, exchange
-signs, exact tensor symmetries, numerical extremes, error paths, compile-fail
-dimension checks, and thread-safety traits are covered. A runnable Rust example
-and a deterministic dependency-free D=1/D=2/D=3 benchmark document the public
-path and performance baseline.
+Independent review found that reconstructing
+`(phi'' - phi'/r)/r` from rounded derivatives was unstable near the center.
+D=2/D=3 away jets now require finite, cancellation-resistant `phi'/r` and
+`(phi'' - phi'/r)/r` coefficients from the radial formula, and Hessian and
+third-tensor components use fused multiply-add expansion. D=1 continues to use
+only the radial derivatives and evaluates no unnecessary quotient.
+
+Independent polynomial truth, finite differences, near-center Gaussian truth,
+center limits, exchange signs, rotation covariance, exact tensor symmetries,
+numerical extremes, error paths, compile-fail dimension checks, and
+thread-safety traits are covered. A runnable Rust example and a deterministic
+dependency-free D=1/D=2/D=3 benchmark document the public path and performance
+baseline.
 
 Concrete kernel families, kernel metadata, anisotropy, geological orientation,
 functionals, assembly, solvers, language bindings, and Surfe compatibility

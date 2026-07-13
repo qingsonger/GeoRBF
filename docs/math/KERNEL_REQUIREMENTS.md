@@ -34,6 +34,22 @@ D3_dd d[i,j,l] = phi'''(r) u_i u_j u_l
     (delta_ij u_l + delta_il u_j + delta_jl u_i - 3 u_i u_j u_l).
 ```
 
+An away radial jet supplies finite derivatives. For D=2 and D=3 it additionally
+supplies the two expansion coefficients
+
+```text
+a(r) = phi'(r) / r
+b(r) = (phi''(r) - a(r)) / r.
+```
+
+Concrete radial formulas compute `a` and `b` directly in cancellation-resistant
+form. Reconstructing `b` by subtracting independently rounded `phi''` and `a`
+near the center can destroy all significant digits or amplify roundoff by
+`1/r`; the calculus therefore never performs that reconstruction. Tensor
+components use fused multiply-add expansion and reject non-finite results. D=1
+uses only `phi'`, `phi''`, and `phi'''` away from the center and never requires
+either quotient.
+
 Each query-argument derivative is a displacement derivative and each
 center-argument derivative contributes one minus sign. Therefore an order-`n`
 mixed tensor has sign `(-1)^m`, where `m` is the number of center arguments;

@@ -3,8 +3,9 @@
 use std::error::Error;
 
 use georbf::{
-    Dim, KernelArgument, KernelCalculusError, Point, RadialDerivativeOrder, RadialJet,
-    RadialJetLocation, RadialSeparation, SpatialKernelJet, SupportedDimension,
+    Dim, KernelArgument, KernelCalculusError, Point, RadialDerivativeOrder,
+    RadialExpansionCoefficient, RadialExpansionCoefficients, RadialJet, RadialJetLocation,
+    RadialSeparation, SpatialKernelJet, SupportedDimension,
 };
 
 const REL_TOLERANCE: f64 = 2.0e-12;
@@ -52,11 +53,14 @@ where
     let radial = if separation.is_center() {
         RadialJet::try_center(0.0, 0.0)?
     } else {
-        RadialJet::try_away(
+        let expansion_coefficients =
+            RadialExpansionCoefficients::try_new(6.0 * radius.powi(4), 24.0 * radius.powi(3))?;
+        RadialJet::try_away_with_expansion(
             radius.powi(6),
             6.0 * radius.powi(5),
             30.0 * radius.powi(4),
             120.0 * radius.powi(3),
+            expansion_coefficients,
         )?
     };
     Ok(SpatialKernelJet::try_new(separation, radial)?)
@@ -306,11 +310,15 @@ where
     let separation = RadialSeparation::try_new(Point::try_new(point)?, Point::try_new([0.0; D])?)?;
     let radius = separation.radius();
     let value = (-alpha * radius * radius).exp();
-    let radial = RadialJet::try_away(
+    let radial = RadialJet::try_away_with_expansion(
         value,
         -2.0 * alpha * radius * value,
         (4.0 * alpha * alpha * radius * radius - 2.0 * alpha) * value,
         (12.0 * alpha * alpha * radius - 8.0 * alpha * alpha * alpha * radius.powi(3)) * value,
+        RadialExpansionCoefficients::try_new(
+            -2.0 * alpha * value,
+            4.0 * alpha * alpha * radius * value,
+        )?,
     )?;
     Ok(SpatialKernelJet::try_new(separation, radial)?)
 }
@@ -368,6 +376,94 @@ fn gaussian_spatial_derivatives_match_independent_finite_differences() -> TestRe
 }
 
 #[test]
+fn stable_coefficients_preserve_near_center_gaussian_third_derivatives() -> TestResult {
+    let alpha: f64 = 0.7;
+    let radius: f64 = 1.0e-10;
+    let value = (-alpha * radius * radius).exp();
+    let jet = gaussian_spatial_jet([radius, 0.0, 0.0], alpha)?;
+    let third = jet.third_derivative([KernelArgument::Query; 3]);
+
+    let expected_pure =
+        (12.0 * alpha * alpha * radius - 8.0 * alpha.powi(3) * radius.powi(3)) * value;
+    let expected_mixed = 4.0 * alpha * alpha * radius * value;
+    assert_close(third[0][0][0], expected_pure, 2.0e-15, 0.0);
+    assert_close(third[0][1][1], expected_mixed, 2.0e-15, 0.0);
+    assert_close(third[0][2][2], expected_mixed, 2.0e-15, 0.0);
+    Ok(())
+}
+
+#[test]
+fn radial_calculus_is_rotation_covariant_through_third_order() -> TestResult {
+    let alpha = 0.7;
+    let point = [0.7, -0.4, 0.9];
+    let angle: f64 = 0.37;
+    let (sine, cosine) = angle.sin_cos();
+    let rotation = [[cosine, -sine, 0.0], [sine, cosine, 0.0], [0.0, 0.0, 1.0]];
+    let rotated_point: [f64; 3] = std::array::from_fn(|row| {
+        (0..3)
+            .map(|column| rotation[row][column] * point[column])
+            .sum::<f64>()
+    });
+
+    let original = gaussian_spatial_jet(point, alpha)?;
+    let rotated = gaussian_spatial_jet(rotated_point, alpha)?;
+    assert_close(rotated.value(), original.value(), REL_TOLERANCE, 0.0);
+
+    let gradient = original.first_derivative(KernelArgument::Query);
+    let expected_gradient: [f64; 3] = std::array::from_fn(|row| {
+        (0..3)
+            .map(|column| rotation[row][column] * gradient[column])
+            .sum::<f64>()
+    });
+    assert_array_close(
+        &rotated.first_derivative(KernelArgument::Query),
+        &expected_gradient,
+    );
+
+    let hessian = original.second_derivative([KernelArgument::Query; 2]);
+    let expected_hessian: Matrix<3> = std::array::from_fn(|row| {
+        std::array::from_fn(|column| {
+            (0..3)
+                .flat_map(|first| {
+                    (0..3).map(move |second| {
+                        rotation[row][first] * rotation[column][second] * hessian[first][second]
+                    })
+                })
+                .sum::<f64>()
+        })
+    });
+    assert_matrix_close(
+        &rotated.second_derivative([KernelArgument::Query; 2]),
+        &expected_hessian,
+    );
+
+    let third = original.third_derivative([KernelArgument::Query; 3]);
+    let expected_third: ThirdTensor<3> = std::array::from_fn(|first| {
+        std::array::from_fn(|second| {
+            std::array::from_fn(|third_axis| {
+                let mut value = 0.0;
+                for source_first in 0..3 {
+                    for source_second in 0..3 {
+                        for source_third in 0..3 {
+                            value += rotation[first][source_first]
+                                * rotation[second][source_second]
+                                * rotation[third_axis][source_third]
+                                * third[source_first][source_second][source_third];
+                        }
+                    }
+                }
+                value
+            })
+        })
+    });
+    assert_tensor_close(
+        &rotated.third_derivative([KernelArgument::Query; 3]),
+        &expected_third,
+    );
+    Ok(())
+}
+
+#[test]
 fn invalid_radial_separation_and_location_states_are_structured_errors() -> TestResult {
     for (value, expected_order) in [
         (f64::NAN, RadialDerivativeOrder::Value),
@@ -394,6 +490,25 @@ fn invalid_radial_separation_and_location_states_are_structured_errors() -> Test
             ..
         })
     ));
+    for (first_over_radius, second_remainder_over_radius, expected) in [
+        (f64::NAN, 0.0, RadialExpansionCoefficient::FirstOverRadius),
+        (
+            0.0,
+            f64::INFINITY,
+            RadialExpansionCoefficient::SecondRemainderOverRadius,
+        ),
+    ] {
+        assert!(matches!(
+            RadialExpansionCoefficients::try_new(
+                first_over_radius,
+                second_remainder_over_radius,
+            ),
+            Err(KernelCalculusError::NonFiniteRadialExpansionCoefficient {
+                coefficient,
+                ..
+            }) if coefficient == expected
+        ));
+    }
 
     assert!(matches!(
         RadialSeparation::try_new(Point::try_new([f64::MAX])?, Point::try_new([-f64::MAX])?,),
@@ -426,29 +541,58 @@ fn invalid_radial_separation_and_location_states_are_structured_errors() -> Test
             jet: RadialJetLocation::Center,
         })
     ));
+
+    let two_dimensional =
+        RadialSeparation::try_new(Point::try_new([1.0, 0.0])?, Point::try_new([0.0, 0.0])?)?;
+    let derivatives_only = RadialJet::try_away(1.0, 2.0, 3.0, 4.0)?;
+    assert!(matches!(
+        SpatialKernelJet::try_new(two_dimensional, derivatives_only),
+        Err(KernelCalculusError::MissingRadialExpansionCoefficients { dimension: 2 })
+    ));
     Ok(())
 }
 
 #[test]
-fn nonrepresentable_hessian_and_third_derivative_are_reported() -> TestResult {
-    let tiny = f64::MIN_POSITIVE;
-    let hessian_separation =
-        RadialSeparation::try_new(Point::try_new([tiny, 0.0])?, Point::try_new([0.0, 0.0])?)?;
-    let hessian_radial = RadialJet::try_away(0.0, f64::MAX, 0.0, 0.0)?;
-    assert!(matches!(
-        SpatialKernelJet::try_new(hessian_separation, hessian_radial),
-        Err(KernelCalculusError::NonFiniteSecondDerivative { row: 1, column: 1 })
-    ));
+fn one_dimensional_away_expansion_needs_no_radial_quotients() -> TestResult {
+    let radius = f64::from_bits(1);
+    let separation = RadialSeparation::try_new(Point::try_new([radius])?, Point::try_new([0.0])?)?;
+    let radial = RadialJet::try_away(1.0, f64::MAX, -f64::MAX, f64::MAX)?;
+    let jet = SpatialKernelJet::try_new(separation, radial)?;
 
-    let third_separation =
-        RadialSeparation::try_new(Point::try_new([0.5, 0.0])?, Point::try_new([0.0, 0.0])?)?;
-    let third_radial = RadialJet::try_away(0.0, 0.0, f64::MAX, 0.0)?;
+    assert_eq!(
+        jet.first_derivative(KernelArgument::Query)[0].to_bits(),
+        f64::MAX.to_bits()
+    );
+    assert_eq!(
+        jet.second_derivative([KernelArgument::Query; 2])[0][0].to_bits(),
+        (-f64::MAX).to_bits()
+    );
+    assert_eq!(
+        jet.third_derivative([KernelArgument::Query; 3])[0][0][0].to_bits(),
+        f64::MAX.to_bits()
+    );
+    Ok(())
+}
+
+#[test]
+fn nonrepresentable_third_derivative_is_reported() -> TestResult {
+    let third_separation = RadialSeparation::try_new(
+        Point::try_new([1.0, 1.0, 1.0])?,
+        Point::try_new([0.0, 0.0, 0.0])?,
+    )?;
+    let third_radial = RadialJet::try_away_with_expansion(
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        RadialExpansionCoefficients::try_new(0.0, f64::MAX)?,
+    )?;
     assert!(matches!(
         SpatialKernelJet::try_new(third_separation, third_radial),
         Err(KernelCalculusError::NonFiniteThirdDerivative {
             first: 0,
-            second: 1,
-            third: 1,
+            second: 0,
+            third: 0,
         })
     ));
     Ok(())
@@ -458,6 +602,7 @@ fn nonrepresentable_hessian_and_third_derivative_are_reported() -> TestResult {
 fn kernel_calculus_values_are_send_and_sync() {
     fn assert_send_sync<T: Send + Sync>() {}
 
+    assert_send_sync::<RadialExpansionCoefficients>();
     assert_send_sync::<RadialJet>();
     assert_send_sync::<RadialSeparation<1>>();
     assert_send_sync::<RadialSeparation<2>>();

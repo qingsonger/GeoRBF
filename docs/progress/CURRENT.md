@@ -2,7 +2,7 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / awaiting independent review
+- Execution mode: Review / awaiting review-repair CI
 - Current requirement: REQ-KCALC-001
 - Issue: #10
 - Pull request: Draft #11
@@ -10,6 +10,16 @@
 
 ## Completed in this run
 
+- Completed the independent mathematical, numerical, safety, API, allocation,
+  benchmark, and test review of PR #11. Repaired catastrophic near-center
+  cancellation in mixed third derivatives by requiring stable D=2/D=3 radial
+  expansion coefficients, preserved quotient-free D=1 behavior, added
+  near-center analytic and rotation-covariance regressions, and recorded the
+  evidence in `docs/reviews/PR-11-INDEPENDENT-REVIEW.md`.
+- Repeated the full benchmark four times after the repair. D=1/D=2/D=3 median
+  times were 36.54, 51.86, and 106.40 ns/iteration with identical checksums;
+  the observed ranges and environment are recorded in
+  `benches/REQ-KCALC-001.md`.
 - Committed and pushed the complete isolated implementation as `c690c73`,
   opened Draft PR #11, and advanced REQ-KCALC-001 to `documented`. Integration
   remains forbidden until the independent review is recorded and the PR is
@@ -130,18 +140,16 @@
 
 ## Current blockers
 
-Integration remains blocked by the mandatory independent mathematical and
-numerical review and merge. Pull-request CI is green; the local implementation,
-tests, documentation, example, and benchmark obligations are complete.
+Integration remains blocked by review-repair CI and merge. The independent
+review and local implementation, test, documentation, example, and benchmark
+obligations are complete.
 
 ## Next atomic task
 
-In a separate session, inspect Draft PR #11 and perform the mandatory
-independent mathematical, numerical, safety, API, allocation, benchmark, and
-test review. Record the evidence in `docs/reviews/PR-11-INDEPENDENT-REVIEW.md`
-and repair every actionable finding before marking the PR ready. Do not begin
-kernel families, metadata, orientation, polynomial, or solver work before
-REQ-KCALC-001 is reviewed and integrated.
+Commit and push the independent-review repairs, require green Windows, Ubuntu,
+and macOS CI for the repaired head, and only then mark PR #11 ready for
+maintainer review. Do not begin kernel families, metadata, orientation,
+polynomial, or solver work before REQ-KCALC-001 is integrated.
 
 ## Latest full test result
 
@@ -150,11 +158,11 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 43 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 46 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
 - `cargo test --doc --workspace`: passed; 9 doctests, including seven
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 29 integration tests
+- `cargo test -p georbf --release --all-features`: passed; 32 integration tests
   and 9 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
@@ -162,9 +170,10 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - `cargo metadata --format-version 1 --no-deps`: passed.
 - `cargo tree --workspace --duplicates`: passed; no duplicates.
 - `cargo bench -p georbf --bench radial_kernel_calculus -- --smoke`: passed
-  for deterministic D=1/D=2/D=3 workloads. The full 1,000,000-iteration local
-  baseline measured 46.79, 92.89, and 170.21 ns/iteration respectively; see
-  `benches/REQ-KCALC-001.md` for environment and checksum details.
+  for deterministic D=1/D=2/D=3 workloads. Four full 1,000,000-iteration local
+  review runs had medians of 36.54, 51.86, and 106.40 ns/iteration
+  respectively with identical checksums; see `benches/REQ-KCALC-001.md` for
+  the environment and observed ranges.
 - `cargo run -p georbf --example radial_kernel_calculus`: passed.
 - Scoped forbidden-pattern and core allocation/dynamic-dispatch scans: passed.
 - Actual CLI checks: `--version` returned success and `--version fit` returned
@@ -184,12 +193,18 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
   `macos-latest`, including formatting, Clippy, workspace tests, doctests,
   benchmark smoke, and all 58 requirement checks. The initial macOS runner
   setup failure passed on the failed-job retry without a code change.
+- Pre-review PR #11 GitHub Actions run 29254116500 for head `70a8339` passed on
+  Windows, Ubuntu, and macOS, including formatting, Clippy, workspace tests,
+  doctests, benchmark smoke, and all 58 requirement checks. Review-repair CI is
+  not yet recorded.
 
 ## Checks not yet available
 
-`cargo-nextest`, `cargo-deny`, `cargo-audit`, `cargo-semver-checks`, Miri,
-sanitizers, fuzzing, mutation testing, and API/ABI/schema snapshot checks are
-not installed or not yet implemented. A second
+`cargo-nextest`, `cargo-deny`, `cargo-audit`, and `cargo-semver-checks` are not
+installed. The `cargo-miri` launcher is installed, but the pinned Rust 1.96.1
+toolchain does not provide its Miri component. Sanitizers, executable fuzz
+targets, mutation testing, allocation instrumentation, and API/ABI/schema
+snapshot checks are not yet implemented. A second
 full-YAML-parser check was not run because PyYAML, Ruby/YAML, and PowerShell
 `ConvertFrom-Yaml` are unavailable; the dependency-free strict registry checker
 did run. Stage 0 has no runtime mathematical path, so its benchmark obligation

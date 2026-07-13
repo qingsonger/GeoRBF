@@ -28,12 +28,15 @@ models own immutable coefficients and transforms; adapters depend on public
 core APIs.
 
 The kernel-calculus layer accepts validated point separations and a
-caller-supplied radial jet. It owns stable radius construction, analytic center
-dispatch, Cartesian tensor expansion, and query/center signs. It does not own
-concrete kernel formulas, parameters, definiteness or smoothness metadata,
-anisotropy, geological concepts, functionals, assembly, or fitting policy.
-Its D=1/D=2/D=3 outputs are fixed arrays with no allocation, dependency,
-dynamic dispatch, or unsafe code.
+caller-supplied radial jet. D=2/D=3 away jets include cancellation-resistant
+radial expansion coefficients computed by the concrete radial formula; D=1
+uses no radial quotients, and center jets declare analytic Euclidean limits.
+The layer owns stable radius construction,
+center dispatch, fused Cartesian tensor expansion, and query/center signs. It
+does not own concrete kernel formulas, parameters, definiteness or smoothness
+metadata, anisotropy, geological concepts, functionals, assembly, or fitting
+policy. Its D=1/D=2/D=3 outputs are fixed arrays with no allocation,
+dependency, dynamic dispatch, or unsafe code.
 
 ## Runtime behavior
 

@@ -48,6 +48,15 @@ pub enum RadialDerivativeOrder {
     Third,
 }
 
+/// Stable radial coefficient used by the Cartesian tensor expansion.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum RadialExpansionCoefficient {
+    /// The coefficient `phi'(r) / r` used by the tangential Hessian term.
+    FirstOverRadius,
+    /// The coefficient `(phi''(r) - phi'(r) / r) / r` used by the third tensor.
+    SecondRemainderOverRadius,
+}
+
 /// Whether a radial jet describes a center or a positive-radius point pair.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum RadialJetLocation {
@@ -67,6 +76,18 @@ pub enum KernelCalculusError {
         order: RadialDerivativeOrder,
         /// Rejected value.
         value: f64,
+    },
+    /// A stable radial expansion coefficient is NaN or infinite.
+    NonFiniteRadialExpansionCoefficient {
+        /// Rejected coefficient.
+        coefficient: RadialExpansionCoefficient,
+        /// Rejected value.
+        value: f64,
+    },
+    /// D=2 or D=3 expansion was requested without stable radial coefficients.
+    MissingRadialExpansionCoefficients {
+        /// Spatial dimension that requires the coefficients.
+        dimension: usize,
     },
     /// Subtracting query and center coordinates produced a non-finite value.
     NonFiniteDisplacementComponent {
@@ -114,6 +135,14 @@ impl fmt::Display for KernelCalculusError {
                     "radial derivative {order:?} must be finite, got {value}"
                 )
             }
+            Self::NonFiniteRadialExpansionCoefficient { coefficient, value } => write!(
+                formatter,
+                "radial expansion coefficient {coefficient:?} must be finite, got {value}"
+            ),
+            Self::MissingRadialExpansionCoefficients { dimension } => write!(
+                formatter,
+                "radial expansion coefficients are required in D={dimension}"
+            ),
             Self::NonFiniteDisplacementComponent { axis } => write!(
                 formatter,
                 "query-center displacement on axis {axis} is not finite"
@@ -147,27 +176,93 @@ impl fmt::Display for KernelCalculusError {
 
 impl Error for KernelCalculusError {}
 
+/// Finite, cancellation-resistant coefficients for an away-from-center jet.
+///
+/// For positive `r`, these values are
+///
+/// ```text
+/// a(r) = phi'(r) / r
+/// b(r) = (phi''(r) - a(r)) / r.
+/// ```
+///
+/// A concrete radial implementation supplies `a` and `b` from stable closed
+/// forms. In particular, it must not reconstruct `b` by subtracting two nearly
+/// equal rounded values close to the center. The kernel-calculus layer does not
+/// know a kernel formula from which it could recover that lost information.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[must_use]
+pub struct RadialExpansionCoefficients {
+    first_over_radius: f64,
+    second_remainder_over_radius: f64,
+}
+
+impl RadialExpansionCoefficients {
+    /// Constructs finite away-from-center expansion coefficients.
+    ///
+    /// # Errors
+    ///
+    /// Returns
+    /// [`KernelCalculusError::NonFiniteRadialExpansionCoefficient`] for the
+    /// first invalid coefficient.
+    pub fn try_new(
+        first_over_radius: f64,
+        second_remainder_over_radius: f64,
+    ) -> Result<Self, KernelCalculusError> {
+        validate_radial_expansion_coefficient(
+            RadialExpansionCoefficient::FirstOverRadius,
+            first_over_radius,
+        )?;
+        validate_radial_expansion_coefficient(
+            RadialExpansionCoefficient::SecondRemainderOverRadius,
+            second_remainder_over_radius,
+        )?;
+        Ok(Self {
+            first_over_radius,
+            second_remainder_over_radius,
+        })
+    }
+
+    /// Returns `phi'(r) / r`.
+    #[must_use]
+    pub const fn first_over_radius(&self) -> f64 {
+        self.first_over_radius
+    }
+
+    /// Returns `(phi''(r) - phi'(r) / r) / r`.
+    #[must_use]
+    pub const fn second_remainder_over_radius(&self) -> f64 {
+        self.second_remainder_over_radius
+    }
+}
+
 /// Finite radial values required for zero-through-third spatial derivatives.
 ///
-/// An away jet stores `phi(r)` through `phi'''(r)` for a positive radius. A
-/// center jet explicitly promises a smooth Euclidean extension through third
-/// spatial order: its gradient and third spatial tensor are zero and its
-/// Hessian is `phi''(0) I`. Kernel capability checks remain the responsibility
-/// of the later kernel metadata requirement.
+/// An away jet stores `phi(r)` through `phi'''(r)` for a positive radius and
+/// may carry the stable Cartesian expansion coefficients required in D=2 and
+/// D=3. D=1 needs no radial quotient. A center jet explicitly promises a
+/// smooth Euclidean extension through third spatial order: its gradient and
+/// third spatial tensor are zero and its Hessian is `phi''(0) I`. Kernel
+/// capability checks remain the responsibility of the later kernel metadata
+/// requirement.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[must_use]
 pub struct RadialJet {
     location: RadialJetLocation,
     derivatives: [f64; 4],
+    expansion_coefficients: Option<RadialExpansionCoefficients>,
 }
 
 impl RadialJet {
     /// Constructs an away-from-center jet from finite radial derivatives.
     ///
+    /// This data is sufficient for D=1. D=2 and D=3 expansion returns
+    /// [`KernelCalculusError::MissingRadialExpansionCoefficients`]; use
+    /// [`Self::try_away_with_expansion`] there.
+    ///
     /// # Errors
     ///
     /// Returns [`KernelCalculusError::NonFiniteRadialDerivative`] for the first
-    /// invalid value in order zero through three.
+    /// invalid radial value in order zero through three.
     pub fn try_away(
         value: f64,
         first: f64,
@@ -179,6 +274,34 @@ impl RadialJet {
         Ok(Self {
             location: RadialJetLocation::AwayFromCenter,
             derivatives,
+            expansion_coefficients: None,
+        })
+    }
+
+    /// Constructs an away jet with stable D=2/D=3 expansion coefficients.
+    ///
+    /// The derivatives and coefficients must be evaluated at the same positive
+    /// radius. Concrete radial implementations compute both coefficients from
+    /// cancellation-resistant closed forms.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`KernelCalculusError::NonFiniteRadialDerivative`] for the first
+    /// invalid radial value in order zero through three. The coefficient type
+    /// validates its own finite-value invariant before this call.
+    pub fn try_away_with_expansion(
+        value: f64,
+        first: f64,
+        second: f64,
+        third: f64,
+        expansion_coefficients: RadialExpansionCoefficients,
+    ) -> Result<Self, KernelCalculusError> {
+        let derivatives = [value, first, second, third];
+        validate_radial_derivatives(&derivatives)?;
+        Ok(Self {
+            location: RadialJetLocation::AwayFromCenter,
+            derivatives,
+            expansion_coefficients: Some(expansion_coefficients),
         })
     }
 
@@ -197,6 +320,7 @@ impl RadialJet {
         Ok(Self {
             location: RadialJetLocation::Center,
             derivatives: [value, 0.0, second, 0.0],
+            expansion_coefficients: None,
         })
     }
 
@@ -228,6 +352,14 @@ impl RadialJet {
     #[must_use]
     pub const fn third_derivative(&self) -> f64 {
         self.derivatives[3]
+    }
+
+    /// Returns the stable expansion coefficients for an away jet.
+    ///
+    /// A center jet returns `None` because it uses direct analytic limits.
+    #[must_use]
+    pub const fn expansion_coefficients(&self) -> Option<&RadialExpansionCoefficients> {
+        self.expansion_coefficients.as_ref()
     }
 }
 
@@ -434,8 +566,18 @@ where
         });
     };
     let first = away_first_derivative(&radial, &unit)?;
-    let second = away_second_derivative(&radial, &unit, separation.radius)?;
-    let third = away_third_derivative(&radial, &unit, separation.radius)?;
+    let expansion_coefficients = match radial.expansion_coefficients {
+        Some(coefficients) => coefficients,
+        None if D == 1 => RadialExpansionCoefficients {
+            first_over_radius: 0.0,
+            second_remainder_over_radius: 0.0,
+        },
+        None => {
+            return Err(KernelCalculusError::MissingRadialExpansionCoefficients { dimension: D });
+        }
+    };
+    let second = away_second_derivative(&radial, &expansion_coefficients, &unit)?;
+    let third = away_third_derivative(&radial, &expansion_coefficients, &unit)?;
     Ok(SpatialKernelJet {
         value: radial.value(),
         first,
@@ -460,8 +602,8 @@ fn away_first_derivative<const D: usize>(
 
 fn away_second_derivative<const D: usize>(
     radial: &RadialJet,
+    expansion_coefficients: &RadialExpansionCoefficients,
     unit: &[f64; D],
-    radius: f64,
 ) -> Result<[[f64; D]; D], KernelCalculusError> {
     let mut second = [[0.0; D]; D];
     for row in 0..D {
@@ -469,10 +611,9 @@ fn away_second_derivative<const D: usize>(
             let unit_product = unit[row] * unit[column];
             let tangential_factor = f64::from(row == column) - unit_product;
             let radial_part = radial.second_derivative() * unit_product;
-            let tangential_part =
-                finite_product_ratio(radial.first_derivative(), tangential_factor, radius)
-                    .ok_or(KernelCalculusError::NonFiniteSecondDerivative { row, column })?;
-            let value = radial_part + tangential_part;
+            let value = expansion_coefficients
+                .first_over_radius()
+                .mul_add(tangential_factor, radial_part);
             if !value.is_finite() {
                 return Err(KernelCalculusError::NonFiniteSecondDerivative { row, column });
             }
@@ -485,8 +626,8 @@ fn away_second_derivative<const D: usize>(
 
 fn away_third_derivative<const D: usize>(
     radial: &RadialJet,
+    expansion_coefficients: &RadialExpansionCoefficients,
     unit: &[f64; D],
-    radius: f64,
 ) -> Result<[[[f64; D]; D]; D], KernelCalculusError> {
     let mut third = [[[0.0; D]; D]; D];
     for first_axis in 0..D {
@@ -494,8 +635,8 @@ fn away_third_derivative<const D: usize>(
             for third_axis in second_axis..D {
                 let value = away_third_component(
                     radial,
+                    expansion_coefficients,
                     unit,
-                    radius,
                     first_axis,
                     second_axis,
                     third_axis,
@@ -509,8 +650,8 @@ fn away_third_derivative<const D: usize>(
 
 fn away_third_component<const D: usize>(
     radial: &RadialJet,
+    expansion_coefficients: &RadialExpansionCoefficients,
     unit: &[f64; D],
-    radius: f64,
     first: usize,
     second: usize,
     third: usize,
@@ -525,15 +666,10 @@ fn away_third_component<const D: usize>(
         + if first == third { unit[second] } else { 0.0 }
         + if second == third { unit[first] } else { 0.0 };
     let correction_factor = delta_sum - 3.0 * unit_product;
-    let correction = if correction_factor == 0.0 {
-        0.0
-    } else {
-        let first_over_radius =
-            finite_product_ratio(radial.first_derivative(), 1.0, radius).ok_or(error)?;
-        let numerator = radial.second_derivative() - first_over_radius;
-        finite_product_ratio(numerator, correction_factor, radius).ok_or(error)?
-    };
-    let value = radial.third_derivative().mul_add(unit_product, correction);
+    let radial_part = radial.third_derivative() * unit_product;
+    let value = expansion_coefficients
+        .second_remainder_over_radius()
+        .mul_add(correction_factor, radial_part);
     if value.is_finite() {
         Ok(value)
     } else {
@@ -565,37 +701,15 @@ fn validate_radial_derivative(
     }
 }
 
-fn finite_product_ratio(left: f64, right: f64, denominator: f64) -> Option<f64> {
-    if left == 0.0 || right == 0.0 {
-        return Some(0.0);
+fn validate_radial_expansion_coefficient(
+    coefficient: RadialExpansionCoefficient,
+    value: f64,
+) -> Result<(), KernelCalculusError> {
+    if value.is_finite() {
+        Ok(())
+    } else {
+        Err(KernelCalculusError::NonFiniteRadialExpansionCoefficient { coefficient, value })
     }
-
-    let direct_product = left * right;
-    if direct_product.is_finite() && direct_product != 0.0 {
-        let result = direct_product / denominator;
-        if result.is_finite() {
-            return Some(result);
-        }
-    }
-
-    let left_ratio = left / denominator;
-    if left_ratio.is_finite() && left_ratio != 0.0 {
-        let result = left_ratio * right;
-        if result.is_finite() {
-            return Some(result);
-        }
-    }
-
-    let right_ratio = right / denominator;
-    if right_ratio.is_finite() && right_ratio != 0.0 {
-        let result = left * right_ratio;
-        if result.is_finite() {
-            return Some(result);
-        }
-    }
-
-    let rounded = direct_product / denominator;
-    rounded.is_finite().then_some(rounded)
 }
 
 fn set_symmetric_third<const D: usize>(
