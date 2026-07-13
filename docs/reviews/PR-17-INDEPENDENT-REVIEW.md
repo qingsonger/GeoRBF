@@ -6,6 +6,7 @@
 - Branch: `codex/req-kernel-002-polyharmonic-surface-splines`
 - Reviewed pre-repair head: `a2cab4b`
 - Review-repair commit: `bc320c5`
+- Review-evidence commit: `d217fcd`
 - Review date: 2026-07-14
 - Mode: Independent mathematical and numerical review and repair
 
@@ -153,7 +154,10 @@ Ubuntu, and macOS. Review-repair run
 [29292921933](https://github.com/qingsonger/GeoRBF/actions/runs/29292921933)
 then passed for `bc320c5` on all three platforms. Every job passed formatting,
 Clippy, 68 workspace tests, 13 doctests, both benchmark smoke workloads, and
-all 58 requirement checks.
+all 58 requirement checks. Review-evidence run
+[29293285706](https://github.com/qingsonger/GeoRBF/actions/runs/29293285706)
+passed the same complete matrix for `d217fcd`, after which PR #17 was marked
+ready for maintainer review.
 
 ## Checks not run
 

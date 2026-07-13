@@ -23,6 +23,9 @@
   Windows, Ubuntu, and macOS, including formatting, Clippy, 68 workspace
   tests, 13 doctests, both benchmark smoke workloads, and all 58 requirement
   checks.
+- Review-evidence commit `d217fcd` passed the same complete three-platform
+  matrix in GitHub Actions run 29293285706. Issue #16 and PR #17 now record the
+  review evidence, and PR #17 is ready for maintainer review.
 - Confirmed PR #17 implementation and registry head `8c3c38d` passed GitHub
   Actions run 29291234362 on Windows, Ubuntu, and macOS, including formatting,
   Clippy, 65 workspace tests, 13 doctests, both benchmark smoke workloads, and
@@ -224,18 +227,17 @@
 
 ## Current blockers
 
-Integration is blocked by three-platform review-evidence CI, maintainer merge,
-and post-merge `main` CI. The independent review, repairs, implementation,
-local checks, documentation, example, interface applicability, and benchmark
+Integration is blocked by maintainer merge and post-merge `main` CI. The
+independent review, repairs, three-platform PR CI, implementation, local
+checks, documentation, example, interface applicability, and benchmark
 evidence are complete.
 
 ## Next atomic task
 
-Push the PR #17 independent-review evidence and verify its complete
-three-platform CI. Mark the PR ready only after that evidence head is green,
-then await maintainer merge. Do not begin smooth global-support or
-compact-support kernels, orientation, anisotropy, polynomial, functional,
-assembly, or solver work in the same run.
+Maintain ready PR #17 and await maintainer merge. After merge, verify `main`
+CI before advancing REQ-KERNEL-002 beyond `documented`. Do not begin smooth
+global-support or compact-support kernels, orientation, anisotropy,
+polynomial, functional, assembly, or solver work in the same run.
 
 ## Latest full test result
 
@@ -319,6 +321,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   complete job set, including both benchmark smoke workloads.
 - REQ-KERNEL-002 review-repair GitHub Actions run 29292921933 for commit
   `bc320c5` passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-002 review-evidence GitHub Actions run 29293285706 for commit
+  `d217fcd` passed on Windows, Ubuntu, and macOS with the complete job set; PR
+  #17 was then marked ready for maintainer review.
 
 ## Checks not yet available
 
