@@ -12,15 +12,20 @@ incompatible units and preserves CRS metadata without performing reprojection.
 
 Length units use exact validated identifiers; aliases and conversions are an
 input-adapter responsibility. Axis order is a permutation from stored component
-positions to canonical axes. CRS metadata may contain EPSG, WKT, both, or
-neither, and is preserved as opaque data. Combining coordinate sources requires
-exactly matching unit, CRS, axis-order, vertical-direction, handedness, and
-angle-unit metadata unless an explicit conversion has already produced a common
-convention.
+positions to canonical axes. Canonical axes are X, X/Y, or X/Y/Z for D=1, D=2,
+or D=3 respectively, and the final canonical axis is vertical. CRS metadata may
+contain EPSG, WKT, both, or neither, and is preserved as opaque data. Combining
+coordinate sources requires exactly matching unit, CRS, axis-order,
+vertical-direction, handedness, and angle-unit metadata unless an explicit
+conversion has already produced a common convention.
 
 Normalization records finite `mu`, finite invertible `S`, and the contract
 `x_tilde = S^-1 (x - mu)`. Readers must validate invertibility without hidden
 regularization and reject an inverse or transformed result that is not finite.
+Data-derived equilibration may change the inversion representation but never
+the stored matrix or user semantics. If that representation cannot remain in
+the finite nonzero domain, readers retry the original unscaled matrix with the
+same exact-zero singularity policy.
 The persistence schema and migration rules remain deferred to REQ-SCHEMA-001;
 this policy does not claim that a public project or model format exists yet.
 

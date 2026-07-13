@@ -2,7 +2,7 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / independent REQ-COORD-001 review required
+- Execution mode: Review / independent REQ-COORD-001 review completed
 - Current requirement: REQ-COORD-001
 - Issue: https://github.com/qingsonger/GeoRBF/issues/7
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/8 (Draft)
@@ -28,6 +28,11 @@
 - Added D=1/D=2/D=3, rotation, shear, near-singular, extreme-value, metadata,
   error-path, and unsupported-dimension coverage; synchronized the mathematical
   and model-format contracts, rustdoc, example, and change record.
+- Completed the independent mathematical, numerical, safety, API, allocation,
+  and test review of PR #8. Repaired scale-sensitive inversion, strengthened
+  independent extreme-value truth and every-field metadata mismatch coverage,
+  defined the vertical canonical axis, and recorded the evidence in
+  `docs/reviews/PR-8-INDEPENDENT-REVIEW.md`.
 - Committed and pushed the implementation, opened Draft PR #8, and advanced
   REQ-COORD-001 to `documented`; integration remains forbidden until the
   independent review is recorded, CI is green, and the PR is merged.
@@ -92,15 +97,14 @@
 
 ## Current blockers
 
-None. REQ-DIM-001 is integrated, so REQ-COORD-001 has no unfinished
-dependency.
+The review-repair commit must pass the three-platform GitHub Actions matrix
+before Draft PR #8 is marked ready. No dependency blocker remains.
 
 ## Next atomic task
 
-Perform the required independent mathematical, numerical, safety, API,
-allocation, and test review of Draft PR #8. Repair any findings, rerun all
-applicable gates, and mark the PR ready only after the review is recorded. Do
-not begin orientation or kernel work while that gate is pending.
+Confirm the review-repair commit passes the three-platform matrix, then mark
+PR #8 ready for maintainer review. Do not begin orientation, anisotropy, or
+kernel work while the review and merge gate remains pending.
 
 ## Latest full test result
 
@@ -109,11 +113,11 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 31 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 35 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
 - `cargo test --doc --workspace`: passed; 7 doctests, including five
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 17 integration tests
+- `cargo test -p georbf --release --all-features`: passed; 21 integration tests
   and 7 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
@@ -126,7 +130,8 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Baseline `main` GitHub Actions run 29246462335 for commit `34468a3`: passed on
   `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
   workspace tests, doctests, and all 58 requirement checks passed in every job.
-- REQ-COORD-001 GitHub Actions run 29248062499 for commit `3bba729`: passed on
+- Pre-review REQ-COORD-001 GitHub Actions run 29248171268 for commit `634792b`:
+  passed on
   `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
   workspace tests, doctests, and all 58 requirement checks passed in every job.
 

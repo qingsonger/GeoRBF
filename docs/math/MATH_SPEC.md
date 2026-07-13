@@ -81,6 +81,8 @@ monotonicity, and polarity.
 Coordinate metadata records an exact length-unit identifier, opaque optional
 EPSG and WKT values, a permutation from component positions to canonical axes,
 the positive vertical direction, handedness, and the external angle unit.
+Canonical axes are X in D=1, X/Y in D=2, and X/Y/Z in D=3; the last canonical
+axis is vertical, and the axis permutation identifies its stored component.
 Metadata is preserved and compared exactly. The core performs no unit aliasing,
 automatic unit conversion, CRS lookup, or reprojection; data with different
 metadata must be converted explicitly before it is combined. Internal angular
@@ -95,10 +97,14 @@ x_tilde = S^-1 (x - mu),
 where `S` is invertible and carries the coordinate scaling policy. The model
 stores finite `mu` and finite `S`; `S^-1` must also be representable with finite
 components. `S` is a general matrix and may contain scaling, rotation,
-permutation, or shear. Construction uses partial pivoting and exact zero-pivot
-decisions. It does not add a singularity tolerance, jitter, regularization, or
-pseudoinverse. Singular matrices and inverses that leave the finite `f64`
-domain are explicit errors.
+permutation, or shear. Construction first attempts max-component row/column
+equilibration and partial-pivot LU solves. This scaling changes only the
+numerical representation. If equilibration or its solve would leave the finite
+nonzero `f64` domain, construction retries unscaled partial-pivot elimination
+so an equilibration artifact alone cannot reject the original matrix. Both
+paths use exact zero-pivot decisions. Neither adds a singularity tolerance,
+jitter, regularization, or pseudoinverse. Singular matrices and inverses that
+cannot be produced with finite components are explicit errors.
 
 The inverse point transform is
 

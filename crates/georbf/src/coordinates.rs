@@ -175,7 +175,8 @@ impl CrsMetadata {
 /// Permutation mapping component positions to canonical axis indices.
 ///
 /// `[1, 0, 2]` means that component positions contain canonical axes Y, X,
-/// and Z respectively.
+/// and Z respectively. Canonical axes are X in D=1, X/Y in D=2, and X/Y/Z in
+/// D=3; the final canonical axis is the vertical axis.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[must_use]
 pub struct AxisOrder<const D: usize>
@@ -227,7 +228,10 @@ where
     }
 }
 
-/// Direction considered positive along the vertical coordinate axis.
+/// Direction considered positive along the final canonical coordinate axis.
+///
+/// This is X in D=1, Y in D=2, and Z in D=3. [`AxisOrder`] determines which
+/// stored component position contains that canonical axis.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum VerticalDirection {
     /// Coordinate values increase upward.

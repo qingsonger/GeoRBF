@@ -9,16 +9,20 @@ no unit conversion or CRS reprojection.
 Added private-invariant affine normalization for
 `x_tilde = S^-1 (x - mu)`. Finite scale matrices are inverted with partial
 pivoting and exact zero-pivot decisions, without a tolerance, jitter,
-regularization, pseudoinverse, or numerical dependency. Singular matrices,
-non-representable inverses, invalid Hessians, and non-finite operation results
-return structured errors.
+regularization, pseudoinverse, or numerical dependency. Independent review
+added a max-component-equilibrated LU path so a finite representable inverse is
+not rejected solely because unscaled elimination overflows; an explicit
+unscaled fallback prevents an equilibration artifact from deciding the result.
+Singular matrices, non-representable inverses, invalid Hessians, and non-finite
+operation results return structured errors.
 
 Point normalization and denormalization support general finite scale matrices.
 Gradient and Hessian results transform back through `S^-T` and
 `S^-T H_tilde S^-1`. Tests cover all supported dimensions, metadata errors,
 unit/CRS mismatch, translation, scaling, rotation, shear, analytic derivative
 truth, near-singular matrices, representable numeric extremes, overflow, and
-unsupported dimensions. A runnable Rust example documents the public path.
+unsupported dimensions. Compatibility tests cover every metadata field. A
+runnable Rust example documents the public path.
 
 Orientation conversion, anisotropy, kernel calculus, reprojection, persistence
 schemas, batch APIs, language bindings, and Surfe compatibility remain out of

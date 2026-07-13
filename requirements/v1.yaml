@@ -50,7 +50,7 @@ requirements:
     priority: P0
     issue: 7
     pull_request: 8
-    tests: [coordinate-metadata, affine-round-trip, analytic-derivative-transform, transform-error-paths, coordinate-dimension-compile-fail]
+    tests: [coordinate-metadata, affine-round-trip, affine-extreme-scale-inversion, analytic-derivative-transform, transform-error-paths, coordinate-dimension-compile-fail]
     docs: [docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, docs/architecture/MODEL_FORMAT.md, rustdoc, crates/georbf/examples/coordinate_normalization.rs]
     rust_api: implemented
     cli: "N/A: coordinate metadata has no standalone command before project input and schemas exist"

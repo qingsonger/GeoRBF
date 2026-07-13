@@ -25,6 +25,22 @@ fn assert_matrix<const D: usize>(actual: &[[f64; D]; D], expected: [[f64; D]; D]
     }
 }
 
+fn assert_relative_matrix<const D: usize>(actual: &[[f64; D]; D], expected: [[f64; D]; D]) {
+    for (actual_row, expected_row) in actual.iter().zip(expected) {
+        for (actual, expected) in actual_row.iter().copied().zip(expected_row) {
+            let tolerance = if expected.classify() == std::num::FpCategory::Zero {
+                0.0
+            } else {
+                32.0 * f64::EPSILON * expected.abs()
+            };
+            assert!(
+                (actual - expected).abs() <= tolerance,
+                "expected {expected:e}, got {actual:e} with tolerance {tolerance:e}"
+            );
+        }
+    }
+}
+
 #[test]
 fn metadata_preserves_units_crs_and_axis_conventions() -> Result<(), Box<dyn Error>> {
     let unit = LengthUnit::try_new("m")?;
@@ -141,6 +157,75 @@ fn metadata_compatibility_rejects_silent_unit_or_crs_mixing() -> Result<(), Box<
 }
 
 #[test]
+fn metadata_compatibility_checks_every_convention_field() -> Result<(), Box<dyn Error>> {
+    let reference = CoordinateMetadata::new(
+        LengthUnit::try_new("m")?,
+        CrsMetadata::from_epsg(4978)?,
+        AxisOrder::<3>::identity(),
+        VerticalDirection::Up,
+        Handedness::Right,
+        AngleUnit::Radians,
+    );
+
+    let cases = [
+        (
+            CoordinateMetadata::new(
+                reference.length_unit().clone(),
+                reference.crs().clone(),
+                AxisOrder::<3>::try_new([1, 0, 2])?,
+                reference.vertical_direction(),
+                reference.handedness(),
+                reference.angle_unit(),
+            ),
+            CoordinateMetadataField::AxisOrder,
+        ),
+        (
+            CoordinateMetadata::new(
+                reference.length_unit().clone(),
+                reference.crs().clone(),
+                *reference.axis_order(),
+                VerticalDirection::Down,
+                reference.handedness(),
+                reference.angle_unit(),
+            ),
+            CoordinateMetadataField::VerticalDirection,
+        ),
+        (
+            CoordinateMetadata::new(
+                reference.length_unit().clone(),
+                reference.crs().clone(),
+                *reference.axis_order(),
+                reference.vertical_direction(),
+                Handedness::Left,
+                reference.angle_unit(),
+            ),
+            CoordinateMetadataField::Handedness,
+        ),
+        (
+            CoordinateMetadata::new(
+                reference.length_unit().clone(),
+                reference.crs().clone(),
+                *reference.axis_order(),
+                reference.vertical_direction(),
+                reference.handedness(),
+                AngleUnit::Degrees,
+            ),
+            CoordinateMetadataField::AngleUnit,
+        ),
+    ];
+
+    for (metadata, expected_field) in cases {
+        assert_eq!(
+            reference.ensure_compatible(&metadata),
+            Err(CoordinateMetadataError::Mismatch {
+                field: expected_field
+            })
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn affine_points_round_trip_in_every_supported_dimension() -> Result<(), Box<dyn Error>> {
     let transform_1d = AffineNormalization::<1>::try_new(Point::try_new([10.0])?, [[2.0]])?;
     let normalized_1d = transform_1d.normalize_point(Point::try_new([14.0])?)?;
@@ -227,6 +312,72 @@ fn affine_inverse_uses_no_hidden_singularity_tolerance() -> Result<(), Box<dyn E
         huge.normalize_point(Point::try_new([f64::MAX])?)?
             .components(),
         [1.0],
+    );
+    Ok(())
+}
+
+#[test]
+fn affine_inverse_avoids_spurious_intermediate_overflow() -> Result<(), Box<dyn Error>> {
+    let maximum = f64::MAX;
+    let transform = AffineNormalization::<2>::try_new(
+        Point::try_new([0.0, 0.0])?,
+        [[0.5, maximum], [0.0, maximum]],
+    )?;
+
+    assert_relative_matrix(
+        transform.inverse_scale_matrix(),
+        [[2.0, -2.0], [0.0, 1.0 / maximum]],
+    );
+    assert_components(
+        transform
+            .normalize_point(Point::try_new([0.5, 0.0])?)?
+            .components(),
+        [1.0, 0.0],
+    );
+    Ok(())
+}
+
+#[test]
+fn affine_inverse_solves_equilibrated_extreme_scale_system() -> Result<(), Box<dyn Error>> {
+    let maximum = f64::MAX;
+    let smallest = f64::from_bits(1);
+    let coupled_scale = maximum * smallest;
+    let transform = AffineNormalization::<3>::try_new(
+        Point::try_new([0.0, 0.0, 0.0])?,
+        [
+            [maximum, maximum, 0.0],
+            [0.0, coupled_scale, maximum],
+            [0.0, 0.0, maximum],
+        ],
+    )?;
+    let reciprocal_maximum = 1.0 / maximum;
+    let reciprocal_coupling = 1.0 / coupled_scale;
+
+    assert_relative_matrix(
+        transform.inverse_scale_matrix(),
+        [
+            [
+                reciprocal_maximum,
+                -reciprocal_coupling,
+                reciprocal_coupling,
+            ],
+            [0.0, reciprocal_coupling, -reciprocal_coupling],
+            [0.0, 0.0, reciprocal_maximum],
+        ],
+    );
+    Ok(())
+}
+
+#[test]
+fn affine_inverse_preserves_representable_unscaled_fallback() -> Result<(), Box<dyn Error>> {
+    let transform = AffineNormalization::<2>::try_new(
+        Point::try_new([0.0, 0.0])?,
+        [[1.0e200, 1.0e-100], [1.0, -1.0e-100]],
+    )?;
+
+    assert_relative_matrix(
+        transform.inverse_scale_matrix(),
+        [[1.0e-200, 1.0e-200], [1.0e-100, -1.0e100]],
     );
     Ok(())
 }

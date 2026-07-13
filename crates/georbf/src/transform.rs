@@ -89,8 +89,12 @@ impl Error for TransformError {}
 
 /// Invertible affine normalization `x_tilde = S^-1 (x - mu)`.
 ///
-/// Construction uses exact zero-pivot decisions with partial pivoting. It does
-/// not add a tolerance, jitter, regularization, or pseudoinverse.
+/// Construction first attempts max-component row/column equilibration followed
+/// by partial-pivot LU solves. If that representation cannot remain in the
+/// finite nonzero `f64` domain, it retries unscaled partial-pivot elimination
+/// rather than let equilibration alone reject the original matrix. Both paths
+/// use exact zero-pivot decisions and add no tolerance, jitter, regularization,
+/// or pseudoinverse.
 ///
 /// ```
 /// use georbf::{AffineNormalization, Point};
@@ -124,8 +128,8 @@ where
     ///
     /// Returns [`TransformError::NonFiniteScaleComponent`] for invalid matrix
     /// data, [`TransformError::SingularScaleMatrix`] for an exact zero pivot,
-    /// or [`TransformError::NonRepresentableInverse`] when elimination cannot
-    /// produce a finite inverse.
+    /// or [`TransformError::NonRepresentableInverse`] when neither documented
+    /// inversion representation can produce a finite inverse.
     pub fn try_new(center: Point<D>, scale_matrix: [[f64; D]; D]) -> Result<Self, TransformError> {
         validate_scale_matrix(&scale_matrix)?;
         let inverse_scale_matrix = invert_matrix(scale_matrix)?;
@@ -261,7 +265,121 @@ fn validate_hessian<const D: usize>(matrix: &[[f64; D]; D]) -> Result<(), Transf
     Ok(())
 }
 
-fn invert_matrix<const D: usize>(
+fn invert_matrix<const D: usize>(matrix: [[f64; D]; D]) -> Result<[[f64; D]; D], TransformError> {
+    invert_matrix_equilibrated(matrix).or_else(|_| invert_matrix_unscaled(matrix))
+}
+
+fn invert_matrix_equilibrated<const D: usize>(
+    matrix: [[f64; D]; D],
+) -> Result<[[f64; D]; D], TransformError> {
+    const SOLVE_SCALE: f64 = 16.0;
+
+    let mut row_scales = [0.0; D];
+    let mut normalized_rows = [[0.0; D]; D];
+    for (row, values) in matrix.iter().enumerate() {
+        let scale = values.iter().copied().map(f64::abs).fold(0.0_f64, f64::max);
+        if scale == 0.0 {
+            return Err(TransformError::SingularScaleMatrix);
+        }
+        row_scales[row] = scale;
+        for (column, value) in values.iter().copied().enumerate() {
+            normalized_rows[row][column] = checked_inverse_divide(value, scale)?;
+        }
+    }
+
+    let mut column_scales = [0.0; D];
+    let mut lu = [[0.0; D]; D];
+    for column in 0..D {
+        let scale = normalized_rows
+            .iter()
+            .map(|row| row[column].abs())
+            .fold(0.0_f64, f64::max);
+        if scale == 0.0 {
+            return Err(TransformError::SingularScaleMatrix);
+        }
+        column_scales[column] = scale;
+        for row in 0..D {
+            lu[row][column] = checked_inverse_divide(normalized_rows[row][column], scale)?;
+        }
+    }
+
+    let mut permutation: [usize; D] = std::array::from_fn(|index| index);
+
+    for pivot_column in 0..D {
+        let mut pivot_row = pivot_column;
+        let mut pivot_magnitude = 0.0_f64;
+        for (row, values) in lu.iter().enumerate().skip(pivot_column) {
+            let magnitude = values[pivot_column].abs();
+            if magnitude > pivot_magnitude {
+                pivot_magnitude = magnitude;
+                pivot_row = row;
+            }
+        }
+        if pivot_magnitude == 0.0 {
+            return Err(TransformError::SingularScaleMatrix);
+        }
+
+        lu.swap(pivot_column, pivot_row);
+        permutation.swap(pivot_column, pivot_row);
+        let pivot = lu[pivot_column][pivot_column];
+        let pivot_values = lu[pivot_column];
+        for values in lu.iter_mut().skip(pivot_column + 1) {
+            let factor = checked_inverse_divide(values[pivot_column], pivot)?;
+            values[pivot_column] = factor;
+            for (column, value) in values.iter_mut().enumerate().skip(pivot_column + 1) {
+                let product = checked_inverse_multiply(factor, pivot_values[column])?;
+                *value = checked_inverse_subtract(*value, product)?;
+            }
+        }
+    }
+
+    let mut inverse = [[0.0; D]; D];
+    for inverse_column in 0..D {
+        let reciprocal = 1.0 / row_scales[inverse_column];
+        let scaled_rhs = if reciprocal.is_finite() {
+            checked_inverse_divide(reciprocal, SOLVE_SCALE)?
+        } else {
+            let scaled_row = checked_inverse_multiply(row_scales[inverse_column], SOLVE_SCALE)?;
+            checked_inverse_divide(1.0, scaled_row)?
+        };
+
+        let mut permuted_rhs = [0.0; D];
+        for row in 0..D {
+            if permutation[row] == inverse_column {
+                permuted_rhs[row] = scaled_rhs;
+            }
+        }
+
+        let mut forward = [0.0; D];
+        for row in 0..D {
+            let mut value = permuted_rhs[row];
+            for column in 0..row {
+                let product = checked_inverse_multiply(lu[row][column], forward[column])?;
+                value = checked_inverse_subtract(value, product)?;
+            }
+            forward[row] = value;
+        }
+
+        let mut solution = [0.0; D];
+        for row in (0..D).rev() {
+            let mut value = forward[row];
+            for column in (row + 1)..D {
+                let product = checked_inverse_multiply(lu[row][column], solution[column])?;
+                value = checked_inverse_subtract(value, product)?;
+            }
+            solution[row] = checked_inverse_divide(value, lu[row][row])?;
+        }
+
+        for row in 0..D {
+            let unscaled = checked_inverse_divide(solution[row], column_scales[row])?;
+            inverse[row][inverse_column] = checked_inverse_multiply(unscaled, SOLVE_SCALE)?;
+        }
+    }
+
+    Ok(inverse)
+}
+
+fn invert_matrix_unscaled<const D: usize>(
     mut matrix: [[f64; D]; D],
 ) -> Result<[[f64; D]; D], TransformError> {
     let mut inverse = identity_matrix();
@@ -313,6 +431,33 @@ fn identity_matrix<const D: usize>() -> [[f64; D]; D] {
 fn ensure_matrix_finite<const D: usize>(matrix: &[[f64; D]; D]) -> Result<(), TransformError> {
     if matrix.iter().flatten().all(|value| value.is_finite()) {
         Ok(())
+    } else {
+        Err(TransformError::NonRepresentableInverse)
+    }
+}
+
+fn checked_inverse_divide(numerator: f64, denominator: f64) -> Result<f64, TransformError> {
+    let result = numerator / denominator;
+    if !result.is_finite() || (result == 0.0 && numerator != 0.0) {
+        Err(TransformError::NonRepresentableInverse)
+    } else {
+        Ok(result)
+    }
+}
+
+fn checked_inverse_multiply(left: f64, right: f64) -> Result<f64, TransformError> {
+    let result = left * right;
+    if !result.is_finite() || (result == 0.0 && left != 0.0 && right != 0.0) {
+        Err(TransformError::NonRepresentableInverse)
+    } else {
+        Ok(result)
+    }
+}
+
+fn checked_inverse_subtract(left: f64, right: f64) -> Result<f64, TransformError> {
+    let result = left - right;
+    if result.is_finite() {
+        Ok(result)
     } else {
         Err(TransformError::NonRepresentableInverse)
     }
