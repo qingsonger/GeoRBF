@@ -1,11 +1,12 @@
 # Current GeoRBF Progress
 
-- Current milestone: M0 / v0.0.1 — specification and engineering baseline
-- Execution mode: Review / repair of PR #2
-- Current requirement: REQ-BOOTSTRAP-001
-- Issue: https://github.com/qingsonger/GeoRBF/issues/1
-- Pull request: https://github.com/qingsonger/GeoRBF/pull/2 (Draft)
-- Branch: `bootstrap/specification`
+- Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
+  orientation, and kernel calculus
+- Execution mode: Implement / next atomic requirement
+- Current requirement: REQ-DIM-001
+- Issue: not yet created
+- Pull request: not yet opened
+- Branch: not yet created
 
 ## Completed in this run
 
@@ -38,18 +39,21 @@
   prerelease workspace package and made `xtask` enforce that policy. The
   complete review evidence is in
   `docs/reviews/PR-2-INDEPENDENT-REVIEW.md`.
+- Marked PR #2 ready and squash-merged it as commit `36ad660`; Issue #1 closed
+  automatically. REQ-BOOTSTRAP-001 now satisfies the integration gate.
 
 ## Current blockers
 
-No known local blocker. The bootstrap requirement remains `documented`, not
-`integrated`, until the review repair has green three-platform CI and PR #2 is
-merged.
+None. Stage 0 is integrated, and REQ-DIM-001 has no dependency other than the
+completed bootstrap requirement.
 
 ## Next atomic task
 
-Confirm the review-repair CI result, then let the repository owner decide when
-to mark PR #2 ready and merge under branch rules. After merge, update
-REQ-BOOTSTRAP-001 to `integrated`; do not begin REQ-DIM-001 before that state.
+Create the REQ-DIM-001 Issue with explicit acceptance criteria, then create
+`codex/req-dim-001-dimension-safe-geometry`. Implement only the dimension-safe
+Point, Vector, Direction, and UnitDirection primitives for exactly D=1, D=2,
+and D=3 with finite-value validation, compile-fail coverage for unsupported
+dimensions, documentation, and the applicable interface status updates.
 
 ## Latest full test result
 
@@ -67,8 +71,10 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
-- Pre-review GitHub Actions run 29239841099 for commit `8d6b44e`: passed on
-  `windows-latest`, `ubuntu-latest`, and `macos-latest`.
+- Review-repair GitHub Actions run 29241492408 for commit `38a39d4`: passed on
+  `windows-latest` with 14 tests and on `ubuntu-latest` and `macos-latest` with
+  15 tests; fmt, clippy, doc tests, and all 58 requirement checks passed in
+  every job.
 
 ## Checks not yet available
 
