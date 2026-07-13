@@ -18,6 +18,12 @@ high-precision truth, finite differences, deterministic random projected-CPD
 checks, center and exchange properties, compile-fail dimensions, pathologies,
 an example, and a dependency-free benchmark cover the new runtime path.
 
+Independent review found and repaired premature intermediate underflow in
+high-power derivatives and Cartesian expansion coefficients. Exact subnormal
+bit-pattern regressions cover both the algebraic and logarithmic branches, and
+an affine-annihilating stencil verifies that the even-power reference-length
+term lies in the declared CPD polynomial side space.
+
 No smooth global-support kernel, compact kernel, polynomial construction, CPD
 rank enforcement, anisotropy, functional, assembly, solver, schema, binding,
 or compatibility behavior is included.

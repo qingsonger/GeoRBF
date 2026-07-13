@@ -180,6 +180,107 @@ fn radial_derivatives_match_embedded_eighty_digit_reference_values() -> TestResu
 }
 
 #[test]
+fn derivative_scaling_preserves_representable_subnormal_results() -> TestResult {
+    // For p=219 and r=2^-5, the odd-power second and third derivatives are
+    // exact integer multiples of powers of two. Although r^(p-n) alone is
+    // below the f64 subnormal range, multiplication by the derivative
+    // coefficient brings the final result back into that range. The expected
+    // bit patterns below follow by rounding those exact integer multiples to
+    // units of 2^-1074; they do not use the production evaluator.
+    let radius = 0.03125;
+    let kernel = PolyharmonicSpline::try_new(219)?;
+    assert_eq!(
+        kernel
+            .radial_derivative(radius, KernelDerivativeOrder::Second)?
+            .ok_or("away second derivative missing")?
+            .to_bits(),
+        23
+    );
+    assert_eq!(
+        kernel
+            .radial_derivative(radius, KernelDerivativeOrder::Third)?
+            .ok_or("away third derivative missing")?
+            .to_bits(),
+        0x27_853
+    );
+
+    let separation =
+        RadialSeparation::try_new(Point::try_new([radius, 0.0])?, Point::try_new([0.0, 0.0])?)?;
+    let jet = kernel.radial_jet(separation)?;
+    let expansion = jet
+        .expansion_coefficients()
+        .ok_or("D=2 expansion coefficients missing")?;
+    assert_eq!(expansion.first_over_radius().to_bits(), 0);
+    assert_eq!(expansion.second_remainder_over_radius().to_bits(), 743);
+    Ok(())
+}
+
+#[test]
+fn logarithmic_derivative_scaling_preserves_representable_subnormal_results() -> TestResult {
+    // At p=1090 and r=1/2, the bare powers in the third derivative and b
+    // coefficient underflow even though the complete products are nonzero.
+    // Independent 100-digit decimal evaluation followed by round-to-nearest,
+    // ties-to-even in units of 2^-1074 gives the exact f64 bit patterns below.
+    let radius = 0.5;
+    let kernel = PolyharmonicSpline::try_new(1090)?;
+    assert_eq!(
+        kernel
+            .radial_derivative(radius, KernelDerivativeOrder::Third)?
+            .ok_or("away third derivative missing")?
+            .to_bits(),
+        0x8000_0000_0001_a928
+    );
+
+    let separation =
+        RadialSeparation::try_new(Point::try_new([radius, 0.0])?, Point::try_new([0.0, 0.0])?)?;
+    let jet = kernel.radial_jet(separation)?;
+    let expansion = jet
+        .expansion_coefficients()
+        .ok_or("D=2 expansion coefficients missing")?;
+    assert_eq!(
+        expansion.second_remainder_over_radius().to_bits(),
+        0x8000_0000_0000_0064
+    );
+    Ok(())
+}
+
+#[test]
+fn even_power_reference_length_changes_only_the_cpd_polynomial_term() -> TestResult {
+    // The second-difference stencil annihilates constants and linear terms.
+    // For phi(r)=r^2 log(r), changing coordinate scale by c introduces a
+    // c^2 log(c) r^2 polynomial term whose projected Gram energy is exactly
+    // zero. The remaining energy must scale by c^2.
+    let kernel = PolyharmonicSpline::try_new(2)?;
+    let points = [0.0_f64, 1.0, 2.0];
+    let weights = [1.0_f64, -2.0, 1.0];
+    assert_same_bits(weights.iter().sum(), 0.0);
+    assert_same_bits(
+        points
+            .iter()
+            .zip(weights)
+            .map(|(point, weight)| point * weight)
+            .sum(),
+        0.0,
+    );
+
+    let energy = |scale: f64| -> Result<f64, PolyharmonicSplineEvaluationError> {
+        let mut result = 0.0;
+        for (row, x) in points.iter().enumerate() {
+            for (column, y) in points.iter().enumerate() {
+                result +=
+                    weights[row] * weights[column] * kernel.radial_value(scale * (x - y).abs())?;
+            }
+        }
+        Ok(result)
+    };
+    let baseline = energy(1.0)?;
+    let scale = 3.5;
+    assert!(baseline > 0.0);
+    assert_close(energy(scale)?, scale * scale * baseline, 2.0e-15);
+    Ok(())
+}
+
+#[test]
 fn analytic_radial_derivatives_match_independent_finite_differences() -> TestResult {
     for power in 1..=6 {
         let kernel = PolyharmonicSpline::try_new(power)?;

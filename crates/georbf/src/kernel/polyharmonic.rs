@@ -474,11 +474,11 @@ fn evaluate_away_derivative(
             KernelDerivativeOrder::Third if power < 3 => 0.0,
             KernelDerivativeOrder::Third => p * (p - 1.0) * (p - 2.0),
         };
-        if coefficient == 0.0 {
-            0.0
-        } else {
-            sign * coefficient * radius.powf(p - derivative_index(order))
-        }
+        scaled_integer_power(
+            radius,
+            i32::from(power) - derivative_index(order),
+            sign * coefficient,
+        )
     } else {
         let log_radius = radius.ln();
         let bracket = match order {
@@ -489,7 +489,11 @@ fn evaluate_away_derivative(
                 (p * (p - 1.0) * (p - 2.0)).mul_add(log_radius, 3.0 * p * p - 6.0 * p + 2.0)
             }
         };
-        sign * radius.powf(p - derivative_index(order)) * bracket
+        scaled_integer_power(
+            radius,
+            i32::from(power) - derivative_index(order),
+            sign * bracket,
+        )
     };
     if value.is_finite() {
         Ok(value)
@@ -507,16 +511,43 @@ fn expansion_coefficients(power: u16, radius: f64) -> (f64, f64) {
     let sign = cpd_sign(power);
     if power % 2 == 1 {
         (
-            sign * p * radius.powf(p - 2.0),
-            sign * p * (p - 2.0) * radius.powf(p - 3.0),
+            scaled_integer_power(radius, i32::from(power) - 2, sign * p),
+            scaled_integer_power(radius, i32::from(power) - 3, sign * p * (p - 2.0)),
         )
     } else {
         let log_radius = radius.ln();
         (
-            sign * radius.powf(p - 2.0) * p.mul_add(log_radius, 1.0),
-            sign * radius.powf(p - 3.0) * (p * (p - 2.0)).mul_add(log_radius, 2.0 * (p - 1.0)),
+            scaled_integer_power(
+                radius,
+                i32::from(power) - 2,
+                sign * p.mul_add(log_radius, 1.0),
+            ),
+            scaled_integer_power(
+                radius,
+                i32::from(power) - 3,
+                sign * (p * (p - 2.0)).mul_add(log_radius, 2.0 * (p - 1.0)),
+            ),
         )
     }
+}
+
+fn scaled_integer_power(radius: f64, exponent: i32, factor: f64) -> f64 {
+    if factor == 0.0 {
+        return factor;
+    }
+    let direct = radius.powi(exponent) * factor;
+    if direct != 0.0 && direct.is_finite() {
+        return direct;
+    }
+    if !factor.is_finite() {
+        return direct;
+    }
+
+    // The bare radial power can underflow before a large derivative
+    // coefficient brings the final product back into the representable
+    // subnormal range. Re-evaluate only this extreme path in the log domain.
+    let log_magnitude = f64::from(exponent).mul_add(radius.ln(), factor.abs().ln());
+    factor.signum() * log_magnitude.exp()
 }
 
 const fn cpd_sign(power: u16) -> f64 {
@@ -527,12 +558,12 @@ const fn cpd_sign(power: u16) -> f64 {
     }
 }
 
-const fn derivative_index(order: KernelDerivativeOrder) -> f64 {
+const fn derivative_index(order: KernelDerivativeOrder) -> i32 {
     match order {
-        KernelDerivativeOrder::Value => 0.0,
-        KernelDerivativeOrder::First => 1.0,
-        KernelDerivativeOrder::Second => 2.0,
-        KernelDerivativeOrder::Third => 3.0,
+        KernelDerivativeOrder::Value => 0,
+        KernelDerivativeOrder::First => 1,
+        KernelDerivativeOrder::Second => 2,
+        KernelDerivativeOrder::Third => 3,
     }
 }
 

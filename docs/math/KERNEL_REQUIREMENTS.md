@@ -121,6 +121,14 @@ Requests for a complete third-order center jet below `p=4` fail explicitly.
 Negative or non-finite radii and non-representable derivatives or expansion
 coefficients also return structured errors.
 
+Derivative coefficients and their integer radial powers are evaluated as one
+scaled product for range classification. In particular, an intermediate
+`r^q` underflow must not erase a nonzero derivative or expansion coefficient
+when multiplication by its analytic coefficient brings the final result back
+into the representable subnormal range. The ordinary finite path remains a
+direct integer power and product; only an otherwise zero or non-finite extreme
+product is re-evaluated in the log domain.
+
 Before exposure, every kernel documents its formula, parameter dimensions,
 definiteness, CPD order, origin limit, required derivatives, and dimension
 range. Tests use high-precision or independent finite differences, origin and
