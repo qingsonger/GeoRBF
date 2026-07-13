@@ -2,11 +2,11 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / independent REQ-DIM-001 review completed
-- Current requirement: REQ-DIM-001
-- Issue: https://github.com/qingsonger/GeoRBF/issues/4
-- Pull request: https://github.com/qingsonger/GeoRBF/pull/5 (Ready for review)
-- Branch: `codex/req-dim-001-dimension-safe-geometry`
+- Execution mode: Implement / next atomic requirement
+- Current requirement: REQ-COORD-001
+- Issue: not yet created
+- Pull request: not yet opened
+- Branch: not yet created
 
 ## Completed in this run
 
@@ -31,6 +31,9 @@
   `docs/reviews/PR-5-INDEPENDENT-REVIEW.md`.
 - Confirmed the review-record head passed GitHub Actions on Windows, Ubuntu, and
   macOS, then marked PR #5 ready for maintainer review.
+- Squash-merged PR #5 as commit `7dfdb18`; Issue #4 closed automatically, and
+  post-merge `main` CI run 29246177488 passed on Windows, Ubuntu, and macOS.
+  REQ-DIM-001 now satisfies every integration gate.
 - Committed and pushed the implementation, opened Draft PR #5, and advanced
   the registry status to `documented`; integration remains forbidden until an
   independent review is complete and the PR is merged.
@@ -68,13 +71,16 @@
 
 ## Current blockers
 
-Maintainer review and merge of PR #5 remain pending. No code, CI, or dependency
-blocker remains.
+None. REQ-DIM-001 is integrated, so REQ-COORD-001 has no unfinished
+dependency.
 
 ## Next atomic task
 
-Obtain maintainer review and merge PR #5. Do not mark REQ-DIM-001 `integrated`
-or start REQ-COORD-001 until PR #5 is merged.
+Create the REQ-COORD-001 Issue with explicit acceptance criteria, then create
+`codex/req-coord-001-coordinate-metadata-normalization`. Implement only units,
+axis conventions, CRS metadata, invertible affine coordinate normalization,
+and correct gradient and Hessian transformations back to original coordinates.
+Do not begin orientation or kernel work in the same run.
 
 ## Latest full test result
 
@@ -93,10 +99,10 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
-- REQ-DIM-001 GitHub Actions run 29244426487 for review-record head `3eaf97f`:
-  passed on
-  `windows-latest`, `ubuntu-latest`, and `macos-latest`; formatting, Clippy,
-  workspace tests, doctests, and all 58 requirement checks passed in every job.
+- REQ-DIM-001 post-merge `main` GitHub Actions run 29246177488 for merge commit
+  `7dfdb18`: passed on `windows-latest`, `ubuntu-latest`, and `macos-latest`;
+  formatting, Clippy, workspace tests, doctests, and all 58 requirement checks
+  passed in every job.
 
 ## Checks not yet available
 

@@ -40,7 +40,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the C ABI rather than Rust geometry types"
     python_api: "N/A: the future Python boundary validates NumPy shapes rather than exposing Rust geometry types"
     benchmark: "N/A: fixed-size primitive validation is constant-time"
-    status: documented
+    status: integrated
 
   - id: REQ-COORD-001
     title: Coordinate metadata and normalization
