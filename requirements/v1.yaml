@@ -13,7 +13,7 @@ requirements:
     milestone: M0-v0.0.1
     priority: P0
     issue: 1
-    pull_request: null
+    pull_request: 2
     tests: [workspace-checks, requirements-checker-tests]
     docs: [V1_SCOPE.md, docs/MASTER_PLAN.md, docs/math, docs/architecture, docs/adr]
     rust_api: "N/A: repository bootstrap exposes no mathematical API"
@@ -22,7 +22,7 @@ requirements:
     cpp_api: "N/A: C ABI does not yet exist"
     python_api: "N/A: stage 0 exports no Python module"
     benchmark: "N/A: specification and build scaffolding are not performance-sensitive"
-    status: in_progress
+    status: documented
 
   - id: REQ-DIM-001
     title: Dimension-safe geometry primitives

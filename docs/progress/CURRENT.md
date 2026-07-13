@@ -4,7 +4,7 @@
 - Execution mode: Implement / bootstrap
 - Current requirement: REQ-BOOTSTRAP-001
 - Issue: https://github.com/qingsonger/GeoRBF/issues/1
-- Pull request: not yet opened
+- Pull request: https://github.com/qingsonger/GeoRBF/pull/2 (Draft)
 - Branch: `bootstrap/specification`
 
 ## Completed in this run
@@ -22,18 +22,20 @@
   status transitions, interface declarations, issue/PR identifiers,
   dependency existence and integration, dependency cycles, forbidden v1
   completion markers, and production-source placeholders.
+- Committed and pushed the complete bootstrap baseline and opened Draft PR #2.
 
 ## Current blockers
 
-None. The bootstrap requirement cannot become `integrated` until its PR is
-independently reviewed, green in CI, and merged.
+No local implementation blocker. The bootstrap requirement is `documented`,
+not `integrated`; it still requires green three-platform CI, independent
+specification/repository review, and merge.
 
 ## Next atomic task
 
-Commit and push REQ-BOOTSTRAP-001 and open its Draft PR. After that PR is green,
-perform an independent specification and repository-baseline review before
-merge. Do not begin REQ-DIM-001 while the bootstrap dependency is not
-integrated.
+Inspect PR #2 CI. Repair any failure before new work. Once CI is green, perform
+an independent specification and repository-baseline review, address findings,
+mark the PR ready, and merge only when repository rules allow. Then update
+REQ-BOOTSTRAP-001 to `integrated`; do not begin REQ-DIM-001 before that state.
 
 ## Latest full test result
 
