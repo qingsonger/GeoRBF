@@ -13,6 +13,31 @@ dimension bound. D=0 and arbitrary unverified dimensions are invalid. A project
 may contain several independent fields; this does not create several core
 algorithms.
 
+## Geometry primitives
+
+`Point<D>`, `Vector<D>`, `Direction<D>`, and `UnitDirection<D>` exist only for
+`D` in `{1, 2, 3}`. Every stored component is a finite `f64`; constructors
+reject NaN and either infinity with the zero-based component index. A zero
+`Vector` is valid, while `Direction` and `UnitDirection` reject a vector whose
+components are all positive or negative zero. Their representation is private,
+so safe callers cannot bypass these invariants.
+
+`Direction` preserves the finite, nonzero magnitude supplied by the caller.
+For its components `v_i`, `UnitDirection` computes
+
+```text
+s   = max_i |v_i|
+q_i = v_i / s
+n   = sqrt(sum_i q_i^2)
+u_i = q_i / n.
+```
+
+The direction invariant guarantees `s > 0`. At least one `|q_i|` is one and
+every `|q_i| <= 1`, so forming the norm cannot overflow or collapse to zero in
+the supported dimensions. The stored `u` has Euclidean norm one up to floating
+point roundoff. This requirement assigns no physical units, coordinate axes,
+CRS, or orientation semantics; those are introduced by later requirements.
+
 ## Field representation
 
 For center representers `M_j` at centers `c_j`, weights `w_j`, polynomial basis
