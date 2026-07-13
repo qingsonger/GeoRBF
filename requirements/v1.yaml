@@ -102,17 +102,17 @@ requirements:
     dependencies: [REQ-DIM-001, REQ-KCALC-001]
     milestone: M1-v0.1.0
     priority: P0
-    issue: null
-    pull_request: null
-    tests: [metadata-consistency, invalid-parameters, capability-boundaries]
-    docs: [docs/math/KERNEL_REQUIREMENTS.md, rustdoc]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: "N/A: metadata queries are constant-time"
-    status: planned
+    issue: 13
+    pull_request: 14
+    tests: [metadata-consistency, cpd-order-validation, dimension-boundaries, capability-boundaries, combined-derivative-demand, invalid-parameters, compact-support-consistency, dimension-compile-fail]
+    docs: [docs/math/KERNEL_REQUIREMENTS.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, docs/reviews/PR-14-INDEPENDENT-REVIEW.md, rustdoc, crates/georbf/examples/kernel_metadata.rs]
+    rust_api: implemented
+    cli: "N/A: no concrete kernel can be selected or inspected by a standalone command yet"
+    c_api: "N/A: formula-free Rust metadata is not an ABI surface before the kernel catalog and API freeze"
+    cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust metadata types"
+    python_api: "N/A: no concrete kernel object exists to expose through the future Python binding"
+    benchmark: "N/A: metadata construction is configuration-time over short borrowed parameter lists; derivative, dimension, and support access are constant-time and no runtime numerical path is introduced"
+    status: documented
 
   - id: REQ-KERNEL-002
     title: Polyharmonic and surface-spline kernels

@@ -146,6 +146,18 @@ limits decide the result; Hessian support is never unconditional. A local
 mixture additionally requires the corresponding derivatives of every spatial
 weight, including all product-rule terms.
 
+Kernel metadata records hierarchical maximum orders through third order:
+`away_through` and an optional `center_through`, with the center order no
+greater than the away order. A combined demand greater than third order is
+unsupported. If a demanded order is at most the center maximum it is supported
+everywhere; otherwise, if it is at most the away maximum it is supported only
+away from centers; all remaining demands are unsupported. Later fitted-model
+capabilities must intersect this kernel result with functional, mixture, and
+transform requirements rather than widening it. The away maximum applies at
+every positive separation, including a compact kernel's support boundary and
+zero exterior branch; boundary smoothness is therefore part of the declared
+capability rather than an independent assumption by sparse assembly.
+
 ## Correctness policy
 
 Truth comes from analytic fields, high-precision evaluation, independent finite

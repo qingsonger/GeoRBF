@@ -1,9 +1,10 @@
 //! The `GeoRBF` scalar-field core.
 //!
 //! The initial public API provides validated, dimension-safe geometry and
-//! coordinate transforms and radial kernel derivative calculus for exactly
-//! one, two, or three dimensions. Concrete kernels, functionals, assembly, and
-//! solvers are introduced by separately reviewed requirements.
+//! coordinate transforms, radial kernel derivative calculus, and formula-free
+//! kernel metadata for exactly one, two, or three dimensions. Concrete
+//! kernels, functionals, assembly, and solvers are introduced by separately
+//! reviewed requirements.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -11,6 +12,7 @@
 pub mod coordinates;
 pub mod dimension;
 pub mod geometry;
+pub mod kernel;
 pub mod kernel_calculus;
 pub mod transform;
 pub mod units;
@@ -21,6 +23,13 @@ pub use coordinates::{
 };
 pub use dimension::{Dim, SupportedDimension};
 pub use geometry::{Direction, GeometryError, Point, UnitDirection, Vector};
+pub use kernel::{
+    CpdOrder, CpdOrderError, KernelDefiniteness, KernelDerivativeCapabilities,
+    KernelDerivativeCapabilitiesError, KernelDerivativeCapability, KernelDerivativeOrder,
+    KernelDimensions, KernelDimensionsError, KernelMetadata, KernelMetadataError,
+    KernelParameterConstraint, KernelParameterDefinition, KernelParameterDefinitionError,
+    KernelParameterUnit, KernelParameterValueError, KernelSupport,
+};
 pub use kernel_calculus::{
     KernelArgument, KernelCalculusError, RadialDerivativeOrder, RadialExpansionCoefficient,
     RadialExpansionCoefficients, RadialJet, RadialJetLocation, RadialSeparation, SpatialKernelJet,

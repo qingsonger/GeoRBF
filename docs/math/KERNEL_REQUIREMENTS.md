@@ -9,6 +9,52 @@ radial value/derivative implementation and metadata covering:
 - compact support radius when applicable; and
 - named, unit-documented parameters.
 
+The shared metadata model represents strict positive definiteness separately
+from conditional positive definiteness. A CPD declaration carries a positive
+integer order; order zero is rejected rather than used as an alias for SPD.
+For order `m`, the required side space is the complete polynomial space of
+total degree at most `m-1` in each declared supported dimension; order one
+therefore means constants. This requirement records that contract only.
+Construction of the space, term-count overflow and size diagnostics, and
+enforcement of CPD side conditions belong to later requirements.
+The normative polynomial and null-space definition is in
+[`CPD_AND_POLYNOMIALS.md`](CPD_AND_POLYNOMIALS.md).
+
+Dimension support is a nonempty subset of D=1, D=2, and D=3 and can only be
+queried through the sealed compile-time dimension bound. Derivative support is
+hierarchical and records a maximum away-from-center order plus an optional
+maximum smooth-center order. The center maximum cannot exceed the away maximum.
+For any demanded order, the result is exactly one of:
+
+```text
+SupportedEverywhere
+SupportedAwayFromCenters
+Unsupported.
+```
+
+Matrix demand is observation order plus center-functional order. Query demand
+is requested output order plus center-functional order. A sum above the
+zero-through-third calculus range is unsupported. This classification is
+metadata, not permission to fabricate a center limit or an unconditional
+fitted-model Hessian. Away-from-center capability covers every strictly
+positive separation. For compact support this includes the support boundary,
+not only the interior formula.
+
+Family parameter definitions use unique lower-snake-case names, a nonempty
+description, a physical dimension (`Dimensionless`, `CoordinateLength`, or
+`InverseCoordinateLength`), and an explicit finite, nonnegative, or positive
+scalar constraint. The ambiguous generic name `shape_parameter` is forbidden.
+Configured values are separate from static family metadata and must be finite
+and satisfy their definition before a concrete kernel accepts them. Global
+support has no radius. Compact support references a declared, strictly
+positive coordinate-length radius parameter, so the configured support radius
+is validated by that definition. For radius `rho`, compact support means the
+kernel uses the exact zero extension for `r >= rho`. The interior formula and
+its one-sided derivatives at `rho` must match that extension through the
+declared away derivative order; otherwise the family must declare a lower
+capability or be rejected. Sparse neighbor exclusion may rely on this exact
+boundary contract only after a concrete kernel verifies it.
+
 The v1 catalog includes polyharmonic/surface-spline families, Gaussian, inverse
 multiquadric, a multiquadric only after its sign and CPD classification are
 verified, supported Matérn smoothness levels, and Wendland C2, C4, and C6.
