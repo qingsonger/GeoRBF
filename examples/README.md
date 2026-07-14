@@ -61,3 +61,11 @@ support boundary. Run it with:
 ```text
 cargo run -p georbf --example wendland_kernels
 ```
+
+`REQ-ORIENT-001` adds `crates/georbf/examples/geological_orientation.rs`,
+which converts right-hand-rule strike/dip and azimuth/plunge measurements to
+validated D=3 directions while preserving polarity metadata. Run it with:
+
+```text
+cargo run -p georbf --example geological_orientation
+```

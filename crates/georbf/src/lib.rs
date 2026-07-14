@@ -3,9 +3,10 @@
 //! The initial public API provides validated, dimension-safe geometry and
 //! coordinate transforms, radial kernel derivative calculus, kernel metadata,
 //! polyharmonic/surface-spline kernels, smooth global-support kernels, and
-//! Wendland compact-support kernels for exactly one, two, or three dimensions.
-//! Functionals, assembly, and solvers are introduced by separately reviewed
-//! requirements.
+//! Wendland compact-support kernels for exactly one, two, or three dimensions,
+//! plus validated geological orientation conversions in two and three
+//! dimensions. Functionals, assembly, and solvers are introduced by separately
+//! reviewed requirements.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -15,6 +16,7 @@ pub mod dimension;
 pub mod geometry;
 pub mod kernel;
 pub mod kernel_calculus;
+pub mod orientation;
 pub mod transform;
 pub mod units;
 
@@ -39,6 +41,10 @@ pub use kernel::{
 pub use kernel_calculus::{
     KernelArgument, KernelCalculusError, RadialDerivativeOrder, RadialExpansionCoefficient,
     RadialExpansionCoefficients, RadialJet, RadialJetLocation, RadialSeparation, SpatialKernelJet,
+};
+pub use orientation::{
+    LinearOrientation, OrientationAngleField, OrientationError, OrientationPolarity,
+    PlanarOrientation, SupportedOrientationDimension,
 };
 pub use transform::{AffineNormalization, TransformError, TransformOperation};
 pub use units::{AngleUnit, LengthUnit, UnitError};

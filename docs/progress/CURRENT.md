@@ -4,12 +4,39 @@
   orientation, and kernel calculus
 - Execution mode: Implement / next atomic requirement
 - Current requirement: REQ-ORIENT-001
-- Issue: not yet created
+- Issue: #25
 - Pull request: not yet opened
-- Branch: not yet created
+- Branch: `codex/req-orient-001-geological-orientation`
 
 ## Completed in this run
 
+- Confirmed clean synchronized `main` at `435cbef`, the correct origin and
+  worktree, no tags, no open Issue or PR, and green three-platform `main` CI
+  run 29304072737. Confirmed REQ-DIM-001 and REQ-COORD-001 are integrated,
+  then created Issue #25 and the isolated REQ-ORIENT-001 branch.
+- Added separate fixed-size planar-normal and linear-direction values for D=2
+  and D=3 with positive, negative, or unknown/axial polarity metadata. All
+  paths reuse the stable private-invariant `UnitDirection` representation and
+  add no dependency, allocation, dynamic dispatch, unsafe code, core output,
+  observation, constraint, or anisotropy behavior.
+- Added explicit degree/radian D=2 signed-dip and plunge conversion plus D=3
+  right-hand-rule strike/dip, dip-direction/dip, and azimuth/plunge conversion
+  in a documented X-easting/Y-northing/Z-up frame. Structured errors identify
+  the invalid angle field, unit, interval, or underlying geometry component.
+- Added independent analytic cardinal and oblique truth, degree/radian parity,
+  strike/dip equivalence, polarity and axial behavior, D=2/D=3 rotation
+  covariance, extreme component normalization, complete angle/component error
+  paths, D=1/D=4 compile failures, and `Send + Sync` assertions.
+- Added synchronized math and architecture contracts, OGC GeoSciML and USGS
+  convention citations, rustdoc, a runnable example, and the change record.
+  The benchmark obligation remains explicitly N/A because every conversion is
+  fixed-size constant work per observation.
+- The implementation head passed formatting, warning-denying workspace
+  Clippy, 101 workspace tests, 19 doctests, 87 release integration tests and
+  19 release doctests, warning-denying rustdoc, the orientation example,
+  dependency metadata/tree checks, forbidden-pattern scans, `git diff --check`,
+  and all 58 requirement checks. Independent review, PR CI, and merge remain
+  pending.
 - Squash-merged PR #23 as commit `7fdb56f`; Issue #22 closed automatically,
   and post-merge `main` CI run 29303883398 passed on Windows, Ubuntu, and
   macOS with the complete job set. REQ-KERNEL-004 now satisfies every
@@ -341,18 +368,17 @@
 
 ## Current blockers
 
-None. REQ-KERNEL-004 is integrated. REQ-ORIENT-001 has no unfinished
-dependency and is the smallest remaining P1-ready M1 requirement, ahead of the
-larger global-anisotropy implementation.
+None. REQ-ORIENT-001 implementation and local validation are complete. Its
+Draft PR, independent review, three-platform CI, merge, and integration-state
+record remain required before the registry may say `integrated`.
 
 ## Next atomic task
 
-Create the REQ-ORIENT-001 Issue with explicit analytic conversion, convention,
-polarity, rotation-invariance, invalid-input, and D=2/D=3 acceptance criteria,
-then create its isolated feature branch. Implement only validated geological
-orientation conversions to the existing dimension-safe direction types and
-synchronize applicable docs, interfaces, diagnostics, examples, and tests. Do
-not begin normal/tangent constraints, global anisotropy, fields, assembly, or
+Commit and push the isolated REQ-ORIENT-001 implementation, open its Draft PR,
+link the PR in the registry, and complete an independent mathematical,
+convention, numerical, API, safety, allocation, documentation, and test review.
+Repair every finding and require a green reviewed head before merge. Do not
+begin normal/tangent constraints, global anisotropy, fields, assembly, or
 solver work in the same requirement.
 
 ## Latest full test result
@@ -362,12 +388,12 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 90 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 101 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 17 doctests, including fifteen
+- `cargo test --doc --workspace`: passed; 19 doctests, including seventeen
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 76 integration tests
-  and 17 doctests, 0 failures.
+- `cargo test -p georbf --release --all-features`: passed; 87 integration tests
+  and 19 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
 - `cargo xtask requirements check`: passed; 58 requirements.
@@ -397,6 +423,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - `cargo run -p georbf --example smooth_global_kernels`: passed.
 - `cargo run -p georbf --example wendland_kernels`: passed; the support
   boundary value was exact positive zero.
+- `cargo run -p georbf --example geological_orientation`: passed; right-hand-
+  rule strike/dip and unknown-polarity lineation conversion produced finite
+  unit directions.
 - Scoped forbidden-pattern and hot-path allocation/dynamic-dispatch scans:
   passed for the Wendland implementation. The only `dyn` occurrences are the
   two standard `Error::source` return types outside numerical evaluation.
@@ -489,6 +518,8 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - REQ-KERNEL-004 post-merge `main` GitHub Actions run 29303883398 for merge
   commit `7fdb56f` passed on Windows, Ubuntu, and macOS with the complete job
   set.
+- Latest `main` GitHub Actions run 29304072737 for integration-state commit
+  `435cbef` passed on Windows, Ubuntu, and macOS with the complete job set.
 
 ## Checks not yet available
 
@@ -504,6 +535,9 @@ is explicitly N/A. REQ-DIM-001 fixed-size validation and normalization are
 constant-time and add no dependency, so its benchmark obligation is also N/A.
 REQ-COORD-001 construction and transforms are also constant-bounded for D at
 most three and introduce no batch path, so its benchmark obligation is N/A.
+REQ-ORIENT-001 conversion performs a bounded number of scalar operations over
+fixed D=2/D=3 arrays per observation, adds no batch path or dependency, and is
+not a demonstrated hot path, so its benchmark obligation is N/A.
 REQ-KERNEL-001 stores borrowed descriptions and performs configuration-time
 `O(P^2)` duplicate checks or `O(P)` lookup over short parameter slices, while
 fixed derivative, dimension, and support access is constant-time. It adds no

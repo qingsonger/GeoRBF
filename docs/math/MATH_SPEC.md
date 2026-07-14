@@ -99,6 +99,25 @@ automatic unit conversion, CRS lookup, or reprojection; data with different
 metadata must be converted explicitly before it is combined. Internal angular
 mathematics uses radians.
 
+Geological orientation conversion exists only in D=2 and D=3 and keeps planar
+unit normals distinct from linear unit directions. Each value preserves
+positive, negative, or unknown/axial polarity metadata. Degree or radian input
+is validated before conversion. In the canonical right-handed D=3 local frame,
+X is easting, Y is northing, Z is up, compass azimuth `a` is clockwise from +Y,
+dip `d` is nonnegative from horizontal, and signed plunge `p` is positive
+downward. The positive reference vectors are
+
+```text
+n(a,d) = [sin(d) sin(a), sin(d) cos(a),  cos(d)]
+l(a,p) = [cos(p) sin(a), cos(p) cos(a), -sin(p)].
+```
+
+Right-hand-rule strike maps to `a = strike + pi/2 (mod 2pi)`. The D=2
+vertical-section analogues are `[sin(d), cos(d)]` for a plane normal and
+`[cos(p), -sin(p)]` for a lineation. Orientation construction does not create
+an observation, constraint, or nonzero-gradient claim. Noncanonical axes or
+vertical signs require an explicit input conversion.
+
 Fitting uses normalized coordinates
 
 ```text
