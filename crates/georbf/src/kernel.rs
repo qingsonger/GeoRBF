@@ -26,10 +26,15 @@ use std::fmt;
 use crate::dimension::{Dim, SupportedDimension};
 
 mod polyharmonic;
+mod smooth_global;
 
 pub use polyharmonic::{
     PolyharmonicSpline, PolyharmonicSplineConstructionError, PolyharmonicSplineEvaluationError,
     SurfaceSpline, SurfaceSplineConstructionError,
+};
+pub use smooth_global::{
+    Gaussian, InverseMultiquadric, Matern, MaternSmoothness, Multiquadric,
+    SmoothKernelConstructionError, SmoothKernelEvaluationError, SmoothKernelFamily,
 };
 
 /// Positive conditional-positive-definiteness order.

@@ -24,12 +24,14 @@ pub use coordinates::{
 pub use dimension::{Dim, SupportedDimension};
 pub use geometry::{Direction, GeometryError, Point, UnitDirection, Vector};
 pub use kernel::{
-    CpdOrder, CpdOrderError, KernelDefiniteness, KernelDerivativeCapabilities,
-    KernelDerivativeCapabilitiesError, KernelDerivativeCapability, KernelDerivativeOrder,
-    KernelDimensions, KernelDimensionsError, KernelMetadata, KernelMetadataError,
-    KernelParameterConstraint, KernelParameterDefinition, KernelParameterDefinitionError,
-    KernelParameterUnit, KernelParameterValueError, KernelSupport, PolyharmonicSpline,
-    PolyharmonicSplineConstructionError, PolyharmonicSplineEvaluationError, SurfaceSpline,
+    CpdOrder, CpdOrderError, Gaussian, InverseMultiquadric, KernelDefiniteness,
+    KernelDerivativeCapabilities, KernelDerivativeCapabilitiesError, KernelDerivativeCapability,
+    KernelDerivativeOrder, KernelDimensions, KernelDimensionsError, KernelMetadata,
+    KernelMetadataError, KernelParameterConstraint, KernelParameterDefinition,
+    KernelParameterDefinitionError, KernelParameterUnit, KernelParameterValueError, KernelSupport,
+    Matern, MaternSmoothness, Multiquadric, PolyharmonicSpline,
+    PolyharmonicSplineConstructionError, PolyharmonicSplineEvaluationError,
+    SmoothKernelConstructionError, SmoothKernelEvaluationError, SmoothKernelFamily, SurfaceSpline,
     SurfaceSplineConstructionError,
 };
 pub use kernel_calculus::{

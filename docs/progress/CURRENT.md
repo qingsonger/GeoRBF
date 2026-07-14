@@ -4,12 +4,37 @@
   orientation, and kernel calculus
 - Execution mode: Implement / next atomic requirement
 - Current requirement: REQ-KERNEL-003
-- Issue: not yet created
+- Issue: #19
 - Pull request: not yet opened
-- Branch: not yet created
+- Branch: `codex/req-kernel-003-smooth-global-kernels`
 
 ## Completed in this run
 
+- Created Issue #19 with explicit Gaussian, inverse-multiquadric, signed
+  multiquadric, and Matérn `1/2`, `3/2`, and `5/2` acceptance criteria after
+  confirming clean synchronized `main`, no open Repair or Review work, and an
+  integrated REQ-KERNEL-001 dependency.
+- Added one-length-scale, global-support Gaussian, inverse multiquadric,
+  CPD-order-one signed multiquadric, and three explicit Matérn members for
+  D=1/D=2/D=3, with exact SPD/CPD metadata and center capabilities.
+- Added analytic positive-radius derivatives and direct stable expansion
+  coefficients through third order. Exponential log-domain and rational
+  `hypot`/scaled-product fallbacks preserve representable extreme tails rather
+  than accepting intermediate zero or infinity as the final result.
+- Added 90-digit truth, independent finite differences, deterministic random
+  SPD and projected-CPD checks, exact center limits, exponential and rational
+  extreme cases, exchange signs, tensor symmetry, pathologies, D=0/D=4
+  compile failures, and `Send + Sync` assertions.
+- Added synchronized math and architecture contracts, source citations,
+  rustdoc, a runnable D=3 example, change record, and deterministic
+  allocation-free six-member benchmark with CI smoke coverage.
+- Four full 1,000,000-iteration benchmark runs retained bit-identical
+  checksums. D=1/D=2/D=3 median catalog-workload times were 489.39, 790.00,
+  and 913.75 ns/iteration; environment and observed ranges are recorded in
+  `benches/REQ-KERNEL-003.md`.
+- Squash-merged integration-state PR #18 as commit `4ffdb0d`; final `main` CI
+  run 29298112320 passed on Windows, Ubuntu, and macOS, and REQ-KERNEL-002 is
+  recorded as integrated.
 - Squash-merged PR #17 as commit `68ad3e9`; Issue #16 closed automatically,
   and post-merge `main` CI run 29297902909 passed on Windows, Ubuntu, and
   macOS. REQ-KERNEL-002 now satisfies every integration gate.
@@ -230,18 +255,19 @@
 
 ## Current blockers
 
-None. REQ-KERNEL-002 is integrated. REQ-KERNEL-003 has no unfinished
-dependency and is the next remaining M1 requirement in registry order.
+Publishing, independent mathematical/numerical review, three-platform PR CI,
+maintainer merge, and post-merge `main` CI remain. The implementation, local
+checks, documentation, example, interface applicability, and benchmark
+evidence are complete.
 
 ## Next atomic task
 
-Create the REQ-KERNEL-003 Issue with explicit Gaussian, inverse-multiquadric,
-validated multiquadric, and supported Matérn acceptance criteria, then create
-an isolated feature branch. Implement only smooth global-support kernels,
-their physical parameters, classifications, center capabilities, independent
-truth tests, documentation, applicable interfaces, diagnostics, and benchmark
-evidence. Do not begin compact-support kernels, orientation, anisotropy,
-polynomial, functional, assembly, or solver work in the same run.
+Commit and push the isolated REQ-KERNEL-003 implementation, open its Draft PR,
+link the PR in the registry, and require an independent review of formulas,
+signs, SPD/CPD classification, center limits, extreme range handling,
+allocations, interfaces, and tests before marking it ready. Do not begin
+compact-support kernels, orientation, anisotropy, polynomial, functional,
+assembly, or solver work in the same run.
 
 ## Latest full test result
 
@@ -250,12 +276,12 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 68 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 78 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 13 doctests, including eleven
+- `cargo test --doc --workspace`: passed; 15 doctests, including thirteen
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 54 integration tests
-  and 13 doctests, 0 failures.
+- `cargo test -p georbf --release --all-features`: passed; 64 integration tests
+  and 15 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
 - `cargo xtask requirements check`: passed; 58 requirements.
@@ -271,10 +297,17 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   1,000,000-iteration runs had medians of 135.28, 215.09, and 245.43
   ns/iteration respectively with bit-identical checksums; see
   `benches/REQ-KERNEL-002.md` for the environment and observed ranges.
+- `cargo bench -p georbf --bench smooth_global_kernels -- --smoke`: passed for
+  deterministic six-family D=1/D=2/D=3 workloads. Four full 1,000,000-iteration
+  runs had medians of 489.39, 790.00, and 913.75 ns/iteration respectively
+  with bit-identical checksums; see `benches/REQ-KERNEL-003.md`.
 - `cargo run -p georbf --example radial_kernel_calculus`: passed.
 - `cargo run -p georbf --example kernel_metadata`: passed.
 - `cargo run -p georbf --example polyharmonic_spline`: passed.
-- Scoped forbidden-pattern and core allocation/dynamic-dispatch scans: passed.
+- `cargo run -p georbf --example smooth_global_kernels`: passed.
+- Scoped forbidden-pattern and hot-path allocation/dynamic-dispatch scans:
+  passed. The only `dyn` occurrences in the module are the two standard
+  `Error::source` return types outside numerical evaluation.
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
@@ -333,6 +366,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - REQ-KERNEL-002 post-merge `main` GitHub Actions run 29297902909 for merge
   commit `68ad3e9` passed on Windows, Ubuntu, and macOS with the complete job
   set.
+- REQ-KERNEL-002 final integration-state `main` GitHub Actions run 29298112320
+  for commit `4ffdb0d` passed on Windows, Ubuntu, and macOS with the complete
+  job set.
 
 ## Checks not yet available
 

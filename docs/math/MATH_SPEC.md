@@ -167,6 +167,17 @@ entries have global support and no scalar shape parameter. Their center
 capability is limited to `min(p-1,3)` and the complete radial jet path rejects
 requests that would imply a nonexistent higher center derivative.
 
+The smooth global catalog uses one positive physical `length_scale`. Gaussian
+`exp(-(r/ell)^2/2)`, inverse multiquadric, and Matérn `1/2`, `3/2`, and `5/2`
+are strictly positive definite in D=1/D=2/D=3. Multiquadric uses the negative
+square-root sign required for positive projected energy and declares CPD order
+one. All supply positive-radius derivatives and direct expansion coefficients
+through third order. Gaussian, both multiquadrics, and Matérn `5/2` have full
+third-order center jets; Matérn `3/2` stops at second order and Matérn `1/2`
+at value. Extreme exponential and rational products are range-classified as a
+whole so an intermediate zero or infinity does not erase a representable
+final tail.
+
 ## Correctness policy
 
 Truth comes from analytic fields, high-precision evaluation, independent finite

@@ -56,6 +56,15 @@ query/center signs to kernel calculus. Concrete kernels remain independent of
 geology, observations, polynomial construction, CPD rank enforcement,
 assembly, solvers, and adapters.
 
+The smooth-global submodule owns Gaussian, inverse multiquadric,
+CPD-positive signed multiquadric, and the explicit Matérn half-integer catalog.
+It validates one physical length scale, pairs each formula with exact SPD/CPD
+and center-capability metadata, preserves representable exponential and
+rational tails, and supplies direct D=2/D=3 expansion coefficients. Like the
+polyharmonic submodule it delegates Cartesian tensors and argument signs to
+kernel calculus and has no geology, polynomial construction, anisotropy,
+assembly, fitting, solver, schema, or adapter dependency.
+
 ## Runtime behavior
 
 Long operations accept cancellation, progress, explicit thread count, and
