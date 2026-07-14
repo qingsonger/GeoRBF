@@ -19,7 +19,9 @@ cargo run --manifest-path spikes/rank-backends/Cargo.toml --release
 `--smoke` runs the shorter CI workload. The `faer-backend` and
 `nalgebra-backend` features can be selected individually with
 `--no-default-features --features <feature>` for dependency and binary-size
-inspection.
+inspection. Selecting neither backend is rejected at compile time; CI verifies
+that negative configuration as well as both single-backend and all-feature
+positive configurations.
 
 Every case validates a nonempty finite matrix, applies eight alternating
 infinity-norm row and column equilibration passes, and records separate RRQR
@@ -28,6 +30,9 @@ and SVD thresholds. Each threshold is
 leading value is the largest absolute R diagonal for RRQR or the largest
 singular value for SVD. RRQR is only a rank-risk screen. The SVD result is the
 review classification, and any disagreement remains visible in the report.
+The threshold-boundary regression uses representable, already-equilibrated
+matrices on both sides of that threshold and derives their expected ranks from
+the matrices' analytic singular values independently of either candidate.
 
 The harness never calls either candidate's pseudoinverse or solve API. Its
 purpose is dependency evaluation and regression evidence, not a production

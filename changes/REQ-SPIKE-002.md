@@ -13,6 +13,10 @@ exact deficiency, near-threshold behavior, nonzero diagonal scaling,
 repeatability, and invalid inputs. A deterministic scaling workload records
 32, 64, and 128 matrix baselines, while CI now runs the shorter spike lint,
 test, and benchmark workload on the same platform matrix as the workspace.
+The threshold case uses representable post-equilibration inputs bracketing the
+analytic SVD threshold, and the harness rejects an empty backend selection;
+CI covers both single-backend paths, the combined path, and the negative
+zero-backend configuration.
 
 The production workspace receives no numerical dependency, solver, public
 matrix type, user API, pseudoinverse, hidden regularization, or fallback. Rust,

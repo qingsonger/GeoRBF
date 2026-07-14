@@ -1,6 +1,9 @@
 use std::hint::black_box;
 use std::time::{Duration, Instant};
 
+#[cfg(not(any(feature = "faer-backend", feature = "nalgebra-backend")))]
+compile_error!("enable at least one rank backend feature: faer-backend or nalgebra-backend");
+
 #[cfg(feature = "nalgebra-backend")]
 use nalgebra::{DMatrix, linalg::SVD};
 
@@ -273,6 +276,31 @@ mod rank_spike_cases {
         )
     }
 
+    fn equilibrated_near_dependent(ulps_above_half: u64) -> Result<MatrixCase, String> {
+        let half = 0.5_f64;
+        let coefficient = f64::from_bits(half.to_bits() + ulps_above_half);
+        MatrixCase::new(
+            3,
+            3,
+            vec![1.0, 0.0, 1.0, 0.0, 1.0, 1.0, coefficient, coefficient, 1.0],
+        )
+    }
+
+    fn analytic_svd_truth(coefficient: f64) -> (usize, f64, f64) {
+        // In orthonormal bases split into (1,-1,0)/sqrt(2) and its complement,
+        // this matrix has one singular value of 1 and a 2x2 block with
+        // Frobenius norm squared 4 + 2*a^2 and determinant 1 - 2*a.
+        let determinant = (1.0 - 2.0 * coefficient).abs();
+        let frobenius_squared = 4.0 + 2.0 * coefficient * coefficient;
+        let discriminant =
+            (frobenius_squared * frobenius_squared - 4.0 * determinant * determinant).sqrt();
+        let largest = frobenius_squared.midpoint(discriminant).sqrt();
+        let smallest = determinant / largest;
+        let threshold = 3.0 * f64::EPSILON * largest;
+        let rank = 2 + usize::from(smallest > threshold);
+        (rank, smallest, threshold)
+    }
+
     #[test]
     fn full_rank_truth_case_agrees() -> Result<(), String> {
         let case = MatrixCase::new(
@@ -301,8 +329,27 @@ mod rank_spike_cases {
 
     #[test]
     fn near_threshold_cases_receive_svd_review() -> Result<(), String> {
-        let resolved = near_dependent(1.0e-12)?;
-        let unresolved = near_dependent(f64::EPSILON / 4.0)?;
+        let exact = equilibrated_near_dependent(0)?;
+        let unresolved = equilibrated_near_dependent(12)?;
+        let resolved = equilibrated_near_dependent(15)?;
+        assert_ne!(unresolved.values, exact.values);
+        assert_ne!(resolved.values, exact.values);
+        assert_ne!(resolved.values, unresolved.values);
+        assert_eq!(exact.equilibrated().values, exact.values);
+        assert_eq!(unresolved.equilibrated().values, unresolved.values);
+        assert_eq!(resolved.equilibrated().values, resolved.values);
+
+        let unresolved_coefficient = unresolved.values[6];
+        let resolved_coefficient = resolved.values[6];
+        let (unresolved_rank, unresolved_smallest, unresolved_threshold) =
+            analytic_svd_truth(unresolved_coefficient);
+        let (resolved_rank, resolved_smallest, resolved_threshold) =
+            analytic_svd_truth(resolved_coefficient);
+        assert_eq!(unresolved_rank, 2, "analytic unresolved rank");
+        assert_eq!(resolved_rank, 3, "analytic resolved rank");
+        assert!((unresolved_smallest / unresolved_threshold - 1.0).abs() < 0.15);
+        assert!((resolved_smallest / resolved_threshold - 1.0).abs() < 0.15);
+
         for &backend in Backend::ALL {
             let resolved_report = analyze(&resolved, backend)?;
             let unresolved_report = analyze(&unresolved, backend)?;
@@ -316,6 +363,26 @@ mod rank_spike_cases {
                 unresolved_report.svd_rank,
                 2,
                 "{} unresolved SVD",
+                backend.label()
+            );
+            let resolved_observed = resolved_report
+                .singular_values
+                .iter()
+                .copied()
+                .fold(f64::INFINITY, f64::min);
+            let unresolved_observed = unresolved_report
+                .singular_values
+                .iter()
+                .copied()
+                .fold(f64::INFINITY, f64::min);
+            assert!(
+                (resolved_observed / resolved_report.svd_threshold - 1.0).abs() < 0.2,
+                "{} resolved threshold adjacency",
+                backend.label()
+            );
+            assert!(
+                (unresolved_observed / unresolved_report.svd_threshold - 1.0).abs() < 0.2,
+                "{} unresolved threshold adjacency",
                 backend.label()
             );
         }
