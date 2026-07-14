@@ -5,11 +5,15 @@
 - Execution mode: Implement / active atomic requirement
 - Current requirement: REQ-ANISO-001
 - Issue: #28
-- Pull request: not yet opened
+- Pull request: #29 (Draft)
 - Branch: `codex/req-aniso-001-global-anisotropy`
 
 ## Completed in this run
 
+- Committed the isolated implementation as `2e5013e`, pushed
+  `codex/req-aniso-001-global-anisotropy`, and opened Draft PR #29. The
+  registry links the PR and records the truthful pre-review `documented`
+  state; independent mathematical and numerical review remains required.
 - Confirmed clean synchronized `main` at `409f274`, the correct origin and
   worktree, no tags, no open Issue, PR, review, or failed CI, and green
   three-platform `main` run 29305762416. Selected Implement mode because no

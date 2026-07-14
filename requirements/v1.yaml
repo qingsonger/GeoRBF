@@ -175,7 +175,7 @@ requirements:
     milestone: M1-v0.1.0
     priority: P1
     issue: 28
-    pull_request: null
+    pull_request: 29
     tests: [analytic-distance-truth, rotation-covariance, coordinate-length-scaling, spd-validation, exact-symmetry, singular-value-truth, condition-policy, chain-rule-through-third, center-limits, query-center-signs, tensor-symmetry, numerical-extremes, structured-errors, anisotropy-dimension-compile-fail]
     docs: [docs/architecture/ANISOTROPY.md, docs/architecture/ARCHITECTURE.md, docs/math/MATH_SPEC.md, rustdoc, crates/georbf/examples/global_anisotropy.rs, benches/REQ-ANISO-001.md]
     rust_api: implemented
@@ -184,7 +184,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust anisotropy types"
     python_api: "N/A: the future Python binding delegates anisotropy validation to the reviewed Rust core after API freeze"
     benchmark: implemented
-    status: in_progress
+    status: documented
 
   - id: REQ-POLY-001
     title: Dimension-generic polynomial spaces
