@@ -6,52 +6,48 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair (P1-1 repaired; fresh Review is next)
+- Mode: Review / PR #38 ready-head integration sequence
 - Requirement: REQ-FUNC-001, Issue #37
 - Branch: `codex/req-func-001-atomic-functionals`
-- Draft pull request: #38
-- Registry state in this change: `in_progress`
+- Pull request: #38 (Draft until the final review-evidence head is pushed)
+- Original reviewed head: `6dcbb9fa8d874cd5de4217e6f5f1deeac9927e0b`
+- Repair and clean fresh re-review head: `264c46a31908a85eb76289ae43e1bad8b5c2ea00`
+- Registry state in this change: `documented`
 - Dependencies: REQ-DIM-001, REQ-KCALC-001, and REQ-POLY-001 are `integrated`
 
-## Independent review result
+## Fresh re-review result
 
-- A fresh read-only `math_reviewer` reviewed exact head `6dcbb9f` without the
-  implementation reasoning and found one P1 defect and no P0, P2, or P3 issue.
-- P1-1 found that `ObservationFunctional::try_apply_kernel` required a complete
-  third-order `SpatialKernelJet` even though atom pairs demand only order zero,
-  one, or two.
-- Durable review evidence and the required regressions are recorded in
-  `docs/reviews/PR-38-INDEPENDENT-REVIEW.md`.
-- The Repair task now passes the exact demand to the evaluator and consumes a
-  `SpatialKernelJetPrefix` that exposes only its supported order. Coincident
-  Matérn 1/2 value/value and Matérn 3/2 derivative/derivative regressions pass
-  without fabricating higher derivatives. An insufficient prefix is a
-  structured error retaining both term provenances.
-- This repair has not been independently re-reviewed. PR #38 remains Draft and
-  REQ-FUNC-001 remains `in_progress`.
+- A fresh read-only `math_reviewer` inspected the complete diff at exact repair
+  head `264c46a` without inheriting the Repair reasoning and found no P0, P1,
+  P2, or P3 issue.
+- P1-1 is closed. The evaluator receives the exact zero-, first-, or
+  second-order atom-pair demand and consumes a demand-bounded
+  `SpatialKernelJetPrefix` without fabricating higher center derivatives.
+- The reviewer independently confirmed the coincident Matérn 1/2 value action
+  is one and the Matérn 3/2 same-direction mixed action is `3/4` for length
+  scale two, with the shared query/center signs applied exactly once.
+- The implementation, mathematics, safety, interfaces, performance, benchmark
+  wiring, and requirement evidence are clean for ready-head CI.
 
 ## Validation state
 
-- Focused functional tests pass 10/10; focused Clippy, the runnable example,
-  benchmark smoke in D=1/D=2/D=3, and `git diff --check` pass.
-- After the final production and test change, the complete stable-code standard
-  gate passed: formatting, workspace Clippy with all targets/features,
-  workspace tests with all features, workspace rustdoc, and all 58 requirement
-  checks. Subsequent changes are review evidence and this bounded handoff only.
-- Draft Ubuntu CI is green on pre-repair head `acaf0dc`; the pushed repair head
-  still requires Draft CI and a fresh independent re-review.
+- The independent reviewer passed formatting, focused warning-denying Clippy,
+  all 10 functional tests, the compile-fail doctest, runnable example,
+  benchmark smoke, all 58 requirement checks, `git diff --check`, and scoped
+  safety/allocation checks.
+- The complete final review-evidence standard gate passes: formatting,
+  workspace Clippy with all targets/features, workspace tests with all
+  features, workspace rustdoc, and all 58 requirement checks.
+- Draft Ubuntu CI run 29339066111 is green on exact repair head `264c46a`.
 
 ## Next task
 
-Open a fresh Review/re-review task for only Draft PR #38 and REQ-FUNC-001. Give
-the read-only `math_reviewer` the bounded requirement/dependency summaries,
-normative documents, complete PR diff, original P1-1 evidence, regressions, and
-validation evidence without this Repair task's reasoning transcript. Verify
-that P1-1 is closed and check for new P0-P3 findings. If any finding remains,
-record it and stop without repair. If clean, follow the mandatory integration
-sequence: mark the PR ready, wait for complete Windows/Ubuntu/macOS and all
-benchmark-smoke CI on that exact ready head, merge only when green, then record
-truthful integration state. Do not start another requirement.
+Finish only PR #38's ready-head integration sequence. Run the complete local
+standard gate on the final review-evidence head, synchronize the PR evidence,
+mark the PR ready, and wait for the Windows, Ubuntu, macOS, and all benchmark
+smoke CI on that exact head. Merge exactly once only when that CI is green,
+then record truthful integration state in an isolated change. Do not begin
+another requirement.
 
 ## Durable evidence
 

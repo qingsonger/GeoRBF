@@ -220,7 +220,7 @@ requirements:
     cpp_api: "N/A: bindings wait for the Rust API and schemas to stabilize"
     python_api: "N/A: bindings wait for the Rust API and schemas to stabilize"
     benchmark: implemented
-    status: in_progress
+    status: documented
 
   - id: REQ-SPIKE-002
     title: Rank-revealing QR and SVD backend spike

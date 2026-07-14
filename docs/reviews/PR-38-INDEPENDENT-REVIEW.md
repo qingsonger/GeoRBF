@@ -4,7 +4,8 @@
 - Issue: https://github.com/qingsonger/GeoRBF/issues/37
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/38
 - Branch: `codex/req-func-001-atomic-functionals`
-- Reviewed head: `6dcbb9fa8d874cd5de4217e6f5f1deeac9927e0b`
+- Original reviewed head: `6dcbb9fa8d874cd5de4217e6f5f1deeac9927e0b`
+- Repair and fresh re-reviewed head: `264c46a31908a85eb76289ae43e1bad8b5c2ea00`
 - Base head: `d5848d143134f009712be4a4286b6e371eae6f2a`
 - Review date: 2026-07-14
 - Mode: Independent mathematical and numerical review
@@ -17,11 +18,12 @@ diff, tests, benchmark evidence, and PR validation state. It established the
 functional and kernel-capability contract independently from the implementation
 task's reasoning.
 
-The review found one P1 defect and no P0, P2, or P3 finding. PR #38 must remain
-Draft and REQ-FUNC-001 must remain `in_progress` until a fresh Repair task adds
-the required independent regression, implements the smallest complete repair,
-runs the final stable-head checks, and pushes. A fresh re-review is required
-after that repair.
+The original review found one P1 defect and no P0, P2, or P3 finding. A fresh
+read-only `math_reviewer` subsequently reviewed the complete repaired diff at
+exact head `264c46a` without inheriting the Repair reasoning, independently
+verified P1-1 closed, and found no P0, P1, P2, or P3 issue. The reviewed head is
+eligible for the ready-head CI and integration sequence; it is not integrated
+until that complete CI is green and the PR is merged.
 
 ## Finding
 
@@ -103,7 +105,36 @@ and test change, the complete standard workspace gate passed: formatting,
 workspace Clippy with all targets/features, workspace tests with all features,
 workspace rustdoc, and all 58 requirement-registry checks.
 
-The original finding is not independently closed by this repair record. PR #38
-remains Draft and REQ-FUNC-001 remains `in_progress`. A fresh read-only
-re-review must verify the repair and check for new P0-P3 findings before the PR
-can be marked ready.
+## Fresh re-review result
+
+The independent reviewer confirmed that the evaluator receives the exact
+zero-, first-, or second-order demand before prefix construction. Value-only
+and value-through-Hessian center prefixes expose only their promised analytic
+limits, complete jets convert through every order a v1 atom pair can demand,
+and an insufficient prefix retains both term indices and provenances.
+
+Independent contraction of the four atom pairs confirms `k`,
+`u^T grad_x k`, `v^T grad_y k = -v^T grad_x k`, and
+`u^T H_xy v = -u^T H_xx v`. For coincident Matérn 3/2 with length scale two,
+`beta^2 = 3/4`, so the same-direction mixed action is exactly the tested
+`3/4`. The Matérn 1/2 value action is exactly one and requests no derivative.
+No third derivative is fabricated in either case.
+
+The fresh reviewer also checked finite arithmetic and error atomicity,
+allocation behavior, D=1/D=2/D=3 gating, type separation, safety, interface
+dispositions, documentation, benchmark wiring, and the absence of hidden
+regularization or out-of-scope semantics. No P0-P3 finding remains.
+
+The reviewer passed formatting; focused warning-denying Clippy; all 10
+functional tests; the functional compile-fail doctest; the runnable example;
+atomic-functional benchmark smoke; all 58 requirement checks;
+`git diff --check`; the duplicate-dependency check; and scoped forbidden-code
+and allocation scans. Draft Ubuntu CI run 29339066111 is green on the exact
+re-reviewed head `264c46a`.
+
+After synchronizing this review evidence and moving the registry only from
+`in_progress` to `documented`, the complete local standard gate passed:
+formatting, warning-denying workspace Clippy with all targets and features,
+workspace tests with all features, workspace rustdoc, and all 58 requirement
+checks. These evidence changes alter no production code, tests, manifest,
+schema, API, build input, or numerical behavior.
