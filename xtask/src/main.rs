@@ -816,12 +816,15 @@ fn scan_rust_sources(path: &Path, failures: &mut Vec<String>) -> Result<(), Stri
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::{
+        collections::{BTreeMap, BTreeSet},
+        fs,
+    };
 
     use super::{
         Requirement, dependency_closure_ids, dependency_cycle_members, format_requirement_summary,
         list_items, manifest_disables_publication, next_eligible_requirement, parse_requirements,
-        scalar, validate_registry_header, validate_requirements,
+        scalar, validate_registry_header, validate_requirements, workspace_root,
     };
 
     fn valid_requirement() -> Requirement {
@@ -1052,5 +1055,31 @@ mod tests {
             dependency_closure_ids("REQ-TOP-001", &requirements),
             Ok(vec!["REQ-BASE-001".to_owned(), "REQ-MIDDLE-001".to_owned()])
         );
+    }
+
+    #[test]
+    fn workflow_docs_require_green_ready_head_ci_before_one_merge() {
+        let root = workspace_root();
+        assert!(
+            root.is_ok(),
+            "workspace root should resolve during tests: {root:?}"
+        );
+        let root = root.unwrap_or_default();
+        let required_sequence = "mark the PR ready -> wait for the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact ready head -> merge exactly once only when that CI is green -> record truthful integration state";
+
+        for relative_path in ["AGENTS.md", "docs/CODEX_WORKFLOW.md"] {
+            let source = fs::read_to_string(root.join(relative_path));
+            assert!(source.is_ok(), "failed to read {relative_path}: {source:?}");
+            let source = source.unwrap_or_default();
+            let normalized = source.split_whitespace().collect::<Vec<_>>().join(" ");
+            assert!(
+                normalized.contains(required_sequence),
+                "{relative_path} must state the canonical ready-head CI sequence"
+            );
+            assert!(
+                !normalized.contains("mark the PR ready, merge it"),
+                "{relative_path} must not permit a merge before ready-head CI"
+            );
+        }
     }
 }

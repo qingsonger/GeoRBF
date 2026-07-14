@@ -56,7 +56,20 @@ ready-head CI -> merge order and contain no pre-CI merge instruction.
 
 ## Disposition
 
-Keep PR #32 in Draft. A fresh Repair task must address only P1-1, run the
-focused documentation consistency check, run the required final standard gate
-on the stable repaired head, update this review evidence and the bounded
-handoff, push, and stop for fresh re-review. Do not begin REQ-POLY-001.
+P1-1 was repaired in a fresh Repair task without product or mathematics
+changes. `AGENTS.md` and `docs/CODEX_WORKFLOW.md` now share the canonical
+ready -> complete exact-ready-head CI -> one green-gated merge -> integration
+state sequence, and the contradictory pre-CI merge instruction was removed.
+
+The new
+`workflow_docs_require_green_ready_head_ci_before_one_merge` regression reads
+both documents, requires the same canonical sequence in each, and rejects the
+original premature-merge wording. Its focused run passed, as did focused
+warning-denying `xtask` Clippy. The final standard gate then passed on the
+stable repaired code/test worktree: formatting, warning-denying workspace
+Clippy, 119 workspace tests, 21 doctests, and all 58 requirement checks. Only
+this review record and the bounded handoff changed after that gate.
+
+Keep PR #32 in Draft. A fresh independent re-review must verify P1-1 is closed
+and check for regressions before the PR can be marked ready. Do not begin
+REQ-POLY-001.

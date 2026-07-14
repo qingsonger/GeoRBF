@@ -79,6 +79,10 @@ Open another new task:
 ## Prompt for re-review and integration
 
 Open a fresh task after repairs, or immediately after a no-finding first review:
+The mandatory integration sequence is: mark the PR ready -> wait for the
+complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact ready head ->
+merge exactly once only when that CI is green -> record truthful integration
+state.
 
 ```text
 这是一个新的 GeoRBF Review/re-review 任务。只处理 PR #<PR号>。

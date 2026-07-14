@@ -53,10 +53,11 @@ Never commit directly to `main`. Normal feature branches use
 - Repair mode addresses only selected review or CI findings, adds regressions,
   reruns focused checks and the final standard checks after the last code
   change, pushes, and stops for fresh re-review.
-- After a clean re-review, a fresh Review task may mark the PR ready, merge it,
-  wait for the complete ready-head CI, merge only when it is green, record
-  truthful integration state, and stop. The next requirement always starts in
-  a new task.
+- After a clean re-review, a fresh Review task must follow this sequence:
+  mark the PR ready -> wait for the complete Windows/Ubuntu/macOS and
+  benchmark-smoke CI on that exact ready head -> merge exactly once only when
+  that CI is green -> record truthful integration state. Then stop; the next
+  requirement always starts in a new task.
 - If a task needs a second context compaction or its active scope is no longer
   explainable from `CURRENT.md` and the PR diff, stop at a safe committed
   boundary, refresh the bounded handoff, and resume in a new task.

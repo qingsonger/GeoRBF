@@ -6,15 +6,15 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / PR #32 review finding P1-1
+- Mode: Review / PR #32 re-review of finding P1-1
 - Issue: #31, `[WORKFLOW] Reduce Codex context and verification overhead`
 - Branch: `codex/issue-31-context-efficiency`
 - Pull request: #32 (Draft),
   `https://github.com/qingsonger/GeoRBF/pull/32`
 - Review record: `docs/reviews/PR-32-INDEPENDENT-REVIEW.md`
-- Selected repair: make `AGENTS.md` require ready -> complete green
-  ready-head CI -> merge exactly once, consistent with
-  `docs/CODEX_WORKFLOW.md`
+- Selected re-review: independently confirm P1-1 is closed and no regression
+  was introduced by the canonical ready -> complete exact-ready-head CI ->
+  one green-gated merge -> integration-state sequence and its focused test
 - Product and mathematics impact: none
 
 ## Product delivery state
@@ -30,11 +30,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task
 
-Open a fresh Repair task for only PR #32 finding P1-1. Remove the contradictory
-pre-CI merge instruction, add focused consistency evidence for the ready ->
-complete ready-head CI -> merge sequence, run the final standard checks on the
-stable repaired head, update the review record and this handoff, push, and stop
-for fresh re-review. Do not begin REQ-POLY-001.
+Open a fresh Review/re-review task for only PR #32. Explicitly create the
+project `math_reviewer` sub-agent with bounded review context, independently
+verify P1-1 is closed, inspect the pushed repair-head CI, and check for new
+findings. If clean, follow the documented ready-head full-CI and integration
+sequence. Do not repair findings in that task and do not begin REQ-POLY-001.
 
 ## Context for the next task
 
@@ -58,11 +58,14 @@ for fresh re-review. Do not begin REQ-POLY-001.
   config parsing succeeded
 - Independent Review of PR #32 found one merge-blocking P1 in the mandatory
   integration sequence; no P0, P2, or P3 finding was identified
-- Review-focused `cargo test -p xtask` passed 13 tests, warning-denying focused
-  Clippy passed, compact commands and failures behaved correctly, and Codex
-  0.142.5 strictly parsed the project configuration
-- Draft CI run 29312598987 passed the Ubuntu correctness gate for reviewed head
-  `3363d79`; the 3-OS benchmark matrix was correctly skipped while Draft
+- Repair-focused documentation consistency regression passed and focused
+  warning-denying `xtask` Clippy passed
+- Final repair gate passed on the stable code/test worktree: formatting,
+  warning-denying workspace Clippy, 119 workspace tests, 21 doctests, and all
+  58 requirement checks; only review evidence and this handoff changed after
+  the gate
+- Draft CI run 29313656457 passed the Ubuntu correctness gate for pre-repair
+  head `f507685`; the pushed repair-head CI must be inspected in re-review
 - Local `actionlint` is unavailable
 
 ## Checks not yet available
