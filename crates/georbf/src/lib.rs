@@ -2,9 +2,10 @@
 //!
 //! The initial public API provides validated, dimension-safe geometry and
 //! coordinate transforms, radial kernel derivative calculus, kernel metadata,
-//! and polyharmonic/surface-spline kernels for exactly one, two, or three
-//! dimensions. Other kernel families, functionals, assembly, and solvers are
-//! introduced by separately reviewed requirements.
+//! polyharmonic/surface-spline kernels, and smooth global-support kernels for
+//! exactly one, two, or three dimensions. Compact-support kernels,
+//! functionals, assembly, and solvers are introduced by separately reviewed
+//! requirements.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]

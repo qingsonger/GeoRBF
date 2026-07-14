@@ -295,7 +295,7 @@ fn center_capabilities_and_limits_are_exact() -> TestResult {
 }
 
 #[test]
-fn deterministic_gram_energies_match_spd_and_cpd_classifications() -> TestResult {
+fn deterministic_gram_matrices_match_spd_and_cpd_classifications() -> TestResult {
     let gaussian = Gaussian::try_new(1.1)?;
     let inverse = InverseMultiquadric::try_new(1.1)?;
     for seed in 1..=5 {
@@ -397,6 +397,12 @@ fn extreme_paths_preserve_representable_exponential_and_rational_tails() -> Test
     let rational_tail = InverseMultiquadric::try_new(0.5)?.radial_value(f64::MAX)?;
     assert!(rational_tail > 0.0 && rational_tail < f64::MIN_POSITIVE);
 
+    let multiquadric = Multiquadric::try_new(0.5)?;
+    let multiquadric_first = multiquadric
+        .radial_derivative(f64::MAX, KernelDerivativeOrder::First)?
+        .ok_or("multiquadric away derivative missing")?;
+    assert_same_bits(multiquadric_first, -2.0);
+
     let tiny_radius = 1.0e-200;
     let separation = RadialSeparation::try_new(
         Point::try_new([tiny_radius, 0.0])?,
@@ -420,6 +426,8 @@ fn shared_cartesian_calculus_preserves_exchange_signs_and_tensor_symmetry() -> T
         Gaussian::try_new(1.4)?.radial_jet(separation)?,
         InverseMultiquadric::try_new(1.4)?.radial_jet(separation)?,
         Multiquadric::try_new(1.4)?.radial_jet(separation)?,
+        Matern::try_new(MaternSmoothness::OneHalf, 1.4)?.radial_jet(separation)?,
+        Matern::try_new(MaternSmoothness::ThreeHalves, 1.4)?.radial_jet(separation)?,
         Matern::try_new(MaternSmoothness::FiveHalves, 1.4)?.radial_jet(separation)?,
     ] {
         let spatial = SpatialKernelJet::try_new(separation, jet)?;
@@ -633,6 +641,31 @@ where
     F: Fn(f64) -> Result<f64, SmoothKernelEvaluationError>,
 {
     let points = deterministic_points::<D>(6, seed);
+    let mut gram = vec![vec![0.0; points.len()]; points.len()];
+    for row in 0..points.len() {
+        for column in 0..points.len() {
+            gram[row][column] = radial_value(distance(points[row], points[column]))?;
+        }
+    }
+
+    let tested_matrix = if project_constants {
+        // The columns `z_i = e_i - e_last` span the complete constant-zero
+        // subspace, so these entries are the independently assembled `Z^T K Z`.
+        let last = points.len() - 1;
+        (0..last)
+            .map(|row| {
+                (0..last)
+                    .map(|column| {
+                        gram[row][column] - gram[row][last] - gram[last][column] + gram[last][last]
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>()
+    } else {
+        gram.clone()
+    };
+    assert_strictly_positive_definite(&tested_matrix, D, project_constants, seed);
+
     let mut weights = deterministic_weights(seed);
     if project_constants {
         weights[5] = -weights[..5].iter().sum::<f64>();
@@ -642,9 +675,7 @@ where
     let mut scale = 0.0;
     for row in 0..points.len() {
         for column in 0..points.len() {
-            let term = weights[row]
-                * weights[column]
-                * radial_value(distance(points[row], points[column]))?;
+            let term = weights[row] * weights[column] * gram[row][column];
             energy += term;
             scale += term.abs();
         }
@@ -654,6 +685,51 @@ where
         "non-positive energy {energy:.17e} at scale {scale:.17e}, D={D}, projected={project_constants}, seed={seed}"
     );
     Ok(())
+}
+
+fn assert_strictly_positive_definite(
+    matrix: &[Vec<f64>],
+    dimension: usize,
+    projected: bool,
+    seed: u64,
+) {
+    let size = matrix.len();
+    assert!(size > 0 && matrix.iter().all(|row| row.len() == size));
+    let scale = matrix
+        .iter()
+        .flatten()
+        .fold(0.0_f64, |maximum, value| maximum.max(value.abs()));
+    let symmetry_tolerance = 32.0 * f64::EPSILON * scale.max(f64::MIN_POSITIVE);
+    for (row, row_values) in matrix.iter().enumerate() {
+        for (column, column_values) in matrix.iter().take(row).enumerate() {
+            assert!(
+                (row_values[column] - column_values[row]).abs() <= symmetry_tolerance,
+                "asymmetric Gram entry at D={dimension}, projected={projected}, seed={seed}, row={row}, column={column}"
+            );
+        }
+    }
+    let pivot_floor = 256.0 * f64::EPSILON * scale.max(f64::MIN_POSITIVE);
+    let mut lower = vec![vec![0.0; size]; size];
+
+    for row in 0..size {
+        for column in 0..=row {
+            let mut residual = matrix[row][column];
+            for (row_term, column_term) in lower[row][..column].iter().zip(&lower[column][..column])
+            {
+                residual -= row_term * column_term;
+            }
+            if row == column {
+                assert!(
+                    residual.is_finite() && residual > pivot_floor,
+                    "non-positive Cholesky pivot {residual:.17e} at scale {scale:.17e}, D={dimension}, projected={projected}, seed={seed}, row={row}"
+                );
+                lower[row][column] = residual.sqrt();
+            } else {
+                lower[row][column] = residual / lower[column][column];
+                assert!(lower[row][column].is_finite());
+            }
+        }
+    }
 }
 
 fn deterministic_points<const D: usize>(count: usize, seed: u64) -> Vec<[f64; D]> {
