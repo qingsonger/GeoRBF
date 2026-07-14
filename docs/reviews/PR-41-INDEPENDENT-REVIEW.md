@@ -126,10 +126,43 @@ evidence because the reviewed implementation head is unchanged. This Review
 adds only review and handoff evidence plus the review-document registry link;
 it does not change production code, tests, manifests, schemas, or build inputs.
 
+## Repair evidence pending fresh re-review
+
+Repair code/test head `30bd4952105acc6a04a7dcaff72493692f29d051`
+addresses only P2-1 and P2-2. The threshold regression now constructs
+already-equilibrated matrices whose repeated third-row coefficient is exactly
+12 and 15 representable ULPs above `0.5`. Both differ bit-for-bit from the
+exact-deficiency matrix and remain unchanged by all eight equilibration
+passes.
+
+An independent analytic calculation splits each matrix into the exact unit
+singular direction `(1,-1,0)/sqrt(2)` and a two-dimensional block. For
+coefficient `a`, that block has Frobenius norm squared `4 + 2*a^2` and
+determinant `1 - 2*a`; the regression computes its largest singular value from
+the stable quadratic root and its smallest as the absolute determinant divided
+by the largest. The 12-ULP case is below the recorded SVD threshold with
+analytic rank two, while the 15-ULP case is above it with analytic rank three.
+Both are within 12% of the threshold, and faer 0.24.4 and nalgebra 0.35.0
+produce the expected SVD review ranks with explicit threshold-adjacency
+assertions.
+
+The harness now emits a compile-time error unless `faer-backend` or
+`nalgebra-backend` is enabled. CI verifies that the zero-backend check fails
+with that exact diagnostic, and tests the faer-only, nalgebra-only, and
+all-feature positive configurations separately.
+
+On the stable repair head, spike formatting, warning-denying all-target
+Clippy, all three 6/6 feature-test configurations, the expected zero-backend
+failure, and the release smoke workload passed. The complete workspace
+formatting, warning-denying Clippy, all 139 tests, all 25 doctests and
+compile-fail tests, all 58 requirement checks, and `git diff --check` also
+passed. The subsequent review-record and bounded-handoff commit changes only
+documentation. A fresh independent re-review is still required before either
+finding can be considered closed or PR #41 can be marked ready.
+
 ## Disposition
 
 PR #41 remains Draft and REQ-SPIKE-002 remains `documented`. A fresh Repair
-task must address only P2-1 and P2-2, add the required regressions, run focused
-checks and one final standard gate on the repaired stable head, update the
-review evidence and bounded handoff, commit, push, and stop for a fresh
-independent re-review.
+task repaired P2-1 and P2-2 at `30bd495`. The next task must be a fresh,
+independent re-review of that repair and the complete PR diff. It must not
+repair code or start REQ-CPD-001.
