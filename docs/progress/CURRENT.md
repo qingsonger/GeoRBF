@@ -1,15 +1,23 @@
 # Current GeoRBF Progress
 
-- Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
-  orientation, and kernel calculus
-- Execution mode: Implement / active atomic requirement
-- Current requirement: REQ-ANISO-001
-- Issue: #28
-- Pull request: #29 (Draft)
-- Branch: `codex/req-aniso-001-global-anisotropy`
+- Current milestone: M2 / v0.2.0 — polynomial spaces, CPD, and atomic
+  functionals
+- Execution mode: Implement / next atomic requirement
+- Current requirement: REQ-POLY-001
+- Issue: not yet created
+- Pull request: not yet opened
+- Branch: not yet created
 
 ## Completed in this run
 
+- Squash-merged PR #29 as commit `c029333`; Issue #28 closed automatically,
+  and post-merge `main` CI run 29310042560 passed on Windows, Ubuntu, and
+  macOS with the complete job set. REQ-ANISO-001 now satisfies every
+  integration gate, completes the M1 requirement registry, and is recorded as
+  `integrated`. No tag or release is claimed.
+- Review-evidence commit `cc205e2` passed GitHub Actions run 29309949002 on
+  Windows, Ubuntu, and macOS. PR #29 was then marked ready with its body
+  synchronized to the final review and validation evidence before merge.
 - Final independent re-review of repaired head `960496a` reported no P0--P3
   finding. It confirmed all four P1 repairs, exact-expansion signs and capacity,
   D=3 determinant indices, the strict overflow guard proof, absence of hidden
@@ -478,17 +486,16 @@
 
 ## Current blockers
 
-None. All independent-review findings are closed and the final repair head is
-green locally and on all three CI platforms. The review-evidence commit must
-pass CI before PR #29 becomes ready or merges.
+None. Every M1 requirement is integrated. REQ-POLY-001 depends only on the
+integrated REQ-DIM-001 and is the first atomic M2 requirement.
 
 ## Next atomic task
 
-Commit and push the independent-review evidence, obtain green three-platform
-CI, then mark PR #29 ready and squash-merge it. After post-merge `main` CI is
-green, record REQ-ANISO-001 as integrated in a separate integration-state PR.
-Do not begin local anisotropy, orientation-tensor estimation, fields, assembly,
-solvers, schemas, or language bindings in the same requirement.
+Create the REQ-POLY-001 Issue with explicit complete-polynomial multi-index,
+ordering, exact term-count, value/derivative, reproduction, dimension, numeric,
+benchmark, interface, and exclusion criteria. Then create its isolated feature
+branch. Do not begin CPD null-space enforcement, functionals, observations,
+assembly, solvers, schemas, or language bindings in the same requirement.
 
 ## Latest full test result
 
@@ -642,6 +649,15 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   then marked ready for maintainer review.
 - REQ-ORIENT-001 post-merge `main` GitHub Actions run 29305578469 for merge
   commit `2ce70db` passed on Windows, Ubuntu, and macOS with the complete job
+  set.
+- REQ-ANISO-001 final repair PR #29 run 29309762439 for commit `960496a`
+  passed on Windows, Ubuntu, and macOS with the complete job set, including all
+  five benchmark smoke workloads and the repaired exact-SPD boundary tests.
+- REQ-ANISO-001 review-evidence PR #29 run 29309949002 for commit `cc205e2`
+  passed on Windows, Ubuntu, and macOS with the complete job set; PR #29 was
+  then marked ready for maintainer review.
+- REQ-ANISO-001 post-merge `main` GitHub Actions run 29310042560 for merge
+  commit `c029333` passed on Windows, Ubuntu, and macOS with the complete job
   set.
 
 ## Checks not yet available
