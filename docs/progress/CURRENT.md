@@ -6,15 +6,16 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / PR #32 re-review of finding P1-1
+- Mode: Review / PR #32 ready-head CI and integration
 - Issue: #31, `[WORKFLOW] Reduce Codex context and verification overhead`
 - Branch: `codex/issue-31-context-efficiency`
 - Pull request: #32 (Draft),
   `https://github.com/qingsonger/GeoRBF/pull/32`
 - Review record: `docs/reviews/PR-32-INDEPENDENT-REVIEW.md`
-- Selected re-review: independently confirm P1-1 is closed and no regression
-  was introduced by the canonical ready -> complete exact-ready-head CI ->
-  one green-gated merge -> integration-state sequence and its focused test
+- Selected integration: the fresh independent re-review closed P1-1 with no
+  P0-P3 finding; push that evidence, mark PR #32 Ready, wait for the complete
+  exact-ready-head CI, merge exactly once only when green, and record truthful
+  integration state
 - Product and mathematics impact: none
 
 ## Product delivery state
@@ -30,11 +31,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task
 
-Open a fresh Review/re-review task for only PR #32. Explicitly create the
-project `math_reviewer` sub-agent with bounded review context, independently
-verify P1-1 is closed, inspect the pushed repair-head CI, and check for new
-findings. If clean, follow the documented ready-head full-CI and integration
-sequence. Do not repair findings in that task and do not begin REQ-POLY-001.
+If this Review task is interrupted, resume only PR #32 integration. Confirm the
+pushed review-evidence head, mark the PR Ready if it is still Draft, wait for
+the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact head,
+merge exactly once only when it is green, then record truthful integration
+state in an isolated change. Do not begin REQ-POLY-001.
 
 ## Context for the next task
 
@@ -65,7 +66,12 @@ sequence. Do not repair findings in that task and do not begin REQ-POLY-001.
   58 requirement checks; only review evidence and this handoff changed after
   the gate
 - Draft CI run 29313656457 passed the Ubuntu correctness gate for pre-repair
-  head `f507685`; the pushed repair-head CI must be inspected in re-review
+  head `f507685`
+- Draft CI run 29317847992 passed the Ubuntu correctness gate for exact repair
+  head `a17e0cd`; the full matrix was correctly skipped while Draft
+- Fresh independent re-review of `a17e0cd` closed P1-1 and found no P0, P1,
+  P2, or P3 finding; the focused workflow consistency regression and
+  `git diff --check` passed
 - Local `actionlint` is unavailable
 
 ## Checks not yet available

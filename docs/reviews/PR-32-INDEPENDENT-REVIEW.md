@@ -73,3 +73,28 @@ this review record and the bounded handoff changed after that gate.
 Keep PR #32 in Draft. A fresh independent re-review must verify P1-1 is closed
 and check for regressions before the PR can be marked ready. Do not begin
 REQ-POLY-001.
+
+## Independent re-review
+
+The fresh re-review examined repaired head `a17e0cd` against `main` at
+`a2be099` and found no P0, P1, P2, or P3 finding. P1-1 is closed:
+
+- `AGENTS.md` and `docs/CODEX_WORKFLOW.md` require the same Ready -> complete
+  Windows/Ubuntu/macOS and benchmark-smoke CI on the exact ready head -> one
+  green-gated merge -> truthful integration-state sequence, with no remaining
+  pre-CI merge alternative.
+- `.github/workflows/ci.yml` triggers on `ready_for_review`, selects the full
+  three-platform matrix for a non-Draft PR, and retains all five benchmark
+  smoke workloads.
+- `workflow_docs_require_green_ready_head_ci_before_one_merge` requires the
+  canonical wording in both documents and rejects the original premature
+  merge phrase. Its focused re-review run passed.
+- Draft CI run 29317847992 passed the Ubuntu correctness gate for exact
+  repaired head `a17e0cd`; the full matrix was correctly skipped while Draft.
+- `git diff --check` passed for the reviewed diff.
+
+No additional regression is required. The recorded final repair gate remains
+applicable because this re-review changes only review evidence and the bounded
+handoff. PR #32 may now be marked Ready after this evidence is pushed; it may
+merge exactly once only after the complete Ready-triggered CI is green on that
+exact evidence head.
