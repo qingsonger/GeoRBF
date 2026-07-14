@@ -28,7 +28,7 @@ GitHub. This file is an index, not a second completion registry.
 
 | Issue | Implementation PR | Integration PR | Independent review |
 | ---: | ---: | ---: | --- |
-| #31 | #32 | pending | `docs/reviews/PR-32-INDEPENDENT-REVIEW.md` |
+| #31 | #32 | #33 | `docs/reviews/PR-32-INDEPENDENT-REVIEW.md` |
 
 ## Milestone transition
 

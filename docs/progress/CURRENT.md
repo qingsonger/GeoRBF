@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Active repository repair: none
 - Integrated workflow repair: Issue #31 via PR #32
 - Integration-state branch: `codex/issue-31-integration-state`
-- Integration-state pull request: not yet opened
+- Integration-state pull request: #33
 - Product and mathematics impact of Issue #31: none
 
 ## Product delivery state
