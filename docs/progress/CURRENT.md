@@ -3,13 +3,21 @@
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
 - Execution mode: Implement / next atomic requirement
-- Current requirement: REQ-ORIENT-001
-- Issue: #25
-- Pull request: #26 (Draft)
-- Branch: `codex/req-orient-001-geological-orientation`
+- Current requirement: REQ-ANISO-001
+- Issue: not yet created
+- Pull request: not yet opened
+- Branch: not yet created
 
 ## Completed in this run
 
+- Squash-merged PR #26 as commit `2ce70db`; Issue #25 closed automatically,
+  and post-merge `main` CI run 29305578469 passed on Windows, Ubuntu, and
+  macOS with the complete job set. REQ-ORIENT-001 now satisfies every
+  integration gate.
+- Review-evidence commit `a76ff26` passed GitHub Actions run 29305486406 on
+  Windows, Ubuntu, and macOS with the complete job set. PR #26 was then marked
+  ready for maintainer review and its body was synchronized with the final
+  review and validation evidence before merge.
 - Independent review of PR #26 confirmed the D=2/D=3 formulas, coordinate
   convention, right-hand-rule sign, angle domains, polarity semantics,
   rotation covariance, dimensions, errors, allocation/safety properties, and
@@ -57,8 +65,7 @@
   Clippy, 102 workspace tests, 19 doctests, 88 release integration tests and
   19 release doctests, warning-denying rustdoc, the orientation example,
   dependency metadata/tree checks, forbidden-pattern scans, `git diff --check`,
-  and all 58 requirement checks. Independent review, PR CI, and merge remain
-  pending.
+  and all 58 requirement checks.
 - Squash-merged PR #23 as commit `7fdb56f`; Issue #22 closed automatically,
   and post-merge `main` CI run 29303883398 passed on Windows, Ubuntu, and
   macOS with the complete job set. REQ-KERNEL-004 now satisfies every
@@ -390,18 +397,17 @@
 
 ## Current blockers
 
-None. REQ-ORIENT-001 implementation, independent review and repair, and
-three-platform PR CI are complete. The review-evidence commit, merge,
-post-merge CI, and integration-state record remain required before the registry
-may say `integrated`.
+None. REQ-ORIENT-001 is integrated. REQ-ANISO-001 has no unfinished dependency
+and is the final remaining M1 requirement.
 
 ## Next atomic task
 
-Commit and push the independent review evidence, require its three-platform CI
-to pass, mark PR #26 ready, and merge it. Confirm post-merge `main` CI before a
-separate integration-state PR records REQ-ORIENT-001 as `integrated`. Do not
-begin normal/tangent constraints, global anisotropy, fields, assembly, or
-solver work in the same requirement.
+Create the REQ-ANISO-001 Issue with explicit isotropic, spheroidal,
+ellipsoidal, and user-metric transform conventions; finite SPD/invertibility
+validation; D=1/D=2/D=3 rotation, scaling, and chain-rule acceptance criteria;
+benchmark obligations; and exclusions. Then create its isolated feature
+branch. Do not begin local anisotropy, orientation-tensor estimation, fields,
+assembly, solvers, schemas, or language bindings in the same requirement.
 
 ## Latest full test result
 
@@ -542,6 +548,15 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   set.
 - Latest `main` GitHub Actions run 29304072737 for integration-state commit
   `435cbef` passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-ORIENT-001 review-repair PR #26 run 29305373648 for commit `bf00f73`
+  passed on Windows, Ubuntu, and macOS with the complete job set, including the
+  signed-zero exact-bit regression.
+- REQ-ORIENT-001 review-evidence PR #26 run 29305486406 for commit `a76ff26`
+  passed on Windows, Ubuntu, and macOS with the complete job set; PR #26 was
+  then marked ready for maintainer review.
+- REQ-ORIENT-001 post-merge `main` GitHub Actions run 29305578469 for merge
+  commit `2ce70db` passed on Windows, Ubuntu, and macOS with the complete job
+  set.
 
 ## Checks not yet available
 

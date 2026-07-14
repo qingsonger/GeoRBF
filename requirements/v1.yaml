@@ -76,7 +76,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust orientation types"
     python_api: "N/A: the future Python binding delegates orientation validation to the reviewed Rust core after API freeze"
     benchmark: "N/A: orientation conversion is constant-time per observation"
-    status: documented
+    status: integrated
 
   - id: REQ-KCALC-001
     title: Radial kernel derivative calculus
