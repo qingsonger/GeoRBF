@@ -6,17 +6,12 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / PR #32 ready-head CI and integration
-- Issue: #31, `[WORKFLOW] Reduce Codex context and verification overhead`
-- Branch: `codex/issue-31-context-efficiency`
-- Pull request: #32 (Draft),
-  `https://github.com/qingsonger/GeoRBF/pull/32`
-- Review record: `docs/reviews/PR-32-INDEPENDENT-REVIEW.md`
-- Selected integration: the fresh independent re-review closed P1-1 with no
-  P0-P3 finding; push that evidence, mark PR #32 Ready, wait for the complete
-  exact-ready-head CI, merge exactly once only when green, and record truthful
-  integration state
-- Product and mathematics impact: none
+- Mode: Implement / next atomic product requirement
+- Active repository repair: none
+- Integrated workflow repair: Issue #31 via PR #32
+- Integration-state branch: `codex/issue-31-integration-state`
+- Integration-state pull request: not yet opened
+- Product and mathematics impact of Issue #31: none
 
 ## Product delivery state
 
@@ -26,16 +21,16 @@ records, benchmark reports, Git, and GitHub.
 - REQ-POLY-001 status: `planned`
 - REQ-POLY-001 issue, branch, and pull request: not yet created
 - Dependencies: REQ-DIM-001 is `integrated`; no blocker
-- Product work remains paused until the higher-priority workflow repair is
-  reviewed and integrated.
+- `cargo xtask requirements next` selects REQ-POLY-001
 
 ## Next task
 
-If this Review task is interrupted, resume only PR #32 integration. Confirm the
-pushed review-evidence head, mark the PR Ready if it is still Draft, wait for
-the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact head,
-merge exactly once only when it is green, then record truthful integration
-state in an isolated change. Do not begin REQ-POLY-001.
+Open a fresh Implement task for only REQ-POLY-001. Perform the mandatory
+preflight, rerun the compact `next`, `show`, and `deps` queries, read only the
+listed mathematical documents plus relevant ADRs and the M2 milestone plan,
+then create the Issue with explicit acceptance criteria and the required
+`codex/req-poly-001-<slug>` branch. Complete only that atomic requirement to a
+Draft PR and stop for a fresh independent Review.
 
 ## Context for the next task
 
@@ -49,29 +44,24 @@ state in an isolated change. Do not begin REQ-POLY-001.
 
 ## Latest known gates
 
-- Synchronized `main`: `a2be099`
-- Latest `main` CI: run 29310297567 passed on Windows, Ubuntu, and macOS
+- Synchronized `main`: `cc68f0e`
+- Latest `main` CI: run 29319281151 passed on Windows, Ubuntu, and macOS with
+  all five benchmark smoke workloads
 - Last integrated product requirement: REQ-ANISO-001 via implementation PR
   #29 and integration-state PR #30
-- Local final gate for Issue #31: passed on the final code/config worktree;
-  formatting, warning-denying workspace Clippy, 118 workspace tests, 21
-  doctests, all 58 requirement checks, `git diff --check`, and strict Codex
-  config parsing succeeded
-- Independent Review of PR #32 found one merge-blocking P1 in the mandatory
-  integration sequence; no P0, P2, or P3 finding was identified
-- Repair-focused documentation consistency regression passed and focused
-  warning-denying `xtask` Clippy passed
+- Issue #31 closed when PR #32 squash-merged as `cc68f0e`; the Ready head was
+  `17b7d16`
+- Independent Review found P1-1 in the mandatory merge sequence; the isolated
+  repair and focused consistency regression closed it
+- Fresh independent re-review found no P0, P1, P2, or P3 finding
 - Final repair gate passed on the stable code/test worktree: formatting,
   warning-denying workspace Clippy, 119 workspace tests, 21 doctests, and all
   58 requirement checks; only review evidence and this handoff changed after
   the gate
-- Draft CI run 29313656457 passed the Ubuntu correctness gate for pre-repair
-  head `f507685`
 - Draft CI run 29317847992 passed the Ubuntu correctness gate for exact repair
   head `a17e0cd`; the full matrix was correctly skipped while Draft
-- Fresh independent re-review of `a17e0cd` closed P1-1 and found no P0, P1,
-  P2, or P3 finding; the focused workflow consistency regression and
-  `git diff --check` passed
+- Ready CI run 29319187658 passed on Windows, Ubuntu, and macOS for exact head
+  `17b7d16`, including all five benchmark smoke workloads
 - Local `actionlint` is unavailable
 
 ## Checks not yet available

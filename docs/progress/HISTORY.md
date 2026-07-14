@@ -24,7 +24,13 @@ The authoritative status and interface dispositions remain in
 performance evidence is in `benches/`, and exact CI/merge history remains in
 GitHub. This file is an index, not a second completion registry.
 
+## Integrated repository workflow repairs
+
+| Issue | Implementation PR | Integration PR | Independent review |
+| ---: | ---: | ---: | --- |
+| #31 | #32 | pending | `docs/reviews/PR-32-INDEPENDENT-REVIEW.md` |
+
 ## Milestone transition
 
-M0 and M1 are complete. M2 begins with REQ-POLY-001 after the isolated Issue
-#31 workflow-efficiency repair is reviewed and integrated.
+M0 and M1 are complete. The isolated Issue #31 workflow-efficiency repair is
+integrated. M2 begins with REQ-POLY-001.
