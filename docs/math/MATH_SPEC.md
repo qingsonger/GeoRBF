@@ -174,9 +174,11 @@ computed pivot. Exact leading-principal-minor signs are certified first with
 power-of-two congruence scaling and fixed-size floating expansions, for both a
 user metric and the rounded `A^T A` derived from a transform. Thus an accepted
 stored matrix is SPD and remains consistent with its distance factor. There is
-no hidden symmetry tolerance, jitter, clipping, regularization, or
-pseudoinverse. Ellipsoidal orthogonality and maximum condition-number
-tolerances exist only as explicit caller inputs.
+also a strict necessary `|B_ij| > max(B_ii, B_jj)` rejection before product
+formation; it cannot reject an SPD matrix and prevents invalid finite entries
+from overflowing the exact expansion. There is no hidden symmetry tolerance,
+jitter, clipping, regularization, or pseudoinverse. Ellipsoidal orthogonality
+and maximum condition-number tolerances exist only as explicit caller inputs.
 
 For a transformed-coordinate kernel jet, the constant-map chain rule is
 

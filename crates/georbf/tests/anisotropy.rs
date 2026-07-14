@@ -515,6 +515,7 @@ fn construction_rejects_invalid_lengths_axes_metrics_and_policies() -> TestResul
         [[1.0, 2.0], [2.0, 1.0]],
         [[1.0, 1.0], [1.0, 1.0]],
         [[2.0, 2.000_000_01], [2.000_000_01, 2.000_000_02]],
+        [[1.0, f64::MAX], [f64::MAX, 1.0]],
     ] {
         assert!(matches!(
             GlobalAnisotropy::<2>::try_from_metric(metric, AnisotropyConditionPolicy::Unbounded),

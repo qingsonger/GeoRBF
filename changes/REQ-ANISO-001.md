@@ -14,6 +14,8 @@ metric is exposed; boundary-indefinite input and rounded singular `A^T A`
 matrices are rejected explicitly. Exact expansion signs, rather than rounded
 square-root bounds, decide determinant boundaries so valid near-singular SPD
 inputs remain accepted.
+An exact-safe strict diagonal-maximum guard rejects mathematically impossible
+SPD off-diagonal magnitudes before they can overflow expansion products.
 
 Validation rejects non-finite or nonpositive lengths, unrepresentable
 reciprocals and products, nonorthogonal ellipsoid axes beyond an explicit

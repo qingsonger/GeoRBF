@@ -42,8 +42,11 @@ factorization must have strictly positive computed pivots. Before factorization,
 power-of-two congruence equilibration and fixed-size floating expansions certify
 the exact signs of all leading principal minors of the supplied `f64` matrix.
 The same certification is applied to a metric derived from `A`; construction
-fails if rounding `A^T A` loses SPD. There is no symmetrization, eigenvalue
-clipping, diagonal adjustment, jitter, or pseudoinverse.
+fails if rounding `A^T A` loses SPD. A strict necessary diagonal-maximum bound
+rejects only non-SPD off-diagonal entries that would overflow exact-product
+formation; determinant boundaries remain exact-expansion decisions. There is
+no symmetrization, eigenvalue clipping, diagonal adjustment, jitter, or
+pseudoinverse.
 
 Exact partial-pivot inversion decides singularity and representability.
 Deterministic fixed-sweep one-sided Jacobi SVD supplies positive finite

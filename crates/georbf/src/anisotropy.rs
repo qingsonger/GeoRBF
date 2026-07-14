@@ -1010,6 +1010,22 @@ where
     }
 
     let scaled = power_of_two_equilibrated_metric(metric)?;
+    for first in 0..D {
+        for second in (first + 1)..D {
+            let maximum_diagonal = scaled[first][first].max(scaled[second][second]);
+            if scaled[first][second].abs() > maximum_diagonal {
+                let residual = scaled[first][first].mul_add(
+                    scaled[second][second],
+                    -scaled[first][second] * scaled[second][first],
+                );
+                return Err(AnisotropyError::MetricNotPositiveDefinite {
+                    pivot: second,
+                    residual,
+                });
+            }
+        }
+    }
+
     if D >= 2 {
         let mut determinant = ExactExpansion::zero();
         determinant.add_product(scaled[0][0], scaled[1][1], 1.0);

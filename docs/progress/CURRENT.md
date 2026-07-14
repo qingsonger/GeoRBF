@@ -39,7 +39,9 @@
   but found a fourth P1 in a redundant rounded-square-root prefilter: downward
   `sqrt` rounding rejected a valid SPD matrix whose exact determinant is one
   machine epsilon. Removed the prefilter so the exact leading-minor expansion
-  is the sole boundary decision and added D=2/D=3 exact regressions.
+  is the sole boundary decision and added D=2/D=3 exact regressions. Added a
+  strict necessary diagonal-maximum guard that cannot reject SPD input and
+  prevents invalid finite off-diagonal values from overflowing exact products.
 - Confirmed clean synchronized `main` at `409f274`, the correct origin and
   worktree, no tags, no open Issue, PR, review, or failed CI, and green
   three-platform `main` run 29305762416. Selected Implement mode because no
