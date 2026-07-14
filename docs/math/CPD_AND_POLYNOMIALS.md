@@ -10,6 +10,33 @@ binomial(D + m - 1, D).
 Multi-indices are generated deterministically; no fixed point count or
 cubic-only shortcut is permitted.
 
+The Rust polynomial-space layer accepts the positive CPD order directly and
+generates monomials `p_alpha(x)=product_i x_i^alpha_i`. It orders terms by
+increasing total degree and then lexicographically from the first Cartesian
+axis with larger exponents first. Thus the D=2 terms through degree two are
+
+```text
+(0,0), (1,0), (0,1), (2,0), (1,1), (0,2).
+```
+
+Values and Cartesian first derivatives are evaluated into caller-provided
+storage. The derivative on axis `j` is formed by lowering `alpha_j` directly,
+
+```text
+partial_j p_alpha(x) =
+    alpha_j x_j^(alpha_j-1) product_(i != j) x_i^alpha_i,
+```
+
+so evaluation never divides by a coordinate and remains well-defined on axes
+and at the origin. Products track a binary exponent internally so premature
+intermediate underflow does not erase a representable mixed monomial. This is
+an evaluation method, not a change of basis or hidden polynomial scaling.
+Input points already carry the core finite-coordinate invariant. Term-count
+overflow, allocation failure, output-length mismatch, and non-finite results
+are structured errors; an error leaves caller output unchanged. This layer
+applies no coordinate normalization. Later CPD assembly owns the documented
+dimensionless equilibration and rank policy.
+
 For center functionals `M_j` and polynomial basis members `p_alpha`, define
 
 ```text

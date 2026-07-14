@@ -31,3 +31,7 @@ harness = false
 [[bench]]
 name = "global_anisotropy"
 harness = false
+
+[[bench]]
+name = "polynomial_spaces"
+harness = false

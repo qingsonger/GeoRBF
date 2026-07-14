@@ -6,67 +6,58 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / next atomic product requirement
-- Active repository repair: none
-- Integrated workflow repair: Issue #31 via PR #32
-- Integration-state branch: `codex/issue-31-integration-state`
-- Integration-state pull request: #33
-- Product and mathematics impact of Issue #31: none
-
-## Product delivery state
-
-- Current milestone: M2 / v0.2.0 -- polynomial spaces, CPD, and atomic
-  functionals
-- Next product requirement: REQ-POLY-001
-- REQ-POLY-001 status: `planned`
-- REQ-POLY-001 issue, branch, and pull request: not yet created
+- Mode: Implement / REQ-POLY-001 complete pending Draft PR creation
+- Requirement Issue: #34
+- Branch: `codex/req-poly-001-polynomial-spaces`
+- Draft pull request: not yet created
 - Dependencies: REQ-DIM-001 is `integrated`; no blocker
-- `cargo xtask requirements next` selects REQ-POLY-001
+- Registry state: `in_progress` until the Draft PR number is recorded
+
+## Implemented scope
+
+- Complete polynomial spaces for positive CPD order in exactly D=1, D=2, and
+  D=3, with exact checked binomial term counts and deterministic graded
+  descending-lexicographic multi-indices.
+- Immutable Rust metadata plus allocation-free batch value and Cartesian
+  gradient evaluation into caller-provided storage. Evaluation lowers
+  exponents without coordinate division and tracks binary exponents so
+  representable mixed monomials survive intermediate underflow.
+- Structured zero-order, degree/term-count overflow, allocation, output-size,
+  and non-finite-result errors; evaluation errors leave output unchanged.
+- Independent combinatorial, analytic, origin, extreme-scale, reproduction,
+  unsupported-dimension, and `Send + Sync` tests; synchronized rustdoc and math
+  documentation; runnable example; changelog fragment; deterministic D=1/D=2/
+  D=3 benchmark and Ready/main CI smoke coverage.
+- CLI, C, C++, and Python are N/A because polynomial generation is internal.
+  CPD rank diagnosis, null spaces, functionals, assembly, fitting, schemas,
+  persistence, adapters, and solvers remain excluded.
 
 ## Next task
 
-Open a fresh Implement task for only REQ-POLY-001. Perform the mandatory
-preflight, rerun the compact `next`, `show`, and `deps` queries, read only the
-listed mathematical documents plus relevant ADRs and the M2 milestone plan,
-then create the Issue with explicit acceptance criteria and the required
-`codex/req-poly-001-<slug>` branch. Complete only that atomic requirement to a
-Draft PR and stop for a fresh independent Review.
+After this implementation is pushed and its Draft PR is linked here, open a
+fresh independent Review task for only REQ-POLY-001. Supply the compact
+requirement summary and dependency closure, `docs/math/CPD_AND_POLYNOMIALS.md`,
+ADR-0004, the PR diff, and validation and benchmark evidence to the project
+`math_reviewer`. Do not repair findings or begin REQ-FUNC-001 in that task.
 
-## Context for the next task
+## Validation evidence
 
-1. Read `AGENTS.md` and this file.
-2. Inspect remote Issue, PR, review, and CI state before selecting the mode.
-3. For product work, run `cargo xtask requirements next`, then
-   `cargo xtask requirements show <REQ-ID>` and `requirements deps <REQ-ID>`.
-4. Read only the documents listed by that compact summary plus relevant ADRs
-   and the current milestone plan.
-5. Consult `docs/progress/HISTORY.md` only when historical evidence is needed.
-
-## Latest known gates
-
-- Synchronized `main`: `cc68f0e`
-- Latest `main` CI: run 29319281151 passed on Windows, Ubuntu, and macOS with
-  all five benchmark smoke workloads
-- Last integrated product requirement: REQ-ANISO-001 via implementation PR
-  #29 and integration-state PR #30
-- Issue #31 closed when PR #32 squash-merged as `cc68f0e`; the Ready head was
-  `17b7d16`
-- Independent Review found P1-1 in the mandatory merge sequence; the isolated
-  repair and focused consistency regression closed it
-- Fresh independent re-review found no P0, P1, P2, or P3 finding
-- Final repair gate passed on the stable code/test worktree: formatting,
-  warning-denying workspace Clippy, 119 workspace tests, 21 doctests, and all
-  58 requirement checks; only review evidence and this handoff changed after
-  the gate
-- Draft CI run 29317847992 passed the Ubuntu correctness gate for exact repair
-  head `a17e0cd`; the full matrix was correctly skipped while Draft
-- Ready CI run 29319187658 passed on Windows, Ubuntu, and macOS for exact head
-  `17b7d16`, including all five benchmark smoke workloads
-- Local `actionlint` is unavailable
+- Stable code/test head passed `cargo fmt --all -- --check`, warning-denying
+  workspace Clippy, 129 workspace tests, 24 doctests/compile-fail tests, and all
+  58 requirement checks.
+- Focused Release polynomial tests passed all 10 cases. Strict warning-denying
+  rustdoc, the runnable example, and polynomial benchmark smoke passed.
+- Four full local polynomial benchmark runs had identical generation and
+  evaluation checksums. Environment and timing ranges are recorded in
+  `docs/benchmarks/REQ-POLY-001.md`.
+- Only this bounded handoff and later PR-link evidence may change after the
+  stable full gate; no production, test, manifest, schema, or build input may
+  change without rerunning it.
 
 ## Checks not yet available
 
 `cargo-nextest`, `cargo-deny`, `cargo-audit`, and `cargo-semver-checks` are not
 installed. Miri is unavailable for pinned Rust 1.96.1. Sanitizers, executable
 fuzzing, mutation testing, allocation instrumentation, and API/ABI/schema
-snapshot checks are tracked by later requirements and release gates.
+snapshot checks are tracked by later requirements and release gates. Local
+`actionlint` is unavailable.

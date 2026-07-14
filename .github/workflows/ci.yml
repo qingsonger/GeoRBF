@@ -71,5 +71,7 @@ jobs:
         run: cargo bench -p georbf --bench wendland_kernels -- --smoke
       - name: Smoke-test global anisotropy benchmark
         run: cargo bench -p georbf --bench global_anisotropy -- --smoke
+      - name: Smoke-test polynomial spaces benchmark
+        run: cargo bench -p georbf --bench polynomial_spaces -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check
