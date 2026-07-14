@@ -1,0 +1,6 @@
+# Balanced project default. Mathematical review uses the dedicated xhigh agent.
+model_reasoning_effort = "high"
+
+[agents]
+max_threads = 4
+max_depth = 1

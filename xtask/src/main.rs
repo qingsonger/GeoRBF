@@ -69,9 +69,24 @@ fn main() -> ExitCode {
 }
 
 fn run(mut args: impl Iterator<Item = String>) -> Result<String, String> {
-    match (args.next().as_deref(), args.next().as_deref(), args.next()) {
-        (Some("requirements"), Some("check"), None) => check_requirements(),
-        _ => Err("usage: cargo xtask requirements check".to_owned()),
+    let arguments = args.by_ref().collect::<Vec<_>>();
+    match arguments.as_slice() {
+        [area, action] if area == "requirements" && action == "check" => check_requirements(),
+        [area, action] if area == "requirements" && action == "next" => next_requirement(),
+        [area, action, requirement_id]
+            if area == "requirements" && action == "show" =>
+        {
+            show_requirement(requirement_id)
+        }
+        [area, action, requirement_id]
+            if area == "requirements" && action == "deps" =>
+        {
+            show_dependency_closure(requirement_id)
+        }
+        _ => Err(
+            "usage:\n  cargo xtask requirements check\n  cargo xtask requirements next\n  cargo xtask requirements show <REQ-ID>\n  cargo xtask requirements deps <REQ-ID>"
+                .to_owned(),
+        ),
     }
 }
 
@@ -83,6 +98,16 @@ fn workspace_root() -> Result<PathBuf, String> {
 }
 
 fn check_requirements() -> Result<String, String> {
+    let (root, requirements) = load_validated_requirements()?;
+    reject_production_placeholders(&root)?;
+    reject_publishable_prerelease_packages(&root)?;
+    Ok(format!(
+        "requirements check passed: {} v1 requirements",
+        requirements.len()
+    ))
+}
+
+fn load_validated_requirements() -> Result<(PathBuf, Vec<Requirement>), String> {
     let root = workspace_root()?;
     let registry_path = root.join("requirements/v1.yaml");
     let source = fs::read_to_string(&registry_path)
@@ -90,12 +115,205 @@ fn check_requirements() -> Result<String, String> {
     validate_registry_header(&source)?;
     let requirements = parse_requirements(&source)?;
     validate_requirements(&requirements)?;
-    reject_production_placeholders(&root)?;
-    reject_publishable_prerelease_packages(&root)?;
-    Ok(format!(
-        "requirements check passed: {} v1 requirements",
-        requirements.len()
-    ))
+    Ok((root, requirements))
+}
+
+fn next_requirement() -> Result<String, String> {
+    let (_, requirements) = load_validated_requirements()?;
+    let requirement = next_eligible_requirement(&requirements)
+        .ok_or_else(|| "no eligible unfinished v1 requirement was found".to_owned())?;
+    Ok(format_requirement_summary(requirement, &requirements))
+}
+
+fn show_requirement(requirement_id: &str) -> Result<String, String> {
+    let (_, requirements) = load_validated_requirements()?;
+    let requirement = find_requirement(&requirements, requirement_id)?;
+    Ok(format_requirement_summary(requirement, &requirements))
+}
+
+fn show_dependency_closure(requirement_id: &str) -> Result<String, String> {
+    let (_, requirements) = load_validated_requirements()?;
+    find_requirement(&requirements, requirement_id)?;
+    let closure = dependency_closure_ids(requirement_id, &requirements)?;
+    if closure.is_empty() {
+        return Ok(format!("{requirement_id} dependency closure: none"));
+    }
+
+    let mut lines = vec![format!("{requirement_id} dependency closure:")];
+    for dependency_id in closure {
+        let dependency = find_requirement(&requirements, &dependency_id)?;
+        lines.push(format!(
+            "- {} [{}] {}",
+            dependency.id(),
+            dependency.value("status"),
+            dependency.value("title")
+        ));
+    }
+    Ok(lines.join("\n"))
+}
+
+fn find_requirement<'a>(
+    requirements: &'a [Requirement],
+    requirement_id: &str,
+) -> Result<&'a Requirement, String> {
+    requirements
+        .iter()
+        .find(|requirement| requirement.id() == requirement_id)
+        .ok_or_else(|| format!("unknown requirement `{requirement_id}`"))
+}
+
+fn format_requirement_summary(requirement: &Requirement, requirements: &[Requirement]) -> String {
+    let status_by_id = requirements
+        .iter()
+        .map(|candidate| (candidate.id(), candidate.value("status")))
+        .collect::<BTreeMap<_, _>>();
+    let dependencies = list_items(requirement.value("dependencies"))
+        .map(|dependency| {
+            let status = status_by_id.get(dependency).copied().unwrap_or("unknown");
+            format!("{dependency} [{status}]")
+        })
+        .collect::<Vec<_>>();
+    let issue = display_optional_identifier(requirement.value("issue"));
+    let pull_request = display_optional_identifier(requirement.value("pull_request"));
+
+    [
+        format!(
+            "{} | {} | {} | {}",
+            requirement.id(),
+            requirement.value("status"),
+            requirement.value("milestone"),
+            requirement.value("priority")
+        ),
+        format!("title: {}", requirement.value("title")),
+        format!("description: {}", requirement.value("description")),
+        format!("issue: {issue}; pull request: {pull_request}"),
+        format!(
+            "dependencies: {}",
+            if dependencies.is_empty() {
+                "none".to_owned()
+            } else {
+                dependencies.join(", ")
+            }
+        ),
+        format!(
+            "tests: {}",
+            list_items(requirement.value("tests"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+        format!(
+            "docs: {}",
+            list_items(requirement.value("docs"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+        format!(
+            "interfaces: rust={}; cli={}; c={}; cpp={}; python={}; benchmark={}",
+            requirement.value("rust_api"),
+            requirement.value("cli"),
+            requirement.value("c_api"),
+            requirement.value("cpp_api"),
+            requirement.value("python_api"),
+            requirement.value("benchmark")
+        ),
+    ]
+    .join("\n")
+}
+
+fn display_optional_identifier(value: &str) -> &str {
+    if is_null(value) { "none" } else { value }
+}
+
+fn next_eligible_requirement(requirements: &[Requirement]) -> Option<&Requirement> {
+    let status_by_id = requirements
+        .iter()
+        .map(|requirement| (requirement.id(), requirement.value("status")))
+        .collect::<BTreeMap<_, _>>();
+
+    let ordering_key = |index: usize, requirement: &Requirement| {
+        (
+            milestone_rank(requirement.value("milestone")),
+            priority_rank(requirement.value("priority")),
+            index,
+        )
+    };
+
+    let active = requirements
+        .iter()
+        .enumerate()
+        .filter(|(_, requirement)| {
+            let rank = status_rank_of(requirement.value("status"));
+            rank >= status_rank_of("in_progress") && rank < status_rank_of("integrated")
+        })
+        .min_by_key(|(index, requirement)| ordering_key(*index, requirement))
+        .map(|(_, requirement)| requirement);
+    if active.is_some() {
+        return active;
+    }
+
+    requirements
+        .iter()
+        .enumerate()
+        .filter(|(_, requirement)| {
+            let rank = status_rank_of(requirement.value("status"));
+            rank < status_rank_of("in_progress")
+                && list_items(requirement.value("dependencies")).all(|dependency| {
+                    status_by_id.get(dependency).is_some_and(|status| {
+                        status_rank_of(status) >= status_rank_of("integrated")
+                    })
+                })
+        })
+        .min_by_key(|(index, requirement)| ordering_key(*index, requirement))
+        .map(|(_, requirement)| requirement)
+}
+
+fn milestone_rank(milestone: &str) -> u32 {
+    milestone
+        .strip_prefix('M')
+        .and_then(|value| value.split_once('-').map(|(number, _)| number))
+        .and_then(|number| number.parse::<u32>().ok())
+        .unwrap_or(u32::MAX)
+}
+
+fn priority_rank(priority: &str) -> u8 {
+    match priority {
+        "P0" => 0,
+        "P1" => 1,
+        "P2" => 2,
+        _ => u8::MAX,
+    }
+}
+
+fn dependency_closure_ids(
+    requirement_id: &str,
+    requirements: &[Requirement],
+) -> Result<Vec<String>, String> {
+    let by_id = requirements
+        .iter()
+        .map(|requirement| (requirement.id(), requirement))
+        .collect::<BTreeMap<_, _>>();
+    let mut visited = BTreeSet::new();
+    let mut closure = Vec::new();
+    visit_dependencies(requirement_id, &by_id, &mut visited, &mut closure)?;
+    Ok(closure)
+}
+
+fn visit_dependencies(
+    requirement_id: &str,
+    by_id: &BTreeMap<&str, &Requirement>,
+    visited: &mut BTreeSet<String>,
+    closure: &mut Vec<String>,
+) -> Result<(), String> {
+    let requirement = by_id
+        .get(requirement_id)
+        .ok_or_else(|| format!("unknown requirement `{requirement_id}`"))?;
+    for dependency in list_items(requirement.value("dependencies")) {
+        if visited.insert(dependency.to_owned()) {
+            visit_dependencies(dependency, by_id, visited, closure)?;
+            closure.push(dependency.to_owned());
+        }
+    }
+    Ok(())
 }
 
 fn validate_registry_header(source: &str) -> Result<(), String> {
@@ -601,8 +819,9 @@ mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
     use super::{
-        Requirement, dependency_cycle_members, list_items, manifest_disables_publication,
-        parse_requirements, scalar, validate_registry_header, validate_requirements,
+        Requirement, dependency_closure_ids, dependency_cycle_members, format_requirement_summary,
+        list_items, manifest_disables_publication, next_eligible_requirement, parse_requirements,
+        scalar, validate_registry_header, validate_requirements,
     };
 
     fn valid_requirement() -> Requirement {
@@ -629,6 +848,28 @@ mod tests {
         .map(|(key, value)| (key.to_owned(), value.to_owned()))
         .collect::<BTreeMap<_, _>>();
         Requirement { line: 1, fields }
+    }
+
+    fn requirement_with(
+        id: &str,
+        status: &str,
+        dependencies: &str,
+        milestone: &str,
+        priority: &str,
+    ) -> Requirement {
+        let mut requirement = valid_requirement();
+        for (field, value) in [
+            ("id", id),
+            ("status", status),
+            ("dependencies", dependencies),
+            ("milestone", milestone),
+            ("priority", priority),
+        ] {
+            requirement
+                .fields
+                .insert(field.to_owned(), value.to_owned());
+        }
+        requirement
     }
 
     #[test]
@@ -729,6 +970,87 @@ mod tests {
         assert_eq!(
             dependency_cycle_members(&requirements, &ids),
             ["REQ-A", "REQ-B"]
+        );
+    }
+
+    #[test]
+    fn compact_summary_includes_dependency_status_and_required_context() {
+        let requirements = [
+            requirement_with("REQ-BASE-001", "integrated", "[]", "M0-v0.0.1", "P0"),
+            requirement_with(
+                "REQ-NEXT-001",
+                "planned",
+                "[REQ-BASE-001]",
+                "M1-v0.1.0",
+                "P0",
+            ),
+        ];
+        let summary = format_requirement_summary(&requirements[1], &requirements);
+        assert!(summary.contains("REQ-NEXT-001 | planned | M1-v0.1.0 | P0"));
+        assert!(summary.contains("dependencies: REQ-BASE-001 [integrated]"));
+        assert!(summary.contains("tests: unit"));
+        assert!(summary.contains("docs: test-doc"));
+    }
+
+    #[test]
+    fn next_requirement_prefers_active_work_then_eligible_milestone_priority() {
+        let mut requirements = vec![
+            requirement_with("REQ-BASE-001", "integrated", "[]", "M0-v0.0.1", "P0"),
+            requirement_with(
+                "REQ-LATER-001",
+                "planned",
+                "[REQ-BASE-001]",
+                "M2-v0.2.0",
+                "P1",
+            ),
+            requirement_with(
+                "REQ-NEXT-001",
+                "planned",
+                "[REQ-BASE-001]",
+                "M2-v0.2.0",
+                "P0",
+            ),
+        ];
+        assert_eq!(
+            next_eligible_requirement(&requirements).map(Requirement::id),
+            Some("REQ-NEXT-001")
+        );
+
+        requirements.push(requirement_with(
+            "REQ-ACTIVE-001",
+            "in_progress",
+            "[REQ-BASE-001]",
+            "M3-v0.3.0",
+            "P1",
+        ));
+        assert_eq!(
+            next_eligible_requirement(&requirements).map(Requirement::id),
+            Some("REQ-ACTIVE-001")
+        );
+    }
+
+    #[test]
+    fn dependency_closure_is_transitive_and_dependencies_first() {
+        let requirements = [
+            requirement_with("REQ-BASE-001", "integrated", "[]", "M0-v0.0.1", "P0"),
+            requirement_with(
+                "REQ-MIDDLE-001",
+                "integrated",
+                "[REQ-BASE-001]",
+                "M1-v0.1.0",
+                "P0",
+            ),
+            requirement_with(
+                "REQ-TOP-001",
+                "planned",
+                "[REQ-MIDDLE-001]",
+                "M2-v0.2.0",
+                "P0",
+            ),
+        ];
+        assert_eq!(
+            dependency_closure_ids("REQ-TOP-001", &requirements),
+            Ok(vec!["REQ-BASE-001".to_owned(), "REQ-MIDDLE-001".to_owned()])
         );
     }
 }

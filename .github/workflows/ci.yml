@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
@@ -17,7 +18,29 @@ env:
   RUST_BACKTRACE: "1"
 
 jobs:
+  draft:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft }}
+    name: draft (ubuntu-latest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.96.1 --profile minimal --component clippy --component rustfmt
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Lint workspace
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: Test workspace
+        run: cargo test --workspace --all-features
+      - name: Test documentation
+        run: cargo test --doc --workspace
+      - name: Validate requirement registry
+        run: cargo xtask requirements check
+
   workspace:
+    if: ${{ github.event_name == 'push' || github.event.pull_request.draft == false }}
     name: workspace (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
