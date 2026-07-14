@@ -27,3 +27,7 @@ harness = false
 [[bench]]
 name = "wendland_kernels"
 harness = false
+
+[[bench]]
+name = "global_anisotropy"
+harness = false

@@ -174,17 +174,17 @@ requirements:
     dependencies: [REQ-COORD-001, REQ-KCALC-001]
     milestone: M1-v0.1.0
     priority: P1
-    issue: null
-    pull_request: null
-    tests: [rotation, scaling, spd-validation, chain-rule]
-    docs: [docs/architecture/ANISOTROPY.md, rustdoc]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
-    status: planned
+    issue: 28
+    pull_request: 29
+    tests: [analytic-distance-truth, rotation-covariance, coordinate-length-scaling, high-axis-ratio, spd-validation, exact-spd-leading-minors, rounded-metric-rejection, exact-symmetry, singular-value-truth, condition-policy, chain-rule-through-third, center-limits, query-center-signs, tensor-symmetry, numerical-extremes, structured-errors, anisotropy-dimension-compile-fail]
+    docs: [docs/architecture/ANISOTROPY.md, docs/architecture/ARCHITECTURE.md, docs/math/MATH_SPEC.md, docs/reviews/PR-29-INDEPENDENT-REVIEW.md, rustdoc, crates/georbf/examples/global_anisotropy.rs, benches/REQ-ANISO-001.md]
+    rust_api: implemented
+    cli: "N/A: versioned project schemas and kernel/metric selection commands are introduced by later requirements"
+    c_api: "N/A: global anisotropy is exposed only after the reviewed Rust API and stable C ABI freeze"
+    cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust anisotropy types"
+    python_api: "N/A: the future Python binding delegates anisotropy validation to the reviewed Rust core after API freeze"
+    benchmark: implemented
+    status: documented
 
   - id: REQ-POLY-001
     title: Dimension-generic polynomial spaces

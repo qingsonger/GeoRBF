@@ -398,6 +398,28 @@ where
             }
         }
 
+        Self::try_from_displacement(displacement)
+    }
+
+    /// Computes `r = ||d||` and `u = d/r` from a finite displacement.
+    ///
+    /// This constructor lets a fixed linear transform form `d` directly,
+    /// avoiding separately transformed points whose subtraction could lose
+    /// information or overflow before cancellation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`KernelCalculusError::NonFiniteDisplacementComponent`] for the
+    /// first invalid component, or
+    /// [`KernelCalculusError::NonRepresentableRadius`] when the radius itself
+    /// is outside the finite `f64` domain.
+    pub fn try_from_displacement(displacement: [f64; D]) -> Result<Self, KernelCalculusError> {
+        for (axis, value) in displacement.iter().copied().enumerate() {
+            if !value.is_finite() {
+                return Err(KernelCalculusError::NonFiniteDisplacementComponent { axis });
+            }
+        }
+
         let scale = displacement
             .iter()
             .copied()
@@ -529,6 +551,20 @@ where
     #[must_use]
     pub fn third_derivative(&self, arguments: [KernelArgument; 3]) -> [[[f64; D]; D]; D] {
         apply_third_sign(self.third, arguments_have_negative_sign(&arguments))
+    }
+
+    pub(crate) const fn from_query_derivatives(
+        value: f64,
+        first: [f64; D],
+        second: [[f64; D]; D],
+        third: [[[f64; D]; D]; D],
+    ) -> Self {
+        Self {
+            value,
+            first,
+            second,
+            third,
+        }
     }
 }
 

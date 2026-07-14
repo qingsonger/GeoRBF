@@ -34,6 +34,14 @@ validated geological angle-to-direction conversion. It does not compile normal
 or tangent constraints, infer gradient magnitude, perform coordinate
 reprojection, or construct anisotropy.
 
+The global-anisotropy layer depends on validated geometry, affine matrix
+inversion, and kernel-calculus jets. It owns fixed D=1/D=2/D=3 distance
+transforms, SPD metrics, explicit condition diagnostics, displacement mapping,
+and the constant-map chain rule through third order. It performs no axis
+estimation, local mixing, kernel-family selection, observation construction,
+assembly, fitting, or solver work. Arbitrary location-dependent metrics remain
+forbidden; the later local-trend layer uses the accepted SPD mixture design.
+
 The kernel-calculus layer accepts validated point separations and a
 caller-supplied radial jet. D=2/D=3 away jets include cancellation-resistant
 radial expansion coefficients computed by the concrete radial formula; D=1
