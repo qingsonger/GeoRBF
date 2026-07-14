@@ -178,6 +178,26 @@ at value. Extreme exponential and rational products are range-classified as a
 whole so an intermediate zero or infinity does not erase a representable
 final tail.
 
+The compact catalog uses the normalized dimension-three Wendland C2, C4, and
+C6 polynomials with `q=r/rho` and `t=max(1-q,0)`:
+
+```text
+t^4 (1+4q),
+t^6 (1+6q+35q^2/3),
+t^8 (1+8q+25q^2+32q^3).
+```
+
+Each has one positive coordinate-length `support_radius=rho`, center value
+one, strict positive definiteness in D=1/D=2/D=3, and exact zero extension for
+`r>=rho`. Analytic value-through-third derivatives and direct `a` and `b`
+coefficients carry enough powers of `t` to match the zero branch through the
+declared away order. C2 stops at second spatial order at the center; C4 and C6
+have complete third-order center jets. Forming `t` as `1-q` on the center half
+and `(rho-r)/rho` on the boundary half, then range-classifying the complete
+factored product, protects both near-center and near-boundary extreme-scale
+evaluation. This numerical catalog does not imply a sparse index, sparse
+matrix format, or sparse solver.
+
 ## Correctness policy
 
 Truth comes from analytic fields, high-precision evaluation, independent finite

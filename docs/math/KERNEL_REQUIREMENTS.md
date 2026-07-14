@@ -250,6 +250,69 @@ The SPD and multiquadric sign classifications are cross-checked against
 The half-integer Matérn formulas and `sqrt(2 nu) r/ell` scaling follow
 [Rasmussen and Williams, section 4.2](https://gaussianprocess.org/gpml/chapters/RW.pdf).
 
+## Wendland compact-support kernels
+
+The compact catalog uses exactly one configured `support_radius = rho`, a
+positive finite coordinate length. Let `alpha = 1/rho`, `q = r/rho`, and
+`t = max(1-q,0)`. All three members are dimensionless, normalized to one at
+the center, strictly positive definite in D=1, D=2, and D=3, and exactly zero
+for `r >= rho`:
+
+```text
+C2: phi = t^4 (1 + 4q)
+C4: phi = t^6 (1 + 6q + 35q^2/3)
+C6: phi = t^8 (1 + 8q + 25q^2 + 32q^3).
+```
+
+The C4 polynomial is divided by its conventional constant factor three so
+that every member has center value one; positive scalar normalization does not
+change strict positive definiteness. These are the dimension-three functions
+constructed by [Wendland (1995)](https://doi.org/10.1007/BF02123482), whose
+positive-definiteness result also covers the lower supported dimensions.
+
+The implementation evaluates these analytic radial terms without numerical
+differentiation:
+
+```text
+C2:
+  phi'   = -20 alpha q t^3
+  phi''  = 20 alpha^2 (4q-1) t^2
+  phi''' = 120 alpha^3 (1-2q) t
+  a      = -20 alpha^2 t^3
+  b      = 60 alpha^3 t^2
+
+C4:
+  phi'   = -(56/3) alpha q(1+5q) t^5
+  phi''  = -(56/3) alpha^2 (1+4q-35q^2) t^4
+  phi''' = 560 alpha^3 q(3-7q) t^3
+  a      = -(56/3) alpha^2 (1+5q) t^5
+  b      = 560 alpha^3 q t^4
+
+C6:
+  phi'   = -22 alpha q(1+7q+16q^2) t^7
+  phi''  = -22 alpha^2 (1+6q-15q^2-160q^3) t^6
+  phi''' = 1584 alpha^3 q(1+5q-20q^2) t^5
+  a      = -22 alpha^2 (1+7q+16q^2) t^7
+  b      = 528 alpha^3 q(1+6q) t^6.
+```
+
+Here `a=phi'/r` and `b=(phi''-a)/r` are direct forms for D=2/D=3 Cartesian
+expansion. Their boundary factors show that the value, first, second, and
+third derivatives agree with the exact zero extension at `r=rho`. The C2
+center supports spatial derivatives through second order with Hessian
+`-20 alpha^2 I`; its nonzero one-sided radial third derivative does not define
+a Euclidean third tensor. C4 and C6 have complete third-order center jets with
+zero odd tensors and Hessians `-(56/3) alpha^2 I` and `-22 alpha^2 I`.
+
+For `0 < r < rho`, the center half forms `t=1-q`, while the boundary half uses
+`t=(rho-r)/rho` so neither an enormous support radius nor subtraction of a
+rounded near-one `q` erases representable information. Factored products use
+a direct ordinary path and re-evaluate only a zero or non-finite extreme
+product from its combined log magnitude. Construction requires reciprocal
+scales through third order to be finite, and genuinely non-representable final
+results return structured errors. The numerical kernel does not own a sparse
+index or assembly policy; those remain gated by the compact-sparse spike.
+
 Before exposure, every kernel documents its formula, parameter dimensions,
 definiteness, CPD order, origin limit, required derivatives, and dimension
 range. Tests use high-precision or independent finite differences, origin and

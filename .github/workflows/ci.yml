@@ -44,5 +44,7 @@ jobs:
         run: cargo bench -p georbf --bench polyharmonic_spline -- --smoke
       - name: Smoke-test smooth global kernels benchmark
         run: cargo bench -p georbf --bench smooth_global_kernels -- --smoke
+      - name: Smoke-test Wendland kernels benchmark
+        run: cargo bench -p georbf --bench wendland_kernels -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check

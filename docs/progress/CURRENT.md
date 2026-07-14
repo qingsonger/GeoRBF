@@ -2,14 +2,44 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / next atomic requirement
+- Execution mode: Implement / Draft PR preparation
 - Current requirement: REQ-KERNEL-004
-- Issue: not yet created
+- Issue: #22
 - Pull request: not yet opened
-- Branch: not yet created
+- Branch: `codex/req-kernel-004-wendland-compact-support`
 
 ## Completed in this run
 
+- Confirmed clean synchronized `main` at `2d57174`, the correct origin and
+  worktree, no tags, no open Issue, PR, review, or failed CI, and green
+  three-platform `main` run 29301969855; confirmed REQ-KERNEL-001 is
+  integrated, then created Issue #22 and the isolated REQ-KERNEL-004 branch.
+- Added normalized Wendland C2, C4, and C6 kernels for D=1/D=2/D=3 with one
+  positive coordinate-length support radius, exact positive-zero boundary and
+  exterior branches, strict-SPD metadata, and exact center capabilities.
+- Added analytic interior value-through-third derivatives and direct stable
+  D=2/D=3 expansion coefficients. A center/boundary split forms the support
+  coordinate without avoidable cancellation, and complete factored-product
+  range classification preserves representable extreme results without
+  hidden regularization.
+- Added exact-rational truth, independent finite differences, deterministic
+  full-Gram Cholesky SPD checks in every dimension, boundary smoothness,
+  center limits, coordinate-scale covariance, exchange signs, tensor
+  symmetry, pathologies, D=0/D=4 compile failures, and `Send + Sync`
+  assertions.
+- Added synchronized math and architecture contracts, the original Wendland
+  paper citation, rustdoc, a runnable D=3 example, change record, and a
+  deterministic allocation-free three-member benchmark with CI smoke
+  coverage. Sparse indexing and assembly remain explicitly excluded.
+- Four full 1,000,000-iteration benchmark runs retained bit-identical
+  checksums. D=1/D=2/D=3 median catalog-workload times were 170.95, 330.13,
+  and 474.78 ns/iteration; environment and observed ranges are recorded in
+  `benches/REQ-KERNEL-004.md`.
+- The final local gate passed formatting, warning-denying workspace Clippy,
+  88 workspace tests, 17 doctests, 74 release integration tests, rustdoc with
+  warnings denied, all four benchmark smoke workloads, the five exercised
+  kernel examples, and all 58 requirement checks. Clippy's initial test-only
+  iterator suggestion was repaired before the final pass.
 - Squash-merged PR #20 as commit `c887cda`; Issue #19 closed automatically,
   and post-merge `main` CI run 29301786246 passed on Windows, Ubuntu, and
   macOS with the complete job set. REQ-KERNEL-003 now satisfies every
@@ -285,19 +315,21 @@
 
 ## Current blockers
 
-None. REQ-KERNEL-003 is integrated. REQ-KERNEL-004 has no unfinished
-dependency and is selected next among the P1-ready M1 requirements to complete
-the active kernel catalog sequence before switching domains.
+None in implementation. REQ-KERNEL-004 has complete local implementation,
+tests, documentation, diagnostics, example, and benchmark evidence. It still
+requires a Draft PR, green three-platform CI, independent mathematical and
+numerical review, merge, and post-merge integration-state confirmation before
+the registry may say `integrated`.
 
 ## Next atomic task
 
-Create the REQ-KERNEL-004 Issue with explicit Wendland C2, C4, and C6
-acceptance criteria, then create an isolated feature branch. Implement only
-dimension-valid compact-support formulas, exact zero extension, support-boundary
-smoothness and capability metadata, independent truth and sampled-SPD tests,
-documentation, applicable interfaces, diagnostics, and benchmark evidence. Do
-not begin orientation, anisotropy, sparse assembly, polynomial, functional,
-field assembly, or solver work in the same run.
+Commit and push the isolated REQ-KERNEL-004 implementation, open its Draft PR,
+link the PR in `requirements/v1.yaml`, and advance only to the truthful
+`documented` state. The following run must enter Review mode for independent
+formula, sign, dimension, SPD, center-limit, boundary, extreme-range,
+allocation, interface, test, documentation, and benchmark review. Do not begin
+orientation, anisotropy, sparse assembly, polynomial, functional, field
+assembly, or solver work before this requirement is reviewed and integrated.
 
 ## Latest full test result
 
@@ -306,12 +338,12 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 78 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 88 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 15 doctests, including thirteen
+- `cargo test --doc --workspace`: passed; 17 doctests, including fifteen
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 64 integration tests
-  and 15 doctests, 0 failures.
+- `cargo test -p georbf --release --all-features`: passed; 74 integration tests
+  and 17 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
 - `cargo xtask requirements check`: passed; 58 requirements.
@@ -331,13 +363,19 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   deterministic six-family D=1/D=2/D=3 workloads. Four full 1,000,000-iteration
   runs had medians of 489.39, 790.00, and 913.75 ns/iteration respectively
   with bit-identical checksums; see `benches/REQ-KERNEL-003.md`.
+- `cargo bench -p georbf --bench wendland_kernels -- --smoke`: passed for
+  deterministic C2/C4/C6 D=1/D=2/D=3 workloads. Four full 1,000,000-iteration
+  runs had medians of 170.95, 330.13, and 474.78 ns/iteration respectively
+  with bit-identical checksums; see `benches/REQ-KERNEL-004.md`.
 - `cargo run -p georbf --example radial_kernel_calculus`: passed.
 - `cargo run -p georbf --example kernel_metadata`: passed.
 - `cargo run -p georbf --example polyharmonic_spline`: passed.
 - `cargo run -p georbf --example smooth_global_kernels`: passed.
+- `cargo run -p georbf --example wendland_kernels`: passed; the support
+  boundary value was exact positive zero.
 - Scoped forbidden-pattern and hot-path allocation/dynamic-dispatch scans:
-  passed. The only `dyn` occurrences in the module are the two standard
-  `Error::source` return types outside numerical evaluation.
+  passed for the Wendland implementation. The only `dyn` occurrences are the
+  two standard `Error::source` return types outside numerical evaluation.
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.

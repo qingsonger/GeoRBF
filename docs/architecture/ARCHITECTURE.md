@@ -65,6 +65,15 @@ polyharmonic submodule it delegates Cartesian tensors and argument signs to
 kernel calculus and has no geology, polynomial construction, anisotropy,
 assembly, fitting, solver, schema, or adapter dependency.
 
+The Wendland submodule owns the normalized C2, C4, and C6 compact-support
+formulas and their one physical support radius. It pairs exact SPD and center
+capability metadata with an explicit zero branch at and beyond the boundary,
+computes analytic radial derivatives and cancellation-resistant D=2/D=3
+expansion coefficients, and preserves representable factored products near
+the support edge. It delegates Cartesian tensors and argument signs to kernel
+calculus. It does not select neighborhoods, sparse storage, or solver policy;
+those remain blocked on the dedicated compact-sparse spike and ADR.
+
 ## Runtime behavior
 
 Long operations accept cancellation, progress, explicit thread count, and
