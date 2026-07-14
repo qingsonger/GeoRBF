@@ -228,7 +228,7 @@ requirements:
     dependencies: [REQ-BOOTSTRAP-001]
     milestone: M2-v0.2.0
     priority: P0
-    issue: null
+    issue: 40
     pull_request: null
     tests: [rank-spike-cases, platform-build]
     docs: [docs/adr, docs/architecture/SOLVER_POLICY.md]
@@ -237,8 +237,8 @@ requirements:
     c_api: "N/A: dependency spike exposes no ABI"
     cpp_api: "N/A: dependency spike exposes no C++ API"
     python_api: "N/A: dependency spike exposes no Python API"
-    benchmark: planned
-    status: planned
+    benchmark: implemented
+    status: in_progress
 
   - id: REQ-CPD-001
     title: CPD rank checks and null-space projection

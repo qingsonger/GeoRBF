@@ -36,6 +36,12 @@ jobs:
         run: cargo test --workspace --all-features
       - name: Test documentation
         run: cargo test --doc --workspace
+      - name: Lint rank-backend spike
+        run: cargo clippy --manifest-path spikes/rank-backends/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Test rank-spike cases
+        run: cargo test --manifest-path spikes/rank-backends/Cargo.toml --all-features
+      - name: Smoke-test rank-backend spike
+        run: cargo run --manifest-path spikes/rank-backends/Cargo.toml --release -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check
 
@@ -61,6 +67,12 @@ jobs:
         run: cargo test --workspace --all-features
       - name: Test documentation
         run: cargo test --doc --workspace
+      - name: Lint rank-backend spike
+        run: cargo clippy --manifest-path spikes/rank-backends/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Test rank-spike cases
+        run: cargo test --manifest-path spikes/rank-backends/Cargo.toml --all-features
+      - name: Smoke-test rank-backend spike
+        run: cargo run --manifest-path spikes/rank-backends/Cargo.toml --release -- --smoke
       - name: Smoke-test radial kernel calculus benchmark
         run: cargo bench -p georbf --bench radial_kernel_calculus -- --smoke
       - name: Smoke-test polyharmonic spline benchmark

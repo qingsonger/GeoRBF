@@ -6,48 +6,57 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-FUNC-001 complete
-- Requirement: REQ-FUNC-001, Issue #37 (closed)
-- Implementation pull request: #38, squash-merged as `2879f13`
-- Integration-state branch: `codex/req-func-001-integration-state`
-- Integration-state pull request: #39
-- Review record: `docs/reviews/PR-38-INDEPENDENT-REVIEW.md`
-- Registry state in this integration change: `integrated`
-- Next eligible requirement: REQ-SPIKE-002 (`planned`)
+- Mode: Implement / REQ-SPIKE-002
+- Requirement: REQ-SPIKE-002, Issue #40
+- Branch: `codex/req-spike-002-rrqr-svd-backend`
+- Draft pull request: pending creation after the stable-head gate
+- Registry state before Draft PR creation: `in_progress`; this task will record
+  the PR and advance it to `documented` after the first push
+- Dependency: REQ-BOOTSTRAP-001 is `integrated`
+- Production dependency state: unchanged; the comparison crate is excluded
+  from the production workspace
 
-## Integration result
+## Implemented decision
 
-- A fresh independent mathematical and numerical re-review found no P0, P1,
-  P2, or P3 issue. P1-1 is closed by exact demand-bounded kernel-jet prefixes
-  and the coincident Matérn regressions.
-- Exact ready head `4bf62ca` passed the complete Windows, Ubuntu, and macOS CI
-  matrix with every benchmark smoke workload in run 29340242329.
-- PR #38 squash-merged exactly once as `2879f13`; Issue #37 closed as
-  completed.
-- Post-merge `main` run 29340402183 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate.
-- The complete local integration-state standard gate passed: formatting,
-  workspace Clippy with all targets/features, workspace tests with all
-  features, workspace rustdoc, and all 58 requirement checks.
-- This isolated integration-state change contains no production, test,
-  manifest, schema, build-input, API, or numerical-behavior change.
+- ADR-0009 selects the nalgebra 0.35 release line for later internal RRQR
+  screening and SVD rank review. REQ-CPD-001 must repeat the patch-level audit
+  before adding a production dependency.
+- The explicit spike policy uses eight deterministic alternating infinity-norm
+  equilibration passes and dimensionless `max(m,n) * eps * leading` RRQR and
+  SVD thresholds. SVD is the review classification; RRQR disagreement remains
+  diagnostic evidence.
+- The isolated harness compares nalgebra 0.35.0 and faer 0.24.4 with six
+  analytic/property/error cases, fixed-size scaling probes, optional backend
+  features, exact lockfile, and no pseudoinverse or solve fallback.
+- CI now lints, tests, and smoke-runs the spike in Draft Ubuntu and the complete
+  ready/main Windows, Ubuntu, and macOS matrix.
+
+## Validation state
+
+- Focused all-feature tests pass all 6 rank-spike cases.
+- All-feature and each single-backend build/test paths pass on pinned Rust
+  1.96.1 `x86_64-pc-windows-msvc`.
+- Warning-denying all-target/all-feature spike Clippy passes.
+- Three deterministic release benchmark runs and the smoke workload pass; the
+  exact ranges and size evidence are in `docs/benchmarks/REQ-SPIKE-002.md`.
+- The final stable-head standard workspace gate passed: formatting,
+  warning-denying workspace Clippy with all targets/features, workspace tests
+  with all features, workspace rustdoc, and all 58 requirement checks.
 
 ## Next task
 
-Open a fresh Implement task for only REQ-SPIKE-002. Perform the mandatory
-preflight, create its Issue with explicit acceptance criteria, confirm its
-dependency closure remains integrated, and read only its listed normative
-documents and relevant ADRs before beginning the backend evaluation. Do not
-continue directly from this integration task.
+After this task creates the Draft PR, open a fresh Review task for only that PR
+and REQ-SPIKE-002. Supply the requirement summary, dependency closure,
+ADR-0009, solver policy, PR diff, and exact validation evidence to an
+independent reviewer. Do not implement REQ-CPD-001 in the same task.
 
 ## Durable evidence
 
-- Requirement summary: `changes/REQ-FUNC-001.md`
-- Benchmark baseline: `docs/benchmarks/REQ-FUNC-001.md`
-- Independent review: `docs/reviews/PR-38-INDEPENDENT-REVIEW.md`
-- Acceptance criteria and exclusions: GitHub Issue #37
-- Exact CI and merge history: GitHub PR #38 and runs 29340242329 and
-  29340402183
+- Acceptance criteria and exclusions: GitHub Issue #40
+- Decision: `docs/adr/ADR-0009-nalgebra-rank-review-backend.md`
+- Change summary: `changes/REQ-SPIKE-002.md`
+- Benchmark and size baseline: `docs/benchmarks/REQ-SPIKE-002.md`
+- Reproducible harness: `spikes/rank-backends/`
 
 ## Checks not yet available
 
