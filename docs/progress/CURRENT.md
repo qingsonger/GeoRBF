@@ -9,9 +9,9 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement / REQ-SPIKE-002
 - Requirement: REQ-SPIKE-002, Issue #40
 - Branch: `codex/req-spike-002-rrqr-svd-backend`
-- Draft pull request: pending creation after the stable-head gate
-- Registry state before Draft PR creation: `in_progress`; this task will record
-  the PR and advance it to `documented` after the first push
+- Draft pull request: #41
+- Initial implementation commit: `69c5a06`
+- Registry state in this change: `documented`
 - Dependency: REQ-BOOTSTRAP-001 is `integrated`
 - Production dependency state: unchanged; the comparison crate is excluded
   from the production workspace
@@ -45,10 +45,10 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task
 
-After this task creates the Draft PR, open a fresh Review task for only that PR
-and REQ-SPIKE-002. Supply the requirement summary, dependency closure,
-ADR-0009, solver policy, PR diff, and exact validation evidence to an
-independent reviewer. Do not implement REQ-CPD-001 in the same task.
+Open a fresh Review task for only Draft PR #41 and REQ-SPIKE-002. Supply the
+requirement summary, dependency closure, ADR-0009, solver policy, PR diff, and
+exact validation evidence to an independent reviewer. Do not implement
+REQ-CPD-001 in the same task.
 
 ## Durable evidence
 
