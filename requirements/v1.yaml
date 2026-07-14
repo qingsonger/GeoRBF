@@ -184,7 +184,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust anisotropy types"
     python_api: "N/A: the future Python binding delegates anisotropy validation to the reviewed Rust core after API freeze"
     benchmark: implemented
-    status: documented
+    status: integrated
 
   - id: REQ-POLY-001
     title: Dimension-generic polynomial spaces
