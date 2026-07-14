@@ -5,7 +5,7 @@
 - Pull request: #41
 - Reviewed implementation head: `9cd0c306cc328822df211fac854c34d15606960f`
 - Base: `origin/main`
-- Result: changes requested; two P2 findings and no P0, P1, or P3 finding
+- Result: fresh re-review closes both P2 findings but requests one P3 repair
 
 ## Review scope and independence
 
@@ -160,9 +160,53 @@ passed. The subsequent review-record and bounded-handoff commit changes only
 documentation. A fresh independent re-review is still required before either
 finding can be considered closed or PR #41 can be marked ready.
 
+## Fresh re-review result
+
+A fresh read-only `math_reviewer` independently inspected the complete PR diff
+at exact head `431da7ffeb39e49d1dd5d0df94318fe5cb75dc34`. It did not inherit the
+Repair reasoning. It found no P0, P1, or P2 issue and confirmed that both
+original P2 findings are closed, but found the following new P3 evidence
+defect.
+
+### P3-1: repair evidence names a nonexistent full commit object
+
+The repair-evidence paragraph at line 131 records
+`30bd4952105acc6a04a7dcaff72493692f29d051` as the repair code/test head. That
+object does not exist. The actual Git commit resolved by the documented short
+prefix is `30bd49520131ff085fd538c93ad767455cdade43`, whose parent is review
+evidence commit `e1db3492866da63115784432977f3c1e7d039b56`. The PR body's
+Repair update repeats the same nonexistent full object name.
+
+The incorrect full hash breaks exact reproduction of durable repair evidence;
+the valid short prefix elsewhere does not make an explicitly recorded invalid
+object truthful. A Repair task must correct both evidence locations to the
+actual full hash and verify it with `git cat-file -e <hash>^{commit}`. Because
+that repair creates a new PR head, another fresh independent re-review is
+required before the PR can be marked ready.
+
+The reviewer independently confirmed P2-1 closed. For the already-equilibrated
+matrix with its repeated coefficient 12 ULPs above `0.5`, the analytic ratio
+`sigma_min / tau_svd` is approximately `0.8888888888888884`, so its rank is
+two. At 15 ULPs the ratio is approximately `1.1111111111111103`, so its rank is
+three. These results follow from the exact singular direction and the
+two-dimensional block invariants, not from either candidate backend. Both
+inputs are representable, bitwise distinct, unchanged by eight equilibration
+passes, and within approximately 11.1% of the strict threshold.
+
+The reviewer also confirmed P2-2 closed. The zero-backend configuration fails
+at compile time with the required diagnostic, while CI retains all-feature,
+faer-only, and nalgebra-only positive tests plus the exact negative check in
+both Draft and ready paths. Focused reproduction passed. No pseudoinverse,
+hidden regularization, production numerical dependency, public interface, or
+out-of-scope CPD implementation was introduced.
+
+Draft Ubuntu CI run 29373908569 passed on exact PR head `431da7f`. The complete
+Windows, Ubuntu, and macOS ready-head matrix and benchmark-smoke gate remains
+intentionally unrun because P3-1 blocks the ready transition.
+
 ## Disposition
 
-PR #41 remains Draft and REQ-SPIKE-002 remains `documented`. A fresh Repair
-task repaired P2-1 and P2-2 at `30bd495`. The next task must be a fresh,
-independent re-review of that repair and the complete PR diff. It must not
-repair code or start REQ-CPD-001.
+PR #41 remains Draft and REQ-SPIKE-002 remains `documented`. P2-1 and P2-2 are
+closed, but P3-1 requires a new, documentation-only Repair task followed by a
+fresh independent re-review. This Review task must not correct the hash, mark
+the PR ready, merge it, or start REQ-CPD-001.
