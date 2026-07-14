@@ -7,8 +7,9 @@ use std::io;
 
 use georbf::{
     CenterRepresenter, FunctionalAtom, FunctionalError, FunctionalExpr, FunctionalProvenance,
-    FunctionalStorage, FunctionalTerm, Gaussian, KernelActionError, ObservationFunctional, Point,
-    PolynomialSpace, RadialSeparation, ScalarFieldSample, SpatialKernelJet, UnitDirection,
+    FunctionalStorage, FunctionalTerm, Gaussian, KernelActionError, KernelDerivativeOrder, Matern,
+    MaternSmoothness, ObservationFunctional, Point, PolynomialSpace, RadialSeparation,
+    ScalarFieldSample, SpatialKernelJet, SpatialKernelJetPrefix, UnitDirection,
 };
 
 fn provenance(identifier: u64) -> FunctionalProvenance {
@@ -35,13 +36,13 @@ fn gaussian_jet<const D: usize>(
     query: Point<D>,
     center: Point<D>,
     length_scale: f64,
-) -> Result<SpatialKernelJet<D>, Box<dyn Error>>
+) -> Result<SpatialKernelJetPrefix<D>, Box<dyn Error>>
 where
     georbf::Dim<D>: georbf::SupportedDimension,
 {
     let separation = RadialSeparation::try_new(query, center)?;
     let radial = Gaussian::try_new(length_scale)?.radial_jet(separation)?;
-    Ok(SpatialKernelJet::try_new(separation, radial)?)
+    Ok(SpatialKernelJet::try_new(separation, radial)?.into())
 }
 
 fn single_observation<const D: usize>(atom: FunctionalAtom<D>) -> ObservationFunctional<D>
@@ -172,7 +173,7 @@ fn kernel_actions_apply_query_and_center_signs_exactly_once() {
     let value_center = FunctionalAtom::value(center, provenance(22));
     let derivative_center =
         FunctionalAtom::directional_derivative(center, direction, provenance(23));
-    let evaluate = |x, y| gaussian_jet(x, y, scale);
+    let evaluate = |x, y, _| gaussian_jet(x, y, scale);
 
     assert_close(
         single_observation(value_query)
@@ -213,7 +214,7 @@ fn kernel_exchange_identity_and_center_limit_hold() {
     let right_derivative = FunctionalAtom::directional_derivative(right, direction, provenance(31));
     let left_value = FunctionalAtom::value(left, provenance(32));
     let right_value = FunctionalAtom::value(right, provenance(33));
-    let evaluate = |x, y| gaussian_jet(x, y, 1.5);
+    let evaluate = |x, y, _| gaussian_jet(x, y, 1.5);
 
     let left_right = single_observation(left_derivative)
         .try_apply_kernel(&single_center(right_value), evaluate)
@@ -250,6 +251,56 @@ fn kernel_exchange_identity_and_center_limit_hold() {
 }
 
 #[test]
+fn coincident_matern_actions_request_only_the_exact_derivative_demand() -> Result<(), Box<dyn Error>>
+{
+    let point = Point::try_new([0.0, 0.0])?;
+    let value = FunctionalAtom::value(point, provenance(34));
+    let one_half = Matern::try_new(MaternSmoothness::OneHalf, 2.0)?;
+    let value_action = single_observation(value).try_apply_kernel(
+        &single_center(value),
+        |query, center, demand| -> Result<SpatialKernelJetPrefix<2>, io::Error> {
+            assert_eq!(demand, KernelDerivativeOrder::Value);
+            let separation = RadialSeparation::try_new(query, center)
+                .map_err(|error| io::Error::other(error.to_string()))?;
+            SpatialKernelJetPrefix::try_center_value(
+                separation,
+                one_half
+                    .radial_value(separation.radius())
+                    .map_err(|error| io::Error::other(error.to_string()))?,
+            )
+            .map_err(|error| io::Error::other(error.to_string()))
+        },
+    )?;
+    assert_eq!(value_action, 1.0);
+
+    let direction = UnitDirection::try_new([1.0, 0.0])?;
+    let derivative = FunctionalAtom::directional_derivative(point, direction, provenance(35));
+    let three_halves = Matern::try_new(MaternSmoothness::ThreeHalves, 2.0)?;
+    let derivative_action = single_observation(derivative).try_apply_kernel(
+        &single_center(derivative),
+        |query, center, demand| -> Result<SpatialKernelJetPrefix<2>, io::Error> {
+            assert_eq!(demand, KernelDerivativeOrder::Second);
+            let separation = RadialSeparation::try_new(query, center)
+                .map_err(|error| io::Error::other(error.to_string()))?;
+            let second = three_halves
+                .radial_derivative(separation.radius(), KernelDerivativeOrder::Second)
+                .map_err(|error| io::Error::other(error.to_string()))?
+                .ok_or_else(|| io::Error::other("Matérn 3/2 center second derivative missing"))?;
+            SpatialKernelJetPrefix::try_center_through_second(
+                separation,
+                three_halves
+                    .radial_value(separation.radius())
+                    .map_err(|error| io::Error::other(error.to_string()))?,
+                second,
+            )
+            .map_err(|error| io::Error::other(error.to_string()))
+        },
+    )?;
+    assert_close(derivative_action, 0.75, 2.0e-15);
+    Ok(())
+}
+
+#[test]
 fn expression_kernel_action_is_bilinear() {
     let query = Point::try_new([1.0, -2.0, 0.5]).unwrap();
     let center = Point::try_new([-0.5, 0.25, 1.0]).unwrap();
@@ -257,7 +308,7 @@ fn expression_kernel_action_is_bilinear() {
     let query_value = FunctionalAtom::value(query, provenance(40));
     let query_derivative = FunctionalAtom::directional_derivative(query, direction, provenance(41));
     let center_value = FunctionalAtom::value(center, provenance(42));
-    let evaluate = |x, y| gaussian_jet(x, y, 3.0);
+    let evaluate = |x, y, _| gaussian_jet(x, y, 3.0);
 
     let combined = ObservationFunctional::new(expression([
         term(2.0, query_value),
@@ -378,7 +429,7 @@ fn kernel_evaluator_errors_retain_both_term_provenances() {
         gaussian_jet(first, center.expression().terms()[0].atom().point(), 1.0).unwrap();
     let mut calls = 0;
     let error = observation
-        .try_apply_kernel(&center, |_, _| {
+        .try_apply_kernel(&center, |_, _, _| {
             calls += 1;
             if calls == 1 {
                 Ok(first_jet)
@@ -399,17 +450,36 @@ fn kernel_evaluator_errors_retain_both_term_provenances() {
     ));
 
     let coincident = Point::try_new([0.0]).unwrap();
+    let direction = UnitDirection::try_new([1.0]).unwrap();
+    let derivative = FunctionalAtom::directional_derivative(coincident, direction, provenance(73));
+    let value_only = SpatialKernelJetPrefix::try_center_value(
+        RadialSeparation::try_new(coincident, coincident).unwrap(),
+        1.0,
+    )
+    .unwrap();
+    assert!(matches!(
+        single_observation(derivative)
+            .try_apply_kernel(&single_center(derivative), |_, _, _| Ok::<_, io::Error>(
+                value_only
+            ),),
+        Err(KernelActionError::InsufficientDerivativeOrder {
+            demanded: KernelDerivativeOrder::Second,
+            available_through: KernelDerivativeOrder::Value,
+            ..
+        })
+    ));
+
     let finite_jet = gaussian_jet(coincident, coincident, 1.0).unwrap();
     let overflowing_observation = ObservationFunctional::new(expression([term(
         f64::MAX,
-        FunctionalAtom::value(coincident, provenance(73)),
+        FunctionalAtom::value(coincident, provenance(74)),
     )]));
     let weighted_center = CenterRepresenter::new(expression([term(
         2.0,
-        FunctionalAtom::value(coincident, provenance(74)),
+        FunctionalAtom::value(coincident, provenance(75)),
     )]));
     assert!(matches!(
-        overflowing_observation.try_apply_kernel(&weighted_center, |_, _| {
+        overflowing_observation.try_apply_kernel(&weighted_center, |_, _, _| {
             Ok::<_, io::Error>(finite_jet)
         }),
         Err(KernelActionError::NonFiniteAction {
@@ -417,7 +487,7 @@ fn kernel_evaluator_errors_retain_both_term_provenances() {
             observation_provenance,
             center_term_index: 0,
             center_provenance,
-        }) if observation_provenance == provenance(73) && center_provenance == provenance(74)
+        }) if observation_provenance == provenance(74) && center_provenance == provenance(75)
     ));
 }
 
@@ -429,6 +499,7 @@ fn observation_and_center_types_preserve_order_and_are_send_sync() {
     assert_send_sync::<FunctionalExpr<3>>();
     assert_send_sync::<ObservationFunctional<3>>();
     assert_send_sync::<CenterRepresenter<3>>();
+    assert_send_sync::<SpatialKernelJetPrefix<3>>();
 
     let point = Point::try_new([0.0, 1.0]).unwrap();
     let first = FunctionalAtom::value(point, provenance(80));

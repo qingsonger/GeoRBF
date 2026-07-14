@@ -52,6 +52,7 @@ pub use kernel::{
 pub use kernel_calculus::{
     KernelArgument, KernelCalculusError, RadialDerivativeOrder, RadialExpansionCoefficient,
     RadialExpansionCoefficients, RadialJet, RadialJetLocation, RadialSeparation, SpatialKernelJet,
+    SpatialKernelJetPrefix,
 };
 pub use orientation::{
     LinearOrientation, OrientationAngleField, OrientationError, OrientationPolarity,

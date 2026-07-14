@@ -82,7 +82,28 @@ the bounded handoff.
 
 ## Disposition
 
-P1-1 requires Repair. This review task records evidence only and makes no
-production or test change. The next task must repair only P1-1 and stop after
-its focused checks, final standard gate, handoff update, commit, and push. It
-must not start another requirement or mark the PR ready.
+P1-1 was repaired in the subsequent bounded Repair task. The evaluator now
+receives the exact atom-pair demand and returns a `SpatialKernelJetPrefix` that
+can stop at value, first, or second order. Complete jets convert through the
+maximum order any v1 atom pair needs. Coincident prefixes use analytic radial
+center limits and do not expose an unsupported higher derivative. Returning a
+prefix below the stated demand is a structured `InsufficientDerivativeOrder`
+error with both term provenances.
+
+The required coincident Matérn 1/2 value/value regression passes with zero-order
+demand and exact action one. The Matérn 3/2 derivative/derivative companion
+passes with second-order demand and the analytic mixed action `3/4` for length
+scale two. Existing Gaussian sign, exchange, center-limit, bilinearity, error,
+example, and benchmark-smoke paths remain green.
+
+Focused functional tests pass 10/10, focused Clippy passes with warnings denied,
+the runnable example passes, benchmark smoke passes in D=1/D=2/D=3 with the
+recorded checksums, and `git diff --check` passes. After the final production
+and test change, the complete standard workspace gate passed: formatting,
+workspace Clippy with all targets/features, workspace tests with all features,
+workspace rustdoc, and all 58 requirement-registry checks.
+
+The original finding is not independently closed by this repair record. PR #38
+remains Draft and REQ-FUNC-001 remains `in_progress`. A fresh read-only
+re-review must verify the repair and check for new P0-P3 findings before the PR
+can be marked ready.

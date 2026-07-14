@@ -73,8 +73,10 @@ where
     let started = Instant::now();
     let mut kernel_checksum = 0.0;
     for _ in 0..iterations {
-        kernel_checksum +=
-            black_box(observation.try_apply_kernel(&representer, |_, _| Ok::<_, Infallible>(jet))?);
+        kernel_checksum += black_box(
+            observation
+                .try_apply_kernel(&representer, |_, _, _| Ok::<_, Infallible>(jet.into()))?,
+        );
     }
     let kernel_elapsed = started.elapsed();
 

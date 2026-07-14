@@ -6,7 +6,7 @@ use std::io;
 use georbf::{
     CenterRepresenter, FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm,
     Gaussian, ObservationFunctional, Point, PolynomialSpace, RadialSeparation, ScalarFieldSample,
-    SpatialKernelJet, UnitDirection,
+    SpatialKernelJet, SpatialKernelJetPrefix, UnitDirection,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -42,13 +42,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     let kernel = Gaussian::try_new(2.0)?;
     let kernel_action = observation.try_apply_kernel(
         &representer,
-        |x, y| -> Result<SpatialKernelJet<2>, io::Error> {
+        |x, y, _| -> Result<SpatialKernelJetPrefix<2>, io::Error> {
             let separation = RadialSeparation::try_new(x, y)
                 .map_err(|error| io::Error::other(error.to_string()))?;
             let radial = kernel
                 .radial_jet(separation)
                 .map_err(|error| io::Error::other(error.to_string()))?;
             SpatialKernelJet::try_new(separation, radial)
+                .map(Into::into)
                 .map_err(|error| io::Error::other(error.to_string()))
         },
     )?;

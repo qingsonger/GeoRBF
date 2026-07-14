@@ -21,6 +21,7 @@ use std::fmt;
 
 use crate::dimension::{Dim, SupportedDimension};
 use crate::geometry::Point;
+use crate::kernel::KernelDerivativeOrder;
 
 /// Which kernel argument a Cartesian derivative acts on.
 ///
@@ -565,6 +566,157 @@ where
             second,
             third,
         }
+    }
+}
+
+/// Demand-bounded Cartesian kernel derivatives for functional matrix actions.
+///
+/// Unlike [`SpatialKernelJet`], this type may stop before third order. This
+/// permits a caller to return exactly the derivatives required by one
+/// observation/center atom pair without fabricating a smoother center limit.
+/// The center constructors use the analytic stationary-radial limits and
+/// expose no derivative above the explicitly promised order. Converting a full
+/// jet preserves every derivative that the v1 atomic functional pairs can
+/// demand (value through second order).
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[must_use]
+pub struct SpatialKernelJetPrefix<const D: usize>
+where
+    Dim<D>: SupportedDimension,
+{
+    available_through: KernelDerivativeOrder,
+    value: f64,
+    first: Option<[f64; D]>,
+    second: Option<[[f64; D]; D]>,
+}
+
+impl<const D: usize> SpatialKernelJetPrefix<D>
+where
+    Dim<D>: SupportedDimension,
+{
+    /// Constructs a value-only jet prefix at coincident points.
+    ///
+    /// # Errors
+    ///
+    /// Returns a location mismatch for distinct points or a non-finite radial
+    /// derivative error when `value` is NaN or infinite.
+    pub fn try_center_value(
+        separation: RadialSeparation<D>,
+        value: f64,
+    ) -> Result<Self, KernelCalculusError> {
+        require_center(separation)?;
+        validate_radial_derivative(RadialDerivativeOrder::Value, value)?;
+        Ok(Self {
+            available_through: KernelDerivativeOrder::Value,
+            value,
+            first: None,
+            second: None,
+        })
+    }
+
+    /// Constructs a value-and-gradient jet prefix at coincident points.
+    ///
+    /// The zero gradient is the analytic limit promised by the caller for a
+    /// stationary radial kernel. No Hessian or third derivative is implied.
+    ///
+    /// # Errors
+    ///
+    /// Returns a location mismatch for distinct points or a non-finite radial
+    /// derivative error when `value` is NaN or infinite.
+    pub fn try_center_through_first(
+        separation: RadialSeparation<D>,
+        value: f64,
+    ) -> Result<Self, KernelCalculusError> {
+        require_center(separation)?;
+        validate_radial_derivative(RadialDerivativeOrder::Value, value)?;
+        Ok(Self {
+            available_through: KernelDerivativeOrder::First,
+            value,
+            first: Some([0.0; D]),
+            second: None,
+        })
+    }
+
+    /// Constructs a value-through-Hessian jet prefix at coincident points.
+    ///
+    /// The stationary-radial analytic limits are zero gradient and
+    /// `phi''(0) I`. This promises no third spatial derivative.
+    ///
+    /// # Errors
+    ///
+    /// Returns a location mismatch for distinct points or a non-finite radial
+    /// derivative error when `value` or `second` is NaN or infinite.
+    pub fn try_center_through_second(
+        separation: RadialSeparation<D>,
+        value: f64,
+        second: f64,
+    ) -> Result<Self, KernelCalculusError> {
+        require_center(separation)?;
+        validate_radial_derivative(RadialDerivativeOrder::Value, value)?;
+        validate_radial_derivative(RadialDerivativeOrder::Second, second)?;
+        Ok(Self {
+            available_through: KernelDerivativeOrder::Second,
+            value,
+            first: Some([0.0; D]),
+            second: Some(std::array::from_fn(|row| {
+                std::array::from_fn(|column| if row == column { second } else { 0.0 })
+            })),
+        })
+    }
+
+    /// Returns the highest derivative order carried by this prefix.
+    #[must_use]
+    pub const fn available_through(&self) -> KernelDerivativeOrder {
+        self.available_through
+    }
+
+    /// Returns the kernel value.
+    #[must_use]
+    pub const fn value(&self) -> f64 {
+        self.value
+    }
+
+    /// Returns the first derivative for the selected argument when available.
+    #[must_use]
+    pub fn first_derivative(&self, argument: KernelArgument) -> Option<[f64; D]> {
+        self.first.map(|first| apply_first_sign(first, argument))
+    }
+
+    /// Returns the second derivative for the selected arguments when available.
+    #[must_use]
+    pub fn second_derivative(&self, arguments: [KernelArgument; 2]) -> Option<[[f64; D]; D]> {
+        self.second
+            .map(|second| apply_second_sign(second, arguments_have_negative_sign(&arguments)))
+    }
+}
+
+impl<const D: usize> From<SpatialKernelJet<D>> for SpatialKernelJetPrefix<D>
+where
+    Dim<D>: SupportedDimension,
+{
+    fn from(jet: SpatialKernelJet<D>) -> Self {
+        Self {
+            available_through: KernelDerivativeOrder::Second,
+            value: jet.value,
+            first: Some(jet.first),
+            second: Some(jet.second),
+        }
+    }
+}
+
+fn require_center<const D: usize>(
+    separation: RadialSeparation<D>,
+) -> Result<(), KernelCalculusError>
+where
+    Dim<D>: SupportedDimension,
+{
+    if separation.is_center() {
+        Ok(())
+    } else {
+        Err(KernelCalculusError::JetLocationMismatch {
+            separation: RadialJetLocation::AwayFromCenter,
+            jet: RadialJetLocation::Center,
+        })
     }
 }
 

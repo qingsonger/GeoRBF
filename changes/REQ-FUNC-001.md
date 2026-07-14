@@ -9,13 +9,16 @@ samples, allocations, shapes, polynomial actions, and accumulated results fail
 with structured diagnostics instead of partial success.
 
 The Rust API applies expressions to explicitly aligned value/gradient samples,
-to every member of the integrated complete polynomial space, and to Cartesian
-kernel jets supplied per term pair. Query and center derivatives delegate their
-signs to the shared kernel calculus, including value/derivative,
-derivative/value, derivative/derivative, exchange-identity, and analytic center
-limits. Distinct `ObservationFunctional` and `CenterRepresenter` wrappers keep
-the two architectural collections type-separated without introducing an
-observation relation or solver row.
+to every member of the integrated complete polynomial space, and to
+demand-bounded Cartesian kernel-jet prefixes supplied per term pair. The
+evaluator receives the exact combined order from zero through two, so
+coincident Matérn 1/2 value actions and Matérn 3/2 second-order actions do not
+require or fabricate a complete third-order center jet. Query and center
+derivatives delegate their signs to the shared kernel calculus, including
+value/derivative, derivative/value, derivative/derivative, exchange-identity,
+and analytic center limits. Distinct `ObservationFunctional` and
+`CenterRepresenter` wrappers keep the two architectural collections
+type-separated without introducing an observation relation or solver row.
 
 Independent analytic-field, polynomial, linearity, derivative-sign, center,
 exchange, provenance, allocation/error, unsupported-dimension, and

@@ -93,10 +93,14 @@ provenance identifier. A `FunctionalExpr` is a nonempty insertion-ordered list
 of finite coefficient/atom pairs. Applying an expression to caller-supplied
 field samples requires one explicitly aligned finite value/gradient sample per
 term. Polynomial action follows the deterministic complete-basis order. Kernel
-action evaluates one Cartesian jet per observation-term/center-term point pair
-and contracts that jet with zero or one unit direction on each side. Every
-coefficient product and sum must remain finite; failure reports the originating
-term provenance rather than returning a partial value.
+action requests the exact combined derivative order (zero, one, or two) for
+each observation-term/center-term point pair and contracts a Cartesian jet
+prefix with zero or one unit direction on each side. A complete jet supplies
+the same prefix through second order; coincident kernels may instead provide
+only the analytic center prefix their declared capability supports. No missing
+higher derivative is fabricated. Every coefficient product and sum must remain
+finite; failure reports the originating term provenance rather than returning
+a partial value.
 
 `ObservationFunctional<D>` and `CenterRepresenter<D>` are distinct types. They
 may contain equal expressions, but no API silently converts one role into the

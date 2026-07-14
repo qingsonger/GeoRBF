@@ -22,7 +22,7 @@ use std::fmt;
 use crate::dimension::{Dim, SupportedDimension};
 use crate::geometry::{Point, UnitDirection};
 use crate::kernel::KernelDerivativeOrder;
-use crate::kernel_calculus::{KernelArgument, SpatialKernelJet};
+use crate::kernel_calculus::{KernelArgument, SpatialKernelJetPrefix};
 use crate::polynomial::{PolynomialSpace, PolynomialSpaceError};
 
 /// Stable opaque caller provenance attached to one atomic functional.
@@ -569,35 +569,54 @@ where
     /// Applies this observation expression to a distinct center representer.
     ///
     /// The evaluator is called once for every observation-term/center-term
-    /// pair with their validated points. It must return the Cartesian kernel
-    /// jet for exactly that query-center ordering. The shared kernel calculus
-    /// then supplies the query/center signs used here.
+    /// pair with their validated points and exact combined derivative demand.
+    /// It must return a Cartesian kernel-jet prefix for exactly that
+    /// query-center ordering. The shared kernel calculus then supplies the
+    /// query/center signs used here.
     ///
     /// # Errors
     ///
     /// Returns [`KernelActionError::Evaluation`] with both term provenances
-    /// when the evaluator fails, or [`KernelActionError::NonFiniteAction`]
-    /// when contraction, coefficient multiplication, or accumulation is not
-    /// finitely representable.
+    /// when the evaluator fails, [`KernelActionError::InsufficientDerivativeOrder`]
+    /// when its jet prefix does not satisfy the stated demand, or
+    /// [`KernelActionError::NonFiniteAction`] when contraction, coefficient
+    /// multiplication, or accumulation is not finitely representable.
     pub fn try_apply_kernel<E>(
         &self,
         center: &CenterRepresenter<D>,
-        mut evaluator: impl FnMut(Point<D>, Point<D>) -> Result<SpatialKernelJet<D>, E>,
+        mut evaluator: impl FnMut(
+            Point<D>,
+            Point<D>,
+            KernelDerivativeOrder,
+        ) -> Result<SpatialKernelJetPrefix<D>, E>,
     ) -> Result<f64, KernelActionError<E>> {
         let mut result = 0.0;
         for (observation_term_index, observation_term) in self.expression.terms.iter().enumerate() {
             for (center_term_index, center_term) in center.expression.terms.iter().enumerate() {
                 let observation_provenance = observation_term.atom.provenance();
                 let center_provenance = center_term.atom.provenance();
-                let jet = evaluator(observation_term.atom.point(), center_term.atom.point())
-                    .map_err(|source| KernelActionError::Evaluation {
+                let demanded = atom_pair_derivative_order(observation_term.atom, center_term.atom);
+                let jet = evaluator(
+                    observation_term.atom.point(),
+                    center_term.atom.point(),
+                    demanded,
+                )
+                .map_err(|source| KernelActionError::Evaluation {
+                    observation_term_index,
+                    observation_provenance,
+                    center_term_index,
+                    center_provenance,
+                    source,
+                })?;
+                let action = atom_kernel_action(observation_term.atom, center_term.atom, &jet)
+                    .ok_or(KernelActionError::InsufficientDerivativeOrder {
                         observation_term_index,
                         observation_provenance,
                         center_term_index,
                         center_provenance,
-                        source,
+                        demanded,
+                        available_through: jet.available_through(),
                     })?;
-                let action = atom_kernel_action(observation_term.atom, center_term.atom, &jet);
                 let weighted = observation_term.coefficient * center_term.coefficient * action;
                 let next = result + weighted;
                 if !action.is_finite() || !weighted.is_finite() || !next.is_finite() {
@@ -664,6 +683,21 @@ pub enum KernelActionError<E> {
         /// Evaluator diagnostic.
         source: E,
     },
+    /// The evaluator returned fewer Cartesian derivatives than the atom pair demands.
+    InsufficientDerivativeOrder {
+        /// Observation term index in insertion order.
+        observation_term_index: usize,
+        /// Observation term provenance.
+        observation_provenance: FunctionalProvenance,
+        /// Center term index in insertion order.
+        center_term_index: usize,
+        /// Center term provenance.
+        center_provenance: FunctionalProvenance,
+        /// Exact derivative order demanded by the atom pair.
+        demanded: KernelDerivativeOrder,
+        /// Highest derivative order carried by the returned jet prefix.
+        available_through: KernelDerivativeOrder,
+    },
     /// Contraction, weighting, or accumulation was not finitely representable.
     NonFiniteAction {
         /// Observation term index in insertion order.
@@ -695,6 +729,19 @@ where
                 observation_provenance.identifier(),
                 center_provenance.identifier()
             ),
+            Self::InsufficientDerivativeOrder {
+                observation_term_index,
+                observation_provenance,
+                center_term_index,
+                center_provenance,
+                demanded,
+                available_through,
+            } => write!(
+                formatter,
+                "kernel evaluation returned derivatives through {available_through:?}, but observation term {observation_term_index} (provenance {}) and center term {center_term_index} (provenance {}) demand {demanded:?}",
+                observation_provenance.identifier(),
+                center_provenance.identifier()
+            ),
             Self::NonFiniteAction {
                 observation_term_index,
                 observation_provenance,
@@ -717,7 +764,7 @@ where
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Evaluation { source, .. } => Some(source),
-            Self::NonFiniteAction { .. } => None,
+            Self::InsufficientDerivativeOrder { .. } | Self::NonFiniteAction { .. } => None,
         }
     }
 }
@@ -737,23 +784,23 @@ where
 fn atom_kernel_action<const D: usize>(
     observation: FunctionalAtom<D>,
     center: FunctionalAtom<D>,
-    jet: &SpatialKernelJet<D>,
-) -> f64
+    jet: &SpatialKernelJetPrefix<D>,
+) -> Option<f64>
 where
     Dim<D>: SupportedDimension,
 {
     match (observation.direction(), center.direction()) {
-        (None, None) => jet.value(),
-        (Some(direction), None) => dot(
+        (None, None) => Some(jet.value()),
+        (Some(direction), None) => Some(dot(
             *direction.components(),
-            jet.first_derivative(KernelArgument::Query),
-        ),
-        (None, Some(direction)) => dot(
+            jet.first_derivative(KernelArgument::Query)?,
+        )),
+        (None, Some(direction)) => Some(dot(
             *direction.components(),
-            jet.first_derivative(KernelArgument::Center),
-        ),
+            jet.first_derivative(KernelArgument::Center)?,
+        )),
         (Some(observation_direction), Some(center_direction)) => {
-            let hessian = jet.second_derivative([KernelArgument::Query, KernelArgument::Center]);
+            let hessian = jet.second_derivative([KernelArgument::Query, KernelArgument::Center])?;
             let mut result = 0.0;
             for (row, observation_component) in observation_direction
                 .components()
@@ -767,8 +814,22 @@ where
                     result += observation_component * hessian[row][column] * center_component;
                 }
             }
-            result
+            Some(result)
         }
+    }
+}
+
+fn atom_pair_derivative_order<const D: usize>(
+    observation: FunctionalAtom<D>,
+    center: FunctionalAtom<D>,
+) -> KernelDerivativeOrder
+where
+    Dim<D>: SupportedDimension,
+{
+    match (observation.direction(), center.direction()) {
+        (None, None) => KernelDerivativeOrder::Value,
+        (Some(_), None) | (None, Some(_)) => KernelDerivativeOrder::First,
+        (Some(_), Some(_)) => KernelDerivativeOrder::Second,
     }
 }
 
