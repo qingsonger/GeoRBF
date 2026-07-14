@@ -148,7 +148,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust kernel types"
     python_api: "N/A: Python kernel objects wait for the reviewed Rust API and versioned schemas"
     benchmark: implemented
-    status: documented
+    status: integrated
 
   - id: REQ-KERNEL-004
     title: Wendland compact-support kernels
