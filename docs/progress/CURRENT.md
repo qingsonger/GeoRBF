@@ -6,48 +6,62 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-FUNC-001 complete
-- Requirement: REQ-FUNC-001, Issue #37 (closed)
-- Implementation pull request: #38, squash-merged as `2879f13`
-- Integration-state branch: `codex/req-func-001-integration-state`
-- Integration-state pull request: #39
-- Review record: `docs/reviews/PR-38-INDEPENDENT-REVIEW.md`
-- Registry state in this integration change: `integrated`
-- Next eligible requirement: REQ-SPIKE-002 (`planned`)
+- Mode: Review / PR #41 clean re-review; ready-head integration sequence next
+- Requirement: REQ-SPIKE-002, Issue #40
+- Branch: `codex/req-spike-002-rrqr-svd-backend`
+- Pull request: #41, Draft until clean-review evidence is synchronized
+- Exact cleanly re-reviewed head: `66ed708a097bd55235f9a4be012c44870a2ffe33`
+- Actual repair code/test head: `30bd49520131ff085fd538c93ad767455cdade43`
+- Review record: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
+- Registry state in this change: `documented`
+- Dependency: REQ-BOOTSTRAP-001 is `integrated`
+- Production dependency state: unchanged; the comparison crate is excluded
+  from the production workspace
 
-## Integration result
+## Review result
 
-- A fresh independent mathematical and numerical re-review found no P0, P1,
-  P2, or P3 issue. P1-1 is closed by exact demand-bounded kernel-jet prefixes
-  and the coincident Matérn regressions.
-- Exact ready head `4bf62ca` passed the complete Windows, Ubuntu, and macOS CI
-  matrix with every benchmark smoke workload in run 29340242329.
-- PR #38 squash-merged exactly once as `2879f13`; Issue #37 closed as
-  completed.
-- Post-merge `main` run 29340402183 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate.
-- The complete local integration-state standard gate passed: formatting,
-  workspace Clippy with all targets/features, workspace tests with all
-  features, workspace rustdoc, and all 58 requirement checks.
-- This isolated integration-state change contains no production, test,
-  manifest, schema, build-input, API, or numerical-behavior change.
+- A second fresh read-only `math_reviewer` inspected the complete PR diff at
+  exact head `66ed708` without inheriting Repair reasoning.
+- P2-1, P2-2, and P3-1 are independently confirmed closed. No P0, P1, P2, or
+  P3 issue remains.
+- The threshold regressions bracket the strict SVD threshold under independent
+  analytic truth; the zero-backend path fails at compile time; the valid
+  repair object and parent resolve exactly.
+- This clean-review record changes documentation only. No production code,
+  test, manifest, schema, build input, requirement status, mathematical claim,
+  or interface changed.
+
+## Validation state
+
+- Focused `cargo xtask requirements show REQ-SPIKE-002`,
+  `cargo xtask requirements deps REQ-SPIKE-002`,
+  `cargo xtask requirements check`, and `git diff --check` passed.
+- On stable code/test head `30bd495`, spike formatting, warning-denying
+  Clippy, all three 6/6 feature-test configurations, the expected zero-backend
+  compile failure, the release smoke workload, workspace formatting,
+  warning-denying Clippy, all 139 tests, all 25 doctests and compile-fail
+  tests, all 58 requirement checks, and `git diff --check` passed.
+- Draft Ubuntu CI run 29375239847 passed on exact reviewed head `66ed708`.
+- The ready-head Windows/Ubuntu/macOS and benchmark-smoke gate has not run and
+  must be triggered only after the clean-review evidence commit is pushed and
+  PR #41 is marked ready.
 
 ## Next task
 
-Open a fresh Implement task for only REQ-SPIKE-002. Perform the mandatory
-preflight, create its Issue with explicit acceptance criteria, confirm its
-dependency closure remains integrated, and read only its listed normative
-documents and relevant ADRs before beginning the backend evaluation. Do not
-continue directly from this integration task.
+Synchronize the clean review evidence to PR #41, mark it ready, and wait for
+the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact ready
+head. Merge exactly once only when that CI is green, wait for post-merge `main`
+CI, then record truthful integration state through an isolated change. Do not
+start REQ-CPD-001 in this task.
 
 ## Durable evidence
 
-- Requirement summary: `changes/REQ-FUNC-001.md`
-- Benchmark baseline: `docs/benchmarks/REQ-FUNC-001.md`
-- Independent review: `docs/reviews/PR-38-INDEPENDENT-REVIEW.md`
-- Acceptance criteria and exclusions: GitHub Issue #37
-- Exact CI and merge history: GitHub PR #38 and runs 29340242329 and
-  29340402183
+- Acceptance criteria and exclusions: GitHub Issue #40
+- Decision: `docs/adr/ADR-0009-nalgebra-rank-review-backend.md`
+- Independent review: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
+- Change summary: `changes/REQ-SPIKE-002.md`
+- Benchmark and size baseline: `docs/benchmarks/REQ-SPIKE-002.md`
+- Reproducible harness: `spikes/rank-backends/`
 
 ## Checks not yet available
 

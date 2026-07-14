@@ -36,6 +36,23 @@ jobs:
         run: cargo test --workspace --all-features
       - name: Test documentation
         run: cargo test --doc --workspace
+      - name: Lint rank-backend spike
+        run: cargo clippy --manifest-path spikes/rank-backends/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Test rank-spike feature configurations
+        run: |
+          cargo test --manifest-path spikes/rank-backends/Cargo.toml --all-features
+          cargo test --manifest-path spikes/rank-backends/Cargo.toml --no-default-features --features faer-backend
+          cargo test --manifest-path spikes/rank-backends/Cargo.toml --no-default-features --features nalgebra-backend
+      - name: Reject rank-spike without a backend
+        shell: bash
+        run: |
+          if output=$(cargo check --manifest-path spikes/rank-backends/Cargo.toml --no-default-features 2>&1); then
+            echo "rank-backend spike unexpectedly accepted an empty backend selection" >&2
+            exit 1
+          fi
+          grep -Fq "enable at least one rank backend feature" <<< "$output"
+      - name: Smoke-test rank-backend spike
+        run: cargo run --manifest-path spikes/rank-backends/Cargo.toml --release -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check
 
@@ -61,6 +78,23 @@ jobs:
         run: cargo test --workspace --all-features
       - name: Test documentation
         run: cargo test --doc --workspace
+      - name: Lint rank-backend spike
+        run: cargo clippy --manifest-path spikes/rank-backends/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Test rank-spike feature configurations
+        run: |
+          cargo test --manifest-path spikes/rank-backends/Cargo.toml --all-features
+          cargo test --manifest-path spikes/rank-backends/Cargo.toml --no-default-features --features faer-backend
+          cargo test --manifest-path spikes/rank-backends/Cargo.toml --no-default-features --features nalgebra-backend
+      - name: Reject rank-spike without a backend
+        shell: bash
+        run: |
+          if output=$(cargo check --manifest-path spikes/rank-backends/Cargo.toml --no-default-features 2>&1); then
+            echo "rank-backend spike unexpectedly accepted an empty backend selection" >&2
+            exit 1
+          fi
+          grep -Fq "enable at least one rank backend feature" <<< "$output"
+      - name: Smoke-test rank-backend spike
+        run: cargo run --manifest-path spikes/rank-backends/Cargo.toml --release -- --smoke
       - name: Smoke-test radial kernel calculus benchmark
         run: cargo bench -p georbf --bench radial_kernel_calculus -- --smoke
       - name: Smoke-test polyharmonic spline benchmark
