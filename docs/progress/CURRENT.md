@@ -6,43 +6,55 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-POLY-001 complete
-- Requirement: REQ-POLY-001, Issue #34 (closed)
-- Implementation pull request: #35, squash-merged as `18b3e66`
-- Integration-state branch: `codex/req-poly-001-integration-state`
-- Integration-state pull request: #36
-- Review record: `docs/reviews/PR-35-INDEPENDENT-REVIEW.md`
-- Registry state in this integration change: `integrated`
-- Next eligible requirement: REQ-FUNC-001 (`planned`)
+- Mode: Review / PR #38 ready-head integration sequence
+- Requirement: REQ-FUNC-001, Issue #37
+- Branch: `codex/req-func-001-atomic-functionals`
+- Pull request: #38 (Draft until the final review-evidence head is pushed)
+- Original reviewed head: `6dcbb9fa8d874cd5de4217e6f5f1deeac9927e0b`
+- Repair and clean fresh re-review head: `264c46a31908a85eb76289ae43e1bad8b5c2ea00`
+- Registry state in this change: `documented`
+- Dependencies: REQ-DIM-001, REQ-KCALC-001, and REQ-POLY-001 are `integrated`
 
-## Integration result
+## Fresh re-review result
 
-- A fresh independent mathematical and numerical re-review found no P0, P1,
-  P2, or P3 issue. P3-1 is closed by the joint-output atomicity regression.
-- Exact ready head `4f219fd` passed the complete Windows, Ubuntu, and macOS CI
-  matrix with every benchmark smoke workload in run 29330884780.
-- PR #35 squash-merged exactly once as `18b3e66`; Issue #34 closed.
-- Post-merge `main` run 29330997791 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate.
-- This isolated integration-state change contains no production, test,
-  manifest, schema, build-input, API, or numerical-behavior change.
+- A fresh read-only `math_reviewer` inspected the complete diff at exact repair
+  head `264c46a` without inheriting the Repair reasoning and found no P0, P1,
+  P2, or P3 issue.
+- P1-1 is closed. The evaluator receives the exact zero-, first-, or
+  second-order atom-pair demand and consumes a demand-bounded
+  `SpatialKernelJetPrefix` without fabricating higher center derivatives.
+- The reviewer independently confirmed the coincident Matérn 1/2 value action
+  is one and the Matérn 3/2 same-direction mixed action is `3/4` for length
+  scale two, with the shared query/center signs applied exactly once.
+- The implementation, mathematics, safety, interfaces, performance, benchmark
+  wiring, and requirement evidence are clean for ready-head CI.
+
+## Validation state
+
+- The independent reviewer passed formatting, focused warning-denying Clippy,
+  all 10 functional tests, the compile-fail doctest, runnable example,
+  benchmark smoke, all 58 requirement checks, `git diff --check`, and scoped
+  safety/allocation checks.
+- The complete final review-evidence standard gate passes: formatting,
+  workspace Clippy with all targets/features, workspace tests with all
+  features, workspace rustdoc, and all 58 requirement checks.
+- Draft Ubuntu CI run 29339066111 is green on exact repair head `264c46a`.
 
 ## Next task
 
-Open a fresh Implement task for only REQ-FUNC-001. Perform the mandatory
-preflight, create or read its Issue with explicit acceptance criteria, confirm
-its dependency closure remains integrated, and read only its listed normative
-documents and relevant ADRs before implementation. Do not continue directly
-from this integration task.
+Finish only PR #38's ready-head integration sequence. Run the complete local
+standard gate on the final review-evidence head, synchronize the PR evidence,
+mark the PR ready, and wait for the Windows, Ubuntu, macOS, and all benchmark
+smoke CI on that exact head. Merge exactly once only when that CI is green,
+then record truthful integration state in an isolated change. Do not begin
+another requirement.
 
 ## Durable evidence
 
-- Requirement summary: `changes/REQ-POLY-001.md`
-- Independent review and repair closure:
-  `docs/reviews/PR-35-INDEPENDENT-REVIEW.md`
-- Deterministic performance baseline: `docs/benchmarks/REQ-POLY-001.md`
-- Exact CI and merge history: GitHub PR #35 and runs 29330884780 and
-  29330997791
+- Requirement summary: `changes/REQ-FUNC-001.md`
+- Benchmark baseline: `docs/benchmarks/REQ-FUNC-001.md`
+- Independent review: `docs/reviews/PR-38-INDEPENDENT-REVIEW.md`
+- Acceptance criteria and exclusions: GitHub Issue #37
 
 ## Checks not yet available
 

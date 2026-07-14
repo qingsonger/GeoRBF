@@ -210,17 +210,17 @@ requirements:
     dependencies: [REQ-DIM-001, REQ-KCALC-001, REQ-POLY-001]
     milestone: M2-v0.2.0
     priority: P0
-    issue: null
-    pull_request: null
+    issue: 37
+    pull_request: 38
     tests: [analytic-action, linearity, derivative-signs, provenance]
     docs: [docs/math/MATH_SPEC.md, docs/architecture/PROBLEM_IR.md, rustdoc]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
-    status: planned
+    rust_api: implemented
+    cli: "N/A: no user-facing problem schema or fitting command exists yet"
+    c_api: "N/A: bindings wait for the Rust API and schemas to stabilize"
+    cpp_api: "N/A: bindings wait for the Rust API and schemas to stabilize"
+    python_api: "N/A: bindings wait for the Rust API and schemas to stabilize"
+    benchmark: implemented
+    status: documented
 
   - id: REQ-SPIKE-002
     title: Rank-revealing QR and SVD backend spike

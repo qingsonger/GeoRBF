@@ -15,3 +15,14 @@ cargo bench -p georbf --bench radial_kernel_calculus
 
 The fixed inputs, iteration count, environment, and measured baseline are
 recorded in `benches/REQ-KCALC-001.md`.
+
+`REQ-FUNC-001` adds a dependency-free benchmark for sample, complete-polynomial,
+and prebuilt-kernel-jet functional actions in D=1, D=2, and D=3:
+
+```text
+cargo bench -p georbf --bench atomic_functionals -- --smoke
+cargo bench -p georbf --bench atomic_functionals
+```
+
+The fixed workload and measured local baseline are recorded in
+`docs/benchmarks/REQ-FUNC-001.md`.

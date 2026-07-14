@@ -35,3 +35,7 @@ harness = false
 [[bench]]
 name = "polynomial_spaces"
 harness = false
+
+[[bench]]
+name = "atomic_functionals"
+harness = false
