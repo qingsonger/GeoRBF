@@ -6,56 +6,56 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement
+- Mode: Review (P1 finding recorded; Repair is next)
 - Requirement: REQ-FUNC-001, Issue #37
 - Branch: `codex/req-func-001-atomic-functionals`
 - Draft pull request: #38
 - Registry state in this change: `in_progress`
 - Dependencies: REQ-DIM-001, REQ-KCALC-001, and REQ-POLY-001 are `integrated`
 
-## Implementation result
+## Independent review result
 
-- Added the two atomic functionals and nonempty finite linear expressions for
-  D=1, D=2, and D=3 with deterministic term order and opaque stable provenance.
-- Added analytic sample, complete-polynomial, and observation/center kernel-jet
-  action. Query/center signs come only from the shared kernel calculus.
-- Added distinct observation-functional and center-representer wrapper types;
-  no semantic observation, constraint, assembly, fit, or solver was introduced.
-- Added structured coefficient, sample, allocation, shape, polynomial, kernel,
-  and non-finite accumulation diagnostics without partial result values.
-- Added independent truth and failure tests, synchronized rustdoc and normative
-  detail, a runnable example, a D=1/D=2/D=3 benchmark and baseline, and CI smoke
-  coverage.
-- Rust: implemented. CLI/C/C++/Python: N/A because problem schemas, fitted
-  models, and stable binding surfaces do not exist yet.
+- A fresh read-only `math_reviewer` reviewed exact head `6dcbb9f` without the
+  implementation reasoning and found one P1 defect and no P0, P2, or P3 issue.
+- P1-1: `ObservationFunctional::try_apply_kernel` requires the evaluator to
+  return a complete third-order `SpatialKernelJet` before dispatch determines
+  that an atom pair needs only order zero, one, or two. This wrongly excludes
+  valid coincident actions for kernels with exactly the demanded center
+  capability, including Matérn 1/2 value/value and Matérn 3/2
+  derivative/derivative.
+- Durable review evidence and the required regressions are recorded in
+  `docs/reviews/PR-38-INDEPENDENT-REVIEW.md`.
+- This Review task changed no production code or tests. PR #38 remains Draft
+  and REQ-FUNC-001 remains `in_progress`.
 
 ## Validation state
 
-- Focused functional integration tests pass: 9/9.
-- Strict `georbf` all-target Clippy passes.
-- Normal benchmark ran four consecutive times with stable checksums; the smoke
-  workload also passes.
-- The final stable-code standard gate passed: format, full workspace/all-target/
-  all-feature Clippy with warnings denied, full workspace tests, documentation
-  tests, and requirement-registry validation on implementation commit
-  `3203360`.
-- After that gate, only this handoff and Draft PR linkage metadata may change;
-  no production, test, manifest, schema, or build input may change without a
-  new final gate.
+- On reviewed head `6dcbb9f`, focused functional tests pass 9/9, functional
+  compile-fail rustdoc passes, benchmark smoke passes in D=1/D=2/D=3, and
+  Draft Ubuntu CI run 29334259493 is green.
+- The implementation-code standard gate passed on `3203360`; changes through
+  `6dcbb9f` after that gate contain only requirement linkage metadata and this
+  bounded handoff.
+- The Repair task must run focused regressions while iterating and the complete
+  standard workspace checks once after its final code change.
 
 ## Next task
 
-Open a fresh Review task for only Draft PR #38 and REQ-FUNC-001. Perform the
-mandatory preflight, then create and wait for the project `math_reviewer`
-sub-agent using only the bounded requirement/dependency summary, normative
-documents and relevant ADRs, PR diff, tests, and benchmark evidence. Record
-findings without repairing production code in the Review task. Do not start
-another requirement.
+Open a fresh Repair task for only P1-1 in Draft PR #38 and REQ-FUNC-001. First
+add the independent coincident Matérn 1/2 value/value regression and the
+Matérn 3/2 derivative/derivative companion. Implement the smallest
+demand-aware repair without fabricating unsupported derivatives, widening
+kernel capability, adding kernel-family special cases, or changing the shared
+query/center sign convention. Run focused checks during repair, then the full
+standard gate after the last code change. Update the review evidence and this
+handoff, commit, push, and stop for a fresh re-review. Do not mark the PR ready
+or start another requirement.
 
 ## Durable evidence
 
 - Requirement summary: `changes/REQ-FUNC-001.md`
 - Benchmark baseline: `docs/benchmarks/REQ-FUNC-001.md`
+- Independent review: `docs/reviews/PR-38-INDEPENDENT-REVIEW.md`
 - Acceptance criteria and exclusions: GitHub Issue #37
 
 ## Checks not yet available
