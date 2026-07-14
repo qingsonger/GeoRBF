@@ -2,14 +2,22 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / evidence publishing
-- Current requirement: REQ-KERNEL-004
-- Issue: #22
-- Pull request: Draft PR #23
-- Branch: `codex/req-kernel-004-wendland-compact-support`
+- Execution mode: Implement / next atomic requirement
+- Current requirement: REQ-ORIENT-001
+- Issue: not yet created
+- Pull request: not yet opened
+- Branch: not yet created
 
 ## Completed in this run
 
+- Squash-merged PR #23 as commit `7fdb56f`; Issue #22 closed automatically,
+  and post-merge `main` CI run 29303883398 passed on Windows, Ubuntu, and
+  macOS with the complete job set. REQ-KERNEL-004 now satisfies every
+  integration gate.
+- Review-evidence commit `b1a989f` passed GitHub Actions run 29303789259 on
+  Windows, Ubuntu, and macOS with the complete job set. PR #23 was then marked
+  ready for maintainer review and its title/body were synchronized with the
+  final evidence before merge.
 - Completed the independent mathematical, numerical, safety, API, allocation,
   performance, interface, documentation, and test review of PR #23. The first
   pass found one merge-blocking test-evidence gap but no production formula
@@ -333,21 +341,19 @@
 
 ## Current blockers
 
-None in implementation. REQ-KERNEL-004 has complete local implementation,
-tests, documentation, diagnostics, example, benchmark evidence, and Draft PR
-#23. Independent review and the review-repair three-platform CI are complete.
-The review-evidence head still requires three-platform CI before the PR is
-marked ready; merge and post-merge integration-state confirmation remain
-mandatory before the registry may say `integrated`.
+None. REQ-KERNEL-004 is integrated. REQ-ORIENT-001 has no unfinished
+dependency and is the smallest remaining P1-ready M1 requirement, ahead of the
+larger global-anisotropy implementation.
 
 ## Next atomic task
 
-Commit and push the PR #23 independent-review evidence, confirm its complete
-three-platform CI, and only then mark the PR ready for maintainer review. After
-the reviewed PR is squash-merged, update the registry to `integrated` through
-a separate reviewable integration-state PR and confirm post-merge `main` CI.
-Do not begin orientation, anisotropy, sparse assembly, polynomial, functional,
-field assembly, or solver work before this requirement is integrated.
+Create the REQ-ORIENT-001 Issue with explicit analytic conversion, convention,
+polarity, rotation-invariance, invalid-input, and D=2/D=3 acceptance criteria,
+then create its isolated feature branch. Implement only validated geological
+orientation conversions to the existing dimension-safe direction types and
+synchronize applicable docs, interfaces, diagnostics, examples, and tests. Do
+not begin normal/tangent constraints, global anisotropy, fields, assembly, or
+solver work in the same requirement.
 
 ## Latest full test result
 
@@ -477,6 +483,12 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - REQ-KERNEL-004 review-repair GitHub Actions run 29303657839 for commit
   `05b74c0` passed on Windows, Ubuntu, and macOS with the complete job set,
   including the repaired boundary and subnormal-range tests.
+- REQ-KERNEL-004 review-evidence GitHub Actions run 29303789259 for commit
+  `b1a989f` passed on Windows, Ubuntu, and macOS with the complete job set; PR
+  #23 was then marked ready for maintainer review.
+- REQ-KERNEL-004 post-merge `main` GitHub Actions run 29303883398 for merge
+  commit `7fdb56f` passed on Windows, Ubuntu, and macOS with the complete job
+  set.
 
 ## Checks not yet available
 
