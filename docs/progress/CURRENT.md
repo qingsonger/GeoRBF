@@ -2,7 +2,7 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / next atomic requirement
+- Execution mode: Review / evidence recording
 - Current requirement: REQ-KERNEL-003
 - Issue: #19
 - Pull request: Draft #20
@@ -10,6 +10,19 @@
 
 ## Completed in this run
 
+- Completed the independent mathematical, numerical, safety, API, allocation,
+  performance, interface, and test review of PR #20. The complete evidence is
+  recorded in `docs/reviews/PR-20-INDEPENDENT-REVIEW.md`.
+- Repaired the SPD/CPD evidence gap by replacing single-vector positivity with
+  symmetry and independent Cholesky checks of every sampled SPD Gram matrix and
+  the full signed-multiquadric `Z^T K Z` constant-zero projection. Added all six
+  families to exchange-sign coverage and an extreme MQ derivative regression.
+- Corrected stale crate-level rustdoc that still described smooth-global
+  kernels as deferred. No production formula defect was found.
+- Review-repair commit `0e56498` passed GitHub Actions run 29300983870 on
+  Windows, Ubuntu, and macOS, including formatting, Clippy, 78 workspace tests,
+  15 doctests, all three benchmark smoke workloads, and all 58 requirement
+  checks.
 - Committed the isolated implementation as `f829757`, pushed
   `codex/req-kernel-003-smooth-global-kernels`, and opened Draft PR #20. The
   requirement registry now links the PR and records the truthful pre-review
@@ -265,19 +278,17 @@
 
 ## Current blockers
 
-Independent mathematical/numerical review, maintainer merge, and post-merge
-`main` CI remain. The implementation, local checks, documentation, example,
-interface applicability, benchmark evidence, Draft PR, and three-platform PR
-CI are complete.
+Maintainer merge and post-merge `main` CI remain. The implementation,
+independent review and repairs, local checks, documentation, example, interface
+applicability, benchmark evidence, Draft PR, and review-repair three-platform
+CI are complete. REQ-KERNEL-003 remains truthfully `documented` until merge.
 
 ## Next atomic task
 
-Complete an independent review of Draft PR #20 covering formulas, signs,
-SPD/CPD classification, center limits, extreme range handling, allocations,
-interfaces, and tests. Repair any actionable findings and reconfirm green
-three-platform CI before marking the PR ready. Do not begin compact-support
-kernels, orientation, anisotropy, polynomial, functional, assembly, or solver
-work in the same run.
+Commit and push the independent review evidence, reconfirm the evidence head on
+Windows, Ubuntu, and macOS, then mark PR #20 ready for maintainer review. Do not
+begin compact-support kernels, orientation, anisotropy, polynomial, functional,
+assembly, or solver work in the same run.
 
 ## Latest full test result
 
@@ -385,6 +396,10 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   workloads.
 - REQ-KERNEL-003 handoff-state GitHub Actions run 29299484831 for commit
   `bd57bee` passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-003 final pre-review GitHub Actions run 29299576028 for commit
+  `624139f` passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-003 review-repair GitHub Actions run 29300983870 for commit
+  `0e56498` passed on Windows, Ubuntu, and macOS with the complete job set.
 
 ## Checks not yet available
 
