@@ -6,36 +6,35 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / PR #35 review finding P3-1
+- Mode: Review / PR #35 fresh re-review
 - Requirement: REQ-POLY-001, Issue #34
 - Branch: `codex/req-poly-001-polynomial-spaces`
 - Draft pull request: #35
-- Reviewed head: `acc65c667932c14d461e2bedd028eea5f1d2bfd8`
+- Previous reviewed head: `acc65c667932c14d461e2bedd028eea5f1d2bfd8`
+- Repair code/test head: `3a538d8a5673b49548f49c86ab0587563bd08405`
 - Review record: `docs/reviews/PR-35-INDEPENDENT-REVIEW.md`
 - Registry state: `documented`; REQ-DIM-001 is `integrated`
 
-## Independent review result
+## Repair result
 
 - The fresh read-only `math_reviewer` found no P0, P1, or P2 issue in the
   implementation, mathematics, safety, interfaces, performance, or scope.
-- P3-1: the joint `PolynomialSpace::try_evaluate` contract promises both output
-  buffers remain unchanged on every error, but failure tests cover only the
-  separate value-only and gradient-only methods. Current production code is
-  correct; the missing regression would allow a future partial-write bug.
-- Required regression: pass correctly sized sentinel values and undersized
-  sentinel gradients to the joint method, assert the structured gradient
-  length error, and assert that both buffers remain unchanged.
-- PR #35 must remain Draft. Review mode did not repair production or test code
-  and did not begin REQ-FUNC-001.
+- Repair head `3a538d8` adds the one required P3-1 joint-output atomicity
+  regression. It asserts the structured gradient length error and proves that
+  correctly sized values and undersized gradients both retain their distinct
+  sentinels.
+- The regression passes against the existing implementation, so production
+  code did not change. P3-1 awaits fresh independent re-review.
+- PR #35 remains Draft. This task did not begin REQ-FUNC-001.
 
 ## Next task
 
-Open a fresh Repair task for only PR #35 finding P3-1. Add the smallest joint-
-output atomicity regression, change production code only if the regression
-exposes a defect, run focused checks during repair, then run the complete
-standard workspace checks once on the stable repair head. Update the review
-record and this handoff, commit, push, and stop for fresh independent re-review.
-Do not begin REQ-FUNC-001.
+Open a fresh Review task for only PR #35. Supply the independent reviewer the
+bounded requirement and dependency summaries, normative documents, complete PR
+diff, original P3-1 finding, and repair validation evidence. Independently
+verify that P3-1 is closed and check for new findings. If clean, follow the
+ready-head CI and integration sequence in `docs/CODEX_WORKFLOW.md`; otherwise
+record findings and stop. Do not begin REQ-FUNC-001.
 
 ## Validation evidence
 
@@ -48,9 +47,12 @@ Do not begin REQ-FUNC-001.
 - Reviewed head `acc65c6` changed only the registry PR link/status and this
   bounded handoff after the stable full gate. Draft CI run 29329182602 passed
   the Ubuntu correctness gate on that exact head.
-- This Review task changes only independent-review evidence, the registry's
-  document link, and this bounded handoff. It does not change production, test,
-  manifest, schema, or build inputs.
+- Repair code/test head `3a538d8` passed the exact focused regression, formatting,
+  warning-denying workspace Clippy, 129 workspace tests, 24 doctests and
+  compile-fail tests, and all 58 requirement checks.
+- The repair changed one regression test only; no production, manifest, schema,
+  build input, registry state, or interface changed. The later review-record
+  and bounded-handoff update is documentation-only.
 
 ## Checks not yet available
 

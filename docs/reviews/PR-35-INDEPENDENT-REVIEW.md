@@ -5,6 +5,7 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/35
 - Branch: `codex/req-poly-001-polynomial-spaces`
 - Reviewed head: `acc65c667932c14d461e2bedd028eea5f1d2bfd8`
+- Repair code/test head: `3a538d8a5673b49548f49c86ab0587563bd08405`
 - Base head: `feeb608b8b2046731d62f4c49f31ee9737524517`
 - Review date: 2026-07-14
 - Mode: Independent mathematical and numerical review
@@ -42,6 +43,19 @@ sentinels. Assert a `Gradients` `OutputLengthMismatch` with expected length
 three and actual length two, then assert that both buffers remain exactly
 unchanged. No production-code change is indicated unless that regression
 exposes a defect.
+
+## Repair evidence
+
+Repair head `3a538d8` adds the required joint-call regression with distinct
+sentinel values in the correctly sized value buffer and undersized gradient
+buffer. It observes the required `Gradients` length error and proves that both
+buffers remain unchanged. The regression passes against the reviewed
+production implementation, so no production code changed.
+
+The focused regression passed. On the stable repair code/test tree, formatting,
+warning-denying workspace Clippy, all 129 workspace tests, all 24 doctests and
+compile-fail tests, and all 58 requirement checks passed. The subsequent review
+record and bounded-handoff update changes documentation only.
 
 ## Independent mathematical and numerical conclusion
 
@@ -88,10 +102,10 @@ exposes a defect.
 
 ## Disposition and residual risk
 
-Keep PR #35 in Draft. A fresh Repair task must address only P3-1, run the
-focused regression and the final standard checks on the stable repair head,
-update this review record and the bounded handoff, push, and stop for a fresh
-independent re-review. Do not begin REQ-FUNC-001.
+P3-1 has repair evidence but remains subject to fresh independent re-review.
+Keep PR #35 in Draft. The next task must independently verify that the original
+finding is closed and check the repair head for new findings; it must not begin
+REQ-FUNC-001.
 
 Allocation instrumentation, Miri, sanitizers, fuzzing, mutation testing, and
 API snapshots are not yet available. The handoff records those as later gates;
