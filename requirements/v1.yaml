@@ -202,7 +202,7 @@ requirements:
     cpp_api: "N/A: polynomial basis generation is internal"
     python_api: "N/A: polynomial basis generation is internal"
     benchmark: implemented
-    status: documented
+    status: integrated
 
   - id: REQ-FUNC-001
     title: Atomic functionals and linear expressions

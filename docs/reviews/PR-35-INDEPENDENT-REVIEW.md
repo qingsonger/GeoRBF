@@ -124,3 +124,15 @@ recorded.
 Allocation instrumentation, Miri, sanitizers, fuzzing, mutation testing, and
 API snapshots are not yet available. The handoff records those as later gates;
 they are residual program risks, not additional findings in REQ-POLY-001.
+
+## Integration evidence
+
+- Final review-evidence head `4f219fd7f0df11ac11b95ffb682c5837af09e39d`
+  passed the complete Windows, Ubuntu, and macOS Ready matrix, including every
+  benchmark smoke workload, in run 29330884780.
+- PR #35 squash-merged exactly once as
+  `18b3e66f487e02df9d38e834e08212fac1e37a79`; Issue #34 closed.
+- Post-merge `main` run 29330997791 passed the same complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate.
+- The isolated registry/progress integration change is PR #36. It makes no
+  production, test, manifest, schema, build-input, API, or numerical change.

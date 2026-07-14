@@ -18,6 +18,7 @@ available in Git history through commit `a2be099`.
 | REQ-KERNEL-004 | #22 | #23 | #24 | `docs/reviews/PR-23-INDEPENDENT-REVIEW.md` |
 | REQ-ORIENT-001 | #25 | #26 | #27 | `docs/reviews/PR-26-INDEPENDENT-REVIEW.md` |
 | REQ-ANISO-001 | #28 | #29 | #30 | `docs/reviews/PR-29-INDEPENDENT-REVIEW.md` |
+| REQ-POLY-001 | #34 | #35 | #36 | `docs/reviews/PR-35-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
@@ -33,4 +34,4 @@ GitHub. This file is an index, not a second completion registry.
 ## Milestone transition
 
 M0 and M1 are complete. The isolated Issue #31 workflow-efficiency repair is
-integrated. M2 begins with REQ-POLY-001.
+integrated. M2 continues with REQ-FUNC-001 after REQ-POLY-001 integration.
