@@ -9,7 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Repair / Codex workflow efficiency
 - Issue: #31, `[WORKFLOW] Reduce Codex context and verification overhead`
 - Branch: `codex/issue-31-context-efficiency`
-- Pull request: not yet opened
+- Pull request: #32 (Draft),
+  `https://github.com/qingsonger/GeoRBF/pull/32`
 - Scope: task boundaries, bounded context, requirement query tooling,
   project reasoning defaults, independent-review configuration, tiered CI,
   and exact user prompts
@@ -28,7 +29,7 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task
 
-Open a fresh Review task for the workflow-efficiency Draft PR after it exists.
+Open a fresh Review task for the workflow-efficiency Draft PR #32.
 Review only Issue #31 acceptance criteria, the PR diff, CI behavior, xtask
 selection/query logic, Codex configuration, bounded handoff, and usage prompts.
 Do not begin REQ-POLY-001 in that Review task.
@@ -57,8 +58,9 @@ Implement task for REQ-POLY-001.
   formatting, warning-denying workspace Clippy, 118 workspace tests, 21
   doctests, all 58 requirement checks, `git diff --check`, and strict Codex
   config parsing succeeded
-- GitHub workflow syntax/runtime: pending Draft PR execution; local
-  `actionlint` is unavailable
+- Draft CI run 29312539834 passed the Ubuntu correctness gate for commit
+  `f09ff13`; the 3-OS benchmark matrix was correctly skipped while Draft
+- Local `actionlint` is unavailable
 
 ## Checks not yet available
 
