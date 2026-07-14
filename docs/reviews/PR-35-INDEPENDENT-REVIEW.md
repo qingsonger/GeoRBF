@@ -4,8 +4,9 @@
 - Issue: https://github.com/qingsonger/GeoRBF/issues/34
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/35
 - Branch: `codex/req-poly-001-polynomial-spaces`
-- Reviewed head: `acc65c667932c14d461e2bedd028eea5f1d2bfd8`
+- Original reviewed head: `acc65c667932c14d461e2bedd028eea5f1d2bfd8`
 - Repair code/test head: `3a538d8a5673b49548f49c86ab0587563bd08405`
+- Fresh re-reviewed head: `e1ae7a67dd71a99d52993af0b5b4ac2f3d388c45`
 - Base head: `feeb608b8b2046731d62f4c49f31ee9737524517`
 - Review date: 2026-07-14
 - Mode: Independent mathematical and numerical review
@@ -20,12 +21,14 @@ ordering, values and Cartesian derivatives, origin and axis limits, extreme
 floating-point products, error atomicity, allocations, dimension gating,
 interfaces, tests, documentation, benchmarks, and the requirement state.
 
-Verdict: one P3 evidence finding blocks marking the Draft PR ready. No P0, P1,
-or P2 finding was identified. The current production implementation satisfies
-the reviewed mathematical and error-atomicity contracts; the finding is a
-missing regression for one public failure path.
+The original review found one P3 evidence gap and no P0, P1, or P2 finding.
+A fresh read-only `math_reviewer` then reviewed the complete current PR diff,
+independently verified the repair, and found no P0, P1, P2, or P3 issue. P3-1
+is closed. The reviewed head is eligible for the ready-head CI and integration
+sequence; it is not integrated until that complete CI is green and the PR is
+merged.
 
-## Finding
+## Original finding
 
 ### P3-1 -- Joint-output error atomicity lacks independent regression evidence
 
@@ -44,7 +47,7 @@ three and actual length two, then assert that both buffers remain exactly
 unchanged. No production-code change is indicated unless that regression
 exposes a defect.
 
-## Repair evidence
+## Repair and fresh re-review evidence
 
 Repair head `3a538d8` adds the required joint-call regression with distinct
 sentinel values in the correctly sized value buffer and undersized gradient
@@ -56,6 +59,15 @@ The focused regression passed. On the stable repair code/test tree, formatting,
 warning-denying workspace Clippy, all 129 workspace tests, all 24 doctests and
 compile-fail tests, and all 58 requirement checks passed. The subsequent review
 record and bounded-handoff update changes documentation only.
+
+The fresh independent reviewer inspected the complete diff from base
+`feeb608b8b2046731d62f4c49f31ee9737524517` through head
+`e1ae7a67dd71a99d52993af0b5b4ac2f3d388c45` without inheriting the
+implementation reasoning. It independently confirmed that the repaired joint
+call uses a correctly sized value buffer and undersized gradient buffer with
+distinct sentinels, returns the structured `Gradients` length mismatch, and
+leaves both outputs unchanged. The exact focused regression passed at the
+reviewed head. No new P0-P3 finding was identified.
 
 ## Independent mathematical and numerical conclusion
 
@@ -102,10 +114,12 @@ record and bounded-handoff update changes documentation only.
 
 ## Disposition and residual risk
 
-P3-1 has repair evidence but remains subject to fresh independent re-review.
-Keep PR #35 in Draft. The next task must independently verify that the original
-finding is closed and check the repair head for new findings; it must not begin
-REQ-FUNC-001.
+P3-1 is closed and the fresh re-review found no P0-P3 issue. PR #35 may be
+marked ready only after the final local standard gate and PR evidence are
+synchronized. It must then wait for the complete Windows, Ubuntu, macOS, and
+benchmark-smoke CI on the exact ready head and merge only if that CI is green.
+Do not begin REQ-FUNC-001 before truthful post-merge integration state is
+recorded.
 
 Allocation instrumentation, Miri, sanitizers, fuzzing, mutation testing, and
 API snapshots are not yet available. The handoff records those as later gates;

@@ -6,35 +6,38 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / PR #35 fresh re-review
+- Mode: Review / PR #35 ready-head integration sequence
 - Requirement: REQ-POLY-001, Issue #34
 - Branch: `codex/req-poly-001-polynomial-spaces`
 - Draft pull request: #35
-- Previous reviewed head: `acc65c667932c14d461e2bedd028eea5f1d2bfd8`
+- Original reviewed head: `acc65c667932c14d461e2bedd028eea5f1d2bfd8`
 - Repair code/test head: `3a538d8a5673b49548f49c86ab0587563bd08405`
+- Clean fresh re-review head: `e1ae7a67dd71a99d52993af0b5b4ac2f3d388c45`
 - Review record: `docs/reviews/PR-35-INDEPENDENT-REVIEW.md`
 - Registry state: `documented`; REQ-DIM-001 is `integrated`
 
-## Repair result
+## Fresh re-review result
 
-- The fresh read-only `math_reviewer` found no P0, P1, or P2 issue in the
-  implementation, mathematics, safety, interfaces, performance, or scope.
-- Repair head `3a538d8` adds the one required P3-1 joint-output atomicity
-  regression. It asserts the structured gradient length error and proves that
-  correctly sized values and undersized gradients both retain their distinct
-  sentinels.
-- The regression passes against the existing implementation, so production
-  code did not change. P3-1 awaits fresh independent re-review.
-- PR #35 remains Draft. This task did not begin REQ-FUNC-001.
+- A fresh read-only `math_reviewer` inspected the complete PR diff through
+  `e1ae7a6` without inheriting implementation reasoning and found no P0, P1,
+  P2, or P3 issue.
+- P3-1 is closed. The reviewer independently verified the structured gradient
+  length error and the distinct value/gradient sentinels in the joint-output
+  atomicity regression; the exact focused regression passed at the reviewed
+  head.
+- The implementation, mathematics, safety, interfaces, performance, scope,
+  benchmark wiring, and requirement evidence are clean for ready-head CI.
+- PR #35 remains Draft until the final local standard gate and PR evidence are
+  synchronized. This task did not begin REQ-FUNC-001.
 
 ## Next task
 
-Open a fresh Review task for only PR #35. Supply the independent reviewer the
-bounded requirement and dependency summaries, normative documents, complete PR
-diff, original P3-1 finding, and repair validation evidence. Independently
-verify that P3-1 is closed and check for new findings. If clean, follow the
-ready-head CI and integration sequence in `docs/CODEX_WORKFLOW.md`; otherwise
-record findings and stop. Do not begin REQ-FUNC-001.
+Finish only PR #35's ready-head integration sequence. Run the complete local
+standard gate on the final review-evidence head, synchronize the PR evidence,
+mark the PR ready, and wait for the Windows, Ubuntu, macOS, and all benchmark
+smoke CI on that exact head. Merge exactly once only when that CI is green,
+then record truthful integration state in an isolated change. Do not begin
+REQ-FUNC-001.
 
 ## Validation evidence
 
@@ -53,6 +56,8 @@ record findings and stop. Do not begin REQ-FUNC-001.
 - The repair changed one regression test only; no production, manifest, schema,
   build input, registry state, or interface changed. The later review-record
   and bounded-handoff update is documentation-only.
+- Draft CI run 29330040940 passed the Ubuntu correctness gate on exact fresh
+  re-review head `e1ae7a6`; the Ready-only matrix was correctly skipped.
 
 ## Checks not yet available
 
