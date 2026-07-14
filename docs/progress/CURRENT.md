@@ -2,14 +2,18 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / ready for maintainer
-- Current requirement: REQ-KERNEL-003
-- Issue: #19
-- Pull request: Ready #20
-- Branch: `codex/req-kernel-003-smooth-global-kernels`
+- Execution mode: Implement / next atomic requirement
+- Current requirement: REQ-KERNEL-004
+- Issue: not yet created
+- Pull request: not yet opened
+- Branch: not yet created
 
 ## Completed in this run
 
+- Squash-merged PR #20 as commit `c887cda`; Issue #19 closed automatically,
+  and post-merge `main` CI run 29301786246 passed on Windows, Ubuntu, and
+  macOS with the complete job set. REQ-KERNEL-003 now satisfies every
+  integration gate.
 - Review-evidence commit `4ff343c` passed GitHub Actions run 29301164389 on
   Windows, Ubuntu, and macOS with the complete job set. PR #20 was then marked
   ready for maintainer review.
@@ -281,18 +285,19 @@
 
 ## Current blockers
 
-Maintainer merge and post-merge `main` CI remain. The implementation,
-independent review and repairs, local checks, documentation, example, interface
-applicability, benchmark evidence, Ready PR, and review-evidence three-platform
-CI are complete. REQ-KERNEL-003 remains truthfully `documented` until merge.
+None. REQ-KERNEL-003 is integrated. REQ-KERNEL-004 has no unfinished
+dependency and is selected next among the P1-ready M1 requirements to complete
+the active kernel catalog sequence before switching domains.
 
 ## Next atomic task
 
-Complete maintainer review and merge PR #20. After merge, confirm the resulting
-`main` CI on Windows, Ubuntu, and macOS before an isolated integration-state
-update marks REQ-KERNEL-003 `integrated`. Do not begin compact-support kernels,
-orientation, anisotropy, polynomial, functional, assembly, or solver work in
-the same run.
+Create the REQ-KERNEL-004 Issue with explicit Wendland C2, C4, and C6
+acceptance criteria, then create an isolated feature branch. Implement only
+dimension-valid compact-support formulas, exact zero extension, support-boundary
+smoothness and capability metadata, independent truth and sampled-SPD tests,
+documentation, applicable interfaces, diagnostics, and benchmark evidence. Do
+not begin orientation, anisotropy, sparse assembly, polynomial, functional,
+field assembly, or solver work in the same run.
 
 ## Latest full test result
 
@@ -407,6 +412,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - REQ-KERNEL-003 review-evidence GitHub Actions run 29301164389 for commit
   `4ff343c` passed on Windows, Ubuntu, and macOS with the complete job set; PR
   #20 was then marked ready for maintainer review.
+- REQ-KERNEL-003 post-merge `main` GitHub Actions run 29301786246 for merge
+  commit `c887cda` passed on Windows, Ubuntu, and macOS with the complete job
+  set.
 
 ## Checks not yet available
 
