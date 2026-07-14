@@ -6,14 +6,15 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / Codex workflow efficiency
+- Mode: Repair / PR #32 review finding P1-1
 - Issue: #31, `[WORKFLOW] Reduce Codex context and verification overhead`
 - Branch: `codex/issue-31-context-efficiency`
 - Pull request: #32 (Draft),
   `https://github.com/qingsonger/GeoRBF/pull/32`
-- Scope: task boundaries, bounded context, requirement query tooling,
-  project reasoning defaults, independent-review configuration, tiered CI,
-  and exact user prompts
+- Review record: `docs/reviews/PR-32-INDEPENDENT-REVIEW.md`
+- Selected repair: make `AGENTS.md` require ready -> complete green
+  ready-head CI -> merge exactly once, consistent with
+  `docs/CODEX_WORKFLOW.md`
 - Product and mathematics impact: none
 
 ## Product delivery state
@@ -29,14 +30,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task
 
-Open a fresh Review task for the workflow-efficiency Draft PR #32.
-Review only Issue #31 acceptance criteria, the PR diff, CI behavior, xtask
-selection/query logic, Codex configuration, bounded handoff, and usage prompts.
-Do not begin REQ-POLY-001 in that Review task.
-
-If review finds a defect, start a fresh Repair task for only those findings.
-After a clean review and truthful integration-state update, start a new
-Implement task for REQ-POLY-001.
+Open a fresh Repair task for only PR #32 finding P1-1. Remove the contradictory
+pre-CI merge instruction, add focused consistency evidence for the ready ->
+complete ready-head CI -> merge sequence, run the final standard checks on the
+stable repaired head, update the review record and this handoff, push, and stop
+for fresh re-review. Do not begin REQ-POLY-001.
 
 ## Context for the next task
 
@@ -58,8 +56,13 @@ Implement task for REQ-POLY-001.
   formatting, warning-denying workspace Clippy, 118 workspace tests, 21
   doctests, all 58 requirement checks, `git diff --check`, and strict Codex
   config parsing succeeded
-- Draft CI run 29312539834 passed the Ubuntu correctness gate for commit
-  `f09ff13`; the 3-OS benchmark matrix was correctly skipped while Draft
+- Independent Review of PR #32 found one merge-blocking P1 in the mandatory
+  integration sequence; no P0, P2, or P3 finding was identified
+- Review-focused `cargo test -p xtask` passed 13 tests, warning-denying focused
+  Clippy passed, compact commands and failures behaved correctly, and Codex
+  0.142.5 strictly parsed the project configuration
+- Draft CI run 29312598987 passed the Ubuntu correctness gate for reviewed head
+  `3363d79`; the 3-OS benchmark matrix was correctly skipped while Draft
 - Local `actionlint` is unavailable
 
 ## Checks not yet available
