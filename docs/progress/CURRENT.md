@@ -6,12 +6,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / PR #41 P3-1 completed; fresh Review required
+- Mode: Review / PR #41 clean re-review; ready-head integration sequence next
 - Requirement: REQ-SPIKE-002, Issue #40
 - Branch: `codex/req-spike-002-rrqr-svd-backend`
-- Draft pull request: #41
-- Freshly re-reviewed implementation/evidence head: `431da7f`
-- Review finding record head: `2401d69`
+- Pull request: #41, Draft until clean-review evidence is synchronized
+- Exact cleanly re-reviewed head: `66ed708a097bd55235f9a4be012c44870a2ffe33`
 - Actual repair code/test head: `30bd49520131ff085fd538c93ad767455cdade43`
 - Review record: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `documented`
@@ -19,18 +18,18 @@ records, benchmark reports, Git, and GitHub.
 - Production dependency state: unchanged; the comparison crate is excluded
   from the production workspace
 
-## Repair result
+## Review result
 
-- P3-1 is repaired in both durable evidence locations. The repair-evidence
-  paragraph and PR #41 Repair update now name the existing code/test commit
-  `30bd49520131ff085fd538c93ad767455cdade43`.
-- `git cat-file -e <hash>^{commit}` confirmed that exact commit object. Its
-  parent is review-evidence commit
-  `e1db3492866da63115784432977f3c1e7d039b56`.
-- The invalid value remains only in the P3-1 finding narrative that documents
-  the original defect; it is no longer presented as repair evidence.
-- No production code, test, manifest, schema, build input, requirement status,
-  mathematical claim, or interface changed. PR #41 remains Draft.
+- A second fresh read-only `math_reviewer` inspected the complete PR diff at
+  exact head `66ed708` without inheriting Repair reasoning.
+- P2-1, P2-2, and P3-1 are independently confirmed closed. No P0, P1, P2, or
+  P3 issue remains.
+- The threshold regressions bracket the strict SVD threshold under independent
+  analytic truth; the zero-backend path fails at compile time; the valid
+  repair object and parent resolve exactly.
+- This clean-review record changes documentation only. No production code,
+  test, manifest, schema, build input, requirement status, mathematical claim,
+  or interface changed.
 
 ## Validation state
 
@@ -42,22 +41,18 @@ records, benchmark reports, Git, and GitHub.
   compile failure, the release smoke workload, workspace formatting,
   warning-denying Clippy, all 139 tests, all 25 doctests and compile-fail
   tests, all 58 requirement checks, and `git diff --check` passed.
-- Draft Ubuntu CI run 29374908542 passed on exact pre-repair PR head `2401d69`.
-  The new documentation-only head still requires fresh independent re-review.
+- Draft Ubuntu CI run 29375239847 passed on exact reviewed head `66ed708`.
 - The ready-head Windows/Ubuntu/macOS and benchmark-smoke gate has not run and
-  must wait for that clean re-review.
+  must be triggered only after the clean-review evidence commit is pushed and
+  PR #41 is marked ready.
 
 ## Next task
 
-Open a fresh Review/re-review task for only PR #41 and REQ-SPIKE-002. Perform
-the mandatory preflight and use a fresh read-only project `math_reviewer`
-without inheriting this Repair reasoning. Confirm P3-1 is closed and inspect
-the complete PR diff for new findings. If any P0-P3 finding remains, record it
-and stop without repairing. If the re-review is clean and the exact final head
-has complete local evidence, synchronize the PR evidence, mark PR #41 ready,
-wait for the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact
-ready head, merge exactly once only when it is green, and record truthful
-integration state. Do not start REQ-CPD-001 in that task.
+Synchronize the clean review evidence to PR #41, mark it ready, and wait for
+the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact ready
+head. Merge exactly once only when that CI is green, wait for post-merge `main`
+CI, then record truthful integration state through an isolated change. Do not
+start REQ-CPD-001 in this task.
 
 ## Durable evidence
 

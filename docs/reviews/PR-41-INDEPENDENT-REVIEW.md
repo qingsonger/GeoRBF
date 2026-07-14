@@ -3,9 +3,10 @@
 - Date: 2026-07-15
 - Requirement: REQ-SPIKE-002
 - Pull request: #41
-- Reviewed implementation head: `9cd0c306cc328822df211fac854c34d15606960f`
+- Initial reviewed implementation head: `9cd0c306cc328822df211fac854c34d15606960f`
+- Latest re-reviewed head: `66ed708a097bd55235f9a4be012c44870a2ffe33`
 - Base: `origin/main`
-- Result: fresh re-review closes both P2 findings but requests one P3 repair
+- Result: clean latest re-review; no P0, P1, P2, or P3 finding remains
 
 ## Review scope and independence
 
@@ -204,9 +205,35 @@ Draft Ubuntu CI run 29373908569 passed on exact PR head `431da7f`. The complete
 Windows, Ubuntu, and macOS ready-head matrix and benchmark-smoke gate remains
 intentionally unrun because P3-1 blocks the ready transition.
 
+## Second fresh re-review result
+
+A second fresh read-only `math_reviewer` independently inspected the complete
+PR diff at exact head `66ed708a097bd55235f9a4be012c44870a2ffe33`.
+It received only the bounded requirement and dependency summaries, Issue #40,
+the normative solver policy and ADR, the complete diff, durable spike and
+benchmark evidence, and exact validation state. It inherited no Repair
+reasoning and found no P0, P1, P2, or P3 issue.
+
+P2-1 remains closed: the 12- and 15-ULP already-equilibrated cases are
+bitwise distinct, bracket the strict SVD threshold under independent analytic
+singular-value truth, and produce the required backend review ranks. P2-2
+remains closed: the empty feature selection fails at compile time, while both
+single-backend and the combined configurations execute all six cases. P3-1 is
+closed: the valid repair object
+`30bd49520131ff085fd538c93ad767455cdade43` and its parent resolve, and the
+invalid full hash remains only in the historical finding narrative.
+
+Focused spike formatting, warning-denying Clippy, all three positive feature
+test configurations, the expected zero-backend failure, release smoke,
+requirement validation, and `git diff --check` passed. Draft Ubuntu CI run
+29375239847 passed on the exact reviewed head. The following clean-review
+evidence commit is documentation-only; the stable repair code/test head and
+its complete local standard gate remain unchanged. The ready-head Windows,
+Ubuntu, macOS, and benchmark-smoke matrix remains pending the ready event.
+
 ## Disposition
 
-PR #41 remains Draft and REQ-SPIKE-002 remains `documented`. P2-1 and P2-2 are
-closed, but P3-1 requires a new, documentation-only Repair task followed by a
-fresh independent re-review. This Review task must not correct the hash, mark
-the PR ready, merge it, or start REQ-CPD-001.
+PR #41 may advance through the mandatory ready-head integration sequence.
+REQ-SPIKE-002 remains `documented` until the implementation PR is merged and
+an isolated integration-state change records the completed evidence. This
+Review task must not start REQ-CPD-001.
