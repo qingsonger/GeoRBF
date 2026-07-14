@@ -6,6 +6,7 @@
 - Branch: `codex/req-kernel-003-smooth-global-kernels`
 - Reviewed pre-repair head: `624139f`
 - Review-repair commit: `0e56498`
+- Review-evidence commit: `4ff343c`
 - Review date: 2026-07-14
 - Mode: Independent mathematical and numerical review and repair
 
@@ -169,7 +170,10 @@ passed for `624139f` on Windows, Ubuntu, and macOS. Review-repair
 [run 29300983870](https://github.com/qingsonger/GeoRBF/actions/runs/29300983870)
 passed for `0e56498` on all three platforms. Every job passed formatting,
 Clippy, 78 workspace tests, 15 doctests, all three benchmark smoke workloads,
-and all 58 requirement checks.
+and all 58 requirement checks. Review-evidence
+[run 29301164389](https://github.com/qingsonger/GeoRBF/actions/runs/29301164389)
+passed the same complete matrix for `4ff343c`, after which PR #20 was marked
+ready for maintainer review.
 
 ## Checks not run
 

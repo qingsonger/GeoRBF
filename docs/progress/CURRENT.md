@@ -2,14 +2,17 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / evidence recording
+- Execution mode: Review / ready for maintainer
 - Current requirement: REQ-KERNEL-003
 - Issue: #19
-- Pull request: Draft #20
+- Pull request: Ready #20
 - Branch: `codex/req-kernel-003-smooth-global-kernels`
 
 ## Completed in this run
 
+- Review-evidence commit `4ff343c` passed GitHub Actions run 29301164389 on
+  Windows, Ubuntu, and macOS with the complete job set. PR #20 was then marked
+  ready for maintainer review.
 - Completed the independent mathematical, numerical, safety, API, allocation,
   performance, interface, and test review of PR #20. The complete evidence is
   recorded in `docs/reviews/PR-20-INDEPENDENT-REVIEW.md`.
@@ -280,15 +283,16 @@
 
 Maintainer merge and post-merge `main` CI remain. The implementation,
 independent review and repairs, local checks, documentation, example, interface
-applicability, benchmark evidence, Draft PR, and review-repair three-platform
+applicability, benchmark evidence, Ready PR, and review-evidence three-platform
 CI are complete. REQ-KERNEL-003 remains truthfully `documented` until merge.
 
 ## Next atomic task
 
-Commit and push the independent review evidence, reconfirm the evidence head on
-Windows, Ubuntu, and macOS, then mark PR #20 ready for maintainer review. Do not
-begin compact-support kernels, orientation, anisotropy, polynomial, functional,
-assembly, or solver work in the same run.
+Complete maintainer review and merge PR #20. After merge, confirm the resulting
+`main` CI on Windows, Ubuntu, and macOS before an isolated integration-state
+update marks REQ-KERNEL-003 `integrated`. Do not begin compact-support kernels,
+orientation, anisotropy, polynomial, functional, assembly, or solver work in
+the same run.
 
 ## Latest full test result
 
@@ -400,6 +404,9 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   `624139f` passed on Windows, Ubuntu, and macOS with the complete job set.
 - REQ-KERNEL-003 review-repair GitHub Actions run 29300983870 for commit
   `0e56498` passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-003 review-evidence GitHub Actions run 29301164389 for commit
+  `4ff343c` passed on Windows, Ubuntu, and macOS with the complete job set; PR
+  #20 was then marked ready for maintainer review.
 
 ## Checks not yet available
 
