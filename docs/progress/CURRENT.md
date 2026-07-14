@@ -10,6 +10,14 @@
 
 ## Completed in this run
 
+- Final independent re-review of repaired head `960496a` reported no P0--P3
+  finding. It confirmed all four P1 repairs, exact-expansion signs and capacity,
+  D=3 determinant indices, the strict overflow guard proof, absence of hidden
+  regularization, and all 13 focused tests. Complete evidence is recorded in
+  `docs/reviews/PR-29-INDEPENDENT-REVIEW.md`.
+- Final repair-head GitHub Actions run 29309762439 passed on Windows, Ubuntu,
+  and macOS with formatting, strict Clippy, 115 workspace tests, 21 doctests,
+  all five benchmark smoke workloads, and all 58 requirement checks.
 - Committed the isolated implementation as `2e5013e`, pushed
   `codex/req-aniso-001-global-anisotropy`, and opened Draft PR #29. The
   registry links the PR and records the truthful pre-review `documented`
@@ -470,17 +478,17 @@
 
 ## Current blockers
 
-None. The three initial independent-review findings are repaired and pass the
-complete local gate. Independent re-review and green repair-head CI remain
-required before PR #29 can become ready or merge.
+None. All independent-review findings are closed and the final repair head is
+green locally and on all three CI platforms. The review-evidence commit must
+pass CI before PR #29 becomes ready or merges.
 
 ## Next atomic task
 
-Commit and push the isolated review repair, obtain green three-platform CI,
-then independently re-review the exact repair range. Record the review only
-after every finding is closed. Do not begin local anisotropy,
-orientation-tensor estimation, fields, assembly, solvers, schemas, or language
-bindings in the same requirement.
+Commit and push the independent-review evidence, obtain green three-platform
+CI, then mark PR #29 ready and squash-merge it. After post-merge `main` CI is
+green, record REQ-ANISO-001 as integrated in a separate integration-state PR.
+Do not begin local anisotropy, orientation-tensor estimation, fields, assembly,
+solvers, schemas, or language bindings in the same requirement.
 
 ## Latest full test result
 

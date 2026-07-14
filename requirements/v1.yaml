@@ -177,7 +177,7 @@ requirements:
     issue: 28
     pull_request: 29
     tests: [analytic-distance-truth, rotation-covariance, coordinate-length-scaling, high-axis-ratio, spd-validation, exact-spd-leading-minors, rounded-metric-rejection, exact-symmetry, singular-value-truth, condition-policy, chain-rule-through-third, center-limits, query-center-signs, tensor-symmetry, numerical-extremes, structured-errors, anisotropy-dimension-compile-fail]
-    docs: [docs/architecture/ANISOTROPY.md, docs/architecture/ARCHITECTURE.md, docs/math/MATH_SPEC.md, rustdoc, crates/georbf/examples/global_anisotropy.rs, benches/REQ-ANISO-001.md]
+    docs: [docs/architecture/ANISOTROPY.md, docs/architecture/ARCHITECTURE.md, docs/math/MATH_SPEC.md, docs/reviews/PR-29-INDEPENDENT-REVIEW.md, rustdoc, crates/georbf/examples/global_anisotropy.rs, benches/REQ-ANISO-001.md]
     rust_api: implemented
     cli: "N/A: versioned project schemas and kernel/metric selection commands are introduced by later requirements"
     c_api: "N/A: global anisotropy is exposed only after the reviewed Rust API and stable C ABI freeze"
