@@ -17,6 +17,8 @@
 - Confirmed implementation-and-registry head `57930eb` passed PR #20 GitHub
   Actions run 29299417381 on Windows, Ubuntu, and macOS with the complete job
   set, including all three benchmark smoke workloads.
+- Confirmed handoff-state head `bd57bee` passed PR #20 GitHub Actions run
+  29299484831 on Windows, Ubuntu, and macOS with the same complete job set.
 - Created Issue #19 with explicit Gaussian, inverse-multiquadric, signed
   multiquadric, and Matérn `1/2`, `3/2`, and `5/2` acceptance criteria after
   confirming clean synchronized `main`, no open Repair or Review work, and an
@@ -29,9 +31,10 @@
   `hypot`/scaled-product fallbacks preserve representable extreme tails rather
   than accepting intermediate zero or infinity as the final result.
 - Added 90-digit truth, independent finite differences, deterministic random
-  SPD and projected-CPD checks, exact center limits, exponential and rational
-  extreme cases, exchange signs, tensor symmetry, pathologies, D=0/D=4
-  compile failures, and `Send + Sync` assertions.
+  SPD and projected-CPD checks, exact center limits, coordinate-scale
+  covariance, exponential and rational extreme cases, exchange signs, tensor
+  symmetry, pathologies, D=0/D=4 compile failures, and `Send + Sync`
+  assertions.
 - Added synchronized math and architecture contracts, source citations,
   rustdoc, a runnable D=3 example, change record, and deterministic
   allocation-free six-member benchmark with CI smoke coverage.
@@ -380,6 +383,8 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   implementation-and-registry head `57930eb` passed on Windows, Ubuntu, and
   macOS with the complete job set, including all three benchmark smoke
   workloads.
+- REQ-KERNEL-003 handoff-state GitHub Actions run 29299484831 for commit
+  `bd57bee` passed on Windows, Ubuntu, and macOS with the complete job set.
 
 ## Checks not yet available
 
