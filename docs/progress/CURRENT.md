@@ -2,14 +2,65 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / next atomic requirement
+- Execution mode: Review / ready for maintainer
 - Current requirement: REQ-KERNEL-003
-- Issue: not yet created
-- Pull request: not yet opened
-- Branch: not yet created
+- Issue: #19
+- Pull request: Ready #20
+- Branch: `codex/req-kernel-003-smooth-global-kernels`
 
 ## Completed in this run
 
+- Review-evidence commit `4ff343c` passed GitHub Actions run 29301164389 on
+  Windows, Ubuntu, and macOS with the complete job set. PR #20 was then marked
+  ready for maintainer review.
+- Completed the independent mathematical, numerical, safety, API, allocation,
+  performance, interface, and test review of PR #20. The complete evidence is
+  recorded in `docs/reviews/PR-20-INDEPENDENT-REVIEW.md`.
+- Repaired the SPD/CPD evidence gap by replacing single-vector positivity with
+  symmetry and independent Cholesky checks of every sampled SPD Gram matrix and
+  the full signed-multiquadric `Z^T K Z` constant-zero projection. Added all six
+  families to exchange-sign coverage and an extreme MQ derivative regression.
+- Corrected stale crate-level rustdoc that still described smooth-global
+  kernels as deferred. No production formula defect was found.
+- Review-repair commit `0e56498` passed GitHub Actions run 29300983870 on
+  Windows, Ubuntu, and macOS, including formatting, Clippy, 78 workspace tests,
+  15 doctests, all three benchmark smoke workloads, and all 58 requirement
+  checks.
+- Committed the isolated implementation as `f829757`, pushed
+  `codex/req-kernel-003-smooth-global-kernels`, and opened Draft PR #20. The
+  requirement registry now links the PR and records the truthful pre-review
+  `documented` state.
+- Confirmed implementation-and-registry head `57930eb` passed PR #20 GitHub
+  Actions run 29299417381 on Windows, Ubuntu, and macOS with the complete job
+  set, including all three benchmark smoke workloads.
+- Confirmed handoff-state head `bd57bee` passed PR #20 GitHub Actions run
+  29299484831 on Windows, Ubuntu, and macOS with the same complete job set.
+- Created Issue #19 with explicit Gaussian, inverse-multiquadric, signed
+  multiquadric, and Matérn `1/2`, `3/2`, and `5/2` acceptance criteria after
+  confirming clean synchronized `main`, no open Repair or Review work, and an
+  integrated REQ-KERNEL-001 dependency.
+- Added one-length-scale, global-support Gaussian, inverse multiquadric,
+  CPD-order-one signed multiquadric, and three explicit Matérn members for
+  D=1/D=2/D=3, with exact SPD/CPD metadata and center capabilities.
+- Added analytic positive-radius derivatives and direct stable expansion
+  coefficients through third order. Exponential log-domain and rational
+  `hypot`/scaled-product fallbacks preserve representable extreme tails rather
+  than accepting intermediate zero or infinity as the final result.
+- Added 90-digit truth, independent finite differences, deterministic random
+  SPD and projected-CPD checks, exact center limits, coordinate-scale
+  covariance, exponential and rational extreme cases, exchange signs, tensor
+  symmetry, pathologies, D=0/D=4 compile failures, and `Send + Sync`
+  assertions.
+- Added synchronized math and architecture contracts, source citations,
+  rustdoc, a runnable D=3 example, change record, and deterministic
+  allocation-free six-member benchmark with CI smoke coverage.
+- Four full 1,000,000-iteration benchmark runs retained bit-identical
+  checksums. D=1/D=2/D=3 median catalog-workload times were 489.39, 790.00,
+  and 913.75 ns/iteration; environment and observed ranges are recorded in
+  `benches/REQ-KERNEL-003.md`.
+- Squash-merged integration-state PR #18 as commit `4ffdb0d`; final `main` CI
+  run 29298112320 passed on Windows, Ubuntu, and macOS, and REQ-KERNEL-002 is
+  recorded as integrated.
 - Squash-merged PR #17 as commit `68ad3e9`; Issue #16 closed automatically,
   and post-merge `main` CI run 29297902909 passed on Windows, Ubuntu, and
   macOS. REQ-KERNEL-002 now satisfies every integration gate.
@@ -230,18 +281,18 @@
 
 ## Current blockers
 
-None. REQ-KERNEL-002 is integrated. REQ-KERNEL-003 has no unfinished
-dependency and is the next remaining M1 requirement in registry order.
+Maintainer merge and post-merge `main` CI remain. The implementation,
+independent review and repairs, local checks, documentation, example, interface
+applicability, benchmark evidence, Ready PR, and review-evidence three-platform
+CI are complete. REQ-KERNEL-003 remains truthfully `documented` until merge.
 
 ## Next atomic task
 
-Create the REQ-KERNEL-003 Issue with explicit Gaussian, inverse-multiquadric,
-validated multiquadric, and supported Matérn acceptance criteria, then create
-an isolated feature branch. Implement only smooth global-support kernels,
-their physical parameters, classifications, center capabilities, independent
-truth tests, documentation, applicable interfaces, diagnostics, and benchmark
-evidence. Do not begin compact-support kernels, orientation, anisotropy,
-polynomial, functional, assembly, or solver work in the same run.
+Complete maintainer review and merge PR #20. After merge, confirm the resulting
+`main` CI on Windows, Ubuntu, and macOS before an isolated integration-state
+update marks REQ-KERNEL-003 `integrated`. Do not begin compact-support kernels,
+orientation, anisotropy, polynomial, functional, assembly, or solver work in
+the same run.
 
 ## Latest full test result
 
@@ -250,12 +301,12 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 68 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 78 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 13 doctests, including eleven
+- `cargo test --doc --workspace`: passed; 15 doctests, including thirteen
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 54 integration tests
-  and 13 doctests, 0 failures.
+- `cargo test -p georbf --release --all-features`: passed; 64 integration tests
+  and 15 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
 - `cargo xtask requirements check`: passed; 58 requirements.
@@ -271,10 +322,17 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   1,000,000-iteration runs had medians of 135.28, 215.09, and 245.43
   ns/iteration respectively with bit-identical checksums; see
   `benches/REQ-KERNEL-002.md` for the environment and observed ranges.
+- `cargo bench -p georbf --bench smooth_global_kernels -- --smoke`: passed for
+  deterministic six-family D=1/D=2/D=3 workloads. Four full 1,000,000-iteration
+  runs had medians of 489.39, 790.00, and 913.75 ns/iteration respectively
+  with bit-identical checksums; see `benches/REQ-KERNEL-003.md`.
 - `cargo run -p georbf --example radial_kernel_calculus`: passed.
 - `cargo run -p georbf --example kernel_metadata`: passed.
 - `cargo run -p georbf --example polyharmonic_spline`: passed.
-- Scoped forbidden-pattern and core allocation/dynamic-dispatch scans: passed.
+- `cargo run -p georbf --example smooth_global_kernels`: passed.
+- Scoped forbidden-pattern and hot-path allocation/dynamic-dispatch scans:
+  passed. The only `dyn` occurrences in the module are the two standard
+  `Error::source` return types outside numerical evaluation.
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
@@ -333,6 +391,22 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - REQ-KERNEL-002 post-merge `main` GitHub Actions run 29297902909 for merge
   commit `68ad3e9` passed on Windows, Ubuntu, and macOS with the complete job
   set.
+- REQ-KERNEL-002 final integration-state `main` GitHub Actions run 29298112320
+  for commit `4ffdb0d` passed on Windows, Ubuntu, and macOS with the complete
+  job set.
+- REQ-KERNEL-003 Draft PR #20 GitHub Actions run 29299417381 for
+  implementation-and-registry head `57930eb` passed on Windows, Ubuntu, and
+  macOS with the complete job set, including all three benchmark smoke
+  workloads.
+- REQ-KERNEL-003 handoff-state GitHub Actions run 29299484831 for commit
+  `bd57bee` passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-003 final pre-review GitHub Actions run 29299576028 for commit
+  `624139f` passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-003 review-repair GitHub Actions run 29300983870 for commit
+  `0e56498` passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-003 review-evidence GitHub Actions run 29301164389 for commit
+  `4ff343c` passed on Windows, Ubuntu, and macOS with the complete job set; PR
+  #20 was then marked ready for maintainer review.
 
 ## Checks not yet available
 

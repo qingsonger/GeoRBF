@@ -43,3 +43,12 @@ gradient. Run it with:
 ```text
 cargo run -p georbf --example polyharmonic_spline
 ```
+
+`REQ-KERNEL-003` adds `crates/georbf/examples/smooth_global_kernels.rs`, which
+constructs Gaussian and Matérn `5/2` kernels with physical length scales,
+evaluates them through the shared D=3 Cartesian calculus, and prints values
+and a query gradient. Run it with:
+
+```text
+cargo run -p georbf --example smooth_global_kernels
+```

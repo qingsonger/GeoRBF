@@ -19,3 +19,7 @@ harness = false
 [[bench]]
 name = "polyharmonic_spline"
 harness = false
+
+[[bench]]
+name = "smooth_global_kernels"
+harness = false

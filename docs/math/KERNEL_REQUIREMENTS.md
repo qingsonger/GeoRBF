@@ -129,6 +129,127 @@ into the representable subnormal range. The ordinary finite path remains a
 direct integer power and product; only an otherwise zero or non-finite extreme
 product is re-evaluated in the log domain.
 
+## Smooth global-support kernels
+
+Every smooth global-support family has exactly one configured
+`length_scale = ell`, a positive finite coordinate length. Values are
+dimensionless and all families support D=1, D=2, and D=3. Construction also
+requires the reciprocal derivative scale through third order to be finite;
+this prevents a successfully constructed kernel from promising derivatives
+that necessarily overflow near its characteristic radius. No amplitude,
+variance, arbitrary smoothness, or generic shape parameter is included.
+
+Let `alpha = 1/ell`, `q = alpha r`, and `h = sqrt(1+q^2)`. The strictly
+positive-definite Gaussian uses the squared-exponential convention
+
+```text
+phi = exp(-q^2/2)
+phi'   = -alpha q phi
+phi''  = alpha^2 (q^2-1) phi
+phi''' = alpha^3 q (3-q^2) phi
+a      = -alpha^2 phi
+b      = alpha^3 q phi.
+```
+
+This length-scale convention is the `nu -> infinity` limit of the Matérn
+scaling below. Gaussian has value one, zero gradient, Hessian
+`-alpha^2 I`, and zero third tensor at the center.
+
+The strictly positive-definite inverse multiquadric is
+
+```text
+phi = h^-1
+phi'   = -alpha q h^-3
+phi''  = alpha^2 (2q^2-1) h^-5
+phi''' = 3 alpha^3 q (3-2q^2) h^-7
+a      = -alpha^2 h^-3
+b      = 3 alpha^3 q h^-5.
+```
+
+Its implementation uses `hypot(1,q)`, the bounded ratio `q/h`, and scaled
+products so `q` or an intermediate inverse power cannot erase a representable
+subnormal final result.
+
+The conventional positive square-root multiquadric is conditionally negative
+definite on the constant-zero subspace. GeoRBF's conditional-definiteness
+contract requires positive projected Gram energy, so the implemented member
+has the mandatory opposite sign and CPD order one:
+
+```text
+phi = -h
+phi'   = -alpha q h^-1
+phi''  = -alpha^2 h^-3
+phi''' = 3 alpha^3 q h^-5
+a      = -alpha^2 h^-1
+b      = alpha^3 q h^-3.
+```
+
+The later polynomial side space is therefore constants. Inverse
+multiquadric and signed multiquadric have the same full third-order center
+capability as Gaussian, with center Hessian `-alpha^2 I`; their center values
+are one and negative one respectively. The multiquadric value can be
+non-representable at a finite extreme radius and then fails explicitly even
+when an individual higher derivative would remain finite.
+
+The supported Matérn members use the standard
+`t = sqrt(2 nu) r / ell = beta r` convention:
+
+```text
+nu=1/2: phi = exp(-t)
+nu=3/2: phi = (1+t) exp(-t)
+nu=5/2: phi = (1+t+t^2/3) exp(-t).
+```
+
+For `nu=1/2`, with `E=exp(-t)`,
+
+```text
+phi'   = -beta E
+phi''  = beta^2 E
+phi''' = -beta^3 E
+a      = -beta^2 E / t
+b      = beta^3 E (t+1) / t^2.
+```
+
+For `nu=3/2`,
+
+```text
+phi'   = -beta t E
+phi''  = beta^2 (t-1) E
+phi''' = beta^3 (2-t) E
+a      = -beta^2 E
+b      = beta^3 E.
+```
+
+For `nu=5/2`,
+
+```text
+phi'   = -beta t(1+t) E / 3
+phi''  = beta^2 (t^2-t-1) E / 3
+phi''' = beta^3 t(3-t) E / 3
+a      = -beta^2 (1+t) E / 3
+b      = beta^3 t E / 3.
+```
+
+Matérn `1/2` is continuous at the center but has no Euclidean first
+derivative there, so its center capability is value only. Matérn `3/2`
+supports center derivatives through second order, with Hessian
+`-beta^2 I`, but its finite one-sided radial third derivative does not create
+a spatial third derivative. Matérn `5/2` supports the complete third-order
+center jet, with Hessian `-(beta^2/3) I`. All three supply analytic derivatives
+through third order at every positive radius.
+
+Exponential products use a direct ordinary path and re-evaluate only a zero
+or non-finite extreme product from its combined log magnitude. Rational
+products similarly combine the reciprocal scale and `hypot` power before
+range classification. These paths preserve representable tails while still
+returning structured errors for genuinely non-finite final derivatives or
+expansion coefficients.
+
+The SPD and multiquadric sign classifications are cross-checked against
+[Micchelli's conditional-positive-definiteness result](https://pages.stat.wisc.edu/~wahba/stat860public/pdf1/micchelli.interpolation.86.pdf).
+The half-integer Matérn formulas and `sqrt(2 nu) r/ell` scaling follow
+[Rasmussen and Williams, section 4.2](https://gaussianprocess.org/gpml/chapters/RW.pdf).
+
 Before exposure, every kernel documents its formula, parameter dimensions,
 definiteness, CPD order, origin limit, required derivatives, and dimension
 range. Tests use high-precision or independent finite differences, origin and

@@ -2,9 +2,10 @@
 //!
 //! The initial public API provides validated, dimension-safe geometry and
 //! coordinate transforms, radial kernel derivative calculus, kernel metadata,
-//! and polyharmonic/surface-spline kernels for exactly one, two, or three
-//! dimensions. Other kernel families, functionals, assembly, and solvers are
-//! introduced by separately reviewed requirements.
+//! polyharmonic/surface-spline kernels, and smooth global-support kernels for
+//! exactly one, two, or three dimensions. Compact-support kernels,
+//! functionals, assembly, and solvers are introduced by separately reviewed
+//! requirements.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -24,12 +25,14 @@ pub use coordinates::{
 pub use dimension::{Dim, SupportedDimension};
 pub use geometry::{Direction, GeometryError, Point, UnitDirection, Vector};
 pub use kernel::{
-    CpdOrder, CpdOrderError, KernelDefiniteness, KernelDerivativeCapabilities,
-    KernelDerivativeCapabilitiesError, KernelDerivativeCapability, KernelDerivativeOrder,
-    KernelDimensions, KernelDimensionsError, KernelMetadata, KernelMetadataError,
-    KernelParameterConstraint, KernelParameterDefinition, KernelParameterDefinitionError,
-    KernelParameterUnit, KernelParameterValueError, KernelSupport, PolyharmonicSpline,
-    PolyharmonicSplineConstructionError, PolyharmonicSplineEvaluationError, SurfaceSpline,
+    CpdOrder, CpdOrderError, Gaussian, InverseMultiquadric, KernelDefiniteness,
+    KernelDerivativeCapabilities, KernelDerivativeCapabilitiesError, KernelDerivativeCapability,
+    KernelDerivativeOrder, KernelDimensions, KernelDimensionsError, KernelMetadata,
+    KernelMetadataError, KernelParameterConstraint, KernelParameterDefinition,
+    KernelParameterDefinitionError, KernelParameterUnit, KernelParameterValueError, KernelSupport,
+    Matern, MaternSmoothness, Multiquadric, PolyharmonicSpline,
+    PolyharmonicSplineConstructionError, PolyharmonicSplineEvaluationError,
+    SmoothKernelConstructionError, SmoothKernelEvaluationError, SmoothKernelFamily, SurfaceSpline,
     SurfaceSplineConstructionError,
 };
 pub use kernel_calculus::{
