@@ -193,7 +193,7 @@ requirements:
     milestone: M2-v0.2.0
     priority: P0
     issue: 34
-    pull_request: null
+    pull_request: 35
     tests: [term-counts, analytic-values, derivatives, reproduction]
     docs: [docs/math/CPD_AND_POLYNOMIALS.md, rustdoc]
     rust_api: implemented
@@ -202,7 +202,7 @@ requirements:
     cpp_api: "N/A: polynomial basis generation is internal"
     python_api: "N/A: polynomial basis generation is internal"
     benchmark: implemented
-    status: in_progress
+    status: documented
 
   - id: REQ-FUNC-001
     title: Atomic functionals and linear expressions

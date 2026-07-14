@@ -6,12 +6,12 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / REQ-POLY-001 complete pending Draft PR creation
+- Mode: Implement / REQ-POLY-001 complete at Draft PR
 - Requirement Issue: #34
 - Branch: `codex/req-poly-001-polynomial-spaces`
-- Draft pull request: not yet created
+- Draft pull request: #35
 - Dependencies: REQ-DIM-001 is `integrated`; no blocker
-- Registry state: `in_progress` until the Draft PR number is recorded
+- Registry state: `documented`; independent Review is still required
 
 ## Implemented scope
 
@@ -34,8 +34,8 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task
 
-After this implementation is pushed and its Draft PR is linked here, open a
-fresh independent Review task for only REQ-POLY-001. Supply the compact
+Open a fresh independent Review task for only REQ-POLY-001 and Draft PR #35.
+Supply the compact
 requirement summary and dependency closure, `docs/math/CPD_AND_POLYNOMIALS.md`,
 ADR-0004, the PR diff, and validation and benchmark evidence to the project
 `math_reviewer`. Do not repair findings or begin REQ-FUNC-001 in that task.
@@ -50,9 +50,9 @@ ADR-0004, the PR diff, and validation and benchmark evidence to the project
 - Four full local polynomial benchmark runs had identical generation and
   evaluation checksums. Environment and timing ranges are recorded in
   `docs/benchmarks/REQ-POLY-001.md`.
-- Only this bounded handoff and later PR-link evidence may change after the
-  stable full gate; no production, test, manifest, schema, or build input may
-  change without rerunning it.
+- Only the registry PR link/status and this bounded handoff changed after the
+  stable full gate; no production, test, manifest, schema, or build input
+  changed.
 
 ## Checks not yet available
 
