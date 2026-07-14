@@ -6,6 +6,13 @@ principal-axis ellipsoidal, arbitrary-transform, and exactly symmetric SPD
 user-metric constructors expose the transform, inverse, metric, singular
 values, and Euclidean condition number.
 
+Spheroidal construction uses an orthonormal-frame factor rather than subtracting
+large inverse-scale projectors, preserving representable high axis ratios.
+Power-of-two congruence equilibration and exact-sign floating expansions certify
+the leading principal minors of user and transform-derived metrics before a
+metric is exposed; boundary-indefinite input and rounded singular `A^T A`
+matrices are rejected explicitly.
+
 Validation rejects non-finite or nonpositive lengths, unrepresentable
 reciprocals and products, nonorthogonal ellipsoid axes beyond an explicit
 caller tolerance, nonsymmetric or non-SPD metrics, singular transforms, and

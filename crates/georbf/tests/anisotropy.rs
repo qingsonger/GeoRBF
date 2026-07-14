@@ -236,6 +236,75 @@ fn singular_values_match_closed_form_two_by_two_truth() -> TestResult {
 }
 
 #[test]
+fn high_axis_ratios_preserve_representable_spheroids_and_diagnostics() -> TestResult {
+    let one = GlobalAnisotropy::<1>::try_spheroidal(
+        UnitDirection::try_new([1.0])?,
+        1.0,
+        1.0e-100,
+        AnisotropyConditionPolicy::Unbounded,
+    )?;
+    assert_eq!(one.transform()[0][0].to_bits(), 1.0_f64.to_bits());
+    assert_eq!(one.metric()[0][0].to_bits(), 1.0_f64.to_bits());
+
+    let two = GlobalAnisotropy::<2>::try_spheroidal(
+        UnitDirection::try_new([1.0, 0.0])?,
+        1.0,
+        1.0e-100,
+        AnisotropyConditionPolicy::Unbounded,
+    )?;
+    assert_matrix(two.transform(), &[[1.0, 0.0], [0.0, 1.0e100]], 0.0);
+    assert_matrix(two.metric(), &[[1.0, 0.0], [0.0, 1.0e200]], 0.0);
+    assert_vector(
+        two.diagnostics().singular_values(),
+        &[1.0e100, 1.0],
+        2.0e-15,
+    );
+    assert_close(two.diagnostics().condition_number(), 1.0e100, 2.0e-15, 0.0);
+
+    let three = GlobalAnisotropy::<3>::try_from_transform(
+        [[1.0e100, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0e-50]],
+        AnisotropyConditionPolicy::Unbounded,
+    )?;
+    assert_vector(
+        three.diagnostics().singular_values(),
+        &[1.0e100, 1.0, 1.0e-50],
+        2.0e-15,
+    );
+    assert_close(
+        three.diagnostics().condition_number(),
+        1.0e150,
+        3.0e-15,
+        0.0,
+    );
+    Ok(())
+}
+
+#[test]
+fn exact_spd_sign_handles_three_dimensional_determinant_boundaries() -> TestResult {
+    let positive_correlation = -0.5 + f64::EPSILON;
+    let positive = [
+        [1.0, positive_correlation, positive_correlation],
+        [positive_correlation, 1.0, positive_correlation],
+        [positive_correlation, positive_correlation, 1.0],
+    ];
+    let accepted =
+        GlobalAnisotropy::<3>::try_from_metric(positive, AnisotropyConditionPolicy::Unbounded)?;
+    assert_eq!(accepted.metric(), &positive);
+
+    let negative_correlation = -0.5 - f64::EPSILON;
+    let negative = [
+        [1.0, negative_correlation, negative_correlation],
+        [negative_correlation, 1.0, negative_correlation],
+        [negative_correlation, negative_correlation, 1.0],
+    ];
+    assert!(matches!(
+        GlobalAnisotropy::<3>::try_from_metric(negative, AnisotropyConditionPolicy::Unbounded),
+        Err(AnisotropyError::MetricNotPositiveDefinite { pivot: 2, .. })
+    ));
+    Ok(())
+}
+
+#[test]
 fn chain_rule_matches_independent_polynomial_truth_through_third_order() -> TestResult {
     let anisotropy = GlobalAnisotropy::<2>::try_from_transform(
         [[2.0, 0.5], [-1.0, 3.0]],
@@ -397,6 +466,13 @@ fn construction_rejects_invalid_lengths_axes_metrics_and_policies() -> TestResul
     assert!(singular_values[0] > 0.0);
     assert_eq!(singular_values[1].to_bits(), 0.0_f64.to_bits());
     assert!(condition_number.is_infinite());
+    assert!(matches!(
+        GlobalAnisotropy::<2>::try_from_transform(
+            [[1.0, 1.0], [1.0e-12, 2.0e-12]],
+            AnisotropyConditionPolicy::Unbounded
+        ),
+        Err(AnisotropyError::MetricNotPositiveDefinite { .. })
+    ));
 
     assert!(matches!(
         GlobalAnisotropy::<2>::try_from_metric(
@@ -420,7 +496,11 @@ fn construction_rejects_invalid_lengths_axes_metrics_and_policies() -> TestResul
             ..
         })
     ));
-    for metric in [[[1.0, 2.0], [2.0, 1.0]], [[1.0, 1.0], [1.0, 1.0]]] {
+    for metric in [
+        [[1.0, 2.0], [2.0, 1.0]],
+        [[1.0, 1.0], [1.0, 1.0]],
+        [[2.0, 2.000_000_01], [2.000_000_01, 2.000_000_02]],
+    ] {
         assert!(matches!(
             GlobalAnisotropy::<2>::try_from_metric(metric, AnisotropyConditionPolicy::Unbounded),
             Err(AnisotropyError::MetricNotPositiveDefinite { .. })

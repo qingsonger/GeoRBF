@@ -134,7 +134,8 @@ where
         /// `B[column][row]`.
         reverse: f64,
     },
-    /// Unregularized Cholesky found a nonpositive diagonal residual.
+    /// Exact scaled leading-minor validation or unregularized Cholesky found a
+    /// nonpositive SPD diagnostic.
     MetricNotPositiveDefinite {
         /// Zero-based Cholesky pivot.
         pivot: usize,
@@ -413,10 +414,12 @@ where
     /// Constructs a spheroidal transform from one principal direction.
     ///
     /// The principal direction has `axial_length`; its orthogonal complement
-    /// has `transverse_length`. The symmetric transform is
-    /// `I/transverse + (1/axial - 1/transverse) u u^T`. In D=1 the transverse
-    /// subspace is empty, so the result depends only on `axial_length` while
-    /// both supplied lengths are still validated.
+    /// has `transverse_length`. A stable orthonormal frame stores the principal
+    /// direction as the first row of `A`; the remaining rows span its
+    /// orthogonal complement. This avoids subtracting nearly equal large
+    /// inverse scales. In D=1 the transverse subspace is empty, so the result
+    /// depends only on `axial_length` while both supplied lengths are still
+    /// validated.
     ///
     /// # Errors
     ///
@@ -429,27 +432,8 @@ where
     ) -> Result<Self, AnisotropyError<D>> {
         let axial_reciprocal = reciprocal_length(axial_length, 0)?;
         let transverse_reciprocal = reciprocal_length(transverse_length, 1)?;
-        let contrast = axial_reciprocal - transverse_reciprocal;
-        let axis = principal_axis.components();
-        let mut transform = [[0.0; D]; D];
-        for row in 0..D {
-            for column in 0..D {
-                let isotropic = if row == column {
-                    transverse_reciprocal
-                } else {
-                    0.0
-                };
-                let value = (contrast * axis[row]).mul_add(axis[column], isotropic);
-                if !value.is_finite() {
-                    return Err(AnisotropyError::NonFiniteTransformComponent {
-                        row,
-                        column,
-                        value,
-                    });
-                }
-                transform[row][column] = value;
-            }
-        }
+        let transform =
+            spheroidal_transform(principal_axis, axial_reciprocal, transverse_reciprocal);
         Self::try_build(transform, None, condition_policy)
     }
 
@@ -742,6 +726,7 @@ where
             Some(metric) => metric,
             None => metric_from_transform(&transform)?,
         };
+        validate_positive_definite_metric(&metric)?;
         let diagnostics = diagnostics_from_singular_values(singular_values)?;
 
         if let AnisotropyConditionPolicy::Maximum(maximum) = condition_policy
@@ -760,6 +745,69 @@ where
             diagnostics,
         })
     }
+}
+
+fn spheroidal_transform<const D: usize>(
+    principal_axis: UnitDirection<D>,
+    axial_reciprocal: f64,
+    transverse_reciprocal: f64,
+) -> [[f64; D]; D]
+where
+    Dim<D>: SupportedDimension,
+{
+    let axis = *principal_axis.components();
+    let mut frame = [[0.0; D]; D];
+
+    if D == 1 {
+        frame[0][0] = 1.0;
+    } else if D == 2 {
+        frame[0] = axis;
+        frame[1][0] = -axis[1];
+        frame[1][1] = axis[0];
+    } else {
+        frame[0] = axis;
+        let reference = axis
+            .iter()
+            .enumerate()
+            .min_by(|(_, left), (_, right)| left.abs().total_cmp(&right.abs()))
+            .map_or(0, |(index, _)| index);
+        let transverse = match reference {
+            0 => [0.0, axis[2], -axis[1]],
+            1 => [-axis[2], 0.0, axis[0]],
+            _ => [axis[1], -axis[0], 0.0],
+        };
+        let transverse = normalize_three(transverse);
+        let second_transverse = normalize_three([
+            axis[1].mul_add(transverse[2], -axis[2] * transverse[1]),
+            axis[2].mul_add(transverse[0], -axis[0] * transverse[2]),
+            axis[0].mul_add(transverse[1], -axis[1] * transverse[0]),
+        ]);
+        frame[1].copy_from_slice(&transverse);
+        frame[2].copy_from_slice(&second_transverse);
+    }
+
+    for (row, values) in frame.iter_mut().enumerate() {
+        let reciprocal = if row == 0 {
+            axial_reciprocal
+        } else {
+            transverse_reciprocal
+        };
+        for value in values {
+            *value *= reciprocal;
+        }
+    }
+    frame
+}
+
+fn normalize_three(components: [f64; 3]) -> [f64; 3] {
+    let scale = components
+        .iter()
+        .copied()
+        .map(f64::abs)
+        .fold(0.0_f64, f64::max);
+    let scaled = components.map(|value| value / scale);
+    let norm = scaled.iter().map(|value| value * value).sum::<f64>().sqrt();
+    scaled.map(|value| value / norm)
 }
 
 fn reciprocal_length<const D: usize>(value: f64, axis: usize) -> Result<f64, AnisotropyError<D>>
@@ -871,7 +919,212 @@ where
             }
         }
     }
+    validate_positive_definite_metric(metric)
+}
+
+#[derive(Clone, Copy)]
+struct ExactExpansion {
+    components: [f64; 64],
+    length: usize,
+}
+
+impl ExactExpansion {
+    const fn zero() -> Self {
+        Self {
+            components: [0.0; 64],
+            length: 0,
+        }
+    }
+
+    fn add_component(&mut self, component: f64) {
+        let mut output = [0.0; 64];
+        let mut output_length = 0;
+        let mut accumulator = component;
+        for value in self.components.iter().copied().take(self.length) {
+            let (sum, error) = two_sum(accumulator, value);
+            if error != 0.0 {
+                output[output_length] = error;
+                output_length += 1;
+            }
+            accumulator = sum;
+        }
+        if accumulator != 0.0 || output_length == 0 {
+            output[output_length] = accumulator;
+            output_length += 1;
+        }
+        self.components = output;
+        self.length = output_length;
+    }
+
+    fn add_product(&mut self, left: f64, right: f64, sign: f64) {
+        let product = left * right;
+        let error = left.mul_add(right, -product);
+        self.add_component(sign * error);
+        self.add_component(sign * product);
+    }
+
+    fn add_triple_product(&mut self, first: f64, second: f64, third: f64, sign: f64) {
+        let product = first * second;
+        let product_error = first.mul_add(second, -product);
+        for partial in [product_error, product] {
+            let scaled = partial * third;
+            let scaled_error = partial.mul_add(third, -scaled);
+            self.add_component(sign * scaled_error);
+            self.add_component(sign * scaled);
+        }
+    }
+
+    fn sign(&self) -> std::cmp::Ordering {
+        self.components
+            .iter()
+            .copied()
+            .take(self.length)
+            .rev()
+            .find(|value| *value != 0.0)
+            .map_or(std::cmp::Ordering::Equal, |value| value.total_cmp(&0.0))
+    }
+}
+
+fn two_sum(left: f64, right: f64) -> (f64, f64) {
+    let sum = left + right;
+    let right_virtual = sum - left;
+    let left_virtual = sum - right_virtual;
+    let right_roundoff = right - right_virtual;
+    let left_roundoff = left - left_virtual;
+    (sum, left_roundoff + right_roundoff)
+}
+
+fn validate_positive_definite_metric<const D: usize>(
+    metric: &[[f64; D]; D],
+) -> Result<(), AnisotropyError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    for (pivot, row) in metric.iter().enumerate() {
+        if row[pivot] <= 0.0 {
+            return Err(AnisotropyError::MetricNotPositiveDefinite {
+                pivot,
+                residual: row[pivot],
+            });
+        }
+    }
+
+    let scaled = power_of_two_equilibrated_metric(metric)?;
+    for first in 0..D {
+        for second in (first + 1)..D {
+            let bound = (scaled[first][first] * scaled[second][second]).sqrt();
+            if scaled[first][second].abs() >= bound {
+                let residual = scaled[first][first].mul_add(
+                    scaled[second][second],
+                    -scaled[first][second] * scaled[second][first],
+                );
+                return Err(AnisotropyError::MetricNotPositiveDefinite {
+                    pivot: second,
+                    residual,
+                });
+            }
+        }
+    }
+
+    if D >= 2 {
+        let mut determinant = ExactExpansion::zero();
+        determinant.add_product(scaled[0][0], scaled[1][1], 1.0);
+        determinant.add_product(scaled[0][1], scaled[1][0], -1.0);
+        if determinant.sign() != std::cmp::Ordering::Greater {
+            return Err(AnisotropyError::MetricNotPositiveDefinite {
+                pivot: 1,
+                residual: scaled[0][0].mul_add(scaled[1][1], -scaled[0][1] * scaled[1][0]),
+            });
+        }
+    }
+
+    if D == 3 {
+        let mut determinant = ExactExpansion::zero();
+        for (first, second, third, sign) in [
+            (0, 1, 2, 1.0),
+            (1, 2, 0, 1.0),
+            (2, 0, 1, 1.0),
+            (2, 1, 0, -1.0),
+            (1, 0, 2, -1.0),
+            (0, 2, 1, -1.0),
+        ] {
+            determinant.add_triple_product(
+                scaled[0][first],
+                scaled[1][second],
+                scaled[2][third],
+                sign,
+            );
+        }
+        if determinant.sign() != std::cmp::Ordering::Greater {
+            return Err(AnisotropyError::MetricNotPositiveDefinite {
+                pivot: 2,
+                residual: approximate_three_determinant(&scaled),
+            });
+        }
+    }
     Ok(())
+}
+
+fn power_of_two_equilibrated_metric<const D: usize>(
+    metric: &[[f64; D]; D],
+) -> Result<[[f64; D]; D], AnisotropyError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let exponents: [i32; D] = std::array::from_fn(|axis| {
+        let exponent = binary_exponent(metric[axis][axis]);
+        -exponent.div_euclid(2)
+    });
+    let mut scaled = [[0.0; D]; D];
+    for (row, output_row) in scaled.iter_mut().enumerate() {
+        for (column, output) in output_row.iter_mut().enumerate() {
+            let value =
+                scale_by_power_of_two(metric[row][column], exponents[row] + exponents[column]);
+            if !value.is_finite() || (value == 0.0 && metric[row][column] != 0.0) {
+                return Err(AnisotropyError::NonRepresentableMetricFactor { row, column });
+            }
+            *output = value;
+        }
+    }
+    Ok(scaled)
+}
+
+fn binary_exponent(value: f64) -> i32 {
+    let bits = value.to_bits();
+    let exponent_bits = ((bits >> 52) & 0x7ff) as i32;
+    if exponent_bits != 0 {
+        exponent_bits - 1023
+    } else {
+        let fraction = bits & ((1_u64 << 52) - 1);
+        let highest_bit = 63 - fraction.leading_zeros().cast_signed();
+        -1074 + highest_bit
+    }
+}
+
+fn scale_by_power_of_two(value: f64, exponent: i32) -> f64 {
+    let mut scaled = value;
+    let mut remaining = exponent;
+    while remaining > 0 {
+        let step = remaining.min(1023);
+        scaled *= 2.0_f64.powi(step);
+        remaining -= step;
+    }
+    while remaining < 0 {
+        let step = remaining.max(-1022);
+        scaled *= 2.0_f64.powi(step);
+        remaining -= step;
+    }
+    scaled
+}
+
+fn approximate_three_determinant<const D: usize>(matrix: &[[f64; D]; D]) -> f64 {
+    let positive = matrix[0][0] * matrix[1][1] * matrix[2][2]
+        + matrix[0][1] * matrix[1][2] * matrix[2][0]
+        + matrix[0][2] * matrix[1][0] * matrix[2][1];
+    let negative = matrix[0][2] * matrix[1][1] * matrix[2][0]
+        + matrix[0][1] * matrix[1][0] * matrix[2][2]
+        + matrix[0][0] * matrix[1][2] * matrix[2][1];
+    positive - negative
 }
 
 #[allow(clippy::needless_range_loop)]

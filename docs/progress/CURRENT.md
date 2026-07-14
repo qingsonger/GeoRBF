@@ -14,6 +14,27 @@
   `codex/req-aniso-001-global-anisotropy`, and opened Draft PR #29. The
   registry links the PR and records the truthful pre-review `documented`
   state; independent mathematical and numerical review remains required.
+- Initial independent review of PR #29 found three merge-blocking P1 numerical
+  boundary defects: the difference-form spheroidal factor cancelled a valid
+  small axial reciprocal at high ratios; a rounded transform-derived `A^T A`
+  could be publicly singular; and ordinary Cholesky rounding could accept a
+  slightly indefinite user metric while storing it unchanged.
+- Replaced spheroidal projector subtraction with a stable D=1/D=2/D=3
+  orthonormal-frame factor. Added power-of-two congruence equilibration and
+  fixed-size exact-sign floating expansions for every D<=3 leading principal
+  minor, applied before user-metric Cholesky and before exposing a metric
+  derived from `A`. No tolerance, eigenvalue clipping, or condition cutoff was
+  introduced.
+- Added exact regressions for the reported D1/D2 `1e100` axis ratio, an
+  independently known D3 `1e150` transform condition, rounded-singular
+  transform metrics, the reported slightly indefinite D2 metric, and D3
+  equicorrelation cases whose pairwise minors pass but determinant sign changes
+  across `-1/2`. All 12 focused anisotropy tests, focused Clippy, and doctests
+  pass after the repairs; independent re-review remains required.
+- The complete repair head passes formatting, warning-denying workspace Clippy,
+  114 workspace tests, 21 doctests, 100 release integration tests plus 21
+  release doctests, warning-denying core rustdoc, the global-anisotropy
+  benchmark smoke workload, `git diff --check`, and all 58 requirement checks.
 - Confirmed clean synchronized `main` at `409f274`, the correct origin and
   worktree, no tags, no open Issue, PR, review, or failed CI, and green
   three-platform `main` run 29305762416. Selected Implement mode because no
@@ -442,17 +463,17 @@
 
 ## Current blockers
 
-None. REQ-ORIENT-001 is integrated. REQ-ANISO-001 has no unfinished dependency
-and is the final remaining M1 requirement.
+None. The three initial independent-review findings are repaired and pass the
+complete local gate. Independent re-review and green repair-head CI remain
+required before PR #29 can become ready or merge.
 
 ## Next atomic task
 
-Create the REQ-ANISO-001 Issue with explicit isotropic, spheroidal,
-ellipsoidal, and user-metric transform conventions; finite SPD/invertibility
-validation; D=1/D=2/D=3 rotation, scaling, and chain-rule acceptance criteria;
-benchmark obligations; and exclusions. Then create its isolated feature
-branch. Do not begin local anisotropy, orientation-tensor estimation, fields,
-assembly, solvers, schemas, or language bindings in the same requirement.
+Commit and push the isolated review repair, obtain green three-platform CI,
+then independently re-review the exact repair range. Record the review only
+after every finding is closed. Do not begin local anisotropy,
+orientation-tensor estimation, fields, assembly, solvers, schemas, or language
+bindings in the same requirement.
 
 ## Latest full test result
 
@@ -461,12 +482,12 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 102 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 114 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 19 doctests, including seventeen
+- `cargo test --doc --workspace`: passed; 21 doctests, including eighteen
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 88 integration tests
-  and 19 doctests, 0 failures.
+- `cargo test -p georbf --release --all-features`: passed; 100 integration
+  tests and 21 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
 - `cargo xtask requirements check`: passed; 58 requirements.
@@ -490,6 +511,11 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   deterministic C2/C4/C6 D=1/D=2/D=3 workloads. Four full 1,000,000-iteration
   runs had medians of 170.95, 330.13, and 474.78 ns/iteration respectively
   with bit-identical checksums; see `benches/REQ-KERNEL-004.md`.
+- `cargo bench -p georbf --bench global_anisotropy -- --smoke`: passed for
+  deterministic allocation-free D=1/D=2/D=3 workloads. Four full
+  1,000,000-iteration pre-review runs had medians of 61.44, 180.81, and 584.77
+  ns/iteration respectively with bit-identical checksums; see
+  `benches/REQ-ANISO-001.md`.
 - `cargo run -p georbf --example radial_kernel_calculus`: passed.
 - `cargo run -p georbf --example kernel_metadata`: passed.
 - `cargo run -p georbf --example polyharmonic_spline`: passed.

@@ -18,8 +18,9 @@ The convenience families use these conventions:
 
 - isotropic length `ell`: `A = I/ell`;
 - spheroidal principal unit direction `u`, axial length `ell_a`, and transverse
-  length `ell_t`:
-  `A = I/ell_t + (1/ell_a - 1/ell_t) u u^T`;
+  length `ell_t`: `B = u u^T/ell_a^2 + (I-u u^T)/ell_t^2`; `A` is a stable
+  orthonormal-frame factor with principal row `u^T/ell_a` and transverse rows
+  scaled by `1/ell_t`, avoiding a large-minus-large projector evaluation;
 - ellipsoidal unit axes `u_i` and lengths `ell_i`: row `i` of `A` is
   `u_i^T/ell_i`; and
 - a user supplies either an arbitrary `A` or an exactly symmetric SPD `B`.
@@ -37,9 +38,12 @@ Ellipsoidal axes are already validated `UnitDirection` values. Their pairwise
 dot products are checked against a caller-supplied finite tolerance in
 `[0,1)`. The constructor neither changes nor orthogonalizes them. A user metric
 must be componentwise finite and exactly symmetric. Its unregularized Cholesky
-factorization must have strictly positive computed pivots; there is no
-symmetrization, eigenvalue clipping, diagonal adjustment, jitter, or
-pseudoinverse.
+factorization must have strictly positive computed pivots. Before factorization,
+power-of-two congruence equilibration and fixed-size floating expansions certify
+the exact signs of all leading principal minors of the supplied `f64` matrix.
+The same certification is applied to a metric derived from `A`; construction
+fails if rounding `A^T A` loses SPD. There is no symmetrization, eigenvalue
+clipping, diagonal adjustment, jitter, or pseudoinverse.
 
 Exact partial-pivot inversion decides singularity and representability.
 Deterministic fixed-sweep one-sided Jacobi SVD supplies positive finite
