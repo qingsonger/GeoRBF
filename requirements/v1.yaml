@@ -120,17 +120,17 @@ requirements:
     dependencies: [REQ-KERNEL-001]
     milestone: M1-v0.1.0
     priority: P1
-    issue: null
-    pull_request: null
-    tests: [high-precision, finite-difference, random-cpd, pathological-input]
-    docs: [docs/math/KERNEL_REQUIREMENTS.md, rustdoc]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
-    status: planned
+    issue: 16
+    pull_request: 17
+    tests: [high-precision, finite-difference, random-cpd, center-limits, stable-expansion-coefficients, subnormal-range, scale-reference-projection, exchange-symmetry, pathological-input, dimension-compile-fail]
+    docs: [docs/math/KERNEL_REQUIREMENTS.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, docs/reviews/PR-17-INDEPENDENT-REVIEW.md, benches/REQ-KERNEL-002.md, rustdoc, crates/georbf/examples/polyharmonic_spline.rs]
+    rust_api: implemented
+    cli: "N/A: project schemas and a kernel-selection command are not implemented yet"
+    c_api: "N/A: concrete kernel construction is not exposed before the Rust API and stable C ABI freeze"
+    cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust kernel types"
+    python_api: "N/A: Python kernel objects wait for the reviewed Rust API and versioned schemas"
+    benchmark: implemented
+    status: documented
 
   - id: REQ-KERNEL-003
     title: Smooth global-support kernels

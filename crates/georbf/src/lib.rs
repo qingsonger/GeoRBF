@@ -1,10 +1,10 @@
 //! The `GeoRBF` scalar-field core.
 //!
 //! The initial public API provides validated, dimension-safe geometry and
-//! coordinate transforms, radial kernel derivative calculus, and formula-free
-//! kernel metadata for exactly one, two, or three dimensions. Concrete
-//! kernels, functionals, assembly, and solvers are introduced by separately
-//! reviewed requirements.
+//! coordinate transforms, radial kernel derivative calculus, kernel metadata,
+//! and polyharmonic/surface-spline kernels for exactly one, two, or three
+//! dimensions. Other kernel families, functionals, assembly, and solvers are
+//! introduced by separately reviewed requirements.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -28,7 +28,9 @@ pub use kernel::{
     KernelDerivativeCapabilitiesError, KernelDerivativeCapability, KernelDerivativeOrder,
     KernelDimensions, KernelDimensionsError, KernelMetadata, KernelMetadataError,
     KernelParameterConstraint, KernelParameterDefinition, KernelParameterDefinitionError,
-    KernelParameterUnit, KernelParameterValueError, KernelSupport,
+    KernelParameterUnit, KernelParameterValueError, KernelSupport, PolyharmonicSpline,
+    PolyharmonicSplineConstructionError, PolyharmonicSplineEvaluationError, SurfaceSpline,
+    SurfaceSplineConstructionError,
 };
 pub use kernel_calculus::{
     KernelArgument, KernelCalculusError, RadialDerivativeOrder, RadialExpansionCoefficient,

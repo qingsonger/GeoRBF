@@ -4,12 +4,50 @@
   orientation, and kernel calculus
 - Execution mode: Implement / next atomic requirement
 - Current requirement: REQ-KERNEL-002
-- Issue: not yet created
-- Pull request: not yet opened
-- Branch: not yet created
+- Issue: #16
+- Pull request: Draft #17
+- Branch: `codex/req-kernel-002-polyharmonic-surface-splines`
 
 ## Completed in this run
 
+- Completed the independent mathematical, numerical, safety, API, allocation,
+  performance, and test review of PR #17. The complete evidence is recorded
+  in `docs/reviews/PR-17-INDEPENDENT-REVIEW.md`.
+- Repaired premature intermediate underflow that silently zeroed
+  representable high-power derivatives and D=2/D=3 expansion coefficients.
+  Exact odd and logarithmic subnormal bit patterns now prevent regression.
+- Added independent `p=2` and `p=4` CPD projection stencils for the fixed
+  logarithmic reference-length contract. Four full post-repair benchmark runs
+  retained identical checksums with no performance regression.
+- Review-repair commit `bc320c5` passed GitHub Actions run 29292921933 on
+  Windows, Ubuntu, and macOS, including formatting, Clippy, 68 workspace
+  tests, 13 doctests, both benchmark smoke workloads, and all 58 requirement
+  checks.
+- Review-evidence commit `d217fcd` passed the same complete three-platform
+  matrix in GitHub Actions run 29293285706. Issue #16 and PR #17 now record the
+  review evidence, and PR #17 is ready for maintainer review.
+- Confirmed PR #17 implementation and registry head `8c3c38d` passed GitHub
+  Actions run 29291234362 on Windows, Ubuntu, and macOS, including formatting,
+  Clippy, 65 workspace tests, 13 doctests, both benchmark smoke workloads, and
+  all 58 requirement checks.
+- Committed and pushed the isolated implementation as `ed311a4`, opened Draft
+  PR #17, and advanced REQ-KERNEL-002 to `documented`. Integration remains
+  forbidden until independent review, green CI, and merge are complete.
+- Confirmed clean synchronized `main` at `0d0aede`, no open Issue or PR, no
+  tags, and green three-platform CI; confirmed REQ-KERNEL-001 is integrated,
+  then created Issue #16 and the isolated REQ-KERNEL-002 branch.
+- Added CPD-positive integer-power polyharmonic splines for D=1/D=2/D=3 and
+  dimension-specific surface splines with `2m>D`, derived power `2m-D`, and
+  explicit complete-polynomial CPD order.
+- Added analytic value-through-third radial derivatives, direct stable D=2/D=3
+  expansion coefficients, exact `min(p-1,3)` center capability, and structured
+  construction, radius, center-jet, and non-representable-result errors.
+- Added embedded 80-digit truth, independent finite differences, deterministic
+  random projected-CPD checks in every dimension, center, exchange-sign,
+  tensor-symmetry, pathological-input, compile-fail, and thread-safety tests.
+- Added synchronized mathematical and architecture contracts, rustdoc, a
+  runnable surface-spline example, change record, deterministic allocation-free
+  benchmark, four-run local baseline, and CI benchmark smoke coverage.
 - Squash-merged PR #14 as commit `d83e2d2`; Issue #13 closed automatically,
   and post-merge `main` CI run 29289145369 passed on Windows, Ubuntu, and
   macOS. REQ-KERNEL-001 now satisfies every integration gate.
@@ -189,32 +227,31 @@
 
 ## Current blockers
 
-None. REQ-KERNEL-001 is integrated. REQ-KERNEL-002 has no unfinished
-dependency and is the next remaining M1 requirement in registry order.
+Integration is blocked by maintainer merge and post-merge `main` CI. The
+independent review, repairs, three-platform PR CI, implementation, local
+checks, documentation, example, interface applicability, and benchmark
+evidence are complete.
 
 ## Next atomic task
 
-Create the REQ-KERNEL-002 Issue with explicit polyharmonic and surface-spline
-acceptance criteria, then create an isolated feature branch. Implement only
-dimension-valid families without a redundant shape parameter, their CPD
-classification, center derivative limits, independent truth tests,
-documentation, applicable interfaces, diagnostics, and benchmark evidence.
-Do not begin smooth global-support or compact-support kernels, orientation,
-anisotropy, polynomial, functional, assembly, or solver work in the same run.
+Maintain ready PR #17 and await maintainer merge. After merge, verify `main`
+CI before advancing REQ-KERNEL-002 beyond `documented`. Do not begin smooth
+global-support or compact-support kernels, orientation, anisotropy,
+polynomial, functional, assembly, or solver work in the same run.
 
 ## Latest full test result
 
-Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
+Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 56 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 68 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 11 doctests, including nine
+- `cargo test --doc --workspace`: passed; 13 doctests, including eleven
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 42 integration tests
-  and 11 doctests, 0 failures.
+- `cargo test -p georbf --release --all-features`: passed; 54 integration tests
+  and 13 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
 - `cargo xtask requirements check`: passed; 58 requirements.
@@ -225,8 +262,14 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
   review runs had medians of 36.54, 51.86, and 106.40 ns/iteration
   respectively with identical checksums; see `benches/REQ-KCALC-001.md` for
   the environment and observed ranges.
+- `cargo bench -p georbf --bench polyharmonic_spline -- --smoke`: passed for
+  deterministic power-five D=1/D=2/D=3 workloads. Four full post-review
+  1,000,000-iteration runs had medians of 135.28, 215.09, and 245.43
+  ns/iteration respectively with bit-identical checksums; see
+  `benches/REQ-KERNEL-002.md` for the environment and observed ranges.
 - `cargo run -p georbf --example radial_kernel_calculus`: passed.
 - `cargo run -p georbf --example kernel_metadata`: passed.
+- `cargo run -p georbf --example polyharmonic_spline`: passed.
 - Scoped forbidden-pattern and core allocation/dynamic-dispatch scans: passed.
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
@@ -270,6 +313,17 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-13:
 - REQ-KERNEL-001 post-merge `main` GitHub Actions run 29289145369 for merge
   commit `d83e2d2` passed on Windows, Ubuntu, and macOS with the complete job
   set.
+- REQ-KERNEL-001 final integration-state `main` GitHub Actions run 29289556802
+  for commit `0d0aede` passed on Windows, Ubuntu, and macOS with the complete
+  job set.
+- REQ-KERNEL-002 Draft PR #17 GitHub Actions run 29291234362 for implementation
+  and registry head `8c3c38d` passed on Windows, Ubuntu, and macOS with the
+  complete job set, including both benchmark smoke workloads.
+- REQ-KERNEL-002 review-repair GitHub Actions run 29292921933 for commit
+  `bc320c5` passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-002 review-evidence GitHub Actions run 29293285706 for commit
+  `d217fcd` passed on Windows, Ubuntu, and macOS with the complete job set; PR
+  #17 was then marked ready for maintainer review.
 
 ## Checks not yet available
 

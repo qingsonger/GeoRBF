@@ -158,6 +158,15 @@ every positive separation, including a compact kernel's support boundary and
 zero exterior branch; boundary smoothness is therefore part of the declared
 capability rather than an independent assumption by sparse assembly.
 
+The first concrete CPD catalog entries use the signed polyharmonic family
+`s_p r^p` for odd integer `p` and `s_p r^p log(r)` for even integer `p`, where
+`s_p = (-1)^(floor(p/2)+1)`. Generic members support all three dimensions and
+have CPD order `floor(p/2)+1`. A dimension-specific surface spline of Sobolev
+order `m` requires `2m>D`, uses `p=2m-D`, and retains CPD order `m`. Both
+entries have global support and no scalar shape parameter. Their center
+capability is limited to `min(p-1,3)` and the complete radial jet path rejects
+requests that would imply a nonexistent higher center derivative.
+
 ## Correctness policy
 
 Truth comes from analytic fields, high-precision evaluation, independent finite
