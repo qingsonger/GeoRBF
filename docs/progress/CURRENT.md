@@ -5,11 +5,14 @@
 - Execution mode: Implement / next atomic requirement
 - Current requirement: REQ-ORIENT-001
 - Issue: #25
-- Pull request: not yet opened
+- Pull request: #26 (Draft)
 - Branch: `codex/req-orient-001-geological-orientation`
 
 ## Completed in this run
 
+- Committed the isolated implementation as `aa1bff6`, pushed
+  `codex/req-orient-001-geological-orientation`, and opened Draft PR #26. The
+  registry links the PR and records the truthful pre-review `documented` state.
 - Confirmed clean synchronized `main` at `435cbef`, the correct origin and
   worktree, no tags, no open Issue or PR, and green three-platform `main` CI
   run 29304072737. Confirmed REQ-DIM-001 and REQ-COORD-001 are integrated,
@@ -374,12 +377,11 @@ record remain required before the registry may say `integrated`.
 
 ## Next atomic task
 
-Commit and push the isolated REQ-ORIENT-001 implementation, open its Draft PR,
-link the PR in the registry, and complete an independent mathematical,
-convention, numerical, API, safety, allocation, documentation, and test review.
-Repair every finding and require a green reviewed head before merge. Do not
-begin normal/tangent constraints, global anisotropy, fields, assembly, or
-solver work in the same requirement.
+Complete an independent mathematical, convention, numerical, API, safety,
+allocation, documentation, and test review of Draft PR #26. Repair every
+finding and require a green reviewed head before merge. Do not begin
+normal/tangent constraints, global anisotropy, fields, assembly, or solver work
+in the same requirement.
 
 ## Latest full test result
 
