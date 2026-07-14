@@ -14,6 +14,9 @@
   `codex/req-kernel-003-smooth-global-kernels`, and opened Draft PR #20. The
   requirement registry now links the PR and records the truthful pre-review
   `documented` state.
+- Confirmed implementation-and-registry head `57930eb` passed PR #20 GitHub
+  Actions run 29299417381 on Windows, Ubuntu, and macOS with the complete job
+  set, including all three benchmark smoke workloads.
 - Created Issue #19 with explicit Gaussian, inverse-multiquadric, signed
   multiquadric, and Matérn `1/2`, `3/2`, and `5/2` acceptance criteria after
   confirming clean synchronized `main`, no open Repair or Review work, and an
@@ -259,16 +262,16 @@
 
 ## Current blockers
 
-Independent mathematical/numerical review, three-platform PR CI, maintainer
-merge, and post-merge `main` CI remain. The implementation, local checks,
-documentation, example, interface applicability, benchmark evidence, and
-Draft PR are complete.
+Independent mathematical/numerical review, maintainer merge, and post-merge
+`main` CI remain. The implementation, local checks, documentation, example,
+interface applicability, benchmark evidence, Draft PR, and three-platform PR
+CI are complete.
 
 ## Next atomic task
 
 Complete an independent review of Draft PR #20 covering formulas, signs,
 SPD/CPD classification, center limits, extreme range handling, allocations,
-interfaces, and tests. Repair any actionable findings and require green
+interfaces, and tests. Repair any actionable findings and reconfirm green
 three-platform CI before marking the PR ready. Do not begin compact-support
 kernels, orientation, anisotropy, polynomial, functional, assembly, or solver
 work in the same run.
@@ -373,6 +376,10 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - REQ-KERNEL-002 final integration-state `main` GitHub Actions run 29298112320
   for commit `4ffdb0d` passed on Windows, Ubuntu, and macOS with the complete
   job set.
+- REQ-KERNEL-003 Draft PR #20 GitHub Actions run 29299417381 for
+  implementation-and-registry head `57930eb` passed on Windows, Ubuntu, and
+  macOS with the complete job set, including all three benchmark smoke
+  workloads.
 
 ## Checks not yet available
 
