@@ -157,7 +157,7 @@ requirements:
     milestone: M1-v0.1.0
     priority: P1
     issue: 22
-    pull_request: null
+    pull_request: 23
     tests: [exact-rational-truth, support-boundary, finite-difference, random-spd, center-limits, coordinate-scale, exchange-symmetry, pathological-input, dimension-compile-fail]
     docs: [docs/math/KERNEL_REQUIREMENTS.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, benches/REQ-KERNEL-004.md, rustdoc, crates/georbf/examples/wendland_kernels.rs]
     rust_api: implemented
@@ -166,7 +166,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust kernel types"
     python_api: "N/A: Python kernel objects wait for the reviewed Rust API and versioned schemas"
     benchmark: implemented
-    status: in_progress
+    status: documented
 
   - id: REQ-ANISO-001
     title: Global anisotropy metrics

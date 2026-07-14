@@ -2,14 +2,18 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / Draft PR preparation
+- Execution mode: Review / independent review next
 - Current requirement: REQ-KERNEL-004
 - Issue: #22
-- Pull request: not yet opened
+- Pull request: Draft PR #23
 - Branch: `codex/req-kernel-004-wendland-compact-support`
 
 ## Completed in this run
 
+- Committed the isolated implementation as `122abcd`, pushed
+  `codex/req-kernel-004-wendland-compact-support`, and opened Draft PR #23.
+  The requirement registry links the PR and records the truthful pre-review
+  `documented` state.
 - Confirmed clean synchronized `main` at `2d57174`, the correct origin and
   worktree, no tags, no open Issue, PR, review, or failed CI, and green
   three-platform `main` run 29301969855; confirmed REQ-KERNEL-001 is
@@ -316,20 +320,20 @@
 ## Current blockers
 
 None in implementation. REQ-KERNEL-004 has complete local implementation,
-tests, documentation, diagnostics, example, and benchmark evidence. It still
-requires a Draft PR, green three-platform CI, independent mathematical and
+tests, documentation, diagnostics, example, benchmark evidence, and Draft PR
+#23. It still requires green three-platform CI, independent mathematical and
 numerical review, merge, and post-merge integration-state confirmation before
 the registry may say `integrated`.
 
 ## Next atomic task
 
-Commit and push the isolated REQ-KERNEL-004 implementation, open its Draft PR,
-link the PR in `requirements/v1.yaml`, and advance only to the truthful
-`documented` state. The following run must enter Review mode for independent
-formula, sign, dimension, SPD, center-limit, boundary, extreme-range,
-allocation, interface, test, documentation, and benchmark review. Do not begin
-orientation, anisotropy, sparse assembly, polynomial, functional, field
-assembly, or solver work before this requirement is reviewed and integrated.
+Enter Review mode for Draft PR #23 and perform an independent formula, sign,
+dimension, SPD, center-limit, support-boundary, extreme-range, allocation,
+interface, test, documentation, and benchmark review. Repair every blocking
+finding on the same branch, record review evidence, wait for green
+three-platform CI, and only then mark the PR ready. Do not begin orientation,
+anisotropy, sparse assembly, polynomial, functional, field assembly, or solver
+work before this requirement is reviewed and integrated.
 
 ## Latest full test result
 
