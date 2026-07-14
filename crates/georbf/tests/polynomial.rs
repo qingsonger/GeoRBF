@@ -202,6 +202,19 @@ fn output_mismatch_and_nonfinite_results_leave_storage_unchanged() -> Result<(),
     );
     assert_eq!(short_values, [7.0; 2]);
 
+    let mut joint_values = [7.0, 8.0, 9.0];
+    let mut short_joint_gradients = [[11.0], [12.0]];
+    assert_eq!(
+        space.try_evaluate(point, &mut joint_values, &mut short_joint_gradients),
+        Err(PolynomialSpaceError::OutputLengthMismatch {
+            output: PolynomialOutput::Gradients,
+            expected: 3,
+            actual: 2,
+        })
+    );
+    assert_eq!(joint_values, [7.0, 8.0, 9.0]);
+    assert_eq!(short_joint_gradients, [[11.0], [12.0]]);
+
     let mut values = [7.0; 3];
     assert_eq!(
         space.try_evaluate_values(Point::try_new([f64::MAX])?, &mut values),
