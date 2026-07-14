@@ -6,8 +6,8 @@
 //! Wendland compact-support kernels for exactly one, two, or three dimensions,
 //! validated geological orientation conversions in two and three dimensions,
 //! fixed global anisotropy metrics with chain-rule derivatives, and complete
-//! dimension-generic polynomial spaces. Functionals, assembly, and solvers are
-//! introduced by separately reviewed requirements.
+//! dimension-generic polynomial spaces, and atomic scalar-field functionals.
+//! Assembly and solvers are introduced by separately reviewed requirements.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -15,6 +15,7 @@
 pub mod anisotropy;
 pub mod coordinates;
 pub mod dimension;
+pub mod functional;
 pub mod geometry;
 pub mod kernel;
 pub mod kernel_calculus;
@@ -31,6 +32,10 @@ pub use coordinates::{
     Handedness, VerticalDirection,
 };
 pub use dimension::{Dim, SupportedDimension};
+pub use functional::{
+    CenterRepresenter, FunctionalAtom, FunctionalError, FunctionalExpr, FunctionalProvenance,
+    FunctionalStorage, FunctionalTerm, KernelActionError, ObservationFunctional, ScalarFieldSample,
+};
 pub use geometry::{Direction, GeometryError, Point, UnitDirection, Vector};
 pub use kernel::{
     CpdOrder, CpdOrderError, Gaussian, InverseMultiquadric, KernelDefiniteness,

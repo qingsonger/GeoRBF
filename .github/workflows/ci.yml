@@ -73,5 +73,7 @@ jobs:
         run: cargo bench -p georbf --bench global_anisotropy -- --smoke
       - name: Smoke-test polynomial spaces benchmark
         run: cargo bench -p georbf --bench polynomial_spaces -- --smoke
+      - name: Smoke-test atomic functionals benchmark
+        run: cargo bench -p georbf --bench atomic_functionals -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check

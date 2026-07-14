@@ -77,3 +77,12 @@ coordinates, and maps its gradient back to original coordinates. Run it with:
 ```text
 cargo run -p georbf --example global_anisotropy
 ```
+
+`REQ-FUNC-001` adds `crates/georbf/examples/atomic_functionals.rs`, which builds
+a value/directional-derivative expression, applies it to a scalar-field sample
+and the complete polynomial basis, and evaluates it against a distinct Gaussian
+center representer. Run it with:
+
+```text
+cargo run -p georbf --example atomic_functionals
+```
