@@ -3,13 +3,16 @@
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
 - Execution mode: Implement / next atomic requirement
-- Current requirement: REQ-KERNEL-002
-- Issue: #16
-- Pull request: Draft #17
-- Branch: `codex/req-kernel-002-polyharmonic-surface-splines`
+- Current requirement: REQ-KERNEL-003
+- Issue: not yet created
+- Pull request: not yet opened
+- Branch: not yet created
 
 ## Completed in this run
 
+- Squash-merged PR #17 as commit `68ad3e9`; Issue #16 closed automatically,
+  and post-merge `main` CI run 29297902909 passed on Windows, Ubuntu, and
+  macOS. REQ-KERNEL-002 now satisfies every integration gate.
 - Completed the independent mathematical, numerical, safety, API, allocation,
   performance, and test review of PR #17. The complete evidence is recorded
   in `docs/reviews/PR-17-INDEPENDENT-REVIEW.md`.
@@ -227,16 +230,17 @@
 
 ## Current blockers
 
-Integration is blocked by maintainer merge and post-merge `main` CI. The
-independent review, repairs, three-platform PR CI, implementation, local
-checks, documentation, example, interface applicability, and benchmark
-evidence are complete.
+None. REQ-KERNEL-002 is integrated. REQ-KERNEL-003 has no unfinished
+dependency and is the next remaining M1 requirement in registry order.
 
 ## Next atomic task
 
-Maintain ready PR #17 and await maintainer merge. After merge, verify `main`
-CI before advancing REQ-KERNEL-002 beyond `documented`. Do not begin smooth
-global-support or compact-support kernels, orientation, anisotropy,
+Create the REQ-KERNEL-003 Issue with explicit Gaussian, inverse-multiquadric,
+validated multiquadric, and supported Matérn acceptance criteria, then create
+an isolated feature branch. Implement only smooth global-support kernels,
+their physical parameters, classifications, center capabilities, independent
+truth tests, documentation, applicable interfaces, diagnostics, and benchmark
+evidence. Do not begin compact-support kernels, orientation, anisotropy,
 polynomial, functional, assembly, or solver work in the same run.
 
 ## Latest full test result
@@ -324,6 +328,11 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - REQ-KERNEL-002 review-evidence GitHub Actions run 29293285706 for commit
   `d217fcd` passed on Windows, Ubuntu, and macOS with the complete job set; PR
   #17 was then marked ready for maintainer review.
+- REQ-KERNEL-002 final ready-head GitHub Actions run 29293436289 for commit
+  `bf58228` passed on Windows, Ubuntu, and macOS with the complete job set.
+- REQ-KERNEL-002 post-merge `main` GitHub Actions run 29297902909 for merge
+  commit `68ad3e9` passed on Windows, Ubuntu, and macOS with the complete job
+  set.
 
 ## Checks not yet available
 
