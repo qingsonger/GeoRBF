@@ -177,6 +177,57 @@ fn support_boundary_and_exterior_are_exact_positive_zero() -> TestResult {
 }
 
 #[test]
+fn interior_limits_match_zero_extension_through_third_order() -> TestResult {
+    let contracts = [
+        (
+            WendlandSmoothness::C2,
+            [4, 3, 2, 1],
+            [5.0, -20.0, 60.0, -120.0],
+        ),
+        (
+            WendlandSmoothness::C4,
+            [6, 5, 4, 3],
+            [56.0 / 3.0, -112.0, 560.0, -2240.0],
+        ),
+        (
+            WendlandSmoothness::C6,
+            [8, 7, 6, 5],
+            [66.0, -528.0, 3696.0, -22176.0],
+        ),
+    ];
+
+    for (smoothness, boundary_powers, signed_limits) in contracts {
+        let kernel = Wendland::try_new(smoothness, 1.0)?;
+        let mut previous_magnitudes = [f64::INFINITY; 4];
+        let mut previous_limit_errors = [f64::INFINITY; 4];
+        for binary_exponent in [4, 8, 12] {
+            let t = 2.0_f64.powi(-binary_exponent);
+            let radius = 1.0 - t;
+            for index in 0..ORDERS.len() {
+                let actual = kernel
+                    .radial_derivative(radius, ORDERS[index])?
+                    .ok_or("just-inside derivative missing")?;
+                assert!(actual != 0.0 && actual.abs() < previous_magnitudes[index]);
+                previous_magnitudes[index] = actual.abs();
+
+                let normalized = actual / t.powi(boundary_powers[index]);
+                let error = (normalized - signed_limits[index]).abs();
+                assert!(
+                    error < previous_limit_errors[index],
+                    "{smoothness:?} order {:?} boundary quotient did not converge: error {error:.17e}",
+                    ORDERS[index]
+                );
+                previous_limit_errors[index] = error;
+                if binary_exponent == 12 {
+                    assert_close(normalized, signed_limits[index], 5.0e-3);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn analytic_derivatives_match_independent_interior_finite_differences() -> TestResult {
     for smoothness in [
         WendlandSmoothness::C2,
@@ -367,6 +418,64 @@ fn extreme_and_invalid_inputs_follow_structured_paths() -> TestResult {
 
     let huge = Wendland::try_new(WendlandSmoothness::C4, f64::MAX)?;
     assert_same_bits(huge.radial_value(1.0)?, 1.0);
+    Ok(())
+}
+
+#[test]
+fn combined_log_recovers_representable_subnormal_scale_products() -> TestResult {
+    // Independent 200-digit decimal evaluation using the exact f64 radius,
+    // followed by round-to-nearest in units of 2^-1074, gives four negative
+    // subnormal units for every center Hessian coefficient below. The stored
+    // inverse squared has already rounded to zero, so a direct scaled product
+    // cannot produce this result.
+    let second_order_radius = 1.0e162_f64;
+    let second_inverse = second_order_radius.recip();
+    assert!(second_inverse > 0.0);
+    assert_same_bits(second_inverse * second_inverse, 0.0);
+    for smoothness in [
+        WendlandSmoothness::C2,
+        WendlandSmoothness::C4,
+        WendlandSmoothness::C6,
+    ] {
+        let kernel = Wendland::try_new(smoothness, second_order_radius)?;
+        let second = kernel
+            .radial_derivative(0.0, KernelDerivativeOrder::Second)?
+            .ok_or("center second derivative missing")?;
+        assert_eq!(second.to_bits(), 0x8000_0000_0000_0004);
+    }
+
+    // At q=1/4, independent exact-rational polynomial evaluation plus
+    // 200-digit decimal scaling by the exact f64 radius gives the bit patterns
+    // below for phi''' and b. The stored inverse cubed is zero, making these
+    // nonzero subnormal results direct evidence for complete-product recovery.
+    let third_order_radius = 1.0e108_f64;
+    let third_inverse = third_order_radius.recip();
+    let third_inverse_squared = third_inverse * third_inverse;
+    assert!(third_inverse_squared > 0.0);
+    assert_same_bits(third_inverse_squared * third_inverse, 0.0);
+    let radius = third_order_radius * 0.25;
+    let separation =
+        RadialSeparation::try_new(Point::try_new([radius, 0.0])?, Point::try_new([0.0, 0.0])?)?;
+    for (smoothness, third_bits, expansion_bits) in [
+        (WendlandSmoothness::C2, 0x9, 0x7),
+        (WendlandSmoothness::C4, 0xf, 0x9),
+        (WendlandSmoothness::C6, 0x13, 0xc),
+    ] {
+        let kernel = Wendland::try_new(smoothness, third_order_radius)?;
+        let third = kernel
+            .radial_derivative(radius, KernelDerivativeOrder::Third)?
+            .ok_or("interior third derivative missing")?;
+        assert_eq!(third.to_bits(), third_bits);
+        let expansion = kernel
+            .radial_jet(separation)?
+            .expansion_coefficients()
+            .copied()
+            .ok_or("stable expansion coefficients missing")?;
+        assert_eq!(
+            expansion.second_remainder_over_radius().to_bits(),
+            expansion_bits
+        );
+    }
     Ok(())
 }
 

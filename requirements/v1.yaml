@@ -158,7 +158,7 @@ requirements:
     priority: P1
     issue: 22
     pull_request: 23
-    tests: [exact-rational-truth, support-boundary, finite-difference, random-spd, center-limits, coordinate-scale, exchange-symmetry, pathological-input, dimension-compile-fail]
+    tests: [exact-rational-truth, support-boundary, finite-difference, random-spd, center-limits, coordinate-scale, subnormal-range, exchange-symmetry, pathological-input, dimension-compile-fail]
     docs: [docs/math/KERNEL_REQUIREMENTS.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, benches/REQ-KERNEL-004.md, rustdoc, crates/georbf/examples/wendland_kernels.rs]
     rust_api: implemented
     cli: "N/A: project schemas and a kernel-selection command are not implemented yet"
