@@ -138,3 +138,20 @@ formatting, warning-denying workspace Clippy with all targets and features,
 workspace tests with all features, workspace rustdoc, and all 58 requirement
 checks. These evidence changes alter no production code, tests, manifest,
 schema, API, build input, or numerical behavior.
+
+## Integration evidence
+
+- Final review-evidence head `4bf62ca5d0a038f8f94c95eb21a97f1c99751d6a`
+  passed the complete Windows, Ubuntu, and macOS Ready matrix, including every
+  benchmark smoke workload, in run 29340242329.
+- PR #38 squash-merged exactly once as
+  `2879f131f4305569f3a652d875e7f538cb844b31`; Issue #37 closed as completed.
+- Post-merge `main` run 29340402183 passed the same complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate on that exact
+  merge commit.
+- The complete local integration-state standard gate passed: formatting,
+  warning-denying workspace Clippy with all targets and features, workspace
+  tests with all features, workspace rustdoc, and all 58 requirement checks.
+- Integration-state PR #39 contains only the isolated registry/progress change;
+  it makes no production, test, manifest, schema, build-input, API, or
+  numerical-behavior change.

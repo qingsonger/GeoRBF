@@ -6,48 +6,39 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / PR #38 ready-head integration sequence
-- Requirement: REQ-FUNC-001, Issue #37
-- Branch: `codex/req-func-001-atomic-functionals`
-- Pull request: #38 (Draft until the final review-evidence head is pushed)
-- Original reviewed head: `6dcbb9fa8d874cd5de4217e6f5f1deeac9927e0b`
-- Repair and clean fresh re-review head: `264c46a31908a85eb76289ae43e1bad8b5c2ea00`
-- Registry state in this change: `documented`
-- Dependencies: REQ-DIM-001, REQ-KCALC-001, and REQ-POLY-001 are `integrated`
+- Mode: Integration state / REQ-FUNC-001 complete
+- Requirement: REQ-FUNC-001, Issue #37 (closed)
+- Implementation pull request: #38, squash-merged as `2879f13`
+- Integration-state branch: `codex/req-func-001-integration-state`
+- Integration-state pull request: #39
+- Review record: `docs/reviews/PR-38-INDEPENDENT-REVIEW.md`
+- Registry state in this integration change: `integrated`
+- Next eligible requirement: REQ-SPIKE-002 (`planned`)
 
-## Fresh re-review result
+## Integration result
 
-- A fresh read-only `math_reviewer` inspected the complete diff at exact repair
-  head `264c46a` without inheriting the Repair reasoning and found no P0, P1,
-  P2, or P3 issue.
-- P1-1 is closed. The evaluator receives the exact zero-, first-, or
-  second-order atom-pair demand and consumes a demand-bounded
-  `SpatialKernelJetPrefix` without fabricating higher center derivatives.
-- The reviewer independently confirmed the coincident Matérn 1/2 value action
-  is one and the Matérn 3/2 same-direction mixed action is `3/4` for length
-  scale two, with the shared query/center signs applied exactly once.
-- The implementation, mathematics, safety, interfaces, performance, benchmark
-  wiring, and requirement evidence are clean for ready-head CI.
-
-## Validation state
-
-- The independent reviewer passed formatting, focused warning-denying Clippy,
-  all 10 functional tests, the compile-fail doctest, runnable example,
-  benchmark smoke, all 58 requirement checks, `git diff --check`, and scoped
-  safety/allocation checks.
-- The complete final review-evidence standard gate passes: formatting,
+- A fresh independent mathematical and numerical re-review found no P0, P1,
+  P2, or P3 issue. P1-1 is closed by exact demand-bounded kernel-jet prefixes
+  and the coincident Matérn regressions.
+- Exact ready head `4bf62ca` passed the complete Windows, Ubuntu, and macOS CI
+  matrix with every benchmark smoke workload in run 29340242329.
+- PR #38 squash-merged exactly once as `2879f13`; Issue #37 closed as
+  completed.
+- Post-merge `main` run 29340402183 passed the same complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate.
+- The complete local integration-state standard gate passed: formatting,
   workspace Clippy with all targets/features, workspace tests with all
   features, workspace rustdoc, and all 58 requirement checks.
-- Draft Ubuntu CI run 29339066111 is green on exact repair head `264c46a`.
+- This isolated integration-state change contains no production, test,
+  manifest, schema, build-input, API, or numerical-behavior change.
 
 ## Next task
 
-Finish only PR #38's ready-head integration sequence. Run the complete local
-standard gate on the final review-evidence head, synchronize the PR evidence,
-mark the PR ready, and wait for the Windows, Ubuntu, macOS, and all benchmark
-smoke CI on that exact head. Merge exactly once only when that CI is green,
-then record truthful integration state in an isolated change. Do not begin
-another requirement.
+Open a fresh Implement task for only REQ-SPIKE-002. Perform the mandatory
+preflight, create its Issue with explicit acceptance criteria, confirm its
+dependency closure remains integrated, and read only its listed normative
+documents and relevant ADRs before beginning the backend evaluation. Do not
+continue directly from this integration task.
 
 ## Durable evidence
 
@@ -55,6 +46,8 @@ another requirement.
 - Benchmark baseline: `docs/benchmarks/REQ-FUNC-001.md`
 - Independent review: `docs/reviews/PR-38-INDEPENDENT-REVIEW.md`
 - Acceptance criteria and exclusions: GitHub Issue #37
+- Exact CI and merge history: GitHub PR #38 and runs 29340242329 and
+  29340402183
 
 ## Checks not yet available
 
