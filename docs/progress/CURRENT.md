@@ -2,7 +2,7 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Review / independent review next
+- Execution mode: Review / evidence publishing
 - Current requirement: REQ-KERNEL-004
 - Issue: #22
 - Pull request: Draft PR #23
@@ -10,6 +10,20 @@
 
 ## Completed in this run
 
+- Completed the independent mathematical, numerical, safety, API, allocation,
+  performance, interface, documentation, and test review of PR #23. The first
+  pass found one merge-blocking test-evidence gap but no production formula
+  defect; the complete evidence is recorded in
+  `docs/reviews/PR-23-INDEPENDENT-REVIEW.md`.
+- Repaired the evidence gap with all-family left-limit checks of the exact
+  boundary powers and leading constants through third order, plus independent
+  exact-bit second-, third-, and expansion-coefficient regressions after
+  stored reciprocal powers underflow. Independent re-review reported no
+  remaining or new finding.
+- Review-repair commit `05b74c0` passed GitHub Actions run 29303657839 on
+  Windows, Ubuntu, and macOS, including 90 workspace tests, 17 doctests, all
+  four benchmark smoke workloads, and all 58 requirement checks. This closes
+  the re-review's residual cross-platform subnormal-rounding risk.
 - Committed the isolated implementation as `122abcd`, pushed
   `codex/req-kernel-004-wendland-compact-support`, and opened Draft PR #23.
   The requirement registry links the PR and records the truthful pre-review
@@ -40,7 +54,7 @@
   and 474.78 ns/iteration; environment and observed ranges are recorded in
   `benches/REQ-KERNEL-004.md`.
 - The final local gate passed formatting, warning-denying workspace Clippy,
-  88 workspace tests, 17 doctests, 74 release integration tests, rustdoc with
+  90 workspace tests, 17 doctests, 76 release integration tests, rustdoc with
   warnings denied, all four benchmark smoke workloads, the five exercised
   kernel examples, and all 58 requirement checks. Clippy's initial test-only
   iterator suggestion was repaired before the final pass.
@@ -321,19 +335,19 @@
 
 None in implementation. REQ-KERNEL-004 has complete local implementation,
 tests, documentation, diagnostics, example, benchmark evidence, and Draft PR
-#23. It still requires green three-platform CI, independent mathematical and
-numerical review, merge, and post-merge integration-state confirmation before
-the registry may say `integrated`.
+#23. Independent review and the review-repair three-platform CI are complete.
+The review-evidence head still requires three-platform CI before the PR is
+marked ready; merge and post-merge integration-state confirmation remain
+mandatory before the registry may say `integrated`.
 
 ## Next atomic task
 
-Enter Review mode for Draft PR #23 and perform an independent formula, sign,
-dimension, SPD, center-limit, support-boundary, extreme-range, allocation,
-interface, test, documentation, and benchmark review. Repair every blocking
-finding on the same branch, record review evidence, wait for green
-three-platform CI, and only then mark the PR ready. Do not begin orientation,
-anisotropy, sparse assembly, polynomial, functional, field assembly, or solver
-work before this requirement is reviewed and integrated.
+Commit and push the PR #23 independent-review evidence, confirm its complete
+three-platform CI, and only then mark the PR ready for maintainer review. After
+the reviewed PR is squash-merged, update the registry to `integrated` through
+a separate reviewable integration-state PR and confirm post-merge `main` CI.
+Do not begin orientation, anisotropy, sparse assembly, polynomial, functional,
+field assembly, or solver work before this requirement is integrated.
 
 ## Latest full test result
 
@@ -342,11 +356,11 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 88 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 90 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
 - `cargo test --doc --workspace`: passed; 17 doctests, including fifteen
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 74 integration tests
+- `cargo test -p georbf --release --all-features`: passed; 76 integration tests
   and 17 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
@@ -457,6 +471,12 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - REQ-KERNEL-003 post-merge `main` GitHub Actions run 29301786246 for merge
   commit `c887cda` passed on Windows, Ubuntu, and macOS with the complete job
   set.
+- REQ-KERNEL-004 Draft PR #23 GitHub Actions runs 29303117570 and 29303155305
+  passed on Windows, Ubuntu, and macOS with the complete job set, including all
+  four benchmark smoke workloads.
+- REQ-KERNEL-004 review-repair GitHub Actions run 29303657839 for commit
+  `05b74c0` passed on Windows, Ubuntu, and macOS with the complete job set,
+  including the repaired boundary and subnormal-range tests.
 
 ## Checks not yet available
 

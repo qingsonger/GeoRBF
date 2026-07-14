@@ -159,7 +159,7 @@ requirements:
     issue: 22
     pull_request: 23
     tests: [exact-rational-truth, support-boundary, finite-difference, random-spd, center-limits, coordinate-scale, subnormal-range, exchange-symmetry, pathological-input, dimension-compile-fail]
-    docs: [docs/math/KERNEL_REQUIREMENTS.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, benches/REQ-KERNEL-004.md, rustdoc, crates/georbf/examples/wendland_kernels.rs]
+    docs: [docs/math/KERNEL_REQUIREMENTS.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, docs/reviews/PR-23-INDEPENDENT-REVIEW.md, benches/REQ-KERNEL-004.md, rustdoc, crates/georbf/examples/wendland_kernels.rs]
     rust_api: implemented
     cli: "N/A: project schemas and a kernel-selection command are not implemented yet"
     c_api: "N/A: concrete kernel construction is not exposed before the Rust API and stable C ABI freeze"
