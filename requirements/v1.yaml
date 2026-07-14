@@ -195,7 +195,7 @@ requirements:
     issue: 34
     pull_request: 35
     tests: [term-counts, analytic-values, derivatives, reproduction]
-    docs: [docs/math/CPD_AND_POLYNOMIALS.md, rustdoc]
+    docs: [docs/math/CPD_AND_POLYNOMIALS.md, docs/reviews/PR-35-INDEPENDENT-REVIEW.md, rustdoc]
     rust_api: implemented
     cli: "N/A: polynomial basis generation is internal"
     c_api: "N/A: polynomial basis generation is internal"

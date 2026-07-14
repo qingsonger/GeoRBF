@@ -6,53 +6,51 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / REQ-POLY-001 complete at Draft PR
-- Requirement Issue: #34
+- Mode: Repair / PR #35 review finding P3-1
+- Requirement: REQ-POLY-001, Issue #34
 - Branch: `codex/req-poly-001-polynomial-spaces`
 - Draft pull request: #35
-- Dependencies: REQ-DIM-001 is `integrated`; no blocker
-- Registry state: `documented`; independent Review is still required
+- Reviewed head: `acc65c667932c14d461e2bedd028eea5f1d2bfd8`
+- Review record: `docs/reviews/PR-35-INDEPENDENT-REVIEW.md`
+- Registry state: `documented`; REQ-DIM-001 is `integrated`
 
-## Implemented scope
+## Independent review result
 
-- Complete polynomial spaces for positive CPD order in exactly D=1, D=2, and
-  D=3, with exact checked binomial term counts and deterministic graded
-  descending-lexicographic multi-indices.
-- Immutable Rust metadata plus allocation-free batch value and Cartesian
-  gradient evaluation into caller-provided storage. Evaluation lowers
-  exponents without coordinate division and tracks binary exponents so
-  representable mixed monomials survive intermediate underflow.
-- Structured zero-order, degree/term-count overflow, allocation, output-size,
-  and non-finite-result errors; evaluation errors leave output unchanged.
-- Independent combinatorial, analytic, origin, extreme-scale, reproduction,
-  unsupported-dimension, and `Send + Sync` tests; synchronized rustdoc and math
-  documentation; runnable example; changelog fragment; deterministic D=1/D=2/
-  D=3 benchmark and Ready/main CI smoke coverage.
-- CLI, C, C++, and Python are N/A because polynomial generation is internal.
-  CPD rank diagnosis, null spaces, functionals, assembly, fitting, schemas,
-  persistence, adapters, and solvers remain excluded.
+- The fresh read-only `math_reviewer` found no P0, P1, or P2 issue in the
+  implementation, mathematics, safety, interfaces, performance, or scope.
+- P3-1: the joint `PolynomialSpace::try_evaluate` contract promises both output
+  buffers remain unchanged on every error, but failure tests cover only the
+  separate value-only and gradient-only methods. Current production code is
+  correct; the missing regression would allow a future partial-write bug.
+- Required regression: pass correctly sized sentinel values and undersized
+  sentinel gradients to the joint method, assert the structured gradient
+  length error, and assert that both buffers remain unchanged.
+- PR #35 must remain Draft. Review mode did not repair production or test code
+  and did not begin REQ-FUNC-001.
 
 ## Next task
 
-Open a fresh independent Review task for only REQ-POLY-001 and Draft PR #35.
-Supply the compact
-requirement summary and dependency closure, `docs/math/CPD_AND_POLYNOMIALS.md`,
-ADR-0004, the PR diff, and validation and benchmark evidence to the project
-`math_reviewer`. Do not repair findings or begin REQ-FUNC-001 in that task.
+Open a fresh Repair task for only PR #35 finding P3-1. Add the smallest joint-
+output atomicity regression, change production code only if the regression
+exposes a defect, run focused checks during repair, then run the complete
+standard workspace checks once on the stable repair head. Update the review
+record and this handoff, commit, push, and stop for fresh independent re-review.
+Do not begin REQ-FUNC-001.
 
 ## Validation evidence
 
-- Stable code/test head passed `cargo fmt --all -- --check`, warning-denying
-  workspace Clippy, 129 workspace tests, 24 doctests/compile-fail tests, and all
-  58 requirement checks.
-- Focused Release polynomial tests passed all 10 cases. Strict warning-denying
-  rustdoc, the runnable example, and polynomial benchmark smoke passed.
+- Stable code/test head `8369aac` passed formatting, warning-denying workspace
+  Clippy, 129 workspace tests, 24 doctests/compile-fail tests, all 58 requirement
+  checks, ten focused Release polynomial tests, strict rustdoc, the runnable
+  example, and polynomial benchmark smoke.
 - Four full local polynomial benchmark runs had identical generation and
-  evaluation checksums. Environment and timing ranges are recorded in
-  `docs/benchmarks/REQ-POLY-001.md`.
-- Only the registry PR link/status and this bounded handoff changed after the
-  stable full gate; no production, test, manifest, schema, or build input
-  changed.
+  evaluation checksums; `docs/benchmarks/REQ-POLY-001.md` records the baseline.
+- Reviewed head `acc65c6` changed only the registry PR link/status and this
+  bounded handoff after the stable full gate. Draft CI run 29329182602 passed
+  the Ubuntu correctness gate on that exact head.
+- This Review task changes only independent-review evidence, the registry's
+  document link, and this bounded handoff. It does not change production, test,
+  manifest, schema, or build inputs.
 
 ## Checks not yet available
 
