@@ -152,5 +152,6 @@ schema, API, build input, or numerical behavior.
 - The complete local integration-state standard gate passed: formatting,
   warning-denying workspace Clippy with all targets and features, workspace
   tests with all features, workspace rustdoc, and all 58 requirement checks.
-- The isolated registry/progress integration change makes no production, test,
-  manifest, schema, build-input, API, or numerical-behavior change.
+- Integration-state PR #39 contains only the isolated registry/progress change;
+  it makes no production, test, manifest, schema, build-input, API, or
+  numerical-behavior change.

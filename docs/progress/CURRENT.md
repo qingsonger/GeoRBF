@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-FUNC-001, Issue #37 (closed)
 - Implementation pull request: #38, squash-merged as `2879f13`
 - Integration-state branch: `codex/req-func-001-integration-state`
-- Integration-state pull request: pending creation after the first push
+- Integration-state pull request: #39
 - Review record: `docs/reviews/PR-38-INDEPENDENT-REVIEW.md`
 - Registry state in this integration change: `integrated`
 - Next eligible requirement: REQ-SPIKE-002 (`planned`)
