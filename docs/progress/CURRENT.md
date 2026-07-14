@@ -2,14 +2,62 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / next atomic requirement
+- Execution mode: Review / evidence publishing
 - Current requirement: REQ-KERNEL-004
-- Issue: not yet created
-- Pull request: not yet opened
-- Branch: not yet created
+- Issue: #22
+- Pull request: Draft PR #23
+- Branch: `codex/req-kernel-004-wendland-compact-support`
 
 ## Completed in this run
 
+- Completed the independent mathematical, numerical, safety, API, allocation,
+  performance, interface, documentation, and test review of PR #23. The first
+  pass found one merge-blocking test-evidence gap but no production formula
+  defect; the complete evidence is recorded in
+  `docs/reviews/PR-23-INDEPENDENT-REVIEW.md`.
+- Repaired the evidence gap with all-family left-limit checks of the exact
+  boundary powers and leading constants through third order, plus independent
+  exact-bit second-, third-, and expansion-coefficient regressions after
+  stored reciprocal powers underflow. Independent re-review reported no
+  remaining or new finding.
+- Review-repair commit `05b74c0` passed GitHub Actions run 29303657839 on
+  Windows, Ubuntu, and macOS, including 90 workspace tests, 17 doctests, all
+  four benchmark smoke workloads, and all 58 requirement checks. This closes
+  the re-review's residual cross-platform subnormal-rounding risk.
+- Committed the isolated implementation as `122abcd`, pushed
+  `codex/req-kernel-004-wendland-compact-support`, and opened Draft PR #23.
+  The requirement registry links the PR and records the truthful pre-review
+  `documented` state.
+- Confirmed clean synchronized `main` at `2d57174`, the correct origin and
+  worktree, no tags, no open Issue, PR, review, or failed CI, and green
+  three-platform `main` run 29301969855; confirmed REQ-KERNEL-001 is
+  integrated, then created Issue #22 and the isolated REQ-KERNEL-004 branch.
+- Added normalized Wendland C2, C4, and C6 kernels for D=1/D=2/D=3 with one
+  positive coordinate-length support radius, exact positive-zero boundary and
+  exterior branches, strict-SPD metadata, and exact center capabilities.
+- Added analytic interior value-through-third derivatives and direct stable
+  D=2/D=3 expansion coefficients. A center/boundary split forms the support
+  coordinate without avoidable cancellation, and complete factored-product
+  range classification preserves representable extreme results without
+  hidden regularization.
+- Added exact-rational truth, independent finite differences, deterministic
+  full-Gram Cholesky SPD checks in every dimension, boundary smoothness,
+  center limits, coordinate-scale covariance, exchange signs, tensor
+  symmetry, pathologies, D=0/D=4 compile failures, and `Send + Sync`
+  assertions.
+- Added synchronized math and architecture contracts, the original Wendland
+  paper citation, rustdoc, a runnable D=3 example, change record, and a
+  deterministic allocation-free three-member benchmark with CI smoke
+  coverage. Sparse indexing and assembly remain explicitly excluded.
+- Four full 1,000,000-iteration benchmark runs retained bit-identical
+  checksums. D=1/D=2/D=3 median catalog-workload times were 170.95, 330.13,
+  and 474.78 ns/iteration; environment and observed ranges are recorded in
+  `benches/REQ-KERNEL-004.md`.
+- The final local gate passed formatting, warning-denying workspace Clippy,
+  90 workspace tests, 17 doctests, 76 release integration tests, rustdoc with
+  warnings denied, all four benchmark smoke workloads, the five exercised
+  kernel examples, and all 58 requirement checks. Clippy's initial test-only
+  iterator suggestion was repaired before the final pass.
 - Squash-merged PR #20 as commit `c887cda`; Issue #19 closed automatically,
   and post-merge `main` CI run 29301786246 passed on Windows, Ubuntu, and
   macOS with the complete job set. REQ-KERNEL-003 now satisfies every
@@ -285,19 +333,21 @@
 
 ## Current blockers
 
-None. REQ-KERNEL-003 is integrated. REQ-KERNEL-004 has no unfinished
-dependency and is selected next among the P1-ready M1 requirements to complete
-the active kernel catalog sequence before switching domains.
+None in implementation. REQ-KERNEL-004 has complete local implementation,
+tests, documentation, diagnostics, example, benchmark evidence, and Draft PR
+#23. Independent review and the review-repair three-platform CI are complete.
+The review-evidence head still requires three-platform CI before the PR is
+marked ready; merge and post-merge integration-state confirmation remain
+mandatory before the registry may say `integrated`.
 
 ## Next atomic task
 
-Create the REQ-KERNEL-004 Issue with explicit Wendland C2, C4, and C6
-acceptance criteria, then create an isolated feature branch. Implement only
-dimension-valid compact-support formulas, exact zero extension, support-boundary
-smoothness and capability metadata, independent truth and sampled-SPD tests,
-documentation, applicable interfaces, diagnostics, and benchmark evidence. Do
-not begin orientation, anisotropy, sparse assembly, polynomial, functional,
-field assembly, or solver work in the same run.
+Commit and push the PR #23 independent-review evidence, confirm its complete
+three-platform CI, and only then mark the PR ready for maintainer review. After
+the reviewed PR is squash-merged, update the registry to `integrated` through
+a separate reviewable integration-state PR and confirm post-merge `main` CI.
+Do not begin orientation, anisotropy, sparse assembly, polynomial, functional,
+field assembly, or solver work before this requirement is integrated.
 
 ## Latest full test result
 
@@ -306,12 +356,12 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 78 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 90 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
-- `cargo test --doc --workspace`: passed; 15 doctests, including thirteen
+- `cargo test --doc --workspace`: passed; 17 doctests, including fifteen
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 64 integration tests
-  and 15 doctests, 0 failures.
+- `cargo test -p georbf --release --all-features`: passed; 76 integration tests
+  and 17 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
 - `cargo xtask requirements check`: passed; 58 requirements.
@@ -331,13 +381,19 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
   deterministic six-family D=1/D=2/D=3 workloads. Four full 1,000,000-iteration
   runs had medians of 489.39, 790.00, and 913.75 ns/iteration respectively
   with bit-identical checksums; see `benches/REQ-KERNEL-003.md`.
+- `cargo bench -p georbf --bench wendland_kernels -- --smoke`: passed for
+  deterministic C2/C4/C6 D=1/D=2/D=3 workloads. Four full 1,000,000-iteration
+  runs had medians of 170.95, 330.13, and 474.78 ns/iteration respectively
+  with bit-identical checksums; see `benches/REQ-KERNEL-004.md`.
 - `cargo run -p georbf --example radial_kernel_calculus`: passed.
 - `cargo run -p georbf --example kernel_metadata`: passed.
 - `cargo run -p georbf --example polyharmonic_spline`: passed.
 - `cargo run -p georbf --example smooth_global_kernels`: passed.
+- `cargo run -p georbf --example wendland_kernels`: passed; the support
+  boundary value was exact positive zero.
 - Scoped forbidden-pattern and hot-path allocation/dynamic-dispatch scans:
-  passed. The only `dyn` occurrences in the module are the two standard
-  `Error::source` return types outside numerical evaluation.
+  passed for the Wendland implementation. The only `dyn` occurrences are the
+  two standard `Error::source` return types outside numerical evaluation.
 - Actual CLI checks: `--version` returned success and `--version fit` returned
   the documented usage error with exit code 2.
 - `git diff --check`: passed.
@@ -415,6 +471,12 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - REQ-KERNEL-003 post-merge `main` GitHub Actions run 29301786246 for merge
   commit `c887cda` passed on Windows, Ubuntu, and macOS with the complete job
   set.
+- REQ-KERNEL-004 Draft PR #23 GitHub Actions runs 29303117570 and 29303155305
+  passed on Windows, Ubuntu, and macOS with the complete job set, including all
+  four benchmark smoke workloads.
+- REQ-KERNEL-004 review-repair GitHub Actions run 29303657839 for commit
+  `05b74c0` passed on Windows, Ubuntu, and macOS with the complete job set,
+  including the repaired boundary and subnormal-range tests.
 
 ## Checks not yet available
 

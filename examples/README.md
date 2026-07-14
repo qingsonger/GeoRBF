@@ -52,3 +52,12 @@ and a query gradient. Run it with:
 ```text
 cargo run -p georbf --example smooth_global_kernels
 ```
+
+`REQ-KERNEL-004` adds `crates/georbf/examples/wendland_kernels.rs`, which
+constructs a Wendland C4 kernel with a physical support radius, evaluates its
+interior D=3 Cartesian jet, and demonstrates the exact zero value at the
+support boundary. Run it with:
+
+```text
+cargo run -p georbf --example wendland_kernels
+```

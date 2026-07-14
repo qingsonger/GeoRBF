@@ -27,6 +27,7 @@ use crate::dimension::{Dim, SupportedDimension};
 
 mod polyharmonic;
 mod smooth_global;
+mod wendland;
 
 pub use polyharmonic::{
     PolyharmonicSpline, PolyharmonicSplineConstructionError, PolyharmonicSplineEvaluationError,
@@ -35,6 +36,9 @@ pub use polyharmonic::{
 pub use smooth_global::{
     Gaussian, InverseMultiquadric, Matern, MaternSmoothness, Multiquadric,
     SmoothKernelConstructionError, SmoothKernelEvaluationError, SmoothKernelFamily,
+};
+pub use wendland::{
+    Wendland, WendlandConstructionError, WendlandEvaluationError, WendlandSmoothness,
 };
 
 /// Positive conditional-positive-definiteness order.

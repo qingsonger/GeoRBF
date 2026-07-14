@@ -2,9 +2,9 @@
 //!
 //! The initial public API provides validated, dimension-safe geometry and
 //! coordinate transforms, radial kernel derivative calculus, kernel metadata,
-//! polyharmonic/surface-spline kernels, and smooth global-support kernels for
-//! exactly one, two, or three dimensions. Compact-support kernels,
-//! functionals, assembly, and solvers are introduced by separately reviewed
+//! polyharmonic/surface-spline kernels, smooth global-support kernels, and
+//! Wendland compact-support kernels for exactly one, two, or three dimensions.
+//! Functionals, assembly, and solvers are introduced by separately reviewed
 //! requirements.
 
 #![forbid(unsafe_code)]
@@ -33,7 +33,8 @@ pub use kernel::{
     Matern, MaternSmoothness, Multiquadric, PolyharmonicSpline,
     PolyharmonicSplineConstructionError, PolyharmonicSplineEvaluationError,
     SmoothKernelConstructionError, SmoothKernelEvaluationError, SmoothKernelFamily, SurfaceSpline,
-    SurfaceSplineConstructionError,
+    SurfaceSplineConstructionError, Wendland, WendlandConstructionError, WendlandEvaluationError,
+    WendlandSmoothness,
 };
 pub use kernel_calculus::{
     KernelArgument, KernelCalculusError, RadialDerivativeOrder, RadialExpansionCoefficient,
