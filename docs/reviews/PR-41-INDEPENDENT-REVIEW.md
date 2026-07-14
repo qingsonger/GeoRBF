@@ -128,7 +128,7 @@ it does not change production code, tests, manifests, schemas, or build inputs.
 
 ## Repair evidence pending fresh re-review
 
-Repair code/test head `30bd4952105acc6a04a7dcaff72493692f29d051`
+Repair code/test head `30bd49520131ff085fd538c93ad767455cdade43`
 addresses only P2-1 and P2-2. The threshold regression now constructs
 already-equilibrated matrices whose repeated third-row coefficient is exactly
 12 and 15 representable ULPs above `0.5`. Both differ bit-for-bit from the

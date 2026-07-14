@@ -6,11 +6,12 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / REQ-SPIKE-002 fresh re-review found P3-1; Repair required
+- Mode: Repair / PR #41 P3-1 completed; fresh Review required
 - Requirement: REQ-SPIKE-002, Issue #40
 - Branch: `codex/req-spike-002-rrqr-svd-backend`
 - Draft pull request: #41
-- Freshly re-reviewed PR head: `431da7f`
+- Freshly re-reviewed implementation/evidence head: `431da7f`
+- Review finding record head: `2401d69`
 - Actual repair code/test head: `30bd49520131ff085fd538c93ad767455cdade43`
 - Review record: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `documented`
@@ -18,44 +19,45 @@ records, benchmark reports, Git, and GitHub.
 - Production dependency state: unchanged; the comparison crate is excluded
   from the production workspace
 
-## Fresh re-review result
+## Repair result
 
-- A fresh read-only `math_reviewer` inspected the complete PR diff without
-  inheriting the Repair reasoning. It found no P0, P1, or P2 issue.
-- P2-1 is closed. Independent analytic singular values put the 12-ULP case at
-  approximately `0.8888888888888884` times the SVD threshold with rank two and
-  the 15-ULP case at approximately `1.1111111111111103` times the threshold
-  with rank three. Both candidate backends match that independent truth.
-- P2-2 is closed. The zero-backend configuration is rejected at compile time,
-  its exact diagnostic is checked, and all-feature plus both single-backend
-  positive configurations remain covered.
-- New P3-1: the review record and PR body name nonexistent full repair commit
-  `30bd4952105acc6a04a7dcaff72493692f29d051`. The actual object is
-  `30bd49520131ff085fd538c93ad767455cdade43`. Exact durable evidence is not
-  reproducible until those two locations are corrected in a Repair task.
+- P3-1 is repaired in both durable evidence locations. The repair-evidence
+  paragraph and PR #41 Repair update now name the existing code/test commit
+  `30bd49520131ff085fd538c93ad767455cdade43`.
+- `git cat-file -e <hash>^{commit}` confirmed that exact commit object. Its
+  parent is review-evidence commit
+  `e1db3492866da63115784432977f3c1e7d039b56`.
+- The invalid value remains only in the P3-1 finding narrative that documents
+  the original defect; it is no longer presented as repair evidence.
+- No production code, test, manifest, schema, build input, requirement status,
+  mathematical claim, or interface changed. PR #41 remains Draft.
 
 ## Validation state
 
-- On stable repair head `30bd495`, spike formatting, warning-denying Clippy,
-  all three 6/6 feature-test configurations, the expected zero-backend compile
-  failure, the release smoke workload, workspace formatting, warning-denying
-  Clippy, all 139 tests, all 25 doctests and compile-fail tests, all 58
-  requirement checks, and `git diff --check` passed.
-- Draft Ubuntu CI run 29373908569 passed on exact PR head `431da7f`, including
-  the three positive feature configurations, exact negative configuration,
-  and spike smoke workload.
+- Focused `cargo xtask requirements show REQ-SPIKE-002`,
+  `cargo xtask requirements deps REQ-SPIKE-002`,
+  `cargo xtask requirements check`, and `git diff --check` passed.
+- On stable code/test head `30bd495`, spike formatting, warning-denying
+  Clippy, all three 6/6 feature-test configurations, the expected zero-backend
+  compile failure, the release smoke workload, workspace formatting,
+  warning-denying Clippy, all 139 tests, all 25 doctests and compile-fail
+  tests, all 58 requirement checks, and `git diff --check` passed.
+- Draft Ubuntu CI run 29374908542 passed on exact pre-repair PR head `2401d69`.
+  The new documentation-only head still requires fresh independent re-review.
 - The ready-head Windows/Ubuntu/macOS and benchmark-smoke gate has not run and
-  must wait for P3-1 repair plus another clean fresh re-review.
+  must wait for that clean re-review.
 
 ## Next task
 
-Open a fresh Repair task for only PR #41 finding P3-1. Correct the nonexistent
-full repair hash in `docs/reviews/PR-41-INDEPENDENT-REVIEW.md` and the PR body to
-`30bd49520131ff085fd538c93ad767455cdade43`; verify that exact object with
-`git cat-file -e <hash>^{commit}`, run focused documentation/registry checks,
-update the bounded handoff, commit, push, and stop. Do not change production
-code, mark the PR ready, merge it, or implement REQ-CPD-001. A fresh independent
-re-review must follow in a new task.
+Open a fresh Review/re-review task for only PR #41 and REQ-SPIKE-002. Perform
+the mandatory preflight and use a fresh read-only project `math_reviewer`
+without inheriting this Repair reasoning. Confirm P3-1 is closed and inspect
+the complete PR diff for new findings. If any P0-P3 finding remains, record it
+and stop without repairing. If the re-review is clean and the exact final head
+has complete local evidence, synchronize the PR evidence, mark PR #41 ready,
+wait for the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact
+ready head, merge exactly once only when it is green, and record truthful
+integration state. Do not start REQ-CPD-001 in that task.
 
 ## Durable evidence
 
