@@ -134,5 +134,5 @@ they are residual program risks, not additional findings in REQ-POLY-001.
   `18b3e66f487e02df9d38e834e08212fac1e37a79`; Issue #34 closed.
 - Post-merge `main` run 29330997791 passed the same complete three-platform
   correctness, benchmark-smoke, and requirement-registry gate.
-- The isolated registry/progress integration pull request is pending. It makes
-  no production, test, manifest, schema, build-input, API, or numerical change.
+- The isolated registry/progress integration change is PR #36. It makes no
+  production, test, manifest, schema, build-input, API, or numerical change.

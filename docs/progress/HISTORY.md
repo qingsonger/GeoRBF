@@ -18,7 +18,7 @@ available in Git history through commit `a2be099`.
 | REQ-KERNEL-004 | #22 | #23 | #24 | `docs/reviews/PR-23-INDEPENDENT-REVIEW.md` |
 | REQ-ORIENT-001 | #25 | #26 | #27 | `docs/reviews/PR-26-INDEPENDENT-REVIEW.md` |
 | REQ-ANISO-001 | #28 | #29 | #30 | `docs/reviews/PR-29-INDEPENDENT-REVIEW.md` |
-| REQ-POLY-001 | #34 | #35 | pending | `docs/reviews/PR-35-INDEPENDENT-REVIEW.md` |
+| REQ-POLY-001 | #34 | #35 | #36 | `docs/reviews/PR-35-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,

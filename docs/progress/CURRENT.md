@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-POLY-001, Issue #34 (closed)
 - Implementation pull request: #35, squash-merged as `18b3e66`
 - Integration-state branch: `codex/req-poly-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #36
 - Review record: `docs/reviews/PR-35-INDEPENDENT-REVIEW.md`
 - Registry state in this integration change: `integrated`
 - Next eligible requirement: REQ-FUNC-001 (`planned`)
