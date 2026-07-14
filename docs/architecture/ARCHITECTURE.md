@@ -27,6 +27,13 @@ depends on the canonical representation; solvers know only numerical forms;
 models own immutable coefficients and transforms; adapters depend on public
 core APIs.
 
+The orientation layer depends only on dimension-safe geometry and angle units.
+It keeps planar normals and linear directions as separate fixed-size D=2/D=3
+types, applies explicit positive/negative/unknown polarity, and owns only
+validated geological angle-to-direction conversion. It does not compile normal
+or tangent constraints, infer gradient magnitude, perform coordinate
+reprojection, or construct anisotropy.
+
 The kernel-calculus layer accepts validated point separations and a
 caller-supplied radial jet. D=2/D=3 away jets include cancellation-resistant
 radial expansion coefficients computed by the concrete radial formula; D=1

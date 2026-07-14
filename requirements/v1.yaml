@@ -66,17 +66,17 @@ requirements:
     dependencies: [REQ-DIM-001, REQ-COORD-001]
     milestone: M1-v0.1.0
     priority: P1
-    issue: null
-    pull_request: null
-    tests: [analytic-directions, polarity, rotation-invariance, invalid-input]
-    docs: [docs/math/NORMAL_AND_TANGENT.md]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
+    issue: 25
+    pull_request: 26
+    tests: [analytic-directions, angle-unit-parity, polarity, signed-zero, rotation-invariance, extreme-components, invalid-input, orientation-dimension-compile-fail]
+    docs: [docs/math/NORMAL_AND_TANGENT.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, docs/reviews/PR-26-INDEPENDENT-REVIEW.md, rustdoc, crates/georbf/examples/geological_orientation.rs]
+    rust_api: implemented
+    cli: "N/A: versioned project inputs and the complete conversion command are introduced by later requirements"
+    c_api: "N/A: orientation construction is exposed only after the Rust API and stable C ABI freeze"
+    cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust orientation types"
+    python_api: "N/A: the future Python binding delegates orientation validation to the reviewed Rust core after API freeze"
     benchmark: "N/A: orientation conversion is constant-time per observation"
-    status: planned
+    status: documented
 
   - id: REQ-KCALC-001
     title: Radial kernel derivative calculus

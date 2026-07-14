@@ -80,8 +80,8 @@ impl LengthUnit {
 /// Unit used by an external angular convention.
 ///
 /// Geometry and kernel internals use radians. This value records how an input
-/// coordinate convention describes angles; conversion belongs to the future
-/// orientation adapter.
+/// coordinate convention describes angles; geological orientation constructors
+/// accept it explicitly and convert validated inputs before evaluation.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AngleUnit {
     /// Radians.
