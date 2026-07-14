@@ -155,6 +155,40 @@ or Hessian are rejected rather than stored. These transforms introduce no
 orientation semantics or anisotropy metric; later requirements build those
 concepts on this coordinate contract.
 
+## Global anisotropy
+
+A fixed global anisotropy acts on the original point-pair displacement as
+
+```text
+z = A(x-y),
+r_A(x,y) = ||z||,
+B = A^T A.
+```
+
+Only D=1, D=2, and D=3 exist. `A` is finite with a finitely representable
+inverse, and the stored finite `B` is SPD. Isotropic, spheroidal, and
+ellipsoidal constructors parameterize rows of `A` with positive axis lengths;
+arbitrary transforms and exactly symmetric SPD user metrics are also accepted.
+The metric path uses unregularized Cholesky and rejects every nonpositive
+computed pivot. There is no hidden symmetry tolerance, jitter, clipping,
+regularization, or pseudoinverse. Ellipsoidal orthogonality and maximum
+condition-number tolerances exist only as explicit caller inputs.
+
+For a transformed-coordinate kernel jet, the constant-map chain rule is
+
+```text
+g_x[i]       = sum_a A[a,i] g_z[a],
+H_x[i,j]     = sum_ab A[a,i] H_z[a,b] A[b,j],
+T_x[i,j,k]   = sum_abc A[a,i] A[b,j] A[c,k] T_z[a,b,c].
+```
+
+The transform is applied before query/center argument signs. Thus a center
+argument still contributes exactly one minus sign at every derivative order,
+and a smooth radial center Hessian `phi''(0) I` becomes
+`phi''(0) B`. The implementation computes `A(x-y)` directly, uses the existing
+stable radius and analytic center rules, and rejects every non-finite
+displacement, radius, or derivative result.
+
 ## Derivative capability
 
 The matrix derivative demand is observation order plus center-functional order.

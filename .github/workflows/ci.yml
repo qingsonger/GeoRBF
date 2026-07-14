@@ -46,5 +46,7 @@ jobs:
         run: cargo bench -p georbf --bench smooth_global_kernels -- --smoke
       - name: Smoke-test Wendland kernels benchmark
         run: cargo bench -p georbf --bench wendland_kernels -- --smoke
+      - name: Smoke-test global anisotropy benchmark
+        run: cargo bench -p georbf --bench global_anisotropy -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check

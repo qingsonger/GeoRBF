@@ -69,3 +69,11 @@ validated D=3 directions while preserving polarity metadata. Run it with:
 ```text
 cargo run -p georbf --example geological_orientation
 ```
+
+`REQ-ANISO-001` adds `crates/georbf/examples/global_anisotropy.rs`, which
+constructs a rotated D=2 ellipsoidal metric, evaluates a Gaussian in transformed
+coordinates, and maps its gradient back to original coordinates. Run it with:
+
+```text
+cargo run -p georbf --example global_anisotropy
+```

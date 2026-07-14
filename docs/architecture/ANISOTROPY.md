@@ -9,10 +9,70 @@ r_A(x, y) = ||A(x - y)||.
 ```
 
 Isotropic, spheroidal, ellipsoidal, and validated user metrics are supported.
-`A` must be finite and invertible, so `B = A^T A` is SPD; singular or
-policy-rejected ill-conditioned transforms fail with recorded singular values
-and condition estimates. The same chain rule supplies original-coordinate
-derivatives.
+`A` must be finite and have a finitely representable inverse, so `B = A^T A`
+is SPD. The Rust core stores all three fixed-size objects: `A`, `A^-1`, and
+`B`. It rejects a metric component that cannot be represented even if the
+input entries of `A` are individually finite.
+
+The convenience families use these conventions:
+
+- isotropic length `ell`: `A = I/ell`;
+- spheroidal principal unit direction `u`, axial length `ell_a`, and transverse
+  length `ell_t`:
+  `A = I/ell_t + (1/ell_a - 1/ell_t) u u^T`;
+- ellipsoidal unit axes `u_i` and lengths `ell_i`: row `i` of `A` is
+  `u_i^T/ell_i`; and
+- a user supplies either an arbitrary `A` or an exactly symmetric SPD `B`.
+
+Lengths are positive values in the active coordinate length unit and their
+reciprocals must be representable. Therefore `A(x-y)` is a nondimensionalized
+displacement. A concrete radial kernel used with physical ellipsoid lengths
+is evaluated in that transformed coordinate system; a transformed-coordinate
+kernel length scale of one leaves the supplied ellipsoid lengths unchanged.
+Alternatively, a caller may supply a dimensionless `A` and retain a physical
+kernel length parameter. The application must choose one composition
+explicitly and record it; GeoRBF does not infer or combine scales.
+
+Ellipsoidal axes are already validated `UnitDirection` values. Their pairwise
+dot products are checked against a caller-supplied finite tolerance in
+`[0,1)`. The constructor neither changes nor orthogonalizes them. A user metric
+must be componentwise finite and exactly symmetric. Its unregularized Cholesky
+factorization must have strictly positive computed pivots; there is no
+symmetrization, eigenvalue clipping, diagonal adjustment, jitter, or
+pseudoinverse.
+
+Exact partial-pivot inversion decides singularity and representability.
+Deterministic fixed-sweep one-sided Jacobi SVD supplies positive finite
+singular values and the Euclidean condition number; it is diagnostic and does
+not replace the exact inversion decision. No condition threshold is implicit.
+A caller may select an explicit finite maximum at least one, in which case the
+error records that maximum and the rejected singular-value diagnostics.
+
+The transformed separation is formed as `A(x-y)`, not as `Ax-Ay`, so a common
+large origin cannot overflow or erase a representable displacement. Stable
+maximum-component radius construction and analytic center dispatch remain in
+kernel calculus. Given a transformed-coordinate spatial jet, the original-
+coordinate query derivatives are
+
+```text
+g_x       = A^T g_z,
+H_x       = A^T H_z A,
+T_x,ijk   = sum_abc A_ai A_bj A_ck T_z,abc.
+```
+
+The returned jet keeps the existing center-argument rule: each center
+derivative contributes exactly one minus sign. Direct fixed-size sums through
+third order preserve exact Hessian and third-tensor permutation symmetry;
+non-representable finite-input results are structured errors. Construction and
+evaluation allocate no heap memory and use no dynamic dispatch.
+
+Global metrics do not estimate axes, select ratios, construct observations,
+assemble kernels, or fit fields. They are compatible with either SPD or CPD
+radial families because an invertible change of coordinates preserves the
+family classification; later CPD assembly still owns polynomial side
+conditions.
+
+## Deferred orientation estimation
 
 An orientation tensor
 

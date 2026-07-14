@@ -265,7 +265,9 @@ fn validate_hessian<const D: usize>(matrix: &[[f64; D]; D]) -> Result<(), Transf
     Ok(())
 }
 
-fn invert_matrix<const D: usize>(matrix: [[f64; D]; D]) -> Result<[[f64; D]; D], TransformError> {
+pub(crate) fn invert_matrix<const D: usize>(
+    matrix: [[f64; D]; D],
+) -> Result<[[f64; D]; D], TransformError> {
     invert_matrix_equilibrated(matrix).or_else(|_| invert_matrix_unscaled(matrix))
 }
 

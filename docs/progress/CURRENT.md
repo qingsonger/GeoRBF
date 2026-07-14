@@ -2,14 +2,55 @@
 
 - Current milestone: M1 / v0.1.0 — dimensions, geometry, coordinates,
   orientation, and kernel calculus
-- Execution mode: Implement / next atomic requirement
+- Execution mode: Implement / active atomic requirement
 - Current requirement: REQ-ANISO-001
-- Issue: not yet created
+- Issue: #28
 - Pull request: not yet opened
-- Branch: not yet created
+- Branch: `codex/req-aniso-001-global-anisotropy`
 
 ## Completed in this run
 
+- Confirmed clean synchronized `main` at `409f274`, the correct origin and
+  worktree, no tags, no open Issue, PR, review, or failed CI, and green
+  three-platform `main` run 29305762416. Selected Implement mode because no
+  Repair or Review work exists and REQ-ANISO-001 is the final M1 requirement;
+  both declared dependencies are integrated.
+- Created Issue #28 with explicit D=1/D=2/D=3 global-metric, validation,
+  condition-policy, chain-rule, test, benchmark, interface, and exclusion
+  criteria, then created `codex/req-aniso-001-global-anisotropy` from current
+  `main`.
+- Added immutable isotropic, spheroidal, principal-axis ellipsoidal,
+  arbitrary-transform, and exactly symmetric SPD user-metric construction.
+  Values store fixed-size `A`, `A^-1`, `B=A^T A`, singular values, and the
+  Euclidean condition number without dependencies, allocation, unsafe code,
+  hidden tolerance, jitter, symmetrization, clipping, or pseudoinverse.
+- Added direct `A(x-y)` separation and the complete original-coordinate chain
+  rule through third order while preserving stable radius construction,
+  analytic center limits, exact query/center signs, and exact Hessian and
+  third-tensor permutation symmetry.
+- Added independent analytic distance and `q(x)^3` derivative truth, closed-
+  form singular-value truth, D=2/D=3 rotation covariance, extreme coordinate-
+  length scaling, SPD and exact-symmetry validation, explicit condition-policy
+  rejection, center-limit, sign, overflow, compile-fail, and `Send + Sync`
+  coverage. Ten focused integration tests pass.
+- Added synchronized math and architecture contracts, complete rustdoc, a
+  runnable rotated-ellipsoid Gaussian example, change record, and deterministic
+  D=1/D=2/D=3 allocation-free benchmark with CI smoke coverage. Four full
+  1,000,000-iteration runs retained bit-identical checksums; median times were
+  61.44, 180.81, and 584.77 ns/iteration respectively.
+- The pre-PR local gate passed formatting, warning-denying workspace Clippy,
+  112 workspace tests, 21 doctests including the anisotropy compile failure,
+  98 release integration tests plus 21 release doctests, warning-denying core
+  rustdoc, all five benchmark smoke workloads, the anisotropy example,
+  dependency metadata/tree checks, scoped allocation/unsafe/placeholder scans,
+  `git diff --check`, and all 58 requirement checks. Workspace-wide rustdoc was
+  not counted as passed because Cargo's known same-output-name collision between
+  the `georbf` library and CLI binary caused a Windows target-doc access error;
+  the changed core crate rustdoc passed independently with warnings denied.
+- `cargo-nextest`, `cargo-deny`, `cargo-audit`, and `cargo-semver-checks` remain
+  unavailable. Miri is not installed for the pinned toolchain; sanitizers,
+  executable fuzzing, mutation testing, allocation instrumentation, and
+  API/ABI/schema snapshot tooling are not yet implemented.
 - Squash-merged PR #26 as commit `2ce70db`; Issue #25 closed automatically,
   and post-merge `main` CI run 29305578469 passed on Windows, Ubuntu, and
   macOS with the complete job set. REQ-ORIENT-001 now satisfies every
