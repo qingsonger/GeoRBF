@@ -305,6 +305,21 @@ fn exact_spd_sign_handles_three_dimensional_determinant_boundaries() -> TestResu
 }
 
 #[test]
+fn exact_spd_sign_does_not_depend_on_rounded_square_roots() -> TestResult {
+    let next_after_one = 1.0 + f64::EPSILON;
+    let two = [[1.0, 1.0], [1.0, next_after_one]];
+    let accepted_two =
+        GlobalAnisotropy::<2>::try_from_metric(two, AnisotropyConditionPolicy::Unbounded)?;
+    assert_eq!(accepted_two.metric(), &two);
+
+    let three = [[1.0, 1.0, 0.0], [1.0, next_after_one, 0.0], [0.0, 0.0, 1.0]];
+    let accepted_three =
+        GlobalAnisotropy::<3>::try_from_metric(three, AnisotropyConditionPolicy::Unbounded)?;
+    assert_eq!(accepted_three.metric(), &three);
+    Ok(())
+}
+
+#[test]
 fn chain_rule_matches_independent_polynomial_truth_through_third_order() -> TestResult {
     let anisotropy = GlobalAnisotropy::<2>::try_from_transform(
         [[2.0, 0.5], [-1.0, 3.0]],

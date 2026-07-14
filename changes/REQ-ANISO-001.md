@@ -11,7 +11,9 @@ large inverse-scale projectors, preserving representable high axis ratios.
 Power-of-two congruence equilibration and exact-sign floating expansions certify
 the leading principal minors of user and transform-derived metrics before a
 metric is exposed; boundary-indefinite input and rounded singular `A^T A`
-matrices are rejected explicitly.
+matrices are rejected explicitly. Exact expansion signs, rather than rounded
+square-root bounds, decide determinant boundaries so valid near-singular SPD
+inputs remain accepted.
 
 Validation rejects non-finite or nonpositive lengths, unrepresentable
 reciprocals and products, nonorthogonal ellipsoid axes beyond an explicit

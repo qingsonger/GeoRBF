@@ -32,9 +32,14 @@
   across `-1/2`. All 12 focused anisotropy tests, focused Clippy, and doctests
   pass after the repairs; independent re-review remains required.
 - The complete repair head passes formatting, warning-denying workspace Clippy,
-  114 workspace tests, 21 doctests, 100 release integration tests plus 21
+  115 workspace tests, 21 doctests, 101 release integration tests plus 21
   release doctests, warning-denying core rustdoc, the global-anisotropy
   benchmark smoke workload, `git diff --check`, and all 58 requirement checks.
+- Independent re-review confirmed the three first-pass P1 defects were closed
+  but found a fourth P1 in a redundant rounded-square-root prefilter: downward
+  `sqrt` rounding rejected a valid SPD matrix whose exact determinant is one
+  machine epsilon. Removed the prefilter so the exact leading-minor expansion
+  is the sole boundary decision and added D=2/D=3 exact regressions.
 - Confirmed clean synchronized `main` at `409f274`, the correct origin and
   worktree, no tags, no open Issue, PR, review, or failed CI, and green
   three-platform `main` run 29305762416. Selected Implement mode because no
@@ -482,11 +487,11 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 114 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 115 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
 - `cargo test --doc --workspace`: passed; 21 doctests, including eighteen
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 100 integration
+- `cargo test -p georbf --release --all-features`: passed; 101 integration
   tests and 21 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
