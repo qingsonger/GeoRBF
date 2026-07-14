@@ -5,8 +5,9 @@
 //! polyharmonic/surface-spline kernels, smooth global-support kernels, and
 //! Wendland compact-support kernels for exactly one, two, or three dimensions,
 //! validated geological orientation conversions in two and three dimensions,
-//! and fixed global anisotropy metrics with chain-rule derivatives. Functionals,
-//! assembly, and solvers are introduced by separately reviewed requirements.
+//! fixed global anisotropy metrics with chain-rule derivatives, and complete
+//! dimension-generic polynomial spaces. Functionals, assembly, and solvers are
+//! introduced by separately reviewed requirements.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -18,6 +19,7 @@ pub mod geometry;
 pub mod kernel;
 pub mod kernel_calculus;
 pub mod orientation;
+pub mod polynomial;
 pub mod transform;
 pub mod units;
 
@@ -50,5 +52,6 @@ pub use orientation::{
     LinearOrientation, OrientationAngleField, OrientationError, OrientationPolarity,
     PlanarOrientation, SupportedOrientationDimension,
 };
+pub use polynomial::{MultiIndex, PolynomialOutput, PolynomialSpace, PolynomialSpaceError};
 pub use transform::{AffineNormalization, TransformError, TransformOperation};
 pub use units::{AngleUnit, LengthUnit, UnitError};
