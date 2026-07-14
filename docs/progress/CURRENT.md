@@ -5,11 +5,15 @@
 - Execution mode: Implement / next atomic requirement
 - Current requirement: REQ-KERNEL-003
 - Issue: #19
-- Pull request: not yet opened
+- Pull request: Draft #20
 - Branch: `codex/req-kernel-003-smooth-global-kernels`
 
 ## Completed in this run
 
+- Committed the isolated implementation as `f829757`, pushed
+  `codex/req-kernel-003-smooth-global-kernels`, and opened Draft PR #20. The
+  requirement registry now links the PR and records the truthful pre-review
+  `documented` state.
 - Created Issue #19 with explicit Gaussian, inverse-multiquadric, signed
   multiquadric, and Matérn `1/2`, `3/2`, and `5/2` acceptance criteria after
   confirming clean synchronized `main`, no open Repair or Review work, and an
@@ -255,19 +259,19 @@
 
 ## Current blockers
 
-Publishing, independent mathematical/numerical review, three-platform PR CI,
-maintainer merge, and post-merge `main` CI remain. The implementation, local
-checks, documentation, example, interface applicability, and benchmark
-evidence are complete.
+Independent mathematical/numerical review, three-platform PR CI, maintainer
+merge, and post-merge `main` CI remain. The implementation, local checks,
+documentation, example, interface applicability, benchmark evidence, and
+Draft PR are complete.
 
 ## Next atomic task
 
-Commit and push the isolated REQ-KERNEL-003 implementation, open its Draft PR,
-link the PR in the registry, and require an independent review of formulas,
-signs, SPD/CPD classification, center limits, extreme range handling,
-allocations, interfaces, and tests before marking it ready. Do not begin
-compact-support kernels, orientation, anisotropy, polynomial, functional,
-assembly, or solver work in the same run.
+Complete an independent review of Draft PR #20 covering formulas, signs,
+SPD/CPD classification, center limits, extreme range handling, allocations,
+interfaces, and tests. Repair any actionable findings and require green
+three-platform CI before marking the PR ready. Do not begin compact-support
+kernels, orientation, anisotropy, polynomial, functional, assembly, or solver
+work in the same run.
 
 ## Latest full test result
 

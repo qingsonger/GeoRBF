@@ -139,7 +139,7 @@ requirements:
     milestone: M1-v0.1.0
     priority: P1
     issue: 19
-    pull_request: null
+    pull_request: 20
     tests: [high-precision, finite-difference, random-spd-cpd, center-limits, exponential-tail, rational-subnormal, exchange-symmetry, pathological-input, dimension-compile-fail]
     docs: [docs/math/KERNEL_REQUIREMENTS.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, benches/REQ-KERNEL-003.md, rustdoc, crates/georbf/examples/smooth_global_kernels.rs]
     rust_api: implemented
@@ -148,7 +148,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than Rust kernel types"
     python_api: "N/A: Python kernel objects wait for the reviewed Rust API and versioned schemas"
     benchmark: implemented
-    status: planned
+    status: documented
 
   - id: REQ-KERNEL-004
     title: Wendland compact-support kernels
