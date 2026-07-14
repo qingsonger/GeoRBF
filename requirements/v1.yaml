@@ -69,7 +69,7 @@ requirements:
     issue: 25
     pull_request: 26
     tests: [analytic-directions, angle-unit-parity, polarity, signed-zero, rotation-invariance, extreme-components, invalid-input, orientation-dimension-compile-fail]
-    docs: [docs/math/NORMAL_AND_TANGENT.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, rustdoc, crates/georbf/examples/geological_orientation.rs]
+    docs: [docs/math/NORMAL_AND_TANGENT.md, docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, docs/reviews/PR-26-INDEPENDENT-REVIEW.md, rustdoc, crates/georbf/examples/geological_orientation.rs]
     rust_api: implemented
     cli: "N/A: versioned project inputs and the complete conversion command are introduced by later requirements"
     c_api: "N/A: orientation construction is exposed only after the Rust API and stable C ABI freeze"

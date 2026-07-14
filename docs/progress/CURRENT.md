@@ -20,8 +20,15 @@
 - Repaired zero canonicalization after polarity application for every
   constructor. Added D=2/D=3 planar/linear exact-bit regressions covering
   negative-polarity horizontal, vertical, and compass directions plus all
-  polarity variants of component inputs. Focused tests and strict Clippy pass;
-  independent re-review and repaired-head CI remain pending.
+  polarity variants of component inputs. Independent re-review of `bf00f73`
+  reported no remaining or new finding.
+- Initial PR #26 run 29304961733 and review-repair run 29305373648 both passed
+  on Windows, Ubuntu, and macOS with the complete job set. The repair run
+  includes 102 workspace tests, 19 doctests, all four existing benchmark smoke
+  workloads, strict Clippy and formatting, and all 58 requirement checks.
+- Recorded the complete independent mathematical, convention, numerical,
+  safety, API, allocation, interface, documentation, and test review in
+  `docs/reviews/PR-26-INDEPENDENT-REVIEW.md`.
 - Committed the isolated implementation as `aa1bff6`, pushed
   `codex/req-orient-001-geological-orientation`, and opened Draft PR #26. The
   registry links the PR and records the truthful pre-review `documented` state.
@@ -383,17 +390,18 @@
 
 ## Current blockers
 
-None. REQ-ORIENT-001 implementation and local validation are complete. Its
-Draft PR, independent review, three-platform CI, merge, and integration-state
-record remain required before the registry may say `integrated`.
+None. REQ-ORIENT-001 implementation, independent review and repair, and
+three-platform PR CI are complete. The review-evidence commit, merge,
+post-merge CI, and integration-state record remain required before the registry
+may say `integrated`.
 
 ## Next atomic task
 
-Complete an independent mathematical, convention, numerical, API, safety,
-allocation, documentation, and test review of Draft PR #26. Repair every
-finding and require a green reviewed head before merge. Do not begin
-normal/tangent constraints, global anisotropy, fields, assembly, or solver work
-in the same requirement.
+Commit and push the independent review evidence, require its three-platform CI
+to pass, mark PR #26 ready, and merge it. Confirm post-merge `main` CI before a
+separate integration-state PR records REQ-ORIENT-001 as `integrated`. Do not
+begin normal/tangent constraints, global anisotropy, fields, assembly, or
+solver work in the same requirement.
 
 ## Latest full test result
 
