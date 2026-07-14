@@ -513,7 +513,7 @@ where
         OrientationPolarity::Negative => components.map(|component| -component),
         OrientationPolarity::Positive | OrientationPolarity::Unknown => components,
     };
-    UnitDirection::try_new(components).map_err(OrientationError::from)
+    UnitDirection::try_new(canonical_zeros(components)).map_err(OrientationError::from)
 }
 
 fn exact_sin_cos(angle: f64) -> (f64, f64) {

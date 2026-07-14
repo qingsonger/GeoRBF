@@ -219,6 +219,87 @@ fn polarity_reverses_known_directions_and_preserves_axial_metadata() -> TestResu
 }
 
 #[test]
+fn every_constructor_canonicalizes_zero_bits_after_polarity() -> TestResult {
+    let plane_2d = PlanarOrientation::<2>::from_signed_dip(
+        0.0,
+        AngleUnit::Degrees,
+        OrientationPolarity::Negative,
+    )?;
+    assert_eq!(
+        plane_2d.normal().components().map(f64::to_bits),
+        [0, (-1.0_f64).to_bits()]
+    );
+
+    let vertical_plane_3d = PlanarOrientation::<3>::from_dip_direction_dip(
+        0.0,
+        90.0,
+        AngleUnit::Degrees,
+        OrientationPolarity::Negative,
+    )?;
+    assert_eq!(
+        vertical_plane_3d.normal().components().map(f64::to_bits),
+        [0, (-1.0_f64).to_bits(), 0]
+    );
+    let horizontal_plane_3d = PlanarOrientation::<3>::from_dip_direction_dip(
+        217.0,
+        0.0,
+        AngleUnit::Degrees,
+        OrientationPolarity::Negative,
+    )?;
+    assert_eq!(
+        horizontal_plane_3d.normal().components().map(f64::to_bits),
+        [0, 0, (-1.0_f64).to_bits()]
+    );
+
+    let line_2d = LinearOrientation::<2>::from_plunge(
+        0.0,
+        AngleUnit::Degrees,
+        OrientationPolarity::Negative,
+    )?;
+    assert_eq!(
+        line_2d.direction().components().map(f64::to_bits),
+        [(-1.0_f64).to_bits(), 0]
+    );
+
+    let horizontal_line_3d = LinearOrientation::<3>::from_azimuth_plunge(
+        90.0,
+        0.0,
+        AngleUnit::Degrees,
+        OrientationPolarity::Negative,
+    )?;
+    assert_eq!(
+        horizontal_line_3d
+            .direction()
+            .components()
+            .map(f64::to_bits),
+        [(-1.0_f64).to_bits(), 0, 0]
+    );
+    let vertical_line_3d = LinearOrientation::<3>::from_azimuth_plunge(
+        293.0,
+        90.0,
+        AngleUnit::Degrees,
+        OrientationPolarity::Negative,
+    )?;
+    assert_eq!(
+        vertical_line_3d.direction().components().map(f64::to_bits),
+        [0, 0, 1.0_f64.to_bits()]
+    );
+
+    for polarity in [
+        OrientationPolarity::Positive,
+        OrientationPolarity::Negative,
+        OrientationPolarity::Unknown,
+    ] {
+        let plane = PlanarOrientation::<2>::from_normal_components([-0.0, 2.0], polarity)?;
+        let line = LinearOrientation::<3>::from_direction_components([-0.0, 2.0, -0.0], polarity)?;
+        assert_eq!(plane.normal().components()[0].to_bits(), 0);
+        assert_eq!(line.direction().components()[0].to_bits(), 0);
+        assert_eq!(line.direction().components()[2].to_bits(), 0);
+    }
+    Ok(())
+}
+
+#[test]
 fn angle_conversions_covary_under_vertical_axis_rotations() -> TestResult {
     let azimuth = 43.0_f64;
     let rotation = 37.0_f64;

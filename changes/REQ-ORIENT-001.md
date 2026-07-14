@@ -18,6 +18,12 @@ normalization, angle and component error paths, compile-fail dimensions, and
 thread-safety tests cover the conversion API. A runnable example and normative
 convention citations accompany the implementation.
 
+Independent review found that applying negative polarity after the angle path's
+initial zero canonicalization recreated negative zero bits, and component
+constructors retained caller-supplied negative zeros. Canonicalization now runs
+after polarity for every constructor, with D=2/D=3 planar/linear bit-level
+regressions for horizontal, vertical, compass-quadrant, and component inputs.
+
 No normal or tangent observation, gradient-magnitude claim, cone, anisotropy,
 orientation-tensor estimation, reprojection, field, assembly, solver, schema,
 binding, or compatibility behavior is included.

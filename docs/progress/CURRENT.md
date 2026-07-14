@@ -10,6 +10,18 @@
 
 ## Completed in this run
 
+- Independent review of PR #26 confirmed the D=2/D=3 formulas, coordinate
+  convention, right-hand-rule sign, angle domains, polarity semantics,
+  rotation covariance, dimensions, errors, allocation/safety properties, and
+  interface dispositions. It found one P1 boundary-contract defect: negative
+  polarity recreated `-0.0`, and component constructors retained input
+  negative zeros while the normative contract promised positive-zero
+  canonicalization.
+- Repaired zero canonicalization after polarity application for every
+  constructor. Added D=2/D=3 planar/linear exact-bit regressions covering
+  negative-polarity horizontal, vertical, and compass directions plus all
+  polarity variants of component inputs. Focused tests and strict Clippy pass;
+  independent re-review and repaired-head CI remain pending.
 - Committed the isolated implementation as `aa1bff6`, pushed
   `codex/req-orient-001-geological-orientation`, and opened Draft PR #26. The
   registry links the PR and records the truthful pre-review `documented` state.
@@ -35,7 +47,7 @@
   The benchmark obligation remains explicitly N/A because every conversion is
   fixed-size constant work per observation.
 - The implementation head passed formatting, warning-denying workspace
-  Clippy, 101 workspace tests, 19 doctests, 87 release integration tests and
+  Clippy, 102 workspace tests, 19 doctests, 88 release integration tests and
   19 release doctests, warning-denying rustdoc, the orientation example,
   dependency metadata/tree checks, forbidden-pattern scans, `git diff --check`,
   and all 58 requirement checks. Independent review, PR CI, and merge remain
@@ -390,11 +402,11 @@ Completed locally on Windows with Rust 1.96.1 on 2026-07-14:
 - `cargo fmt --all -- --check`: passed.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`:
   passed.
-- `cargo test --workspace --all-features`: passed; 101 tests, 0 failures on
+- `cargo test --workspace --all-features`: passed; 102 tests, 0 failures on
   Windows. The Unix matrix additionally runs the non-Unicode argv regression.
 - `cargo test --doc --workspace`: passed; 19 doctests, including seventeen
   unsupported-dimension compile-fail cases, 0 failures.
-- `cargo test -p georbf --release --all-features`: passed; 87 integration tests
+- `cargo test -p georbf --release --all-features`: passed; 88 integration tests
   and 19 doctests, 0 failures.
 - `RUSTDOCFLAGS="-D warnings" cargo doc -p georbf --all-features --no-deps`:
   passed.
