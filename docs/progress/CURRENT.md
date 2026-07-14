@@ -9,7 +9,7 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement
 - Requirement: REQ-FUNC-001, Issue #37
 - Branch: `codex/req-func-001-atomic-functionals`
-- Draft pull request: pending initial implementation push
+- Draft pull request: #38
 - Registry state in this change: `in_progress`
 - Dependencies: REQ-DIM-001, REQ-KCALC-001, and REQ-POLY-001 are `integrated`
 
@@ -37,17 +37,20 @@ records, benchmark reports, Git, and GitHub.
   workload also passes.
 - The final stable-code standard gate passed: format, full workspace/all-target/
   all-feature Clippy with warnings denied, full workspace tests, documentation
-  tests, and requirement-registry validation.
+  tests, and requirement-registry validation on implementation commit
+  `3203360`.
 - After that gate, only this handoff and Draft PR linkage metadata may change;
   no production, test, manifest, schema, or build input may change without a
   new final gate.
 
 ## Next task
 
-Finish only this Implement task: run the standard workspace gate once on the
-stable head, commit and push, open the Draft PR, record its number in the
-registry and this handoff, push that metadata-only follow-up, and stop. The
-independent mathematical and numerical Review must start in a fresh task.
+Open a fresh Review task for only Draft PR #38 and REQ-FUNC-001. Perform the
+mandatory preflight, then create and wait for the project `math_reviewer`
+sub-agent using only the bounded requirement/dependency summary, normative
+documents and relevant ADRs, PR diff, tests, and benchmark evidence. Record
+findings without repairing production code in the Review task. Do not start
+another requirement.
 
 ## Durable evidence
 
