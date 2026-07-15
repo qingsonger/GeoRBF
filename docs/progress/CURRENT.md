@@ -6,27 +6,27 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active scope
 
-- Mode: Repair complete; fresh independent re-review required next
+- Mode: Review clean; ready-head integration sequence next
 - Requirement: REQ-CPD-001, Issue #45
-- Draft pull request: #46
+- Pull request: #46 (Draft until this clean-review evidence is pushed)
 - Branch: `codex/req-cpd-001-rank-nullspace`
-- Reviewed head: `cf4976ee7e575da1856d5871f6f6f744fccd43d4`
+- Exact cleanly reviewed head: `062bae329bbd2194b93d7708a428852c459eccfd`
 - Repair code/test head: `06ad419c06fd4c887c32be8a8dcd6ff9e1061c68`
 - Registry state: `documented` (not integrated)
 - Dependencies: REQ-KERNEL-002, REQ-POLY-001, REQ-FUNC-001, and
   REQ-SPIKE-002 are integrated
 
-## Repair result
+## Review result
 
-- P2-5 is repaired with a fixed-stack exact binary accumulator that retains
-  the representable `2^-104` near-cancellation residual and does not fabricate
-  zero for the exact `2^-1075` product.
-- Both original-unit diagnostic callers map a nonzero result that would round
-  to zero to their existing structured unrepresentable-residual errors.
-- Independent regressions cover exact cancellation, the subnormal boundary,
-  and a public D=1 order-one null-space and unit-coordinate expanded-weight
-  case checked against fused double-double truth.
-- PR #46 remains Draft pending a fresh independent complete-diff re-review.
+- A fifth fresh read-only `math_reviewer` independently inspected the complete
+  PR diff at exact head `062bae3` without inheriting Repair reasoning.
+- P2-5 is closed: the fixed-stack exact binary accumulator retains the
+  representable `2^-104` near-cancellation residual, rejects the exact nonzero
+  `2^-1075` result as unrepresentable, and both public diagnostic paths have
+  independent regressions.
+- No P0, P1, P2, or P3 finding remains. The complete diff is consistent with
+  the scoped mathematical, numerical, architecture, interface, diagnostic,
+  allocation, benchmark, and requirement contracts.
 
 ## Validation state
 
@@ -40,23 +40,21 @@ records, benchmark reports, Git, and GitHub.
 - The optimized one-iteration benchmark smoke retained checksum
   `-4.97657470788226419e-14` and completed in 0.7554 ms locally, within the
   recorded 0.706--1.125 ms complete-assembly baseline.
-- Exact reviewed-documentation-head Draft CI run 29393699380 passed Ubuntu on
-  `6d82acf`. New Draft CI for the pushed repair head is not yet evidence; the
-  ready three-platform and benchmark-smoke matrix remains deferred until a
-  clean re-review.
+- The independent reviewer reran the public CPD target (13/13), all six private
+  CPD regressions, formatting, all 58 requirement checks, and
+  `git diff --check`; all passed.
+- Exact reviewed-head Draft CI run 29394931421 passed its complete Ubuntu job
+  on `062bae3`. The ready Windows/Ubuntu/macOS and benchmark-smoke matrix has
+  not run and must be triggered on the clean-evidence head.
 
 ## Next task
 
-- Open a fresh Review/re-review task for PR #46. Supply the independent
-  `math_reviewer` only the bounded requirement/dependency summaries, normative
-  documents and ADRs, complete PR diff, and validation evidence.
-- Independently confirm P2-5 is closed and inspect the complete repaired diff
-  for new P0-P3 findings. Do not repair production code in that Review task.
-- If any finding remains, record it and stop. If the re-review is clean and
-  the exact final head has valid local evidence, follow the mandatory sequence:
-  mark PR #46 ready, wait for complete Windows/Ubuntu/macOS and benchmark-smoke
-  CI on that exact ready head, merge only when green, and record truthful
-  integration state. Then stop without beginning another requirement.
+- Push this documentation-only clean-review evidence and mark PR #46 ready.
+- Wait for the ready event to complete Windows, Ubuntu, macOS, and every
+  benchmark smoke workload on that exact head. Merge exactly once only when
+  the complete matrix is green.
+- Wait for the post-merge `main` gate, then record truthful integration state
+  through an isolated change. Stop without beginning another requirement.
 
 ## Durable evidence
 

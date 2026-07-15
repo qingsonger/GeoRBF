@@ -552,3 +552,60 @@ code/test-head gate remains applicable.
 PR #46 remains Draft. This Repair task must stop after pushing for a fresh
 independent re-review; it must not mark the PR ready, merge it, or begin
 another requirement.
+
+## Fifth fresh re-review of the exact-binary accumulation repair
+
+- Date: 2026-07-15
+- Reviewed head: `062bae329bbd2194b93d7708a428852c459eccfd`
+- Repair code/test head: `06ad419c06fd4c887c32be8a8dcd6ff9e1061c68`
+- Base: `98593115d73f1347a67deaa2d6d8d77a2d1aee87`
+- Result: P2-5 closed; no P0-P3 finding remains
+
+A fifth fresh read-only `math_reviewer` received only the bounded requirement
+and dependency summaries, Issue #45 acceptance criteria, normative documents
+and ADRs, the complete PR diff, and validation evidence. It independently
+reviewed the exact repaired head without inheriting the Repair reasoning and
+made no repository or remote changes.
+
+### Closed: P2-5 exact original-unit accumulation
+
+The fixed 67-limb signed binary accumulator retains every exact finite `f64`
+significand product and rounds the completed signed sum once. It preserves the
+finite representable `2^-104` near-cancellation residual, rejects the exact
+nonzero `2^-1075` result as unrepresentable, and has sufficient exponent and
+carry capacity for finite `f64` products and a `usize`-bounded dot product.
+Both the null-space and expanded-weight diagnostic callers map the
+unrepresentable result to their existing structured errors, with independent
+private and public regressions.
+
+### Complete-diff disposition
+
+No P0, P1, P2, or P3 finding remains. The reviewer independently confirmed
+the polynomial actions and derivative signs, D=1/D=2/D=3 complete polynomial
+spaces, scale-aware equilibration and rank decisions, conservative ambiguity
+handling, mapped null-space construction, matrix-infinity residuals, hard
+failure semantics, projection without hidden regularization, provenance,
+allocation shape, interface dispositions, diagnostics, benchmark routing,
+and requirement evidence. Positive-definiteness classification and Hessian
+capability remain explicitly outside this atomic requirement.
+
+The reviewer ran:
+
+```text
+cargo test -p georbf --test cpd
+cargo test -p georbf --lib cpd::tests
+cargo fmt --all -- --check
+cargo xtask requirements check
+git diff --check
+```
+
+All 13 public CPD tests, all six private CPD regressions, formatting, and all
+58 registry checks passed. Both exact P2-5 regressions also passed separately.
+The reviewer verified that `06ad419..062bae3` changes only this review record
+and the bounded handoff, so the complete standard gate on stable code/test
+head `06ad419` remains applicable. Draft CI run 29394931421 passed its complete
+Ubuntu correctness job on exact reviewed head `062bae3`.
+
+PR #46 may advance to ready after this clean-review evidence is pushed. The
+resulting exact ready head must pass the complete Windows, Ubuntu, and macOS
+matrix with every benchmark smoke workload before merge.
