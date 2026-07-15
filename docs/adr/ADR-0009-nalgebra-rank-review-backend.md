@@ -35,7 +35,8 @@ The rank policy evaluated here is:
    dispatch. Preserve exact zero rows and columns for explicit diagnosis.
 2. Apply eight deterministic alternating infinity-norm row and column
    equilibration passes. Record cumulative row and column scales when this
-   policy moves into production.
+   policy moves into production. Reject both unrepresentable cumulative
+   multipliers and any scaling step that rounds a nonzero entry to zero.
 3. Form the dimensionless RRQR screen threshold
    `tau_qr = max(m,n) * eps * max_i(abs(R_ii))`.
 4. Form the SVD review threshold
@@ -47,8 +48,10 @@ The rank policy evaluated here is:
    scales, matrix norms, condition estimate, and scaled and original-unit
    residuals.
 6. Use `SVD::try_new` with a finite, recorded iteration limit and convert
-   non-convergence into a structured error. Do not call nalgebra's
-   pseudoinverse or minimum-norm solve as a rank-deficiency fallback.
+   non-convergence into a structured error. Preserve all completed
+   equilibration and RRQR evidence, and mark SVD-derived evidence and the final
+   decision unavailable. Do not call nalgebra's pseudoinverse or minimum-norm
+   solve as a rank-deficiency fallback.
 
 The exact fixed pass count and threshold multiplier are an initial recorded
 policy, not an authorization to hide ambiguous cases. The CPD implementation

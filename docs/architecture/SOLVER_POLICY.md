@@ -41,7 +41,10 @@ The CPD rank policy uses eight alternating infinity-norm equilibration passes,
 the dimension-times-epsilon RRQR and SVD thresholds recorded in
 `docs/math/CPD_AND_POLYNOMIALS.md`, and a factor-16 SVD ambiguity guard band.
 RRQR/SVD disagreement or threshold adjacency is an explicit error, not an
-automatic solver adjustment.
+automatic solver adjustment. Equilibration rejects a cumulative multiplier or
+individual nonzero entry that becomes unrepresentable. Bounded SVD
+non-convergence retains completed equilibration and RRQR evidence while
+marking every SVD-derived field and the final rank decision unavailable.
 
 Regularization is None, Explicit(value), or AutomaticWithin(maximum). Any
 automatic choice records requested and actual solver, amount added, original

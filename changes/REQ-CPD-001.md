@@ -9,6 +9,13 @@ bounded SVD review, explicit factor-16 ambiguity guard, condition diagnostics,
 and clear rank-deficiency failure without coordinate mutation, jitter,
 pseudoinverse, or minimum-norm fallback.
 
+Independent review repairs reject an equilibration step before it can round a
+nonzero action to zero, including the exact full-rank extreme-scale regression
+`[[1e308,1e-16],[1e308,2e-16]]`. A forced bounded-SVD non-convergence seam
+verifies that structured failure retains norms, scales, zero indices, and
+RRQR evidence while explicitly leaving SVD-derived fields and the final rank
+decision unavailable.
+
 Clearly full-rank inputs construct and verify an orthonormal basis for
 `null(Q^T)`. Reduced coordinates expand only as provenance-bearing `w = Z y`
 weights with a rechecked polynomial side condition. A finite symmetric-energy

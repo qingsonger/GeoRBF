@@ -176,6 +176,57 @@ pub struct CpdRankDiagnostics {
     pub decision: CpdRankDecision,
 }
 
+/// Rank evidence retained when bounded SVD review cannot produce a decision.
+///
+/// RRQR screening is complete in this state. Every SVD-derived field and the
+/// final decision is explicitly `None` rather than being fabricated.
+#[derive(Clone, Debug, PartialEq)]
+#[must_use]
+pub struct CpdIncompleteRankDiagnostics {
+    /// Number of center-functional rows.
+    pub rows: usize,
+    /// Number of complete polynomial-space columns.
+    pub columns: usize,
+    /// Fixed count of alternating infinity-norm equilibration passes.
+    pub equilibration_passes: usize,
+    /// Multipliers satisfying `scaled = diag(row_scales) Q diag(column_scales)`.
+    pub row_scales: Vec<f64>,
+    /// Polynomial-column multipliers used by the equilibration.
+    pub column_scales: Vec<f64>,
+    /// Rows that are exactly zero before equilibration.
+    pub zero_rows: Vec<usize>,
+    /// Columns that are exactly zero before equilibration.
+    pub zero_columns: Vec<usize>,
+    /// Norms of the original polynomial-action matrix.
+    pub original_norms: CpdMatrixNorms,
+    /// Norms after dimensionless equilibration.
+    pub scaled_norms: CpdMatrixNorms,
+    /// Absolute diagonal of the column-pivoted QR `R` factor.
+    pub rrqr_diagonal: Vec<f64>,
+    /// RRQR threshold `max(rows, columns) * eps * max(abs(diag(R)))`.
+    pub rrqr_threshold: f64,
+    /// Effective RRQR rank using a strict threshold comparison.
+    pub rrqr_rank: usize,
+    /// Unavailable singular values because bounded SVD did not converge.
+    pub singular_values: Option<Vec<f64>>,
+    /// Unavailable SVD threshold because bounded SVD did not converge.
+    pub svd_threshold: Option<f64>,
+    /// Unavailable SVD rank because bounded SVD did not converge.
+    pub svd_rank: Option<usize>,
+    /// Unavailable lower ambiguity-band edge.
+    pub ambiguity_lower: Option<f64>,
+    /// Unavailable upper ambiguity-band edge.
+    pub ambiguity_upper: Option<f64>,
+    /// Unavailable threshold-adjacency decision.
+    pub threshold_adjacent: Option<bool>,
+    /// Unavailable RRQR/SVD disagreement decision.
+    pub rank_disagreement: Option<bool>,
+    /// Unavailable spectral condition estimate.
+    pub condition_estimate: Option<f64>,
+    /// Unavailable final rank decision.
+    pub decision: Option<CpdRankDecision>,
+}
+
 /// Scale-aware quality evidence for the constructed null-space basis.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[must_use]
@@ -608,6 +659,8 @@ pub enum CpdError {
     SvdDidNotConverge {
         /// Recorded finite iteration limit.
         maximum_iterations: usize,
+        /// Available equilibration and RRQR evidence; SVD fields are unavailable.
+        diagnostics: Box<CpdIncompleteRankDiagnostics>,
     },
     /// The polynomial-action matrix is clearly rank deficient.
     RankDeficient {
@@ -693,6 +746,15 @@ impl CpdError {
             _ => None,
         }
     }
+
+    /// Returns incomplete rank evidence when bounded SVD review did not converge.
+    #[must_use]
+    pub fn incomplete_rank_diagnostics(&self) -> Option<&CpdIncompleteRankDiagnostics> {
+        match self {
+            Self::SvdDidNotConverge { diagnostics, .. } => Some(diagnostics),
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for CpdError {
@@ -743,7 +805,9 @@ impl fmt::Display for CpdError {
                 "{} equilibration scale {index} became unrepresentable on pass {pass}",
                 if *row_scale { "row" } else { "column" }
             ),
-            Self::SvdDidNotConverge { maximum_iterations } => write!(
+            Self::SvdDidNotConverge {
+                maximum_iterations, ..
+            } => write!(
                 formatter,
                 "SVD rank review did not converge within {maximum_iterations} iterations"
             ),
@@ -833,8 +897,24 @@ struct EquilibratedMatrix {
     zero_columns: Vec<usize>,
 }
 
+#[derive(Clone, Copy)]
+enum SvdReviewMode {
+    Bounded,
+    #[cfg(test)]
+    ForceNonConvergence,
+}
+
 fn diagnose_rank(actions: &CpdMatrix) -> Result<CpdRankDiagnostics, CpdError> {
+    diagnose_rank_with_svd_review(actions, SvdReviewMode::Bounded)
+}
+
+fn diagnose_rank_with_svd_review(
+    actions: &CpdMatrix,
+    svd_review: SvdReviewMode,
+) -> Result<CpdRankDiagnostics, CpdError> {
     let equilibrated = equilibrate(actions)?;
+    let original_norms = matrix_norms(actions);
+    let scaled_norms = matrix_norms(&equilibrated.matrix);
     let matrix = DMatrix::from_row_slice(
         equilibrated.matrix.rows,
         equilibrated.matrix.columns,
@@ -853,11 +933,27 @@ fn diagnose_rank(actions: &CpdMatrix) -> Result<CpdRankDiagnostics, CpdError> {
         .filter(|value| **value > rrqr_threshold)
         .count();
 
-    let svd = SVD::try_new(matrix, false, false, 5.0 * f64::EPSILON, SVD_MAX_ITERATIONS).ok_or(
-        CpdError::SvdDidNotConverge {
+    let svd = match svd_review {
+        SvdReviewMode::Bounded => {
+            SVD::try_new(matrix, false, false, 5.0 * f64::EPSILON, SVD_MAX_ITERATIONS)
+        }
+        #[cfg(test)]
+        SvdReviewMode::ForceNonConvergence => None,
+    };
+    let Some(svd) = svd else {
+        return Err(CpdError::SvdDidNotConverge {
             maximum_iterations: SVD_MAX_ITERATIONS,
-        },
-    )?;
+            diagnostics: Box::new(incomplete_rank_diagnostics(
+                actions,
+                equilibrated,
+                original_norms,
+                scaled_norms,
+                rrqr_diagonal,
+                rrqr_threshold,
+                rrqr_rank,
+            )),
+        });
+    };
     let singular_values = svd.singular_values.iter().copied().collect::<Vec<_>>();
     let svd_threshold = rank_threshold(&singular_values, dimension)?;
     let svd_rank = singular_values
@@ -892,8 +988,8 @@ fn diagnose_rank(actions: &CpdMatrix) -> Result<CpdRankDiagnostics, CpdError> {
         column_scales: equilibrated.column_scales,
         zero_rows: equilibrated.zero_rows,
         zero_columns: equilibrated.zero_columns,
-        original_norms: matrix_norms(actions),
-        scaled_norms: matrix_norms(&equilibrated.matrix),
+        original_norms,
+        scaled_norms,
         rrqr_diagonal,
         rrqr_threshold,
         rrqr_rank,
@@ -908,6 +1004,40 @@ fn diagnose_rank(actions: &CpdMatrix) -> Result<CpdRankDiagnostics, CpdError> {
         decision,
     };
     Ok(diagnostics)
+}
+
+fn incomplete_rank_diagnostics(
+    actions: &CpdMatrix,
+    equilibrated: EquilibratedMatrix,
+    original_norms: CpdMatrixNorms,
+    scaled_norms: CpdMatrixNorms,
+    rrqr_diagonal: Vec<f64>,
+    rrqr_threshold: f64,
+    rrqr_rank: usize,
+) -> CpdIncompleteRankDiagnostics {
+    CpdIncompleteRankDiagnostics {
+        rows: actions.rows,
+        columns: actions.columns,
+        equilibration_passes: EQUILIBRATION_PASSES,
+        row_scales: equilibrated.row_scales,
+        column_scales: equilibrated.column_scales,
+        zero_rows: equilibrated.zero_rows,
+        zero_columns: equilibrated.zero_columns,
+        original_norms,
+        scaled_norms,
+        rrqr_diagonal,
+        rrqr_threshold,
+        rrqr_rank,
+        singular_values: None,
+        svd_threshold: None,
+        svd_rank: None,
+        ambiguity_lower: None,
+        ambiguity_upper: None,
+        threshold_adjacent: None,
+        rank_disagreement: None,
+        condition_estimate: None,
+        decision: None,
+    }
 }
 
 fn equilibrate(actions: &CpdMatrix) -> Result<EquilibratedMatrix, CpdError> {
@@ -947,7 +1077,15 @@ fn equilibrate(actions: &CpdMatrix) -> Result<EquilibratedMatrix, CpdError> {
                 }
                 *row_scale = cumulative;
                 for value in &mut values[start..end] {
-                    *value /= scale;
+                    let scaled = *value / scale;
+                    if *value != 0.0 && scaled == 0.0 {
+                        return Err(CpdError::UnrepresentableEquilibrationScale {
+                            row_scale: true,
+                            index: row,
+                            pass,
+                        });
+                    }
+                    *value = scaled;
                 }
             }
         }
@@ -966,7 +1104,16 @@ fn equilibrate(actions: &CpdMatrix) -> Result<EquilibratedMatrix, CpdError> {
                 }
                 column_scales[column] = cumulative;
                 for row in 0..actions.rows {
-                    values[row * actions.columns + column] /= scale;
+                    let index = row * actions.columns + column;
+                    let scaled = values[index] / scale;
+                    if values[index] != 0.0 && scaled == 0.0 {
+                        return Err(CpdError::UnrepresentableEquilibrationScale {
+                            row_scale: false,
+                            index: column,
+                            pass,
+                        });
+                    }
+                    values[index] = scaled;
                 }
             }
         }
@@ -1194,4 +1341,71 @@ fn try_filled<T: Clone>(count: usize, value: T, storage: CpdStorage) -> Result<V
         })?;
     values.resize(count, value);
     Ok(values)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use super::*;
+
+    #[test]
+    fn forced_svd_non_convergence_retains_available_rank_evidence() -> Result<(), Box<dyn Error>> {
+        let actions =
+            CpdMatrix::try_from_row_major(3, 3, vec![2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])?;
+        let Err(error) =
+            diagnose_rank_with_svd_review(&actions, SvdReviewMode::ForceNonConvergence)
+        else {
+            return Err(std::io::Error::other("forced bounded SVD unexpectedly converged").into());
+        };
+        assert!(error.rank_diagnostics().is_none());
+        assert!(error.incomplete_rank_diagnostics().is_some());
+        let (maximum_iterations, diagnostics) = match error {
+            CpdError::SvdDidNotConverge {
+                maximum_iterations,
+                diagnostics,
+            } => (maximum_iterations, diagnostics),
+            other => {
+                return Err(std::io::Error::other(format!(
+                    "expected structured SVD non-convergence, got {other:?}"
+                ))
+                .into());
+            }
+        };
+
+        assert_eq!(maximum_iterations, SVD_MAX_ITERATIONS);
+        assert_eq!((diagnostics.rows, diagnostics.columns), (3, 3));
+        assert_eq!(diagnostics.equilibration_passes, EQUILIBRATION_PASSES);
+        assert_eq!(diagnostics.row_scales, [0.5, 1.0, 1.0]);
+        assert_eq!(diagnostics.column_scales, [1.0, 1.0, 1.0]);
+        assert_eq!(diagnostics.zero_rows, [2]);
+        assert_eq!(diagnostics.zero_columns, [2]);
+        assert_eq!(
+            diagnostics.original_norms,
+            CpdMatrixNorms {
+                max_absolute: 2.0,
+                infinity: 2.0,
+            }
+        );
+        assert_eq!(
+            diagnostics.scaled_norms,
+            CpdMatrixNorms {
+                max_absolute: 1.0,
+                infinity: 1.0,
+            }
+        );
+        assert_eq!(diagnostics.rrqr_diagonal, [1.0, 1.0, 0.0]);
+        assert!((diagnostics.rrqr_threshold - 3.0 * f64::EPSILON).abs() <= f64::EPSILON);
+        assert_eq!(diagnostics.rrqr_rank, 2);
+        assert!(diagnostics.singular_values.is_none());
+        assert!(diagnostics.svd_threshold.is_none());
+        assert!(diagnostics.svd_rank.is_none());
+        assert!(diagnostics.ambiguity_lower.is_none());
+        assert!(diagnostics.ambiguity_upper.is_none());
+        assert!(diagnostics.threshold_adjacent.is_none());
+        assert!(diagnostics.rank_disagreement.is_none());
+        assert!(diagnostics.condition_estimate.is_none());
+        assert!(diagnostics.decision.is_none());
+        Ok(())
+    }
 }

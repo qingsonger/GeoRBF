@@ -35,8 +35,9 @@ pub use coordinates::{
     Handedness, VerticalDirection,
 };
 pub use cpd::{
-    CpdError, CpdMatrix, CpdMatrixNorms, CpdNullSpace, CpdNullSpaceQuality, CpdRankDecision,
-    CpdRankDiagnostics, CpdStorage, CpdWeightOrigin, CpdWeights,
+    CpdError, CpdIncompleteRankDiagnostics, CpdMatrix, CpdMatrixNorms, CpdNullSpace,
+    CpdNullSpaceQuality, CpdRankDecision, CpdRankDiagnostics, CpdStorage, CpdWeightOrigin,
+    CpdWeights,
 };
 pub use dimension::{Dim, SupportedDimension};
 pub use functional::{

@@ -70,6 +70,30 @@ fn action_row_center(
     Ok(CenterRepresenter::new(FunctionalExpr::try_new(terms)?))
 }
 
+fn value_action_row_center(
+    action: [f64; 2],
+    provenance: u64,
+) -> Result<CenterRepresenter<1>, Box<dyn Error>> {
+    let atoms = [
+        FunctionalAtom::value(
+            Point::try_new([0.0])?,
+            FunctionalProvenance::new(provenance),
+        ),
+        FunctionalAtom::value(
+            Point::try_new([1.0])?,
+            FunctionalProvenance::new(provenance + 1),
+        ),
+    ];
+    let coefficients = [action[0] - action[1], action[1]];
+    let terms = coefficients
+        .into_iter()
+        .zip(atoms)
+        .filter(|(coefficient, _)| *coefficient != 0.0)
+        .map(|(coefficient, atom)| FunctionalTerm::try_new(coefficient, atom))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(CenterRepresenter::new(FunctionalExpr::try_new(terms)?))
+}
+
 fn assert_polynomial_reproduction(system: &CpdNullSpace, coefficients: &[f64]) {
     assert_eq!(system.actions().columns(), coefficients.len());
     let samples = (0..system.actions().rows())
@@ -275,6 +299,33 @@ fn coordinate_units_and_nonzero_functional_scaling_preserve_rank() -> Result<(),
             .iter()
             .all(|scale| scale.is_finite() && *scale > 0.0)
     );
+    Ok(())
+}
+
+#[test]
+fn extreme_scale_equilibration_never_erases_a_full_rank_action() -> Result<(), Box<dyn Error>> {
+    let centers = [
+        value_action_row_center([1.0e308, 1.0e-16], 10)?,
+        value_action_row_center([1.0e308, 2.0e-16], 20)?,
+    ];
+    let space = PolynomialSpace::<1>::try_new(2)?;
+    let actions = centers
+        .iter()
+        .map(|center| center.expression().try_apply_polynomial(&space))
+        .collect::<Result<Vec<_>, _>>()?;
+    assert_eq!(actions, [vec![1.0e308, 1.0e-16], vec![1.0e308, 2.0e-16]]);
+
+    let result = CpdNullSpace::try_from_centers(&centers, &space);
+    match result {
+        Ok(system) => assert_eq!(system.diagnostics().decision, CpdRankDecision::FullRank),
+        Err(CpdError::UnrepresentableEquilibrationScale { .. }) => {}
+        other => {
+            return Err(std::io::Error::other(format!(
+                "full-rank extreme-scale action was misclassified: {other:?}"
+            ))
+            .into());
+        }
+    }
     Ok(())
 }
 

@@ -55,11 +55,18 @@ implemented numerical adapter applies eight deterministic alternating
 infinity-norm row and column equilibration passes and records cumulative
 multipliers satisfying `Q_scaled = D_row Q D_column`. Exactly zero rows and
 columns remain zero for diagnosis; a nonzero cumulative multiplier that
-overflows or underflows is an error. The policy records original and scaled
+overflows or underflows is an error, as is any scaling operation that would
+round a nonzero matrix entry to zero before the opposite-axis pass can act.
+The policy records original and scaled
 matrix norms, both thresholds and ranks, the RRQR diagonal, all SVD singular
 values, the scaled condition estimate, and the ambiguity band. Changing
 coordinate units or multiplying a functional by a nonzero scale must not
 change the rank decision.
+
+If bounded SVD review does not converge, no effective rank is reported. The
+structured error retains the matrix shapes and norms, equilibration passes and
+scales, original zero indices, RRQR diagonal, threshold, and rank; all
+SVD-derived fields and the final decision are explicitly unavailable.
 
 The RRQR and SVD thresholds are respectively
 
