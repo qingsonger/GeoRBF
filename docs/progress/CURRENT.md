@@ -6,60 +6,45 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / fresh independent re-review of PR #49 repair
+- Mode: Repair / address PR #49 re-review finding P3-1 only
 - Requirement: REQ-SPIKE-001, Issue #48
 - Branch: `codex/req-spike-001-dense-factorization`
 - Draft pull request: #49
-- Original reviewed head: `b194061163e3e15add68c044a9ed040b23f3bdd8`
+- Re-reviewed repair head: `7b9226e656eddbafbc6f5f17e7726fc3f8d4c770`
 - Review record: `docs/reviews/PR-49-INDEPENDENT-REVIEW.md`
 - Registry state: `documented` (not integrated)
 - Dependency: REQ-BOOTSTRAP-001 is `integrated`
 
-## Repair result
+## Re-review result
 
-- P1-1: original-unit residual review now rejects a nonfinite residual entry,
-  residual norm, matrix/vector norm, denominator, or backward error. The
-  finite `A = [f64::MAX]`, `b = [0]`, `x = [2]` overflow counterexample is a
-  regression.
-- P1-2: backend factor construction is separated from right-hand-side solves.
-  One factorization is reused for the initial solution and all zero-to-three
-  refinement corrections. An instrumented regression observes exactly one
-  factorization and multiple solves during an accepted correction.
-- P1-3: the indefinite truth case is `[[0, 2], [2, 0]]`, whose zero diagonal
-  under every symmetric permutation forces a 2-by-2 first pivot. Both backend
-  tests inspect and require the exposed 2-by-2 block, verify the analytic
-  solution, and require checked-Cholesky rejection.
-- The performance record was regenerated with factorization reuse. Nalgebra
-  retained the lower median in all six Windows measurements, with overlapping
-  64-square LBLT ranges.
+- A fresh read-only `math_reviewer` independently inspected the complete
+  14-file diff at the exact repair head and closed original findings P1-1,
+  P1-2, and P1-3.
+- New P3-1: ADR-0010 says all six independent harness tests passed, but the
+  repaired harness and review evidence contain eight tests. The accepted ADR's
+  evidence count must change from six to eight.
+- No new P0, P1, or P2 finding was identified, and no other P3 finding was
+  identified.
 
 ## Next task
 
-Open a fresh Review task for only the repaired PR #49. Supply the requirement
-summary, dependency closure, normative documents, complete PR diff, original
-P1 findings, and validation evidence to a read-only independent reviewer. Do
-not inherit this repair reasoning, do not repair production or test code in the
-same task, keep the PR Draft, and do not begin REQ-IR-001.
-
-If the fresh review is clean, stop with its findings recorded so a later fresh
-Review task can perform the ready-head CI and integration sequence required by
-`AGENTS.md` and `docs/CODEX_WORKFLOW.md`.
+Open a fresh Repair task for only P3-1. Change the ADR-0010 evidence count from
+six to eight, update the review record and bounded handoff, run the applicable
+documentation and requirement checks, commit, push, and stop. Do not change
+production or test code, do not mark PR #49 ready, and do not begin
+REQ-IR-001. A fresh independent re-review must follow.
 
 ## Validation evidence
 
-- Combined, faer-only, and nalgebra-only focused configurations each passed all
-  8 tests, including the three repair regressions; warning-denying all-target
-  all-feature spike Clippy passed.
-- The no-backend configuration failed with the required compile error, and the
-  repaired optimized smoke workload passed.
-- Three consecutive optimized complete 32/64/128 workloads passed with stable
-  per-backend checksums, residuals, and accepted refinement counts. The
-  repaired ranges are recorded in `docs/benchmarks/REQ-SPIKE-001.md`.
-- The stable repair code/test head passed workspace formatting, warning-denying
-  workspace Clippy, all-feature workspace tests, workspace doc tests, all 58
-  requirement checks, and `git diff --check`. This final evidence-only handoff
-  update changes no code, tests, manifests, schemas, or build inputs.
-- No three-platform ready-head CI is claimed while the PR remains Draft.
+- The independent reviewer reran combined, faer-only, and nalgebra-only tests;
+  each passed 8/8. Spike formatting, warning-denying all-feature Clippy, the
+  required no-backend rejection, optimized smoke, all 58 requirement checks,
+  and `git diff --check` passed.
+- The stable repair head retains the recorded complete local workspace gate and
+  passed exact-head Draft CI run 29402438886. The independent reviewer did not
+  rerun the complete workspace gate.
+- No three-platform or benchmark-smoke ready-head CI is claimed while the PR
+  remains Draft.
 
 ## Checks not yet available
 

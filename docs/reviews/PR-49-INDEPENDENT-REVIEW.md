@@ -4,11 +4,13 @@
 - Issue: https://github.com/qingsonger/GeoRBF/issues/48
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/49
 - Branch: `codex/req-spike-001-dense-factorization`
-- Reviewed head: `b194061163e3e15add68c044a9ed040b23f3bdd8`
+- Original reviewed head: `b194061163e3e15add68c044a9ed040b23f3bdd8`
+- Re-reviewed repair head: `7b9226e656eddbafbc6f5f17e7726fc3f8d4c770`
 - Base head: `8fee4315f7335c48d919cc5f04a217e6db829a07`
 - Review date: 2026-07-15
-- Result: three P1 findings; PR must remain Draft
-- Repair status: P1-1 through P1-3 implemented; fresh re-review required
+- Result: original P1-1 through P1-3 closed; new P3-1 finding; PR must
+  remain Draft
+- Repair status: fresh Repair required for P3-1 only
 
 ## Scope and independence
 
@@ -147,3 +149,55 @@ and exact lockfile; unavailable audit tools were not claimed as executed.
   workspace doc tests, and all 58 requirement checks. `git diff --check` also
   passed. The subsequent review-record and handoff edits are evidence-only and
   change no code, tests, manifests, schemas, or build inputs.
+
+## Fresh independent re-review of the repair
+
+A new read-only `math_reviewer` received the bounded requirement summary and
+dependency closure, normative documents, complete 14-file diff, original P1
+findings, repair validation, benchmark evidence, and exact repair head. It did
+not inherit the Repair reasoning and made no repository or remote changes.
+
+The reviewer confirmed that P1-1 through P1-3 are closed on
+`7b9226e656eddbafbc6f5f17e7726fc3f8d4c770`:
+
+- residual entries, norms, denominator, and backward error are all required to
+  be finite, and the finite-input overflow counterexample is a regression;
+- one factor object supplies the initial solve and every bounded refinement
+  correction, while instrumentation observes one factorization and multiple
+  solves during an accepted correction; and
+- both backends solve the analytic `[[0, 2], [2, 0]]` truth case, reject its
+  checked-Cholesky path, and expose the required nonzero 2-by-2 pivot block.
+
+### P3-1: ADR test count is stale
+
+`docs/adr/ADR-0010-nalgebra-dense-factorization-backend.md` says that all six
+independent harness tests passed. The repaired harness contains eight tests,
+and the repair evidence correctly records 8/8. The accepted ADR therefore has
+a stale, directly verifiable evidence count.
+
+Required repair: change only the ADR evidence count from six to eight, update
+the bounded review and handoff evidence, and stop for another fresh independent
+re-review. Do not change production or test code and do not begin REQ-IR-001.
+
+No new P0, P1, or P2 finding was identified. The reviewer also found no other
+P3 issue in the formulae, factorization semantics, truth cases, original-unit
+residual review, refinement policy, hidden-adjustment exclusions, determinism,
+benchmark record, dependency isolation, interfaces, CI, or requirement state.
+
+### Re-review validation and disposition
+
+- Combined, faer-only, and nalgebra-only configurations each passed all eight
+  tests; warning-denying all-feature spike Clippy and spike formatting passed.
+- The no-backend configuration failed with the required compile error, and the
+  optimized smoke workload passed with finite results.
+- All 58 requirement checks and `git diff --check` passed. The spike remained
+  workspace-excluded with exact candidate versions, and the root lockfile was
+  unchanged.
+- Draft CI run 29402438886 passed on the exact repair head. The ready-only
+  Windows, Ubuntu, macOS, and benchmark-smoke matrix correctly remained
+  unexecuted while the PR was Draft.
+
+The re-review result is one P3 finding. Keep PR #49 Draft and stop for the
+bounded documentation-only Repair. No complete workspace gate was rerun by the
+reviewer; the unchanged repair head retains the complete local gate recorded
+above, and the exact head passed Draft CI.
