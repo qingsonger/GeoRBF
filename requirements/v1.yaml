@@ -264,17 +264,17 @@ requirements:
     dependencies: [REQ-BOOTSTRAP-001]
     milestone: M3-v0.3.0
     priority: P0
-    issue: null
-    pull_request: null
+    issue: 48
+    pull_request: 49
     tests: [spd-cases, indefinite-cases, ill-conditioned-cases, platform-build]
-    docs: [docs/adr, docs/architecture/SOLVER_POLICY.md]
+    docs: [docs/adr, docs/architecture/SOLVER_POLICY.md, docs/reviews/PR-49-INDEPENDENT-REVIEW.md]
     rust_api: "N/A: dependency spike exposes no user API"
     cli: "N/A: dependency spike exposes no command"
     c_api: "N/A: dependency spike exposes no ABI"
     cpp_api: "N/A: dependency spike exposes no C++ API"
     python_api: "N/A: dependency spike exposes no Python API"
-    benchmark: planned
-    status: planned
+    benchmark: implemented
+    status: documented
 
   - id: REQ-IR-001
     title: Semantic and canonical problem IR

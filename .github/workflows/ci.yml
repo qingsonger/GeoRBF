@@ -53,6 +53,23 @@ jobs:
           grep -Fq "enable at least one rank backend feature" <<< "$output"
       - name: Smoke-test rank-backend spike
         run: cargo run --manifest-path spikes/rank-backends/Cargo.toml --release -- --smoke
+      - name: Lint dense-factorization spike
+        run: cargo clippy --manifest-path spikes/factorization-backends/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Test dense-factorization feature configurations
+        run: |
+          cargo test --manifest-path spikes/factorization-backends/Cargo.toml --all-features
+          cargo test --manifest-path spikes/factorization-backends/Cargo.toml --no-default-features --features faer-backend
+          cargo test --manifest-path spikes/factorization-backends/Cargo.toml --no-default-features --features nalgebra-backend
+      - name: Reject dense-factorization spike without a backend
+        shell: bash
+        run: |
+          if output=$(cargo check --manifest-path spikes/factorization-backends/Cargo.toml --no-default-features 2>&1); then
+            echo "dense-factorization spike unexpectedly accepted an empty backend selection" >&2
+            exit 1
+          fi
+          grep -Fq "enable at least one dense factorization backend feature" <<< "$output"
+      - name: Smoke-test dense-factorization spike
+        run: cargo run --manifest-path spikes/factorization-backends/Cargo.toml --release -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check
 
@@ -95,6 +112,23 @@ jobs:
           grep -Fq "enable at least one rank backend feature" <<< "$output"
       - name: Smoke-test rank-backend spike
         run: cargo run --manifest-path spikes/rank-backends/Cargo.toml --release -- --smoke
+      - name: Lint dense-factorization spike
+        run: cargo clippy --manifest-path spikes/factorization-backends/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Test dense-factorization feature configurations
+        run: |
+          cargo test --manifest-path spikes/factorization-backends/Cargo.toml --all-features
+          cargo test --manifest-path spikes/factorization-backends/Cargo.toml --no-default-features --features faer-backend
+          cargo test --manifest-path spikes/factorization-backends/Cargo.toml --no-default-features --features nalgebra-backend
+      - name: Reject dense-factorization spike without a backend
+        shell: bash
+        run: |
+          if output=$(cargo check --manifest-path spikes/factorization-backends/Cargo.toml --no-default-features 2>&1); then
+            echo "dense-factorization spike unexpectedly accepted an empty backend selection" >&2
+            exit 1
+          fi
+          grep -Fq "enable at least one dense factorization backend feature" <<< "$output"
+      - name: Smoke-test dense-factorization spike
+        run: cargo run --manifest-path spikes/factorization-backends/Cargo.toml --release -- --smoke
       - name: Smoke-test radial kernel calculus benchmark
         run: cargo bench -p georbf --bench radial_kernel_calculus -- --smoke
       - name: Smoke-test polyharmonic spline benchmark

@@ -6,58 +6,55 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-CPD-001 complete
-- Requirement: REQ-CPD-001, Issue #45 (closed)
-- Implementation pull request: #46, squash-merged as `0c19373`
-- Integration-state branch: `codex/req-cpd-001-integration-state`
-- Integration-state pull request: #47 (Draft until final evidence is green)
-- Review record: `docs/reviews/PR-46-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-SPIKE-001 (`planned`)
+- Mode: Review / ready-head integration sequence for PR #49
+- Requirement: REQ-SPIKE-001, Issue #48
+- Branch: `codex/req-spike-001-dense-factorization`
+- Draft pull request: #49
+- Clean re-review head: `7e365514c5541b6b3e8b594f6fc8ef18bbc90851`
+- Review record: `docs/reviews/PR-49-INDEPENDENT-REVIEW.md`
+- Registry state: `documented` (not integrated)
+- Dependency: REQ-BOOTSTRAP-001 is `integrated`
 
-## Integration result
+## Re-review result
 
-- A fifth fresh read-only `math_reviewer` closed P2-5 and found no remaining
-  P0, P1, P2, or P3 issue in the complete implementation diff.
-- Exact ready head `bf69ed4` passed the complete Windows, Ubuntu, and macOS CI
-  matrix with every benchmark smoke workload in run 29396342123.
-- PR #46 squash-merged exactly once as `0c19373`; Issue #45 closed as
-  completed.
-- Post-merge `main` run 29396715017 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate.
-- This isolated integration-state change updates only registry and progress
-  evidence. It changes no production code, tests, manifest, schema, build
-  input, API, numerical behavior, dependency, tag, or release.
+- A fresh read-only `math_reviewer` confirmed P3-2 is closed on exact head
+  `7e365514c5541b6b3e8b594f6fc8ef18bbc90851` and found no remaining P0, P1,
+  P2, or P3 issue in the complete PR diff.
+- Independent truth review reconfirmed the SPD and mandatory two-by-two-pivot
+  indefinite cases, finite original-unit backward-error evidence, one-factor
+  refinement, explicit failure, no hidden adjustment, dependency isolation,
+  truthful interfaces, CI claims, and requirement state.
+- The review evidence update changes only the review record and this handoff;
+  production code, tests, manifests, schemas, CI, and build inputs are
+  unchanged.
 
-## Validation state
+## Integration sequence
 
-- On stable implementation code/test head `06ad419`, the focused CPD suite and
-  complete standard workspace gate passed. Later implementation-branch commits
-  changed only review evidence and the bounded handoff.
-- Exact ready-head and post-merge `main` three-platform gates are green as
-  recorded above.
-- The integration-state branch must pass the complete local standard gate and
-  `git diff --check` after its final evidence update.
+Synchronize the clean review evidence, mark PR #49 ready, and wait for the
+complete Windows, Ubuntu, and macOS correctness matrix and every benchmark
+smoke workload on that exact Ready head. Merge exactly once only if the full
+gate is green, then record truthful integration state in an isolated change.
+Do not begin REQ-IR-001 in this task.
 
-## Next task
+## Validation evidence
 
-After the isolated integration-state pull request is green and merged, open a
-fresh Implement task. Perform the mandatory preflight and use
-`cargo xtask requirements next`; do not start REQ-SPIKE-001 in this task.
-
-## Durable evidence
-
-- Acceptance criteria and exclusions: GitHub Issue #45
-- Merged implementation: GitHub PR #46
-- Integration-state pull request: GitHub PR #47
-- Independent review and repair evidence:
-  `docs/reviews/PR-46-INDEPENDENT-REVIEW.md`
-- Mathematical contract: `docs/math/CPD_AND_POLYNOMIALS.md`
-- Solver policy: `docs/architecture/SOLVER_POLICY.md`
-- Backend decision and production re-audit:
-  `docs/adr/ADR-0009-nalgebra-rank-review-backend.md`
-- Change summary: `changes/REQ-CPD-001.md`
-- Benchmark and size baseline: `docs/benchmarks/REQ-CPD-001.md`
+- The independent reviewer reran spike formatting, warning-denying all-feature
+  Clippy, combined and both single-backend configurations with 8/8 tests each,
+  optimized smoke, all 58 requirement checks, and `git diff --check`; all
+  passed.
+- The primary task ran the complete standard workspace gate on exact reviewed
+  head `1ca34634aab1a46ee482b1d0737119c0327123db`; all five required checks and
+  `git diff --check` passed.
+- The documentation-only P3-2 repair reran all 58 requirement checks and
+  `git diff --check`; both passed.
+- Exact-head Draft CI run 29403767685 passed on Ubuntu. The reviewer relied on
+  that run for the required no-backend rejection and did not rerun it locally.
+- Exact repaired-head Draft CI run 29404916642 passed on Ubuntu.
+- The primary task ran the complete standard workspace gate and
+  `git diff --check` on exact clean-review head
+  `7e365514c5541b6b3e8b594f6fc8ef18bbc90851`; all passed.
+- No three-platform or benchmark-smoke Ready-head CI is claimed before that
+  event-triggered run completes.
 
 ## Checks not yet available
 
@@ -65,4 +62,6 @@ fresh Implement task. Perform the mandatory preflight and use
 installed. Miri is unavailable for pinned Rust 1.96.1. Sanitizers, executable
 fuzzing, mutation testing, allocation instrumentation, and API/ABI/schema
 snapshot checks are tracked by later requirements and release gates. Local
-`actionlint` is unavailable.
+`actionlint` is unavailable. The performed advisory review was an OSV batch API
+query of every exact selected package; it is not a claim that unavailable
+audit tools ran.

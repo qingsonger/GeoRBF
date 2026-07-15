@@ -7,6 +7,15 @@ Production backends are selected only after the recorded spikes:
 - SPIKE-003: compact sparse assembly and solution; and
 - SPIKE-004: canonical QP and SOCP mapping.
 
+REQ-SPIKE-001 selects the nalgebra 0.35 release line as the preferred later
+production backend for checked dense Cholesky and Bunch--Kaufman LBLT with
+symmetric 1-by-1 and 2-by-2 pivot blocks. The spike itself remains isolated;
+production adoption must stay behind the private numerical adapter, repeat the
+dependency and advisory audit, and keep nalgebra matrix types out of public
+geometry and model APIs. Checked Cholesky must never use the substitute-
+diagonal entry point. A zero pivot, nonfinite result, failed original-unit
+residual review, or nondecreasing refinement correction is an explicit failure.
+
 REQ-CPD-001 adopts nalgebra 0.35.0 behind the private CPD numerical adapter for
 column-pivoted QR screening, bounded SVD rank review, and QR-supported
 null-space construction. GeoRBF-owned row-major matrices and diagnostics are
@@ -17,17 +26,24 @@ Each spike reviews correctness, scaling, maintenance, license, MSRV, unsafe
 use, platforms, binary size, alternatives, and deterministic behavior, then
 produces an ADR before dependency lock-in.
 
-Target dispatch is Cholesky for SPD equality systems, pivoted LDLT for CPD KKT
-systems, RRQR for rank risk, SVD for rank review or justified minimum-norm
-work, projected weighted least squares for L2 losses, a mature convex QP backend
-for linear inequalities and epigraph losses, and a mature SOCP backend for
-angular and thickness cones.
+Target dispatch is checked Cholesky for SPD equality systems, pivoted
+Bunch--Kaufman LBLT for symmetric-indefinite KKT systems, RRQR for rank risk,
+SVD for rank review or justified minimum-norm work, projected weighted least
+squares for L2 losses, a mature convex QP backend for linear inequalities and
+epigraph losses, and a mature SOCP backend for angular and thickness cones.
 
 Every solve performs finite and unit checks, coordinate and direction
 normalization, explicit constraint scaling, duplicate/conflict review,
 polynomial rank and kernel capability checks, anisotropy validation, memory
 estimation, symmetry checks, conditioning estimation, iterative refinement, and
 residual review in original units.
+
+Iterative refinement is bounded and explicit. It reuses the unchanged
+mathematical matrix and requested factorization, records the initial and final
+original-unit residuals and accepted correction count, and accepts a correction
+only when that residual strictly decreases. It never authorizes a factorization
+switch, diagonal substitution, jitter, pseudoinverse, constraint relaxation,
+or other implicit problem change.
 
 Rank and condition decisions use an explicitly recorded dimensionless
 equilibration. Diagnostics retain row and column scales, matrix norms, rank
