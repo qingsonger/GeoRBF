@@ -292,7 +292,7 @@ requirements:
     cpp_api: "N/A: the C ABI does not yet expose a stable problem surface"
     python_api: "N/A: no stable schema-backed fitting surface exists yet"
     benchmark: implemented
-    status: documented
+    status: integrated
 
   - id: REQ-FIELD-001
     title: Unified hard-equality field assembly

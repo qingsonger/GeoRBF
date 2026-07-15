@@ -220,3 +220,24 @@ instrumentation, nextest, cargo-deny, cargo-audit, semver checks, Miri,
 sanitizers, fuzzing, mutation testing, API/ABI/schema snapshots, and local
 actionlint remain unavailable or deferred as documented; none is claimed as
 executed.
+
+## Integration evidence
+
+- Clean-review evidence was pushed in documentation-only commit
+  `e610e2997d10d9235163a3d1b1a44d7d5f7f08ff`, and PR #52 was marked Ready
+  without changing the independently reviewed implementation.
+- Ready-head CI run 29416668025 passed Windows, Ubuntu, and macOS on exact head
+  `e610e2997d10d9235163a3d1b1a44d7d5f7f08ff`, including every benchmark smoke
+  workload and the requirement-registry gate.
+- PR #52 squash-merged exactly once as
+  `76f55e6eee1123c9c4ed4c08abe853f18882211a`; Issue #51 closed as completed.
+- Post-merge `main` CI run 29417378257 passed the complete three-platform
+  correctness, benchmark-smoke, and registry gate on exact merge commit
+  `76f55e6eee1123c9c4ed4c08abe853f18882211a`.
+- Integration-state PR #53 contains only the registry and evidence changes
+  described below and remains Draft until its final evidence is green.
+
+The isolated integration-state change records REQ-IR-001 as `integrated` and
+advances the bounded handoff without starting REQ-FIELD-001. It changes no
+production code, tests, manifests, schemas, CI, build inputs, APIs, numerical
+behavior, dependencies, tags, or releases.
