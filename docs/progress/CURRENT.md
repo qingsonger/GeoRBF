@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-IR-001, Issue #51 (closed)
 - Implementation pull request: #52, squash-merged as `76f55e6`
 - Integration-state branch: `codex/req-ir-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #53 (Draft until final evidence is green)
 - Review record: `docs/reviews/PR-52-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-FIELD-001 (`planned`)
@@ -49,7 +49,7 @@ fresh Implement task. Perform the mandatory preflight and use
 
 - Acceptance criteria and exclusions: GitHub Issue #51
 - Merged implementation: GitHub PR #52
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #53
 - Independent review and repair evidence:
   `docs/reviews/PR-52-INDEPENDENT-REVIEW.md`
 - Problem IR contract: `docs/architecture/PROBLEM_IR.md`

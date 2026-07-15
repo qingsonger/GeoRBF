@@ -234,6 +234,8 @@ executed.
 - Post-merge `main` CI run 29417378257 passed the complete three-platform
   correctness, benchmark-smoke, and registry gate on exact merge commit
   `76f55e6eee1123c9c4ed4c08abe853f18882211a`.
+- Integration-state PR #53 contains only the registry and evidence changes
+  described below and remains Draft until its final evidence is green.
 
 The isolated integration-state change records REQ-IR-001 as `integrated` and
 advances the bounded handoff without starting REQ-FIELD-001. It changes no
