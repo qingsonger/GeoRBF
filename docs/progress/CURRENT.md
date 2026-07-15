@@ -4,15 +4,14 @@ This file is a bounded handoff for the next task. Completed history belongs in
 `docs/progress/HISTORY.md`, requirement change fragments, independent review
 records, benchmark reports, Git, and GitHub.
 
-## Active repository work
+## Completed scope and terminal handoff
 
-- Mode: Review / PR #44 blocked by P2-1
+- Mode: Terminal handoff / REQ-SPIKE-002 complete
 - Requirement: REQ-SPIKE-002, Issue #40 (closed)
 - Implementation pull request: #41, squash-merged as `4c1ddeb`
 - Integration-state pull request: #42, squash-merged as
   `d8ce7508c51f77b8d50245a8d1255ffad2d44c92`
-- Repair branch: `codex/issue-43-correct-integration-handoff`
-- Repair pull request: #44 (Draft)
+- Handoff repair: Issue #43, pull request #44
 - Review record: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
 - Handoff-repair review: `docs/reviews/PR-44-INDEPENDENT-REVIEW.md`
 - Registry state: `integrated`
@@ -47,8 +46,9 @@ records, benchmark reports, Git, and GitHub.
   proposed handoff would immediately become stale after merge because it keeps
   the completed Repair active and calls PR #44 Draft. No P0, P1, or P3 finding
   was reported.
-- PR #44 must remain Draft until a fresh Repair replaces the transient state
-  with a terminal handoff and a fresh re-review reports no P0-P3 finding.
+- The focused Repair replaces those transient state claims with this terminal
+  handoff. A fresh independent re-review must report no P0-P3 finding before
+  PR #44 can enter the ready-head integration sequence.
 - On stable implementation code/test head `30bd495`, the focused spike matrix
   and complete standard workspace gate passed. Later implementation-branch
   commits changed documentation only.
@@ -58,18 +58,19 @@ records, benchmark reports, Git, and GitHub.
   warning-denying workspace Clippy with all targets and features, workspace
   tests with all features, workspace rustdoc, all 58 requirement checks, and
   `git diff --check`.
-- This Issue #43 repair changes only this bounded handoff. The diff against
-  post-merge `main` proves that no production code, test, manifest, schema,
-  build input, API, numerical behavior, dependency, tag, or release changed,
-  so the immutable full-gate evidence above is reused.
+- This Issue #43 repair changes only bounded handoff and review evidence. The
+  diff against post-merge `main` proves that no production code, test,
+  manifest, schema, build input, API, numerical behavior, dependency, tag, or
+  release changed, so the immutable full-gate evidence above is reused.
 
 ## Next task
 
-Open a fresh Repair task for PR #44 and address only P2-1 in
-`docs/reviews/PR-44-INDEPENDENT-REVIEW.md`. Replace the transient Repair and
-Draft-PR claims with a terminal handoff that remains true after merge, preserve
-`REQ-SPIKE-002: integrated`, rerun the focused documentation checks, commit and
-push, then stop for fresh independent re-review. Do not start REQ-CPD-001.
+- Before PR #44 merges, open a fresh Review/re-review task for that PR. Verify
+  P2-1 is closed without inheriting this Repair reasoning; if no P0-P3 finding
+  remains, follow the mandatory ready-head CI and merge sequence.
+- After PR #44 merges, open a fresh Implement preflight and use
+  `cargo xtask requirements next` to select the next atomic requirement.
+- Do not start REQ-CPD-001 in the Repair or Review task.
 
 ## Durable evidence
 
