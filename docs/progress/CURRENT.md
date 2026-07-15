@@ -6,58 +6,53 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-CPD-001 complete
-- Requirement: REQ-CPD-001, Issue #45 (closed)
-- Implementation pull request: #46, squash-merged as `0c19373`
-- Integration-state branch: `codex/req-cpd-001-integration-state`
-- Integration-state pull request: #47 (Draft until final evidence is green)
-- Review record: `docs/reviews/PR-46-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-SPIKE-001 (`planned`)
+- Mode: Implement complete; independent Review next
+- Requirement: REQ-SPIKE-001, Issue #48
+- Branch: `codex/req-spike-001-dense-factorization`
+- Pull request: pending Draft creation
+- Registry state: `planned` until the Draft PR number is recorded
+- Dependency: REQ-BOOTSTRAP-001 is integrated
 
-## Integration result
+## Implementation result
 
-- A fifth fresh read-only `math_reviewer` closed P2-5 and found no remaining
-  P0, P1, P2, or P3 issue in the complete implementation diff.
-- Exact ready head `bf69ed4` passed the complete Windows, Ubuntu, and macOS CI
-  matrix with every benchmark smoke workload in run 29396342123.
-- PR #46 squash-merged exactly once as `0c19373`; Issue #45 closed as
-  completed.
-- Post-merge `main` run 29396715017 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate.
-- This isolated integration-state change updates only registry and progress
-  evidence. It changes no production code, tests, manifest, schema, build
-  input, API, numerical behavior, dependency, tag, or release.
+- Added an excluded comparison harness pinned to nalgebra 0.35.0 and faer
+  0.24.4 with checked Cholesky, symmetric-pivoted Bunch--Kaufman LBLT, finite
+  and original-unit residual review, and at most three explicit refinement
+  corrections.
+- Six independent cases cover analytic SPD truth, a leading-zero indefinite
+  system requiring a 2-by-2 pivot, wrong-Cholesky and singular failures,
+  ill-conditioned scaling, deterministic repeats, and invalid input.
+- Accepted ADR-0010 selects nalgebra 0.35 for later private production adoption.
+  This requirement adds no production solver, dependency, public matrix type,
+  or user-facing API.
+- CI now lints and tests both single-backend configurations and their combined
+  path, rejects an empty selection, and runs the smoke workload. Ready and main
+  execute this evidence on Windows, Ubuntu, and macOS.
 
 ## Validation state
 
-- On stable implementation code/test head `06ad419`, the focused CPD suite and
-  complete standard workspace gate passed. Later implementation-branch commits
-  changed only review evidence and the bounded handoff.
-- Exact ready-head and post-merge `main` three-platform gates are green as
-  recorded above.
-- The integration-state branch must pass the complete local standard gate and
-  `git diff --check` after its final evidence update.
+- Combined and both single-backend focused test configurations pass 6/6 tests.
+- Spike Clippy with all targets, all features, and warnings denied passes.
+- The negative no-backend configuration fails with the required compile error.
+- The optimized smoke and complete 32/64/128 comparison workloads pass.
+- The final stable-head standard workspace gate and `git diff --check` must be
+  recorded after the last implementation or evidence change.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh Implement task. Perform the mandatory preflight and use
-`cargo xtask requirements next`; do not start REQ-SPIKE-001 in this task.
+After the Draft PR is created and its exact head is green, open a fresh Review
+task. Review only REQ-SPIKE-001 and that PR; use the project `math_reviewer`
+read-only agent with the bounded requirement/dependency summary, relevant
+solver policy and ADR, complete PR diff, and validation evidence. Do not repair
+production code or begin REQ-IR-001 in the Review task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #45
-- Merged implementation: GitHub PR #46
-- Integration-state pull request: GitHub PR #47
-- Independent review and repair evidence:
-  `docs/reviews/PR-46-INDEPENDENT-REVIEW.md`
-- Mathematical contract: `docs/math/CPD_AND_POLYNOMIALS.md`
-- Solver policy: `docs/architecture/SOLVER_POLICY.md`
-- Backend decision and production re-audit:
-  `docs/adr/ADR-0009-nalgebra-rank-review-backend.md`
-- Change summary: `changes/REQ-CPD-001.md`
-- Benchmark and size baseline: `docs/benchmarks/REQ-CPD-001.md`
+- Acceptance criteria and exclusions: GitHub Issue #48
+- Backend decision: `docs/adr/ADR-0010-nalgebra-dense-factorization-backend.md`
+- Reproducible harness: `spikes/factorization-backends/`
+- Benchmark and size baseline: `docs/benchmarks/REQ-SPIKE-001.md`
+- Requirement change summary: `changes/REQ-SPIKE-001.md`
 
 ## Checks not yet available
 
@@ -65,4 +60,6 @@ fresh Implement task. Perform the mandatory preflight and use
 installed. Miri is unavailable for pinned Rust 1.96.1. Sanitizers, executable
 fuzzing, mutation testing, allocation instrumentation, and API/ABI/schema
 snapshot checks are tracked by later requirements and release gates. Local
-`actionlint` is unavailable.
+`actionlint` is unavailable. The performed advisory review was an OSV batch API
+query of every exact selected package; it is not a claim that unavailable audit
+tools ran.

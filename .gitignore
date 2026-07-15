@@ -1,5 +1,6 @@
 /target/
 /spikes/rank-backends/target/
+/spikes/factorization-backends/target/
 /.idea/
 /.vscode/
 *.pdb
