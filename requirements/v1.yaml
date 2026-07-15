@@ -256,7 +256,7 @@ requirements:
     cpp_api: "N/A: no stable C++ binding surface exists yet"
     python_api: "N/A: no stable Python binding surface exists yet"
     benchmark: implemented
-    status: documented
+    status: integrated
 
   - id: REQ-SPIKE-001
     title: Dense factorization backend spike

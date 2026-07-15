@@ -609,3 +609,21 @@ Ubuntu correctness job on exact reviewed head `062bae3`.
 PR #46 may advance to ready after this clean-review evidence is pushed. The
 resulting exact ready head must pass the complete Windows, Ubuntu, and macOS
 matrix with every benchmark smoke workload before merge.
+
+## Integration evidence
+
+- Clean-review evidence was pushed in documentation-only commit `bf69ed4`, and
+  PR #46 was marked ready without changing the reviewed implementation.
+- Ready-head CI run 29396342123 passed Windows, Ubuntu, and macOS on exact head
+  `bf69ed42ec614612cedb32cbcb0bb3b4f771cfc4`, including every benchmark smoke
+  workload.
+- PR #46 squash-merged exactly once as
+  `0c1937360b9467b05cb9e4e1d7d58f6cba9ff46f`; Issue #45 closed.
+- Post-merge `main` CI run 29396715017 passed the complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate on exact merge
+  commit `0c19373`.
+
+The isolated integration-state change records REQ-CPD-001 as `integrated` and
+advances the bounded handoff without starting the next requirement. It changes
+no production code, tests, manifests, schemas, build inputs, APIs, numerical
+behavior, dependencies, tags, or releases.
