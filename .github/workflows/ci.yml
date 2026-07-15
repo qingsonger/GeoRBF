@@ -109,5 +109,7 @@ jobs:
         run: cargo bench -p georbf --bench polynomial_spaces -- --smoke
       - name: Smoke-test atomic functionals benchmark
         run: cargo bench -p georbf --bench atomic_functionals -- --smoke
+      - name: Smoke-test CPD rank and null-space benchmark
+        run: cargo bench -p georbf --bench cpd_rank_nullspace -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check

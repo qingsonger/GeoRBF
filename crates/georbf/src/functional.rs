@@ -492,18 +492,35 @@ where
         let mut gradients =
             try_zeroed_vec(count, [0.0; D], FunctionalStorage::PolynomialGradients)?;
 
+        self.try_apply_polynomial_with_scratch(space, &mut output, &mut values, &mut gradients)?;
+        Ok(output)
+    }
+
+    pub(crate) fn try_apply_polynomial_with_scratch(
+        &self,
+        space: &PolynomialSpace<D>,
+        output: &mut [f64],
+        values: &mut [f64],
+        gradients: &mut [[f64; D]],
+    ) -> Result<(), FunctionalError> {
+        let count = space.term_count();
+        debug_assert_eq!(output.len(), count);
+        debug_assert_eq!(values.len(), count);
+        debug_assert_eq!(gradients.len(), count);
+        output.fill(0.0);
+
         for (term_index, term) in self.terms.iter().enumerate() {
             let provenance = term.atom.provenance();
             match term.atom {
                 FunctionalAtom::Value { point, .. } => space
-                    .try_evaluate_values(point, &mut values)
+                    .try_evaluate_values(point, values)
                     .map_err(|source| FunctionalError::PolynomialEvaluation {
                         term_index,
                         provenance,
                         source,
                     })?,
                 FunctionalAtom::DirectionalDerivative { point, .. } => space
-                    .try_evaluate_gradients(point, &mut gradients)
+                    .try_evaluate_gradients(point, gradients)
                     .map_err(|source| FunctionalError::PolynomialEvaluation {
                         term_index,
                         provenance,
@@ -529,7 +546,7 @@ where
                 output[basis_index] = next;
             }
         }
-        Ok(output)
+        Ok(())
     }
 }
 

@@ -246,7 +246,7 @@ requirements:
     dependencies: [REQ-KERNEL-002, REQ-POLY-001, REQ-FUNC-001, REQ-SPIKE-002]
     milestone: M2-v0.2.0
     priority: P0
-    issue: null
+    issue: 45
     pull_request: null
     tests: [polynomial-reproduction, nullspace, degeneracy-1d-2d-3d, scale-invariance, rank-threshold, kkt-equivalence]
     docs: [docs/math/CPD_AND_POLYNOMIALS.md, docs/architecture/SOLVER_POLICY.md]
@@ -256,7 +256,7 @@ requirements:
     cpp_api: planned
     python_api: planned
     benchmark: planned
-    status: planned
+    status: in_progress
 
   - id: REQ-SPIKE-001
     title: Dense factorization backend spike
