@@ -281,3 +281,101 @@ release gates. Local `actionlint` is unavailable. The subsequent review-record
 and bounded-handoff update is documentation-only, so the stable code/test-head
 gate remains applicable. PR #46 must remain Draft for a fresh independent
 re-review of the complete repaired diff.
+
+## Fresh re-review of the scaled null-space repair
+
+- Date: 2026-07-15
+- Reviewed head: `9d7177eb034ae07e8ef04a915a0fa06664b8450e`
+- Repair code/test head: `10d3892381356ed5453e1c58b5daceefee037dda`
+- Base: `98593115d73f1347a67deaa2d6d8d77a2d1aee87`
+- Result: P1-2, P2-2, and P2-3 closed; one new P2 finding; PR #46
+  must remain Draft
+
+A third fresh read-only `math_reviewer` received only the bounded requirement
+and dependency summaries, Issue #45 acceptance criteria, normative documents
+and ADRs, the complete PR diff, and validation evidence. It independently
+reviewed the exact repaired head without inheriting the Repair reasoning and
+made no repository or remote changes.
+
+### Closed: P1-2 scaled null-space construction
+
+Null-space QR now uses the safely equilibrated action and maps its basis
+through the recorded row scales before stable deterministic
+reorthogonalization. The reported common-`1e200` value-row overflow and
+`1e-308` derivative-row underflow construction failures are closed by the
+implementation and independent regressions.
+
+### Closed: P2-2 matrix infinity residuals
+
+Both side-condition and orthonormality binding quantities now use maximum
+absolute row sums. The two-entry aggregate regression independently recomputes
+both matrix infinity norms.
+
+### Closed: P2-3 overflowing original-unit weight products
+
+Original-unit weight residual recovery no longer forms the reported
+overflowing products or folds NaN into zero. The independent regression
+restores a finite nonzero residual, and an unrepresentable restored value is a
+structured error.
+
+### P2-4: column normalization can fabricate zero original-unit residuals
+
+`crates/georbf/src/cpd.rs:1230-1235` normalizes mapped row scales by their
+maximum without detecting nonzero-to-zero underflow. The null-space and
+expanded-weight residual helpers at `crates/georbf/src/cpd.rs:1271-1287` and
+`1328-1341` independently divide an original action column by its maximum.
+That normalization can also underflow nonzero actions to zero, after which
+`rescale_residual` at `crates/georbf/src/cpd.rs:1364-1366` immediately reports
+zero rather than recovering the original-unit residual.
+
+The independent public-API reproducer uses D=1, CPD order one, and
+
+```text
+Q = [1e308, 1e-308, 1e-308]^T.
+```
+
+Equilibration succeeds with row scales `[1e-308, 1e308, 1e308]`. Assembly
+returns a basis containing, up to sign,
+`z = [0, -1/sqrt(2), -1/sqrt(2)]`. Direct original-unit evaluation gives
+
+```text
+Q^T z = -sqrt(2) * 1e-308
+      ~= -1.414213562373095e-308,
+```
+
+which is finite and representable. Nevertheless, the reported original
+side-condition residual and the corresponding expanded-weight original
+residual are both `0.0`, because column normalization rounds the action to
+`[1,0,0]`. The basis residual remains within the documented relative
+tolerance, so this is a P2 diagnostic and provenance failure rather than a
+rank or feasibility misclassification. It violates the contract to recover a
+truthful original-unit residual or fail explicitly when restoration is
+unrepresentable.
+
+Required repair and regression:
+
+- assemble the D=1 order-one system above and independently recompute every
+  `Q^T Z` entry plus a unit-coordinate expanded-weight residual in original
+  units;
+- require the reported original matrix-infinity residual to match the finite
+  nonzero independent result, or return an explicit structured
+  unrepresentable-arithmetic error, never zero; and
+- make column normalization exponent-aware or detect nonzero-to-zero
+  normalization before the residual is lost.
+
+## Third-review validation and disposition
+
+- Exact reviewed-head Draft CI run 29390599350 passed its complete Ubuntu job;
+  the ready Windows, Ubuntu, macOS, and benchmark-smoke matrix was correctly
+  skipped.
+- The complete standard gate passed on exact repair code/test head `10d3892`.
+  The final reviewed-head delta is documentation-only, so that immutable
+  code/test evidence remains applicable.
+- The reviewer found no P0, P1, or P3 issue. P1-2, P2-2, and P2-3 are closed;
+  P2-4 remains.
+
+PR #46 must remain Draft. A fresh Repair task must address only P2-4, add the
+required independent regression, run focused checks and the final standard
+gate, update the repair evidence and bounded handoff, commit, push, and stop
+for another fresh independent re-review. This Review task must not repair
+production code, mark the PR ready, merge it, or begin another requirement.
