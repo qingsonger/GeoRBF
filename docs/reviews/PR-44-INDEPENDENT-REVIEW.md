@@ -57,8 +57,25 @@ Required repair:
 - `git diff --check origin/main...5c45a873` passed, and the diff contains only
   `docs/progress/CURRENT.md`.
 
+## Repair evidence pending fresh re-review
+
+Repair commit `94879c2ddc93edbeaea6cd5d4a1146908c8a9dff` addresses only
+P2-1. The bounded handoff no longer describes Issue #43 Repair as the active
+mode or PR #44 as Draft. It instead records the completed REQ-SPIKE-002 scope,
+identifies Issue #43 and PR #44 without a transient state, and selects the next
+task through explicit pre-merge and post-merge conditions. The same handoff
+therefore remains truthful through the ready and merge sequence.
+
+`REQ-SPIKE-002` and its dependency remain `integrated`.
+`cargo xtask requirements check` passed all 58 requirements, and
+`git diff --check` passed. The complete branch diff against post-merge `main`
+contains only bounded handoff and review documentation, so the immutable full
+workspace gate recorded in `docs/progress/CURRENT.md` remains applicable. No
+production code, test, manifest, schema, build input, API, numerical behavior,
+dependency, tag, or release changed.
+
 ## Disposition
 
-PR #44 remains Draft. A fresh Repair task must address only P2-1, update this
-review record with repair evidence, commit and push, then stop for another
-fresh independent re-review. This Review task must not implement REQ-CPD-001.
+This Repair task ends with PR #44 still Draft and stops for a fresh independent
+re-review. That Review must confirm P2-1 is closed and inspect for new P0-P3
+findings before any ready transition. It must not implement REQ-CPD-001.
