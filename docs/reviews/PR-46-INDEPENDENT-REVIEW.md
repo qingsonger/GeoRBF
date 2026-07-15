@@ -97,10 +97,41 @@ Required repair and regression:
 - This Review adds only the independent review record, its registry link, and
   the bounded handoff. All 58 requirement checks and `git diff --check` pass.
 
+## Repair evidence pending fresh re-review
+
+Repair code/test head `d5c6a89eaa9045f5ec8f7bf6548f1b82eea21a71`
+addresses only P1-1 and P2-1:
+
+- P1-1: every row and column scaling step now rejects a nonzero entry that
+  would round to zero. The independent regression assembles the exact
+  full-rank action matrix `[[1e308,1e-16],[1e308,2e-16]]` from same-unit value
+  functionals and forbids `RankDeficient`.
+- P2-1: a test-only backend seam forces bounded SVD non-convergence. The
+  structured error retains original and scaled norms, row and column scales,
+  original zero indices, RRQR diagonal, threshold, rank, and the iteration
+  limit; all SVD-derived fields and the final decision are explicitly `None`.
+
+Both focused regressions and the complete stable-head standard gate passed:
+
+```text
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo test --doc --workspace
+cargo xtask requirements check
+```
+
+The requirement checker reports all 58 v1 entries valid, and
+`git diff --check` passes. `cargo-nextest`, `cargo-deny`, `cargo-audit`, and
+`cargo-semver-checks` are unavailable locally; Miri is unavailable for pinned
+Rust 1.96.1. Sanitizers, executable fuzzing, mutation testing, allocation
+instrumentation, and API/ABI/schema snapshot checks remain assigned to later
+requirements and release gates. Local `actionlint` is unavailable.
+
 ## Disposition
 
-PR #46 must remain Draft. A fresh Repair task may address only P1-1 and P2-1,
-must add the independent regressions before or alongside the smallest fixes,
-and must run the complete standard gate after the final code change. A later
-fresh independent re-review is required. This Review task must not repair the
-implementation or start another requirement.
+PR #46 remains Draft. The Repair evidence above does not independently close
+P1-1 or P2-1. A fresh read-only independent re-review must examine the repaired
+head without inheriting the Repair reasoning, confirm whether both findings
+are closed, and check for new P0-P3 findings. Do not mark the PR ready, merge,
+or begin another requirement before that re-review is clean.
