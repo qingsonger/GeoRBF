@@ -1,0 +1,121 @@
+# PR #49 Independent Review
+
+- Requirement: REQ-SPIKE-001
+- Issue: https://github.com/qingsonger/GeoRBF/issues/48
+- Pull request: https://github.com/qingsonger/GeoRBF/pull/49
+- Branch: `codex/req-spike-001-dense-factorization`
+- Reviewed head: `b194061163e3e15add68c044a9ed040b23f3bdd8`
+- Base head: `8fee4315f7335c48d919cc5f04a217e6db829a07`
+- Review date: 2026-07-15
+- Result: three P1 findings; PR must remain Draft
+
+## Scope and independence
+
+A fresh read-only `math_reviewer` received only the bounded requirement and
+dependency summaries, Issue #48 acceptance criteria, the milestone and solver
+policies, ADR-0010, the complete PR diff, and the recorded validation and
+benchmark evidence. It did not inherit the implementation reasoning and made
+no repository or remote changes.
+
+The reviewer independently checked the SPD and indefinite truth cases,
+factorization and failure semantics, original-unit backward error, bounded
+iterative refinement, hidden regularization and fallback exclusions,
+determinism, dependency and interface isolation, benchmark evidence, CI
+coverage, and requirement state. Three P1 findings block the ready-head
+integration sequence. No additional P0, P2, or P3 finding was identified.
+
+## Findings
+
+### P1-1: nonfinite residual evidence can pass residual review
+
+`spikes/factorization-backends/src/main.rs:155`, `:170`, and `:197` use
+`f64::max` to fold the residual norm, do not require the residual entries,
+norms, denominator, or backward error to be finite, and reject only when
+`backward_error > 1e-8`. A NaN comparison is false, so this path can report
+success without a finite original-unit residual review.
+
+For the finite one-by-one input `A = [f64::MAX]`, `b = [0]` and finite
+candidate `x = [2]`, floating evaluation gives `A*x = +infinity`, an infinite
+residual norm and denominator, and therefore a NaN backward error. This is an
+explicit counterexample to the ADR and solver-policy rule that nonfinite solve
+or residual evidence must fail.
+
+Required repair: return an error when any residual entry, residual norm,
+matrix/vector norm, denominator, or backward error is nonfinite. Add the
+one-by-one counterexample as an independent regression and require
+`residual_metrics(&case, &[2.0])` to fail.
+
+### P1-2: refinement reconstructs the factorization for every correction
+
+`spikes/factorization-backends/src/main.rs:251` creates the initial solve, but
+line 264 sends each correction through `solve` again. The backend paths at
+lines 213 and 232 then reconstruct the matrix factorization. The experiment
+keeps the matrix values and factorization kind unchanged, but it does not reuse
+the same factors as required by `docs/architecture/SOLVER_POLICY.md:41` and
+`docs/adr/ADR-0010-nalgebra-dense-factorization-backend.md:44`.
+
+Standard iterative refinement factorizes once and repeatedly solves
+`A * delta_k = b - A * x_k` with those same factors before accepting
+`x_(k+1) = x_k + delta_k`. Re-factorizing also makes the benchmark charge each
+accepted correction for a new factorization, so the recorded experiment does
+not measure the stated policy.
+
+Required repair: separate factor construction from right-hand-side solves and
+reuse one factorization for the initial solution and all zero-to-three
+corrections. Add instrumented regression evidence that one `refine` call
+constructs exactly one factorization.
+
+### P1-3: the claimed mandatory 2-by-2 pivot case permits all 1-by-1 pivots
+
+`spikes/factorization-backends/src/main.rs:452-459` uses
+
+```text
+[ 0  2  0 ]
+[ 2  0  1 ]
+[ 0  1 -3 ]
+```
+
+The matrix is symmetric, nonsingular, and indefinite, but it does not require
+a 2-by-2 pivot. After the symmetric permutation `(3, 2, 1)`, an LDLT
+factorization can use the three nonzero 1-by-1 pivots `-3`, `1/3`, and `-12`.
+The test checks only the analytic solution and Cholesky rejection; it never
+establishes a 2-by-2 block. The ADR, README, and change fragment therefore
+overstate the evidence.
+
+Required repair: use the two-by-two matrix `[[0, 2], [2, 0]]`. It has
+eigenvalues `-2` and `2`, determinant `-4`, and zero diagonal under every
+symmetric permutation, so a symmetric LDLT first step must use a 2-by-2
+block. Verify its analytic solution and checked-Cholesky rejection for both
+backends, and inspect the block structure as well if the candidate API exposes
+it.
+
+## Independently verified evidence
+
+- The reviewed branch and remote PR head both equal `b194061163e3e15add68c044a9ed040b23f3bdd8`.
+- The complete 13-file diff from `origin/main` was reviewed, including the
+  510-line harness, exact lockfile, CI, manifests, ADR, benchmark record,
+  registry, and bounded handoff.
+- The analytic SPD matrix is positive definite. The indefinite truth matrix is
+  symmetric, nonsingular, and indefinite, and the scaled ill-conditioned SPD
+  construction preserves positive definiteness by positive diagonal
+  congruence.
+- The normwise backward-error formula is the standard original-unit form when
+  every intermediate value is finite.
+- No jitter, pseudoinverse, factorization fallback, implicit regularization,
+  production dependency, or user-interface exposure was found.
+- Draft CI run 29400346664 passed on the exact reviewed head. The full
+  Windows, Ubuntu, and macOS ready-head matrix was correctly skipped while the
+  PR remained Draft.
+
+## Disposition
+
+Keep PR #49 Draft. A fresh Repair task must address only P1-1, P1-2, and P1-3,
+add the specified regressions, run focused checks during repair and the final
+standard workspace gate on the stable repair head, update this record and the
+bounded handoff, commit, push, and stop for a fresh independent re-review. Do
+not begin REQ-IR-001.
+
+The complete three-platform and benchmark-smoke ready-head gate remains an
+integration requirement, not a finding. External maintenance, license, unsafe,
+and advisory evidence was reviewed only through the bounded repository record
+and exact lockfile; unavailable audit tools were not claimed as executed.

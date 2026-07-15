@@ -267,7 +267,7 @@ requirements:
     issue: 48
     pull_request: 49
     tests: [spd-cases, indefinite-cases, ill-conditioned-cases, platform-build]
-    docs: [docs/adr, docs/architecture/SOLVER_POLICY.md]
+    docs: [docs/adr, docs/architecture/SOLVER_POLICY.md, docs/reviews/PR-49-INDEPENDENT-REVIEW.md]
     rust_api: "N/A: dependency spike exposes no user API"
     cli: "N/A: dependency spike exposes no command"
     c_api: "N/A: dependency spike exposes no ABI"
