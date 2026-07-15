@@ -7,7 +7,9 @@
 //! validated geological orientation conversions in two and three dimensions,
 //! fixed global anisotropy metrics with chain-rule derivatives, complete
 //! dimension-generic polynomial spaces, atomic scalar-field functionals, and
-//! scale-aware CPD polynomial rank enforcement with null-space projection.
+//! scale-aware CPD polynomial rank enforcement with null-space projection,
+//! plus provenance-preserving semantic and solver-neutral canonical problem
+//! intermediate representations.
 //! Field assembly and solvers are introduced by separately reviewed
 //! requirements.
 
@@ -24,6 +26,7 @@ pub mod kernel;
 pub mod kernel_calculus;
 pub mod orientation;
 pub mod polynomial;
+pub mod problem_ir;
 pub mod transform;
 pub mod units;
 
@@ -67,5 +70,13 @@ pub use orientation::{
     PlanarOrientation, SupportedOrientationDimension,
 };
 pub use polynomial::{MultiIndex, PolynomialOutput, PolynomialSpace, PolynomialSpaceError};
+pub use problem_ir::{
+    AffineExpression, AffineTerm, CanonicalCapabilities, CanonicalEquality, CanonicalLinearBound,
+    CanonicalMemoryEstimate, CanonicalProblem, CanonicalScaling, CanonicalSecondOrderCone,
+    CanonicalizationError, Enforcement, ExecutionOptions, ObservationId, ProblemIrError,
+    ProblemIrStorage, SemanticConstraint, SemanticExpression, SemanticMetadataField,
+    SemanticProblemIr, SemanticProvenance, SemanticRelation, SoftLoss, SourceLocation,
+    VariableBlock,
+};
 pub use transform::{AffineNormalization, TransformError, TransformOperation};
 pub use units::{AngleUnit, LengthUnit, UnitError};

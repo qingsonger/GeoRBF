@@ -46,3 +46,7 @@ harness = false
 [[bench]]
 name = "cpd_rank_nullspace"
 harness = false
+
+[[bench]]
+name = "problem_ir"
+harness = false

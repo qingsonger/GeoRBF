@@ -38,3 +38,14 @@ cargo bench -p georbf --bench cpd_rank_nullspace
 
 The recorded baseline and dependency-size context are in
 `docs/benchmarks/REQ-CPD-001.md`.
+
+`REQ-IR-001` adds a deterministic 96-constraint semantic-to-canonical
+compilation workload for D=1, D=2, and D=3:
+
+```text
+cargo bench -p georbf --bench problem_ir -- --smoke
+cargo bench -p georbf --bench problem_ir
+```
+
+The fixed workload and local baseline are recorded in
+`docs/benchmarks/REQ-IR-001.md`.
