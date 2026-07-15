@@ -145,5 +145,7 @@ jobs:
         run: cargo bench -p georbf --bench atomic_functionals -- --smoke
       - name: Smoke-test CPD rank and null-space benchmark
         run: cargo bench -p georbf --bench cpd_rank_nullspace -- --smoke
+      - name: Smoke-test semantic and canonical problem IR benchmark
+        run: cargo bench -p georbf --bench problem_ir -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check

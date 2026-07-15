@@ -86,3 +86,11 @@ center representer. Run it with:
 ```text
 cargo run -p georbf --example atomic_functionals
 ```
+
+`REQ-IR-001` adds `crates/georbf/examples/problem_ir.rs`, which retains full
+semantic source provenance and compiles equality and interval relations through
+an explicit affine linearizer into solver-neutral canonical rows. Run it with:
+
+```text
+cargo run -p georbf --example problem_ir
+```
