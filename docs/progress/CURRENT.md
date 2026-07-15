@@ -9,8 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement / REQ-FIELD-001 complete
 - Requirement: REQ-FIELD-001, Issue #54
 - Branch: `codex/req-field-001-hard-equality-assembly`
-- Draft pull request: pending creation after the stable-head gate
-- Registry state: `planned` pending Draft PR linkage (not `integrated`)
+- Draft pull request: #55
+- Registry state: `documented` (not `integrated`)
 - Dependencies: complete closure through REQ-ANISO-001, REQ-CPD-001, and
   REQ-IR-001 is `integrated`
 
@@ -39,14 +39,15 @@ records, benchmark reports, Git, and GitHub.
 - Four local 100-iteration benchmark runs retained dimension-specific bit-stable
   checksums; timing ranges are recorded in
   `docs/benchmarks/REQ-FIELD-001.md`.
-- One complete stable-code-head gate passed: format, warning-denying workspace
+- Exact implementation head `6687631` passed one complete stable-code-head
+  gate: format, warning-denying workspace
   Clippy, all-feature workspace tests, workspace doctests, the 58-requirement
   registry check, and `git diff --check`.
 
 ## Next task
 
-After the Draft PR is created, open a fresh independent Review task. Review only
-REQ-FIELD-001 against Issue #54, its dependency closure, normative field/math
+Open a fresh independent Review task for Draft PR #55. Review only REQ-FIELD-001
+against Issue #54, its dependency closure, normative field/math
 documents, the complete PR diff, and validation evidence. Use a fresh read-only
 project `math_reviewer`; do not repair production code or begin REQ-SOLVE-001 in
 that Review task.

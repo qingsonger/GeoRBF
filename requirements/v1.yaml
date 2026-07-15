@@ -301,7 +301,7 @@ requirements:
     milestone: M3-v0.3.0
     priority: P0
     issue: 54
-    pull_request: null
+    pull_request: 55
     tests: [analytic-fields, mixed-functionals, symmetry, invalid-capabilities]
     docs: [docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, rustdoc]
     rust_api: implemented
@@ -310,7 +310,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than reimplementing assembly"
     python_api: "N/A: no stable schema-backed fitting surface exists before solver and model integration"
     benchmark: implemented
-    status: planned
+    status: documented
 
   - id: REQ-SOLVE-001
     title: Dense equality solvers and numerical policy
