@@ -8,9 +8,9 @@
 - Re-reviewed repair head: `7b9226e656eddbafbc6f5f17e7726fc3f8d4c770`
 - Base head: `8fee4315f7335c48d919cc5f04a217e6db829a07`
 - Review date: 2026-07-15
-- Result: original P1-1 through P1-3 closed; new P3-1 finding; PR must
-  remain Draft
-- Repair status: fresh Repair required for P3-1 only
+- Result: original P1-1 through P1-3 closed; P3-1 implemented; P3-2 requires
+  fresh independent re-review; PR must remain Draft
+- Repair status: P3-2 implemented; fresh independent re-review required
 
 ## Scope and independence
 
