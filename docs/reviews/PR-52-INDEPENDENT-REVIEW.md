@@ -143,13 +143,36 @@ polynomial and rank decisions, solver infeasibility, rotation invariance,
 anisotropy and positive definiteness, Hessian capability, and actual QP/SOCP
 solution remain explicitly outside this solver-neutral IR requirement.
 
+## Bounded P2-2 repair evidence pending fresh re-review
+
+Repair code/test head `1e782a73ab758ea93f0e71e5dba250cf3a03e7aa`
+addresses only P2-2. Equality, linear-bound, and SOC canonicalization now copy
+every owned provenance string through an exact fallible reservation before
+inserting the completed row or cone. Reservation failure returns
+`CanonicalizationError::Ir(ProblemIrError::AllocationFailed)` with the new
+`CanonicalProvenance` storage category; no infallible provenance string clone
+remains in the three canonicalization branches.
+
+Three isolated unit regressions use a thread-local, provenance-copy-only
+reservation failpoint while exercising the public `try_compile` entrypoint.
+The equality, linear-bound, and SOC cases each return the structured allocation
+error without abort, panic, global-allocator replacement, or canonical result.
+The focused regressions passed 3/3, the complete problem-IR integration file
+passed 11/11, and focused warning-denying Clippy passed.
+
+After the last production/test change, the complete stable-head standard gate
+passed formatting, warning-denying workspace Clippy for all targets and
+features, all-feature workspace tests, workspace doctests, all 58 requirement
+checks, and `git diff --check` on exact head `1e782a7`. The later evidence
+update changes only this review record and the bounded handoff, so that
+immutable-head gate remains applicable. The repair does not independently
+close P2-2; PR #52 remains Draft and REQ-IR-001 remains `documented`.
+
 ## Disposition
 
-Keep PR #52 Draft. A fresh bounded Repair task must address only P2-2, add the
-required regressions, rerun focused checks and the final standard gate after
-the last code change, update evidence, push, and stop for another fresh
-independent re-review. Do not mark the PR ready, merge it, or begin
-REQ-FIELD-001 in this Review task.
+Keep PR #52 Draft. A fresh independent re-review must confirm P2-2 is closed on
+exact repair head `1e782a7` and inspect the bounded PR for new findings. This
+Repair evidence must not mark the PR ready, merge it, or begin REQ-FIELD-001.
 
 SPD/CPD classification, center limits, polynomial and rank decisions, solver
 infeasibility, rotation invariance, anisotropy and positive definiteness, and
