@@ -10,6 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-SPIKE-001, Issue #48 (closed)
 - Implementation pull request: #49, squash-merged as `2e4cfbc`
 - Integration-state branch: `codex/req-spike-001-integration-state`
+- Integration-state pull request: #50 (Draft until final evidence is green)
 - Review record: `docs/reviews/PR-49-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-IR-001 (`planned`)
@@ -49,6 +50,7 @@ fresh Implement task. Perform the mandatory preflight and use
 
 - Acceptance criteria and exclusions: GitHub Issue #48
 - Merged implementation: GitHub PR #49
+- Integration-state pull request: GitHub PR #50
 - Independent review and repair evidence:
   `docs/reviews/PR-49-INDEPENDENT-REVIEW.md`
 - Solver policy: `docs/architecture/SOLVER_POLICY.md`
