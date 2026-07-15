@@ -6,9 +6,10 @@
 - Branch: `codex/req-ir-001-semantic-canonical-ir`
 - Reviewed head: `dc88b999f02e31934dc1daa06a4909a87aed69ab`
 - Fresh re-reviewed head: `133c8680cbd32e539dd855b7c59e1f374cc15f43`
+- Clean P2-2 re-reviewed head: `b6e5e136afab1449497c9058653d793f19c4c63f`
 - Base head: `46a6d48115c5a01d2f200cc956a41a1dcc3158fa`
 - Review date: 2026-07-15
-- Result: P2-1 closed; P2-2 found; bounded Repair required; PR must remain Draft
+- Result: P2-1 and P2-2 closed; no P0-P3 finding; Ready integration sequence authorized
 
 ## Scope and independence
 
@@ -168,11 +169,49 @@ update changes only this review record and the bounded handoff, so that
 immutable-head gate remains applicable. The repair does not independently
 close P2-2; PR #52 remains Draft and REQ-IR-001 remains `documented`.
 
+## Fresh independent re-review of the P2-2 repair
+
+A new read-only `math_reviewer` independently reviewed the complete 15-file PR
+diff on exact evidence head `b6e5e136afab1449497c9058653d793f19c4c63f`
+and the P2-2 repair commit `1e782a73ab758ea93f0e71e5dba250cf3a03e7aa`
+against base `46a6d48115c5a01d2f200cc956a41a1dcc3158fa`. It received only the
+bounded requirement and dependency summaries, Issue #51 acceptance criteria,
+scoped normative documents, PR diff, validation evidence, and original P2-2
+statement. It made no repository or remote changes and did not inherit the
+Repair reasoning.
+
+The reviewer confirmed that equality, linear-bound, and SOC canonicalization
+all call the same fallible provenance deep-copy path through public
+`try_compile`. Source path, original units, field path, and the optional
+constraint group each reserve their UTF-8 byte length with
+`try_reserve_exact`; a failure returns `CanonicalProvenance` with the exact
+requested byte count, while the successful `push_str` cannot reallocate after
+that exact reservation. No infallible provenance clone remains in the three
+canonicalization paths.
+
+The isolated failure hook is test-only, thread-local, one-shot, and reset by
+RAII. The equality, bound, and cone regressions each exercise public
+canonicalization and require the structured allocation error. Because
+`try_compile` returns only `Result<CanonicalProblem, _>`, an error exposes no
+partial canonical result. P2-2 is closed, and no new P0, P1, P2, or P3 finding
+was found.
+
+The reviewer passed all three focused P2-2 regressions, the 11-test problem-IR
+integration file, formatting, warning-denying workspace Clippy for all targets
+and features, all-feature workspace tests, workspace doctests, all 58
+requirement checks, the runnable problem-IR example, D=1/D=2/D=3 benchmark
+smoke with checksums 53840/53920/54000, and `git diff --check`. The diff from
+repair head `1e782a7` to reviewed head `b6e5e13` changes only this review record
+and the bounded handoff, so the immutable repair-head gate remains applicable.
+
 ## Disposition
 
-Keep PR #52 Draft. A fresh independent re-review must confirm P2-2 is closed on
-exact repair head `1e782a7` and inspect the bounded PR for new findings. This
-Repair evidence must not mark the PR ready, merge it, or begin REQ-FIELD-001.
+PR #52 may enter the mandatory integration sequence. First synchronize this
+clean review evidence and mark the resulting exact head Ready. Then wait for
+the complete Windows, Ubuntu, and macOS correctness matrix and every benchmark
+smoke workload on that exact Ready head. Merge exactly once only if that full
+gate is green, and record integration state in an isolated change. Do not begin
+REQ-FIELD-001 in this task.
 
 SPD/CPD classification, center limits, polynomial and rank decisions, solver
 infeasibility, rotation invariance, anisotropy and positive definiteness, and

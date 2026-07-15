@@ -6,7 +6,7 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete / fresh re-review required for PR #52 finding P2-2
+- Mode: Review clean / Ready-head integration sequence for PR #52
 - Requirement: REQ-IR-001, Issue #51
 - Branch: `codex/req-ir-001-semantic-canonical-ir`
 - Draft pull request: #52
@@ -14,30 +14,30 @@ records, benchmark reports, Git, and GitHub.
 - P2-1 repair code/test head: `4562a20d565bc541ffd06a37220378c41229a627`
 - Fresh re-reviewed head: `133c8680cbd32e539dd855b7c59e1f374cc15f43`
 - P2-2 repair code/test head: `1e782a73ab758ea93f0e71e5dba250cf3a03e7aa`
+- Clean P2-2 re-reviewed head: `b6e5e136afab1449497c9058653d793f19c4c63f`
 - Review record: `docs/reviews/PR-52-INDEPENDENT-REVIEW.md`
 - Registry state: `documented` (not `integrated`)
 - Dependencies: complete closure through REQ-FUNC-001 is `integrated`
 
-## Bounded P2-2 repair result
+## Clean re-review result
 
-- Equality, linear-bound, and SOC canonicalization now deep-copy every owned
-  provenance string only after a successful fallible reservation. Failure is
-  returned as `CanonicalizationError::Ir(ProblemIrError::AllocationFailed)`
-  with `CanonicalProvenance` storage and no observable partial result.
-- Three isolated thread-local failure regressions exercise the public
-  `try_compile` path at the equality, bound, and cone provenance-copy sites.
-  They do not replace or modify the global allocator.
-- The repair is not independently reviewed. PR #52 remains Draft, and
-  REQ-IR-001 remains `documented` rather than `integrated`.
+- A fresh read-only `math_reviewer` independently confirmed P2-2 is closed and
+  found no remaining P0, P1, P2, or P3 issue in the complete PR diff.
+- Equality, linear-bound, and SOC canonicalization use one fallible deep-copy
+  path for every owned provenance string. Its test-only failure hook is
+  thread-local, one-shot, RAII-cleaned, and exercised through public
+  `try_compile` without any partial canonical result.
+- The clean review evidence update changes only the review record and this
+  bounded handoff. Production code, tests, manifests, schemas, CI, and build
+  inputs are unchanged from the fully checked repair head.
 
-## Next task
+## Integration sequence
 
-Open a fresh Review/re-review task for PR #52. Use an independent read-only
-`math_reviewer` to confirm P2-2 is closed on exact repair head `1e782a7` and
-check for new findings without inheriting this Repair reasoning. If clean,
-follow the mandatory Ready -> exact-head Windows/Ubuntu/macOS and benchmark-
-smoke CI -> single merge -> isolated integration-state sequence. If any
-finding remains, record it and stop without repair. Do not begin REQ-FIELD-001.
+Commit and push this documentation-only clean-review evidence, then mark PR #52
+Ready. Wait for the complete Windows, Ubuntu, and macOS correctness matrix and
+every benchmark-smoke workload on that exact Ready head. Merge exactly once
+only when the full gate is green, wait for post-merge `main` CI, and record
+truthful integration state in an isolated change. Do not begin REQ-FIELD-001.
 
 ## Validation evidence
 
@@ -48,13 +48,14 @@ finding remains, record it and stop without repair. Do not begin REQ-FIELD-001.
   workspace Clippy for all targets and features, all-feature workspace tests,
   workspace doctests, all 58 requirement checks, and `git diff --check` on
   exact P2-2 repair code/test head `1e782a7`.
-- This subsequent evidence update changes only the bounded handoff and review
-  record, so the immutable code/test-head gate remains applicable under the
-  repository's documentation-only evidence rule.
-- Draft CI run 29414844400 passed the Ubuntu correctness job on pre-repair head
-  `75d6def`. Ready-only three-platform and benchmark-smoke CI remains
-  intentionally unexecuted while the PR is Draft; no CI result is claimed for
-  the just-pushed repair head.
+- The fresh reviewer independently passed the complete standard gate, all
+  three provenance allocation regressions, the 11-test problem-IR integration
+  file, the runnable example, D=1/D=2/D=3 benchmark smoke, all 58 requirement
+  checks, and `git diff --check` on reviewed head `b6e5e13`.
+- Draft CI run 29415584108 passed the Ubuntu correctness job on exact reviewed
+  head `b6e5e13`. Ready-only three-platform and benchmark-smoke CI remains
+  intentionally unexecuted until this clean evidence is pushed and PR #52 is
+  marked Ready.
 
 ## Checks not yet available
 
