@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-SPIKE-002, Issue #40 (closed)
 - Implementation pull request: #41, squash-merged as `4c1ddeb`
 - Integration-state branch: `codex/req-spike-002-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #42 (Draft until final evidence is green)
 - Review record: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-CPD-001 (`planned`)
@@ -40,8 +40,10 @@ records, benchmark reports, Git, and GitHub.
   commits changed documentation only.
 - Exact ready-head and post-merge `main` three-platform gates are green as
   recorded above.
-- The complete local standard gate must pass on the final integration-state
-  head before its pull request is marked ready.
+- The complete local integration-state standard gate passed: formatting,
+  warning-denying workspace Clippy with all targets and features, workspace
+  tests with all features, workspace rustdoc, all 58 requirement checks, and
+  `git diff --check`.
 
 ## Next task
 

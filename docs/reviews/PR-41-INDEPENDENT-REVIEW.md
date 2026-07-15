@@ -249,6 +249,7 @@ Review task must not start REQ-CPD-001.
 - Post-merge `main` run 29376336046 passed the same complete three-platform
   correctness, benchmark-smoke, and requirement-registry gate on that exact
   merge commit.
-- The isolated integration-state pull request is pending. Its final head must
-  pass the complete local standard gate before it is marked ready; it changes
-  only registry and progress evidence.
+- Integration-state PR #42 contains only the isolated registry and progress
+  evidence change. Its complete local standard gate passed before the ready
+  transition; it changes no production code, tests, manifest, schema, build
+  input, API, numerical behavior, dependency, tag, or release.
