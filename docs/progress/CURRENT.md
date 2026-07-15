@@ -4,15 +4,17 @@ This file is a bounded handoff for the next task. Completed history belongs in
 `docs/progress/HISTORY.md`, requirement change fragments, independent review
 records, benchmark reports, Git, and GitHub.
 
-## Active repository work
+## Completed scope and terminal handoff
 
-- Mode: Integration state / REQ-SPIKE-002 complete
+- Mode: Terminal handoff / REQ-SPIKE-002 complete
 - Requirement: REQ-SPIKE-002, Issue #40 (closed)
 - Implementation pull request: #41, squash-merged as `4c1ddeb`
-- Integration-state branch: `codex/req-spike-002-integration-state`
-- Integration-state pull request: #42 (Draft until final evidence is green)
+- Integration-state pull request: #42, squash-merged as
+  `d8ce7508c51f77b8d50245a8d1255ffad2d44c92`
+- Handoff repair: Issue #43, pull request #44
 - Review record: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
+- Handoff-repair review: `docs/reviews/PR-44-INDEPENDENT-REVIEW.md`
+- Registry state: `integrated`
 - Next eligible requirement: REQ-CPD-001 (`planned`)
 - Production dependency state: unchanged; the comparison crate is excluded
   from the production workspace
@@ -29,27 +31,46 @@ records, benchmark reports, Git, and GitHub.
   completed.
 - Post-merge `main` run 29376336046 passed the same complete three-platform
   correctness, benchmark-smoke, and requirement-registry gate.
-- This isolated integration-state change updates only registry and progress
-  evidence. It changes no production code, tests, manifest, schema, build
-  input, API, numerical behavior, dependency, tag, or release.
+- Exact integration-state ready head `efd2221` passed the complete Windows,
+  Ubuntu, and macOS CI matrix in run 29380377235.
+- PR #42 squash-merged exactly once as
+  `d8ce7508c51f77b8d50245a8d1255ffad2d44c92`; post-merge `main` run
+  29380658715 passed the complete three-platform correctness, benchmark-smoke,
+  and requirement-registry gate on that exact commit.
+- The REQ-SPIKE-002 implementation and integration-state sequence is complete.
 
 ## Validation state
 
+- The first fresh read-only independent reviewer inspected exact PR #44 head
+  `5c45a8732a0da827c0ca6957544bcc2eb2523ac8` and found P2-1: the
+  proposed handoff would immediately become stale after merge because it keeps
+  the completed Repair active and calls PR #44 Draft. No P0, P1, or P3 finding
+  was reported.
+- A fresh read-only independent re-review inspected exact repaired head
+  `c09d581a2f97d9b774a8e1e1ede81275460655a6`, confirmed P2-1 closed,
+  and found no new P0, P1, P2, or P3 issue. PR #44 is cleared to enter the
+  mandatory ready-head integration sequence.
 - On stable implementation code/test head `30bd495`, the focused spike matrix
   and complete standard workspace gate passed. Later implementation-branch
   commits changed documentation only.
-- Exact ready-head and post-merge `main` three-platform gates are green as
-  recorded above.
+- Exact implementation and integration-state ready-head and post-merge `main`
+  three-platform gates are green as recorded above.
 - The complete local integration-state standard gate passed: formatting,
   warning-denying workspace Clippy with all targets and features, workspace
   tests with all features, workspace rustdoc, all 58 requirement checks, and
   `git diff --check`.
+- This Issue #43 repair changes only bounded handoff and review evidence. The
+  diff against post-merge `main` proves that no production code, test,
+  manifest, schema, build input, API, numerical behavior, dependency, tag, or
+  release changed, so the immutable full-gate evidence above is reused.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh Implement task. Perform the mandatory preflight and use
-`cargo xtask requirements next`; do not start REQ-CPD-001 in this task.
+- PR #44 must pass the complete Windows, Ubuntu, and macOS ready-head CI and
+  every benchmark-smoke workload on its exact final head before it merges.
+- After PR #44 merges, open a fresh Implement preflight and use
+  `cargo xtask requirements next` to select the next atomic requirement.
+- Do not start REQ-CPD-001 in this Review task.
 
 ## Durable evidence
 
