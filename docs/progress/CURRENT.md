@@ -6,7 +6,7 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / Issue #43 bounded-handoff correction
+- Mode: Review / PR #44 blocked by P2-1
 - Requirement: REQ-SPIKE-002, Issue #40 (closed)
 - Implementation pull request: #41, squash-merged as `4c1ddeb`
 - Integration-state pull request: #42, squash-merged as
@@ -14,6 +14,7 @@ records, benchmark reports, Git, and GitHub.
 - Repair branch: `codex/issue-43-correct-integration-handoff`
 - Repair pull request: #44 (Draft)
 - Review record: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
+- Handoff-repair review: `docs/reviews/PR-44-INDEPENDENT-REVIEW.md`
 - Registry state: `integrated`
 - Next eligible requirement: REQ-CPD-001 (`planned`)
 - Production dependency state: unchanged; the comparison crate is excluded
@@ -41,6 +42,13 @@ records, benchmark reports, Git, and GitHub.
 
 ## Validation state
 
+- A fresh read-only independent reviewer inspected exact PR #44 head
+  `5c45a8732a0da827c0ca6957544bcc2eb2523ac8` and found P2-1: the
+  proposed handoff would immediately become stale after merge because it keeps
+  the completed Repair active and calls PR #44 Draft. No P0, P1, or P3 finding
+  was reported.
+- PR #44 must remain Draft until a fresh Repair replaces the transient state
+  with a terminal handoff and a fresh re-review reports no P0-P3 finding.
 - On stable implementation code/test head `30bd495`, the focused spike matrix
   and complete standard workspace gate passed. Later implementation-branch
   commits changed documentation only.
@@ -57,9 +65,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task
 
-After this bounded-handoff repair pull request is reviewed and merged, open a
-fresh Implement task. Perform the mandatory preflight and use
-`cargo xtask requirements next`; do not start REQ-CPD-001 in this Repair task.
+Open a fresh Repair task for PR #44 and address only P2-1 in
+`docs/reviews/PR-44-INDEPENDENT-REVIEW.md`. Replace the transient Repair and
+Draft-PR claims with a terminal handoff that remains true after merge, preserve
+`REQ-SPIKE-002: integrated`, rerun the focused documentation checks, commit and
+push, then stop for fresh independent re-review. Do not start REQ-CPD-001.
 
 ## Durable evidence
 
