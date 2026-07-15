@@ -12,7 +12,7 @@ records, benchmark reports, Git, and GitHub.
 - Integration-state pull request: #42, squash-merged as
   `d8ce7508c51f77b8d50245a8d1255ffad2d44c92`
 - Repair branch: `codex/issue-43-correct-integration-handoff`
-- Repair pull request: pending creation
+- Repair pull request: #44 (Draft)
 - Review record: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
 - Registry state: `integrated`
 - Next eligible requirement: REQ-CPD-001 (`planned`)
