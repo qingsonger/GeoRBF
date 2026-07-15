@@ -128,10 +128,117 @@ Rust 1.96.1. Sanitizers, executable fuzzing, mutation testing, allocation
 instrumentation, and API/ABI/schema snapshot checks remain assigned to later
 requirements and release gates. Local `actionlint` is unavailable.
 
-## Disposition
+## Fresh re-review of the repaired head
 
-PR #46 remains Draft. The Repair evidence above does not independently close
-P1-1 or P2-1. A fresh read-only independent re-review must examine the repaired
-head without inheriting the Repair reasoning, confirm whether both findings
-are closed, and check for new P0-P3 findings. Do not mark the PR ready, merge,
-or begin another requirement before that re-review is clean.
+- Date: 2026-07-15
+- Reviewed head: `687731f0807e7c541123ae1c419d724b458546d0`
+- Repair code/test head: `d5c6a89eaa9045f5ec8f7bf6548f1b82eea21a71`
+- Base: `98593115d73f1347a67deaa2d6d8d77a2d1aee87`
+- Result: P1-1 and P2-1 closed; one new P1 and two new P2 findings;
+  PR #46 must remain Draft
+
+A second fresh read-only `math_reviewer` received only the bounded requirement
+and dependency summaries, normative documents and ADRs, complete PR and repair
+diffs, and validation evidence. It verified that the final-head delta after the
+repair code/test head changes only this review record and the bounded handoff.
+It independently inspected the complete repaired implementation rather than
+only the original findings and made no repository or remote changes.
+
+### Closed: P1-1 equilibration underflow
+
+Every row and column scaling operation now rejects a nonzero entry that would
+round to zero at `crates/georbf/src/cpd.rs:1079-1088` and `1106-1116`, in
+addition to validating cumulative multipliers. The exact extreme-scale
+regression at `crates/georbf/tests/cpd.rs:305-329` confirms that the
+representable full-rank action is never mislabeled `RankDeficient`.
+
+### Closed: P2-1 SVD non-convergence evidence
+
+The incomplete diagnostic at `crates/georbf/src/cpd.rs:185-228`, `943-955`,
+and `1009-1040` retains shapes, norms, scales, original zero indices, RRQR
+diagonal, threshold and rank, plus the iteration limit. Every SVD-derived field
+and the final decision is explicitly unavailable. The forced regression at
+`crates/georbf/src/cpd.rs:1352-1408` exercises that path.
+
+### P1-2: null-space construction discards the safe equilibration
+
+`crates/georbf/src/cpd.rs:353-354` passes the original action matrix to
+`construct_null_space`, and `crates/georbf/src/cpd.rs:1140-1146` performs an
+unpivoted QR on that original matrix. Full rank was established on
+`D_row Q D_column`, but QR of the unscaled matrix need not remain numerically
+representable.
+
+For the valid D=1, order-one action
+
+```text
+Q = [[1e200],
+     [1e200]],
+```
+
+equilibration safely produces `[[1],[1]]`, the exact rank is one, and the null
+space is spanned by `[1,-1]`. Nalgebra's Householder norm on the original
+column squares the entries and overflows. The dual case
+`[[1,0],[0,1e-308],[0,1e-308]]` has a representable, clearly full-rank
+equilibrated action but loses the original second-column norm through
+underflow. A nonzero functional-row scale can therefore turn a valid system
+into a construction or verification error, violating the scale-invariance
+contract in `docs/math/CPD_AND_POLYNOMIALS.md`.
+
+Required repair and regression:
+
+- construct from the safely equilibrated action and map the null basis back
+  with `z = D_row u` before deterministic reorthogonalization; using the
+  scaled basis unchanged is mathematically incorrect;
+- compare D=1, order-one value centers with coefficients `1` and `1e200`,
+  requiring both assemblies to succeed and independently satisfy `Q^T Z = 0`
+  and `Z^T Z = I`; and
+- add a derivative-row or equivalent action case at `1e-308` to cover the
+  underflow direction.
+
+### P2-2: binding infinity residuals are maximum entries
+
+`crates/georbf/src/cpd.rs:1206-1234` records the largest individual entry of
+the column-scaled `Q^T Z`, and `crates/georbf/src/cpd.rs:1236-1247` does the
+same for `Z^T Z-I`. The public contract at
+`crates/georbf/src/cpd.rs:233-240` calls both values infinity residuals, whose
+matrix norm is `max_i sum_j |A_ij|`, not `max_ij |A_ij|`. The checks at
+`crates/georbf/src/cpd.rs:355-357` can therefore understate aggregate residual
+by up to the nullity and accept a residual above the documented tolerance.
+
+Required regression: exercise the private verifier with two residual entries
+in one row, each `0.75 * tolerance`, and require a reported infinity norm of
+`1.5 * tolerance`; independently recompute both matrix infinity norms.
+
+### P2-3: original-unit weight residual can discard NaN
+
+`crates/georbf/src/cpd.rs:1274-1286` forms unscaled products before summation
+and folds them with `f64::max`. Oppositely signed overflowing products can
+produce NaN, while `finite.max(NaN)` retains the finite operand and can
+fabricate a zero original-unit residual. For `Q^T = [10,10]` and large,
+nearly cancelling finite weights near `+/-7e307`, each product overflows even
+though the exact residual can be finite and nonzero. This conflicts with the
+structured non-finite-result and original-unit diagnostic contracts.
+
+Required regression: pass those actions and weights with a representable
+relative difference near `1e-15` to the private residual helper and require a
+finite nonzero residual derived by a scaled computation, or an explicit
+unrepresentable diagnostic, never zero obtained by discarding NaN.
+
+## Re-review validation and disposition
+
+- Exact final-head Draft CI run 29387532506 passed its complete Ubuntu job;
+  the ready Windows, Ubuntu, macOS, and benchmark-smoke matrix was correctly
+  skipped.
+- The complete standard gate passed on exact repair code/test head `d5c6a89`.
+  The final-head delta before this review conclusion is documentation-only, so
+  that immutable code/test evidence remains applicable.
+- The reviewer found no P0 or P3 issue. Polynomial actions, signs, complete
+  polynomial spaces, eight-pass equilibration, thresholds and ambiguity band,
+  provenance, projected energy, hard failures, determinism, allocation shape,
+  interface dispositions, and benchmark routing otherwise match the scoped
+  contracts.
+
+PR #46 must remain Draft. A fresh Repair task must address only P1-2, P2-2,
+and P2-3, add their regressions, run the required checks, and stop for another
+fresh independent re-review. This Review task must not repair production code,
+mark the PR ready, merge it, or begin another requirement.
