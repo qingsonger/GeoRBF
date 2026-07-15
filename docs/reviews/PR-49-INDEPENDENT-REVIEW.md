@@ -208,3 +208,49 @@ Repair has implemented it. The repair reran all 58 requirement checks and
 the repair changes no code, tests, manifests, schemas, or build inputs; the
 stable code/test head retains the complete local gate recorded above. Keep PR
 #49 Draft and stop for a fresh independent re-review of the repaired PR head.
+
+## Fresh independent re-review of the P3-1 repair
+
+A new read-only `math_reviewer` reviewed exact head
+`1ca34634aab1a46ee482b1d0737119c0327123db` against base
+`8fee4315f7335c48d919cc5f04a217e6db829a07`. It received only the bounded
+requirement context, dependency closure, Issue #48 acceptance criteria,
+normative documents, complete 14-file diff, validation evidence, and exact
+head. It made no repository or remote changes.
+
+The reviewer confirmed P1-1, P1-2, P1-3, and P3-1 are closed. It found no new
+P0, P1, or P2 issue in the formulae, factorization semantics, truth cases,
+original-unit residual review, refinement policy, hidden-adjustment
+exclusions, determinism, benchmark record, dependency isolation, interfaces,
+CI claims, or requirement state.
+
+### P3-2: review header still requests the completed P3-1 repair
+
+The result and repair-status fields at the top of this review record still say
+that P3-1 is a new finding and requires a fresh Repair. Later sections of this
+record and `docs/progress/CURRENT.md` instead state truthfully that P3-1 was
+implemented and awaited this fresh re-review. The contradictory top-level
+status can send the next task back into the already completed repair.
+
+Required repair: update only the review record's top-level result and repair
+status to say that the P3-1 repair is implemented and that a fresh re-review is
+required for P3-2. Update the bounded handoff consistently, rerun the 58
+requirement checks and `git diff --check`, and stop for another fresh
+independent re-review. Do not change production or test code and do not begin
+REQ-IR-001.
+
+### P3-2 re-review validation and disposition
+
+- Spike formatting, warning-denying all-feature Clippy, combined and both
+  single-backend configurations with 8/8 tests each, optimized smoke, all 58
+  requirement checks, and `git diff --check` passed.
+- Exact-head Draft CI run 29403767685 passed on Ubuntu. The ready-only
+  Windows, Ubuntu, macOS, and benchmark-smoke matrix correctly remained
+  unexecuted while the PR was Draft.
+- The primary task independently ran the complete standard workspace gate on
+  exact head `1ca34634aab1a46ee482b1d0737119c0327123db`; formatting,
+  warning-denying workspace Clippy, all-feature workspace tests, workspace doc
+  tests, all 58 requirement checks, and `git diff --check` passed.
+
+The re-review result is one P3 finding. Keep PR #49 Draft and stop for a fresh
+bounded Repair of P3-2 only.

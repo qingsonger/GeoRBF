@@ -6,43 +6,44 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / fresh independent re-review of PR #49 P3-1 repair
+- Mode: Repair / PR #49 P3-2 review-header status
 - Requirement: REQ-SPIKE-001, Issue #48
 - Branch: `codex/req-spike-001-dense-factorization`
 - Draft pull request: #49
-- P3-1 repair base: `c7d8d43aaa3b837f56af1fe9084ce388d3099dd6`
+- P3-2 finding head: `1ca34634aab1a46ee482b1d0737119c0327123db`
 - Review record: `docs/reviews/PR-49-INDEPENDENT-REVIEW.md`
 - Registry state: `documented` (not integrated)
 - Dependency: REQ-BOOTSTRAP-001 is `integrated`
 
-## Repair result
+## Re-review result
 
-- P3-1 is implemented: ADR-0010 now says that all eight independent harness
-  tests passed, consistent with the repaired harness and 8/8 review evidence.
-- The review record now distinguishes the re-review finding from its bounded
-  documentation-only repair.
-- Only the ADR, review record, and this handoff changed. Production code,
-  tests, manifests, schemas, and build inputs are unchanged.
+- P1-1, P1-2, P1-3, and P3-1 are closed. No new P0, P1, or P2 finding was
+  identified.
+- P3-2 remains open: the review record's top-level result and repair-status
+  fields still request the already completed P3-1 Repair, contradicting the
+  later review sections and prior handoff.
+- This Review task records the finding only. It does not implement the repair.
 
 ## Next task
 
-Open a fresh Review task and supply a read-only independent reviewer with the
-bounded requirement context, normative documents, complete PR diff, validation
-evidence, and exact repaired PR head. Confirm P3-1 is closed and check for new
-findings. Follow the repository's re-review and integration sequence only if
-the review is clean. Do not begin REQ-IR-001 in this task.
+Open a fresh Repair task for P3-2 only. Update the review record's top-level
+result and repair status so they truthfully say that P3-1 is implemented and
+that P3-2 requires a fresh re-review. Update this handoff consistently, rerun
+all 58 requirement checks and `git diff --check`, commit and push, then stop
+for another fresh independent re-review. Do not change production or test code
+and do not begin REQ-IR-001.
 
 ## Validation evidence
 
-- The independent reviewer reran combined, faer-only, and nalgebra-only tests;
-  each passed 8/8. Spike formatting, warning-denying all-feature Clippy, the
-  required no-backend rejection, optimized smoke, all 58 requirement checks,
-  and `git diff --check` passed.
-- The documentation-only P3-1 repair reran all 58 requirement checks and
-  `git diff --check`; both passed.
-- The stable repair head retains the recorded complete local workspace gate and
-  passed exact-head Draft CI run 29402438886. The independent reviewer did not
-  rerun the complete workspace gate.
+- The independent reviewer reran spike formatting, warning-denying all-feature
+  Clippy, combined and both single-backend configurations with 8/8 tests each,
+  optimized smoke, all 58 requirement checks, and `git diff --check`; all
+  passed.
+- The primary task ran the complete standard workspace gate on exact reviewed
+  head `1ca34634aab1a46ee482b1d0737119c0327123db`; all five required checks and
+  `git diff --check` passed.
+- Exact-head Draft CI run 29403767685 passed on Ubuntu. The reviewer relied on
+  that run for the required no-backend rejection and did not rerun it locally.
 - No three-platform or benchmark-smoke ready-head CI is claimed while the PR
   remains Draft.
 
