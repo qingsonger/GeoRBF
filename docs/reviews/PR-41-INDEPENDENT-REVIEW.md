@@ -237,3 +237,18 @@ PR #41 may advance through the mandatory ready-head integration sequence.
 REQ-SPIKE-002 remains `documented` until the implementation PR is merged and
 an isolated integration-state change records the completed evidence. This
 Review task must not start REQ-CPD-001.
+
+## Integration evidence
+
+- Final clean-review evidence head
+  `3e6f4e1ce1379b03b5e6875cdf008ed96b0d1753` passed the complete Windows,
+  Ubuntu, and macOS ready matrix, including every benchmark smoke workload, in
+  run 29376057562.
+- PR #41 squash-merged exactly once as
+  `4c1ddeb5448d13f5657d00f9a8a3be3081a6892b`; Issue #40 closed as completed.
+- Post-merge `main` run 29376336046 passed the same complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate on that exact
+  merge commit.
+- The isolated integration-state pull request is pending. Its final head must
+  pass the complete local standard gate before it is marked ready; it changes
+  only registry and progress evidence.
