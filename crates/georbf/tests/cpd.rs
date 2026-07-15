@@ -88,7 +88,8 @@ fn assert_polynomial_reproduction(system: &CpdNullSpace, coefficients: &[f64]) {
             .iter()
             .enumerate()
             .map(|(row, sample)| {
-                system.basis().get(row, column).unwrap_or(f64::NAN) * sample
+                let basis_value = system.basis().get(row, column).unwrap_or(f64::NAN);
+                basis_value * sample
             })
             .sum::<f64>();
         assert!(projected.abs() < 1.0e-11);

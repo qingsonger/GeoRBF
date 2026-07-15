@@ -247,16 +247,16 @@ requirements:
     milestone: M2-v0.2.0
     priority: P0
     issue: 45
-    pull_request: null
+    pull_request: 46
     tests: [polynomial-reproduction, nullspace, degeneracy-1d-2d-3d, scale-invariance, rank-threshold, kkt-equivalence]
-    docs: [docs/math/CPD_AND_POLYNOMIALS.md, docs/architecture/SOLVER_POLICY.md]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
-    status: in_progress
+    docs: [docs/math/CPD_AND_POLYNOMIALS.md, docs/architecture/SOLVER_POLICY.md, docs/benchmarks/REQ-CPD-001.md]
+    rust_api: implemented
+    cli: "N/A: no field schema or CLI CPD surface exists yet"
+    c_api: "N/A: no stable C binding surface exists yet"
+    cpp_api: "N/A: no stable C++ binding surface exists yet"
+    python_api: "N/A: no stable Python binding surface exists yet"
+    benchmark: implemented
+    status: documented
 
   - id: REQ-SPIKE-001
     title: Dense factorization backend spike
