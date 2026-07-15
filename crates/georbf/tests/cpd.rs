@@ -43,6 +43,25 @@ where
     ])?))
 }
 
+fn scaled_derivative_center<const D: usize>(
+    coordinates: [f64; D],
+    direction: [f64; D],
+    coefficient: f64,
+    provenance: u64,
+) -> Result<CenterRepresenter<D>, Box<dyn Error>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let atom = FunctionalAtom::directional_derivative(
+        Point::try_new(coordinates)?,
+        UnitDirection::try_new(direction)?,
+        FunctionalProvenance::new(provenance),
+    );
+    Ok(CenterRepresenter::new(FunctionalExpr::try_new([
+        FunctionalTerm::try_new(coefficient, atom)?,
+    ])?))
+}
+
 fn action_row_center(
     action: [f64; 3],
     provenance: u64,
@@ -118,6 +137,53 @@ fn assert_polynomial_reproduction(system: &CpdNullSpace, coefficients: &[f64]) {
             .sum::<f64>();
         assert!(projected.abs() < 1.0e-11);
     }
+}
+
+fn assert_independent_null_space_properties(system: &CpdNullSpace) {
+    let actions = system.actions();
+    let basis = system.basis();
+    let side_condition_infinity = (0..actions.columns())
+        .map(|polynomial| {
+            let column_scale = (0..actions.rows())
+                .map(|row| actions.get(row, polynomial).unwrap_or(f64::NAN).abs())
+                .fold(0.0_f64, f64::max);
+            (0..basis.columns())
+                .map(|basis_column| {
+                    (0..actions.rows())
+                        .map(|row| {
+                            actions.get(row, polynomial).unwrap_or(f64::NAN) / column_scale
+                                * basis.get(row, basis_column).unwrap_or(f64::NAN)
+                        })
+                        .sum::<f64>()
+                        .abs()
+                })
+                .sum::<f64>()
+        })
+        .fold(0.0_f64, f64::max);
+    let orthonormality_infinity = (0..basis.columns())
+        .map(|left| {
+            (0..basis.columns())
+                .map(|right| {
+                    let product = (0..basis.rows())
+                        .map(|row| {
+                            basis.get(row, left).unwrap_or(f64::NAN)
+                                * basis.get(row, right).unwrap_or(f64::NAN)
+                        })
+                        .sum::<f64>();
+                    (product - f64::from(left == right)).abs()
+                })
+                .sum::<f64>()
+        })
+        .fold(0.0_f64, f64::max);
+
+    assert!(side_condition_infinity <= system.quality().tolerance);
+    assert!(orthonormality_infinity <= system.quality().tolerance);
+    assert!(
+        (system.quality().side_condition_residual - side_condition_infinity).abs() <= f64::EPSILON
+    );
+    assert!(
+        (system.quality().orthonormality_residual - orthonormality_infinity).abs() <= f64::EPSILON
+    );
 }
 
 #[test]
@@ -326,6 +392,35 @@ fn extreme_scale_equilibration_never_erases_a_full_rank_action() -> Result<(), B
             .into());
         }
     }
+    Ok(())
+}
+
+#[test]
+fn extreme_row_scales_preserve_the_original_null_space() -> Result<(), Box<dyn Error>> {
+    let constant_space = PolynomialSpace::<1>::try_new(1)?;
+    for coefficient in [1.0, 1.0e200] {
+        let centers = [
+            value_center([-1.0], coefficient, 10)?,
+            value_center([1.0], coefficient, 20)?,
+        ];
+        let system = CpdNullSpace::try_from_centers(&centers, &constant_space)?;
+        assert_eq!(system.diagnostics().decision, CpdRankDecision::FullRank);
+        assert_independent_null_space_properties(&system);
+    }
+
+    let linear_space = PolynomialSpace::<1>::try_new(2)?;
+    let derivative_scaled = [
+        value_center([0.0], 1.0, 30)?,
+        scaled_derivative_center([0.0], [1.0], 1.0e-308, 40)?,
+        scaled_derivative_center([1.0], [1.0], 1.0e-308, 50)?,
+    ];
+    let system = CpdNullSpace::try_from_centers(&derivative_scaled, &linear_space)?;
+    assert_eq!(
+        system.actions().values(),
+        &[1.0, 0.0, 0.0, 1.0e-308, 0.0, 1.0e-308]
+    );
+    assert_eq!(system.diagnostics().decision, CpdRankDecision::FullRank);
+    assert_independent_null_space_properties(&system);
     Ok(())
 }
 

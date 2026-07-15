@@ -16,6 +16,13 @@ verifies that structured failure retains norms, scales, zero indices, and
 RRQR evidence while explicitly leaving SVD-derived fields and the final rank
 decision unavailable.
 
+A second repair constructs the null space from the safely equilibrated action
+matrix and maps it back with the recorded row scaling before deterministic
+reorthogonalization. Extreme `1e200` value rows and `1e-308` derivative rows
+therefore preserve the original `Q^T Z = 0` side condition. Binding diagnostics
+now report actual matrix infinity norms, and original-unit residuals use scaled
+arithmetic so overflowing intermediate products cannot be discarded as zero.
+
 Clearly full-rank inputs construct and verify an orthonormal basis for
 `null(Q^T)`. Reduced coordinates expand only as provenance-bearing `w = Z y`
 weights with a rechecked polynomial side condition. A finite symmetric-energy

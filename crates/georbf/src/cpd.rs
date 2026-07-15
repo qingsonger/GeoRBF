@@ -335,7 +335,8 @@ impl CpdNullSpace {
         }
 
         let actions = CpdMatrix::try_from_row_major(rows, columns, values)?;
-        let diagnostics = diagnose_rank(&actions)?;
+        let rank_diagnosis = diagnose_rank(&actions)?;
+        let diagnostics = rank_diagnosis.diagnostics;
         match diagnostics.decision {
             CpdRankDecision::FullRank => {}
             CpdRankDecision::Deficient => {
@@ -350,10 +351,11 @@ impl CpdNullSpace {
             }
         }
 
-        let basis = construct_null_space(&actions)?;
+        let basis = construct_null_space(&rank_diagnosis.scaled_actions, &diagnostics.row_scales)?;
         let quality = verify_null_space(&actions, &basis);
         if quality.side_condition_residual > quality.tolerance
             || quality.orthonormality_residual > quality.tolerance
+            || !quality.original_side_condition_residual.is_finite()
         {
             return Err(CpdError::NullSpaceVerificationFailed { quality });
         }
@@ -431,6 +433,9 @@ impl CpdNullSpace {
         }
         let (residual, original_residual) = weight_residuals(&self.actions, &weights);
         let tolerance = verification_tolerance(self.actions.rows);
+        if !original_residual.is_finite() {
+            return Err(CpdError::UnrepresentableOriginalWeightResidual);
+        }
         if residual > tolerance {
             return Err(CpdError::WeightSideConditionFailed {
                 residual,
@@ -710,6 +715,8 @@ pub enum CpdError {
         /// Verification tolerance.
         tolerance: f64,
     },
+    /// The original-unit `Q^T w` residual could not be represented finitely.
+    UnrepresentableOriginalWeightResidual,
     /// The center-energy matrix had the wrong shape.
     EnergyShapeMismatch {
         /// Required square dimension.
@@ -855,6 +862,9 @@ impl fmt::Display for CpdError {
                 formatter,
                 "expanded weights violate Q^T w = 0: residual {residual}, tolerance {tolerance}"
             ),
+            Self::UnrepresentableOriginalWeightResidual => formatter.write_str(
+                "expanded-weight residual in original action units is not representable",
+            ),
             Self::EnergyShapeMismatch {
                 expected,
                 rows,
@@ -897,6 +907,11 @@ struct EquilibratedMatrix {
     zero_columns: Vec<usize>,
 }
 
+struct RankDiagnosis {
+    diagnostics: CpdRankDiagnostics,
+    scaled_actions: CpdMatrix,
+}
+
 #[derive(Clone, Copy)]
 enum SvdReviewMode {
     Bounded,
@@ -904,14 +919,23 @@ enum SvdReviewMode {
     ForceNonConvergence,
 }
 
-fn diagnose_rank(actions: &CpdMatrix) -> Result<CpdRankDiagnostics, CpdError> {
-    diagnose_rank_with_svd_review(actions, SvdReviewMode::Bounded)
+fn diagnose_rank(actions: &CpdMatrix) -> Result<RankDiagnosis, CpdError> {
+    diagnose_rank_with_scaled_actions(actions, SvdReviewMode::Bounded)
 }
 
+#[cfg(test)]
 fn diagnose_rank_with_svd_review(
     actions: &CpdMatrix,
     svd_review: SvdReviewMode,
 ) -> Result<CpdRankDiagnostics, CpdError> {
+    diagnose_rank_with_scaled_actions(actions, svd_review)
+        .map(|rank_diagnosis| rank_diagnosis.diagnostics)
+}
+
+fn diagnose_rank_with_scaled_actions(
+    actions: &CpdMatrix,
+    svd_review: SvdReviewMode,
+) -> Result<RankDiagnosis, CpdError> {
     let equilibrated = equilibrate(actions)?;
     let original_norms = matrix_norms(actions);
     let scaled_norms = matrix_norms(&equilibrated.matrix);
@@ -980,6 +1004,7 @@ fn diagnose_rank_with_svd_review(
         }
         _ => f64::INFINITY,
     };
+    let scaled_actions = equilibrated.matrix;
     let diagnostics = CpdRankDiagnostics {
         rows: actions.rows,
         columns: actions.columns,
@@ -1003,7 +1028,10 @@ fn diagnose_rank_with_svd_review(
         condition_estimate,
         decision,
     };
-    Ok(diagnostics)
+    Ok(RankDiagnosis {
+        diagnostics,
+        scaled_actions,
+    })
 }
 
 fn incomplete_rank_diagnostics(
@@ -1131,42 +1159,47 @@ fn equilibrate(actions: &CpdMatrix) -> Result<EquilibratedMatrix, CpdError> {
     })
 }
 
-fn construct_null_space(actions: &CpdMatrix) -> Result<CpdMatrix, CpdError> {
-    let nullity = actions.rows - actions.columns;
+fn construct_null_space(
+    scaled_actions: &CpdMatrix,
+    row_scales: &[f64],
+) -> Result<CpdMatrix, CpdError> {
+    let nullity = scaled_actions.rows - scaled_actions.columns;
     if nullity == 0 {
-        return CpdMatrix::try_from_row_major(actions.rows, 0, Vec::new());
+        return CpdMatrix::try_from_row_major(scaled_actions.rows, 0, Vec::new());
     }
 
-    // Row equilibration changes null(Q^T). Build a well-scaled basis for the
-    // scaled matrix, map it back with the recorded row operation implicitly by
-    // using the original column space, and reorthogonalize deterministically.
-    // The original QR is safe here because rank classification has already
-    // rejected marginal systems; final scale-aware residual checks are binding.
-    let matrix = DMatrix::from_row_slice(actions.rows, actions.columns, &actions.values);
+    // If Q_scaled = D_row Q D_column and Q_scaled^T u = 0, then
+    // z = D_row u satisfies Q^T z = 0. Construct against the safely scaled
+    // column space, map with D_row, and reorthogonalize the mapped columns.
+    let matrix = DMatrix::from_row_slice(
+        scaled_actions.rows,
+        scaled_actions.columns,
+        &scaled_actions.values,
+    );
     let column_basis = matrix.qr().q();
-    let basis_count = checked_entries(actions.rows, nullity)?;
+    let basis_count = checked_entries(scaled_actions.rows, nullity)?;
     let mut columns = try_zeroed(basis_count, CpdStorage::NullSpaceBasis)?;
-    let mut candidate = vec![0.0; actions.rows];
-    let acceptance = verification_tolerance(actions.rows);
+    let mut candidate = vec![0.0; scaled_actions.rows];
+    let acceptance = verification_tolerance(scaled_actions.rows);
     let mut constructed = 0;
-    for axis in 0..actions.rows {
+    for axis in 0..scaled_actions.rows {
         candidate.fill(0.0);
         candidate[axis] = 1.0;
         for _ in 0..2 {
-            for column in 0..actions.columns {
-                let projection = (0..actions.rows)
+            for column in 0..scaled_actions.columns {
+                let projection = (0..scaled_actions.rows)
                     .map(|row| candidate[row] * column_basis[(row, column)])
                     .sum::<f64>();
-                for row in 0..actions.rows {
+                for row in 0..scaled_actions.rows {
                     candidate[row] -= projection * column_basis[(row, column)];
                 }
             }
             for column in 0..constructed {
-                let offset = column * actions.rows;
-                let projection = (0..actions.rows)
+                let offset = column * scaled_actions.rows;
+                let projection = (0..scaled_actions.rows)
                     .map(|row| candidate[row] * columns[offset + row])
                     .sum::<f64>();
-                for row in 0..actions.rows {
+                for row in 0..scaled_actions.rows {
                     candidate[row] -= projection * columns[offset + row];
                 }
             }
@@ -1179,8 +1212,8 @@ fn construct_null_space(actions: &CpdMatrix) -> Result<CpdMatrix, CpdError> {
         if norm <= acceptance {
             continue;
         }
-        let offset = constructed * actions.rows;
-        for row in 0..actions.rows {
+        let offset = constructed * scaled_actions.rows;
+        for row in 0..scaled_actions.rows {
             columns[offset + row] = candidate[row] / norm;
         }
         constructed += 1;
@@ -1194,13 +1227,41 @@ fn construct_null_space(actions: &CpdMatrix) -> Result<CpdMatrix, CpdError> {
             actual: constructed,
         });
     }
-    let mut row_major = try_zeroed(basis_count, CpdStorage::NullSpaceBasis)?;
-    for row in 0..actions.rows {
-        for column in 0..nullity {
-            row_major[row * nullity + column] = columns[column * actions.rows + row];
+    let maximum_row_scale = row_scales.iter().copied().fold(0.0_f64, f64::max);
+    for column in 0..nullity {
+        let offset = column * scaled_actions.rows;
+        for row in 0..scaled_actions.rows {
+            columns[offset + row] *= row_scales[row] / maximum_row_scale;
+        }
+        for _ in 0..2 {
+            for previous in 0..column {
+                let previous_offset = previous * scaled_actions.rows;
+                let projection = (0..scaled_actions.rows)
+                    .map(|row| columns[offset + row] * columns[previous_offset + row])
+                    .sum::<f64>();
+                for row in 0..scaled_actions.rows {
+                    columns[offset + row] -= projection * columns[previous_offset + row];
+                }
+            }
+        }
+        let norm = stable_norm(&columns[offset..offset + scaled_actions.rows]);
+        if !norm.is_finite() || norm <= acceptance {
+            return Err(CpdError::NullSpaceConstructionFailed {
+                expected: nullity,
+                actual: column,
+            });
+        }
+        for row in 0..scaled_actions.rows {
+            columns[offset + row] /= norm;
         }
     }
-    CpdMatrix::try_from_row_major(actions.rows, nullity, row_major)
+    let mut row_major = try_zeroed(basis_count, CpdStorage::NullSpaceBasis)?;
+    for row in 0..scaled_actions.rows {
+        for column in 0..nullity {
+            row_major[row * nullity + column] = columns[column * scaled_actions.rows + row];
+        }
+    }
+    CpdMatrix::try_from_row_major(scaled_actions.rows, nullity, row_major)
 }
 
 fn verify_null_space(actions: &CpdMatrix, basis: &CpdMatrix) -> CpdNullSpaceQuality {
@@ -1213,14 +1274,9 @@ fn verify_null_space(actions: &CpdMatrix, basis: &CpdMatrix) -> CpdNullSpaceQual
         if column_scale == 0.0 {
             continue;
         }
+        let mut side_condition_row_sum = 0.0_f64;
+        let mut original_side_condition_row_sum = 0.0_f64;
         for basis_column in 0..basis.columns {
-            let original_residual = (0..actions.rows)
-                .map(|row| {
-                    actions.values[row * actions.columns + polynomial]
-                        * basis.values[row * basis.columns + basis_column]
-                })
-                .sum::<f64>()
-                .abs();
             let residual = (0..actions.rows)
                 .map(|row| {
                     actions.values[row * actions.columns + polynomial] / column_scale
@@ -1228,13 +1284,17 @@ fn verify_null_space(actions: &CpdMatrix, basis: &CpdMatrix) -> CpdNullSpaceQual
                 })
                 .sum::<f64>()
                 .abs();
-            side_condition_residual = side_condition_residual.max(residual);
-            original_side_condition_residual =
-                original_side_condition_residual.max(original_residual);
+            let original_residual = rescale_residual(residual, column_scale, 1.0);
+            side_condition_row_sum += residual;
+            original_side_condition_row_sum += original_residual;
         }
+        side_condition_residual = side_condition_residual.max(side_condition_row_sum);
+        original_side_condition_residual =
+            original_side_condition_residual.max(original_side_condition_row_sum);
     }
     let mut orthonormality_residual = 0.0_f64;
     for left in 0..basis.columns {
+        let mut row_sum = 0.0_f64;
         for right in 0..basis.columns {
             let product = (0..basis.rows)
                 .map(|row| {
@@ -1242,9 +1302,9 @@ fn verify_null_space(actions: &CpdMatrix, basis: &CpdMatrix) -> CpdNullSpaceQual
                         * basis.values[row * basis.columns + right]
                 })
                 .sum::<f64>();
-            orthonormality_residual =
-                orthonormality_residual.max((product - f64::from(left == right)).abs());
+            row_sum += (product - f64::from(left == right)).abs();
         }
+        orthonormality_residual = orthonormality_residual.max(row_sum);
     }
     CpdNullSpaceQuality {
         side_condition_residual,
@@ -1271,10 +1331,6 @@ fn weight_residuals(actions: &CpdMatrix, weights: &[f64]) -> (f64, f64) {
         if column_scale == 0.0 {
             continue;
         }
-        let original_value = (0..actions.rows)
-            .map(|row| actions.values[row * actions.columns + polynomial] * weights[row])
-            .sum::<f64>()
-            .abs();
         let value = (0..actions.rows)
             .map(|row| {
                 actions.values[row * actions.columns + polynomial] / column_scale
@@ -1282,10 +1338,51 @@ fn weight_residuals(actions: &CpdMatrix, weights: &[f64]) -> (f64, f64) {
             })
             .sum::<f64>()
             .abs();
+        let original_value = rescale_residual(value, column_scale, weight_scale);
         residual = residual.max(value);
         original_residual = original_residual.max(original_value);
     }
     (residual, original_residual)
+}
+
+fn stable_norm(values: &[f64]) -> f64 {
+    let scale = values
+        .iter()
+        .map(|value| value.abs())
+        .fold(0.0_f64, f64::max);
+    if scale == 0.0 {
+        return 0.0;
+    }
+    scale
+        * values
+            .iter()
+            .map(|value| (value / scale).powi(2))
+            .sum::<f64>()
+            .sqrt()
+}
+
+fn rescale_residual(normalized: f64, first_scale: f64, second_scale: f64) -> f64 {
+    if normalized == 0.0 {
+        return 0.0;
+    }
+    let factors = [normalized, first_scale, second_scale];
+    for [first, second, third] in [
+        [0, 1, 2],
+        [0, 2, 1],
+        [1, 2, 0],
+        [1, 0, 2],
+        [2, 0, 1],
+        [2, 1, 0],
+    ] {
+        let partial = factors[first] * factors[second];
+        if partial.is_finite() && partial != 0.0 {
+            let result = partial * factors[third];
+            if result.is_finite() && result != 0.0 {
+                return result;
+            }
+        }
+    }
+    f64::NAN
 }
 
 fn rank_threshold(values: &[f64], dimension: usize) -> Result<f64, CpdError> {
@@ -1348,6 +1445,54 @@ mod tests {
     use std::error::Error;
 
     use super::*;
+
+    #[test]
+    fn binding_verifier_reports_matrix_infinity_norms() -> Result<(), Box<dyn Error>> {
+        let tolerance = verification_tolerance(2);
+        let entry = 0.75 * tolerance;
+        let actions = CpdMatrix::try_from_row_major(2, 1, vec![1.0, 0.0])?;
+        let basis = CpdMatrix::try_from_row_major(2, 2, vec![entry, entry, 0.5, 0.25])?;
+        let quality = verify_null_space(&actions, &basis);
+
+        let expected_side = 2.0 * entry;
+        assert!((quality.side_condition_residual - expected_side).abs() <= f64::EPSILON);
+        assert!((quality.original_side_condition_residual - expected_side).abs() <= f64::EPSILON);
+
+        let expected_orthonormality = (0..basis.columns)
+            .map(|left| {
+                (0..basis.columns)
+                    .map(|right| {
+                        let product = (0..basis.rows)
+                            .map(|row| {
+                                basis.values[row * basis.columns + left]
+                                    * basis.values[row * basis.columns + right]
+                            })
+                            .sum::<f64>();
+                        (product - f64::from(left == right)).abs()
+                    })
+                    .sum::<f64>()
+            })
+            .fold(0.0_f64, f64::max);
+        assert!((quality.orthonormality_residual - expected_orthonormality).abs() <= f64::EPSILON);
+        Ok(())
+    }
+
+    #[test]
+    fn original_weight_residual_does_not_discard_overflowing_products() -> Result<(), Box<dyn Error>>
+    {
+        let actions = CpdMatrix::try_from_row_major(2, 1, vec![10.0, 10.0])?;
+        let magnitude = 7.0e307;
+        let weights = [magnitude, -magnitude * (1.0 - 8.0 * f64::EPSILON)];
+        assert!(actions.values[0] * weights[0] == f64::INFINITY);
+        assert!(actions.values[1] * weights[1] == f64::NEG_INFINITY);
+
+        let (_, original_residual) = weight_residuals(&actions, &weights);
+        let independent_residual = 10.0 * (weights[0] + weights[1]).abs();
+        assert!(original_residual.is_finite());
+        assert!(original_residual > 0.0);
+        assert!((original_residual / independent_residual - 1.0).abs() < 0.25);
+        Ok(())
+    }
 
     #[test]
     fn forced_svd_non_convergence_retains_available_rank_evidence() -> Result<(), Box<dyn Error>> {

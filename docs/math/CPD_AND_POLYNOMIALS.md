@@ -88,13 +88,19 @@ Weights obey
 Q^T w = 0.
 ```
 
-A clearly full-rank system constructs a numerically orthonormal null-space
-basis `Z` using backend QR column-space vectors followed by deterministic
-twice-reorthogonalized completion. Binding verification checks column-scaled
-`Q^T Z` and `Z^T Z - I` against `64 * row_count * eps`. The public API retains
-center and atomic-functional provenance, and expanded weights record that they
-were formed as `w = Z y`; each expansion rechecks `Q^T w = 0` at the same
-scaled tolerance. Projected energy is
+A clearly full-rank system constructs a basis `U` for the safely equilibrated
+null space using backend QR column-space vectors followed by deterministic
+twice-reorthogonalized completion. Because
+`Q_scaled = D_row Q D_column`, the basis is mapped back as `z = D_row u` and
+twice reorthogonalized again to produce a numerically orthonormal basis `Z` for
+the original `null(Q^T)`. Binding verification checks the true matrix infinity
+norms (maximum absolute row sums) of column-scaled `Q^T Z` and `Z^T Z - I`
+against `64 * row_count * eps`. Original-unit residuals are recovered from
+scaled arithmetic without first forming overflowing products; an
+unrepresentable result is an explicit error rather than a fabricated finite
+value. The public API retains center and atomic-functional provenance, and
+expanded weights record that they were formed as `w = Z y`; each expansion
+rechecks `Q^T w = 0` at the same scaled tolerance. Projected energy is
 
 ```text
 0.5 y^T (Z^T K Z) y.
