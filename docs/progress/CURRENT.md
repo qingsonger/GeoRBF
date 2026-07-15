@@ -6,53 +6,52 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / PR #52 finding P2-1
+- Mode: Review / fresh re-review required for repaired PR #52
 - Requirement: REQ-IR-001, Issue #51
 - Branch: `codex/req-ir-001-semantic-canonical-ir`
 - Draft pull request: #52
-- Reviewed head: `dc88b999f02e31934dc1daa06a4909a87aed69ab`
+- Original reviewed head: `dc88b999f02e31934dc1daa06a4909a87aed69ab`
+- Repair code/test head: `4562a20d565bc541ffd06a37220378c41229a627`
 - Review record: `docs/reviews/PR-52-INDEPENDENT-REVIEW.md`
 - Registry state: `documented` (not `integrated`)
 - Dependencies: complete closure through REQ-FUNC-001 is `integrated`
 
-## Independent review result
+## Repair result pending fresh independent re-review
 
-- P2-1: the exact canonical-mapping test checks constants, counts, scaling,
-  capabilities, and partial provenance but no sparse variable index or
-  coefficient. Coefficient deletion, sign reversal, index permutation, or
-  moving terms between SOC sides could therefore escape the required exact
-  equality, bound, and SOC mapping evidence.
-- The implementation preserves the authoritative coefficient and constant
-  mappings by inspection; this is a test-evidence defect, not a confirmed
-  production mapping defect.
-- No P0, P1, or P3 issue was identified. Review mode made no production or test
-  repair and did not begin REQ-FIELD-001.
+- P2-1 was addressed only in `crates/georbf/tests/problem_ir.rs`. The exact
+  canonical-mapping regression now compares every equality, bound, SOC-left,
+  and SOC-right `(variable, coefficient)` sequence supplied by the distinct
+  existing fixture.
+- The same regression now compares complete canonical cone provenance:
+  observation identifier, source path and line, original units, field path,
+  and constraint group.
+- No production code, API, manifest, schema, build input, dependency,
+  benchmark, or interface disposition changed. Repair evidence is not an
+  independent finding closure.
 
 ## Next task
 
-Open a fresh Repair task for only PR #52 finding P2-1. Extend the existing exact
-canonical-mapping test to compare every equality, bound, SOC-left, and SOC-right
-`(variable, coefficient)` sequence and complete canonical provenance for at
-least one row or cone. Run focused checks, then the complete standard workspace
-gate on the stable repair head. Update the review record and this bounded
-handoff, commit, push, and stop for a fresh independent re-review. Keep the PR
-Draft and do not begin REQ-FIELD-001.
+Open a fresh Review/re-review task for only PR #52. Supply the independent
+reviewer the bounded requirement/dependency summaries, normative documents,
+complete repaired diff, and validation evidence without this Repair task's
+reasoning transcript. Verify P2-1 and check for new findings. If clean, follow
+the mandatory ready-head integration sequence; otherwise record findings and
+stop for another bounded Repair. Do not begin REQ-FIELD-001.
 
 ## Validation evidence
 
-- The independent reviewer passed all 11 problem-IR tests, crate doctests, the
-  runnable example, and D=1/D=2/D=3 benchmark smoke on exact reviewed head
-  `dc88b999f02e31934dc1daa06a4909a87aed69ab`.
-- The reviewer also passed the complete stable-head standard gate: formatting,
-  warning-denying workspace Clippy, all-feature workspace tests, workspace
-  doctests, all 58 requirement checks, and `git diff --check`.
-- Draft CI run 29410313417 passed the Ubuntu job on the exact reviewed head; the
-  Ready-only three-platform and benchmark-smoke matrix correctly remained
-  unexecuted.
-- This Review task changes only the independent-review record, the requirement's
-  review-document link, and this bounded handoff. It does not change production,
-  tests, manifests, schemas, build inputs, APIs, dependencies, or numerical
-  behavior.
+- The exact regression and the complete focused problem-IR file passed; the
+  latter ran all 11 tests on repair code/test head `4562a20`.
+- The complete stable-head standard gate passed formatting, warning-denying
+  workspace Clippy for all targets and features, all-feature workspace tests,
+  workspace doctests, all 58 requirement checks, and `git diff --check` on
+  exact repair code/test head `4562a20`.
+- The first gate attempt found only Clippy's test-function length limit. A test
+  helper removed the repetition, focused tests and focused Clippy passed, the
+  repair commit was amended, and the complete gate was rerun from the start.
+- The subsequent evidence update changes only this bounded handoff and the
+  independent-review record, so the immutable code/test-head gate remains
+  applicable under the repository's documentation-only evidence rule.
 
 ## Checks not yet available
 

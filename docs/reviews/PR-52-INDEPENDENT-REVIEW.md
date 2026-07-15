@@ -7,7 +7,7 @@
 - Reviewed head: `dc88b999f02e31934dc1daa06a4909a87aed69ab`
 - Base head: `46a6d48115c5a01d2f200cc956a41a1dcc3158fa`
 - Review date: 2026-07-15
-- Result: one P2 finding; PR must remain Draft
+- Result: P2-1 repaired; fresh independent re-review required; PR must remain Draft
 
 ## Scope and independence
 
@@ -80,13 +80,33 @@ at least one row or cone in the same regression.
   reviewed head. The Ready-only Windows, Ubuntu, macOS, and benchmark-smoke
   matrix correctly remained unexecuted.
 
+## Repair evidence pending fresh re-review
+
+Repair code/test head `4562a20d565bc541ffd06a37220378c41229a627`
+addresses only P2-1. The existing exact canonical-mapping regression now
+compares every sparse `(variable, coefficient)` sequence for the equality row,
+linear-bound row, both SOC left expressions, and the SOC right expression. It
+also compares the cone's complete canonical observation identifier, source
+path and one-based line, original units, field path, and constraint group.
+
+The focused problem-IR test file passed all 11 tests. The first full-gate
+attempt exposed only Clippy's test-function length limit; the repeated term
+comparison was moved into a test helper without reducing the asserted mapping
+or provenance evidence. After that final test-code change, the complete stable-
+head standard gate passed formatting, warning-denying workspace Clippy for all
+targets and features, all-feature workspace tests, workspace doctests, all 58
+requirement checks, and `git diff --check` on the exact repair code/test head.
+
+No production code, public API, manifest, schema, build input, dependency,
+benchmark, or interface disposition changed. The requirement remains
+`documented`, and this repair evidence does not independently close P2-1.
+
 ## Disposition
 
-Keep PR #52 Draft. A fresh Repair task must address only P2-1, add the specified
-independent coefficient and provenance assertions, run focused checks and the
-complete final standard gate on the stable repair head, update this record and
-the bounded handoff, commit, push, and stop for a fresh independent re-review.
-Do not begin REQ-FIELD-001.
+Keep PR #52 Draft. A fresh independent re-review must inspect the repaired PR
+head without inheriting the Repair reasoning, verify whether P2-1 is closed,
+and check for new findings. Do not mark the PR ready, merge it, or begin
+REQ-FIELD-001 in this Repair task.
 
 SPD/CPD classification, center limits, polynomial and rank decisions, solver
 infeasibility, rotation invariance, anisotropy and positive definiteness, and
