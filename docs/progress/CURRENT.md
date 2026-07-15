@@ -6,60 +6,53 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / REQ-IR-001 complete
+- Mode: Repair / PR #52 finding P2-1
 - Requirement: REQ-IR-001, Issue #51
 - Branch: `codex/req-ir-001-semantic-canonical-ir`
 - Draft pull request: #52
+- Reviewed head: `dc88b999f02e31934dc1daa06a4909a87aed69ab`
+- Review record: `docs/reviews/PR-52-INDEPENDENT-REVIEW.md`
 - Registry state: `documented` (not `integrated`)
 - Dependencies: complete closure through REQ-FUNC-001 is `integrated`
 
-## Implemented scope
+## Independent review result
 
-- Added immutable `SemanticProblemIr<D>` for D=1/D=2/D=3 with full source,
-  units, field-path, group, compiled-functional, relation, enforcement/loss,
-  and execution provenance.
-- Added validated sparse affine expressions and named canonical variable blocks.
-- Added deterministic hard equality, linear-bound, interval, and SOC mapping
-  through an explicit caller linearizer; basis/kernel assembly remains outside
-  this IR requirement.
-- Added solver-neutral canonical rows/cones with complete provenance, explicit
-  identity scaling, required solver capabilities, and checked numeric memory
-  estimates.
-- Soft loss metadata is retained, but objective/epigraph compilation returns a
-  source-aware unsupported-path error until later approved requirements.
-- Added independent tests, compile-fail rustdoc, runnable example, architecture
-  docs, changelog fragment, deterministic benchmark, and three-platform CI smoke
-  routing.
-
-## Validation state
-
-- Focused problem-IR tests: 11 passed.
-- Focused warning-denying Clippy: passed for the library, test, example, and
-  benchmark targets after the final focused changes.
-- Runnable example and unsupported-dimension doctest: passed.
-- Benchmark smoke passed; the checked estimate is dimension-specific because
-  the explicit variable-scaling vector has D entries.
-- Four local 1,000-iteration baselines retained checksums `5384000`, `5392000`,
-  and `5400000` for D=1/D=2/D=3; timing ranges are recorded in
-  `docs/benchmarks/REQ-IR-001.md`.
-- One complete final stable-head gate passed: format, warning-denying workspace
-  Clippy, all-feature workspace tests, workspace doctests, the 58-requirement
-  registry check, and `git diff --check`.
+- P2-1: the exact canonical-mapping test checks constants, counts, scaling,
+  capabilities, and partial provenance but no sparse variable index or
+  coefficient. Coefficient deletion, sign reversal, index permutation, or
+  moving terms between SOC sides could therefore escape the required exact
+  equality, bound, and SOC mapping evidence.
+- The implementation preserves the authoritative coefficient and constant
+  mappings by inspection; this is a test-evidence defect, not a confirmed
+  production mapping defect.
+- No P0, P1, or P3 issue was identified. Review mode made no production or test
+  repair and did not begin REQ-FIELD-001.
 
 ## Next task
 
-Open a fresh independent Review task for the Draft PR created from this branch.
-Review only REQ-IR-001 against Issue #51, its dependency closure, normative IR
-and constraint documents, the complete PR diff, and validation evidence. Use a
-fresh read-only project `math_reviewer`; do not repair production code or begin
-REQ-FIELD-001 in that Review task.
+Open a fresh Repair task for only PR #52 finding P2-1. Extend the existing exact
+canonical-mapping test to compare every equality, bound, SOC-left, and SOC-right
+`(variable, coefficient)` sequence and complete canonical provenance for at
+least one row or cone. Run focused checks, then the complete standard workspace
+gate on the stable repair head. Update the review record and this bounded
+handoff, commit, push, and stop for a fresh independent re-review. Keep the PR
+Draft and do not begin REQ-FIELD-001.
 
-## Durable evidence
+## Validation evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #51
-- Requirement summary: `changes/REQ-IR-001.md`
-- Architecture contract: `docs/architecture/PROBLEM_IR.md`
-- Benchmark: `docs/benchmarks/REQ-IR-001.md`
+- The independent reviewer passed all 11 problem-IR tests, crate doctests, the
+  runnable example, and D=1/D=2/D=3 benchmark smoke on exact reviewed head
+  `dc88b999f02e31934dc1daa06a4909a87aed69ab`.
+- The reviewer also passed the complete stable-head standard gate: formatting,
+  warning-denying workspace Clippy, all-feature workspace tests, workspace
+  doctests, all 58 requirement checks, and `git diff --check`.
+- Draft CI run 29410313417 passed the Ubuntu job on the exact reviewed head; the
+  Ready-only three-platform and benchmark-smoke matrix correctly remained
+  unexecuted.
+- This Review task changes only the independent-review record, the requirement's
+  review-document link, and this bounded handoff. It does not change production,
+  tests, manifests, schemas, build inputs, APIs, dependencies, or numerical
+  behavior.
 
 ## Checks not yet available
 

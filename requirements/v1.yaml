@@ -285,7 +285,7 @@ requirements:
     issue: 51
     pull_request: 52
     tests: [provenance, deterministic-compilation, invalid-paths]
-    docs: [docs/architecture/PROBLEM_IR.md, rustdoc]
+    docs: [docs/architecture/PROBLEM_IR.md, docs/reviews/PR-52-INDEPENDENT-REVIEW.md, rustdoc]
     rust_api: implemented
     cli: "N/A: no user-facing problem schema or fitting command exists yet"
     c_api: "N/A: bindings wait for the Rust problem and model APIs plus schemas to stabilize"
