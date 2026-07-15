@@ -242,3 +242,42 @@ PR #46 must remain Draft. A fresh Repair task must address only P1-2, P2-2,
 and P2-3, add their regressions, run the required checks, and stop for another
 fresh independent re-review. This Review task must not repair production code,
 mark the PR ready, merge it, or begin another requirement.
+
+## Repair evidence pending fresh re-review: P1-2, P2-2, and P2-3
+
+Repair code/test head `10d3892381356ed5453e1c58b5daceefee037dda`
+addresses only the three findings from the second independent review:
+
+- P1-2: rank diagnosis now returns the safely equilibrated action matrix used
+  by RRQR/SVD. Null-space QR constructs `U` from that matrix, maps each column
+  with `z = D_row u`, and applies deterministic twice-reorthogonalization with
+  a stable norm. Independent D=1 regressions cover value rows scaled from `1`
+  to `1e200` and derivative rows at `1e-308`; both independently recompute the
+  column-scaled `Q^T Z` and `Z^T Z-I` matrix infinity norms.
+- P2-2: binding verification now sums absolute residual entries across each
+  matrix row before taking the maximum. A private verifier regression places
+  two `0.75 * tolerance` entries in one row and requires the reported side
+  residual to be `1.5 * tolerance`; it also independently recomputes the
+  orthonormality matrix infinity norm.
+- P2-3: original-unit residuals are recovered from normalized dot products by
+  trying representable multiplication orders, never by forming overflowing
+  original products. A regression with `Q^T = [10,10]` and nearly cancelling
+  weights near `+/-7e307` requires the finite nonzero residual; an actually
+  unrepresentable restored weight residual returns the structured
+  `UnrepresentableOriginalWeightResidual` error.
+
+All focused regressions pass. The complete standard gate passed on exact
+repair code/test head `10d3892`: formatting, warning-denying workspace Clippy,
+all-feature workspace tests, workspace doc tests, and all 58 requirement
+checks. `git diff --check` also passed. Four consecutive repaired benchmark
+runs produced the bit-identical checksum `-4.97657470788226419e-12` and the
+updated local baseline recorded in `docs/benchmarks/REQ-CPD-001.md`.
+
+`cargo-nextest`, `cargo-deny`, `cargo-audit`, and `cargo-semver-checks` remain
+unavailable locally; Miri remains unavailable for pinned Rust 1.96.1.
+Sanitizers, executable fuzzing, mutation testing, allocation instrumentation,
+and API/ABI/schema snapshot checks remain assigned to later requirements and
+release gates. Local `actionlint` is unavailable. The subsequent review-record
+and bounded-handoff update is documentation-only, so the stable code/test-head
+gate remains applicable. PR #46 must remain Draft for a fresh independent
+re-review of the complete repaired diff.
