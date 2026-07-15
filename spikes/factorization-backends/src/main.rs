@@ -9,7 +9,10 @@ compile_error!(
 #[cfg(feature = "faer-backend")]
 use faer::prelude::Solve;
 #[cfg(feature = "nalgebra-backend")]
-use nalgebra::{DMatrix, DVector, linalg::LBLT};
+use nalgebra::{
+    DMatrix, DVector, Dyn,
+    linalg::{Cholesky, LBLT},
+};
 
 const MAX_REFINEMENT_STEPS: usize = 3;
 const ACCEPTED_BACKWARD_ERROR: f64 = 1.0e-8;
@@ -123,6 +126,48 @@ struct RefinementReport {
     accepted_steps: usize,
 }
 
+type RhsSolver = dyn Fn(&[f64]) -> Result<Vec<f64>, String>;
+
+struct FactorizedSystem {
+    backend: Backend,
+    method: Factorization,
+    dimension: usize,
+    #[cfg(test)]
+    has_2x2_pivot_block: bool,
+    solve_rhs: Box<RhsSolver>,
+}
+
+impl FactorizedSystem {
+    fn new(case: &LinearCase, backend: Backend, method: Factorization) -> Result<Self, String> {
+        match backend {
+            #[cfg(feature = "faer-backend")]
+            Backend::Faer => factorize_faer(case, method),
+            #[cfg(feature = "nalgebra-backend")]
+            Backend::Nalgebra => factorize_nalgebra(case, method),
+        }
+    }
+
+    fn solve(&self, case: &LinearCase) -> Result<SolveReport, String> {
+        if case.dimension != self.dimension {
+            return Err("factorization and right-hand side dimensions differ".to_owned());
+        }
+        let solution = (self.solve_rhs)(&case.rhs)?;
+        let (residual_inf, backward_error) = residual_metrics(case, &solution)?;
+        if backward_error > ACCEPTED_BACKWARD_ERROR {
+            return Err(format!(
+                "{} {} solve failed residual review: {backward_error:.17e}",
+                self.backend.label(),
+                self.method.label()
+            ));
+        }
+        Ok(SolveReport {
+            solution,
+            residual_inf,
+            backward_error,
+        })
+    }
+}
+
 fn matrix_vector_product(
     dimension: usize,
     matrix: &[f64],
@@ -152,95 +197,174 @@ fn residual_vector(case: &LinearCase, solution: &[f64]) -> Result<Vec<f64>, Stri
         .collect())
 }
 
-fn infinity_norm(values: &[f64]) -> f64 {
-    values.iter().map(|value| value.abs()).fold(0.0, f64::max)
+fn infinity_norm(values: &[f64], label: &str) -> Result<f64, String> {
+    if values.iter().any(|value| !value.is_finite()) {
+        return Err(format!("{label} contains a nonfinite entry"));
+    }
+    let norm = values.iter().map(|value| value.abs()).fold(0.0, f64::max);
+    if !norm.is_finite() {
+        return Err(format!("{label} infinity norm is nonfinite"));
+    }
+    Ok(norm)
 }
 
-fn matrix_infinity_norm(case: &LinearCase) -> f64 {
-    (0..case.dimension)
-        .map(|row| {
-            case.matrix[row * case.dimension..(row + 1) * case.dimension]
-                .iter()
-                .map(|value| value.abs())
-                .sum::<f64>()
-        })
-        .fold(0.0, f64::max)
+fn matrix_infinity_norm(case: &LinearCase) -> Result<f64, String> {
+    let mut norm = 0.0_f64;
+    for row in 0..case.dimension {
+        let row_sum = case.matrix[row * case.dimension..(row + 1) * case.dimension]
+            .iter()
+            .map(|value| value.abs())
+            .sum::<f64>();
+        if !row_sum.is_finite() {
+            return Err("matrix infinity norm has a nonfinite row sum".to_owned());
+        }
+        norm = norm.max(row_sum);
+    }
+    if !norm.is_finite() {
+        return Err("matrix infinity norm is nonfinite".to_owned());
+    }
+    Ok(norm)
 }
 
 fn residual_metrics(case: &LinearCase, solution: &[f64]) -> Result<(f64, f64), String> {
     if solution.iter().any(|value| !value.is_finite()) {
         return Err("backend produced a nonfinite solution".to_owned());
     }
-    let residual_inf = infinity_norm(&residual_vector(case, solution)?);
-    let denominator =
-        matrix_infinity_norm(case).mul_add(infinity_norm(solution), infinity_norm(&case.rhs));
+    let residual = residual_vector(case, solution)?;
+    let residual_inf = infinity_norm(&residual, "residual")?;
+    let matrix_inf = matrix_infinity_norm(case)?;
+    let solution_inf = infinity_norm(solution, "solution")?;
+    let rhs_inf = infinity_norm(&case.rhs, "right-hand side")?;
+    let denominator = matrix_inf.mul_add(solution_inf, rhs_inf);
+    if !denominator.is_finite() {
+        return Err("backward-error denominator is nonfinite".to_owned());
+    }
     let backward_error = if denominator == 0.0 {
         residual_inf
     } else {
         residual_inf / denominator
     };
+    if !backward_error.is_finite() {
+        return Err("backward error is nonfinite".to_owned());
+    }
     Ok((residual_inf, backward_error))
 }
 
+#[cfg(test)]
 fn solve(
     case: &LinearCase,
     backend: Backend,
     method: Factorization,
 ) -> Result<SolveReport, String> {
-    let solution = match backend {
-        #[cfg(feature = "faer-backend")]
-        Backend::Faer => solve_faer(case, method)?,
-        #[cfg(feature = "nalgebra-backend")]
-        Backend::Nalgebra => solve_nalgebra(case, method)?,
-    };
-    let (residual_inf, backward_error) = residual_metrics(case, &solution)?;
-    if backward_error > ACCEPTED_BACKWARD_ERROR {
-        return Err(format!(
-            "{} {} solve failed residual review: {backward_error:.17e}",
-            backend.label(),
-            method.label()
-        ));
-    }
-    Ok(SolveReport {
-        solution,
-        residual_inf,
-        backward_error,
-    })
+    FactorizedSystem::new(case, backend, method)?.solve(case)
 }
 
 #[cfg(feature = "faer-backend")]
-fn solve_faer(case: &LinearCase, method: Factorization) -> Result<Vec<f64>, String> {
+fn factorize_faer(case: &LinearCase, method: Factorization) -> Result<FactorizedSystem, String> {
     let matrix = faer::Mat::from_fn(case.dimension, case.dimension, |row, column| {
         case.matrix[row * case.dimension + column]
     });
-    let rhs = faer::Mat::from_fn(case.dimension, 1, |row, _| case.rhs[row]);
-    let solution = match method {
-        Factorization::Cholesky => matrix
-            .as_ref()
-            .llt(faer::Side::Lower)
-            .map_err(|error| format!("faer checked Cholesky rejected matrix: {error:?}"))?
-            .solve(&rhs),
-        Factorization::PivotedLblt => matrix.as_ref().lblt(faer::Side::Lower).solve(&rhs),
+    let dimension = case.dimension;
+    let (has_2x2_pivot_block, solve_rhs): (bool, Box<RhsSolver>) = match method {
+        Factorization::Cholesky => {
+            let factor = matrix
+                .as_ref()
+                .llt(faer::Side::Lower)
+                .map_err(|error| format!("faer checked Cholesky rejected matrix: {error:?}"))?;
+            let solve_rhs = move |rhs: &[f64]| {
+                if rhs.len() != dimension || rhs.iter().any(|value| !value.is_finite()) {
+                    return Err(
+                        "right-hand side must be finite and match the factorization".to_owned()
+                    );
+                }
+                let rhs = faer::Mat::from_fn(dimension, 1, |row, _| rhs[row]);
+                let solution = factor.solve(&rhs);
+                Ok((0..dimension).map(|index| solution[(index, 0)]).collect())
+            };
+            (false, Box::new(solve_rhs))
+        }
+        Factorization::PivotedLblt => {
+            let factor = matrix.as_ref().lblt(faer::Side::Lower);
+            let subdiagonal = factor.B_subdiag().column_vector();
+            let has_2x2_pivot_block = (0..dimension).any(|index| subdiagonal[index] != 0.0);
+            let solve_rhs = move |rhs: &[f64]| {
+                if rhs.len() != dimension || rhs.iter().any(|value| !value.is_finite()) {
+                    return Err(
+                        "right-hand side must be finite and match the factorization".to_owned()
+                    );
+                }
+                let rhs = faer::Mat::from_fn(dimension, 1, |row, _| rhs[row]);
+                let solution = factor.solve(&rhs);
+                Ok((0..dimension).map(|index| solution[(index, 0)]).collect())
+            };
+            (has_2x2_pivot_block, Box::new(solve_rhs))
+        }
     };
-    Ok((0..case.dimension)
-        .map(|index| solution[(index, 0)])
-        .collect())
+    #[cfg(not(test))]
+    let _ = has_2x2_pivot_block;
+    Ok(FactorizedSystem {
+        backend: Backend::Faer,
+        method,
+        dimension,
+        #[cfg(test)]
+        has_2x2_pivot_block,
+        solve_rhs,
+    })
 }
 
 #[cfg(feature = "nalgebra-backend")]
-fn solve_nalgebra(case: &LinearCase, method: Factorization) -> Result<Vec<f64>, String> {
+fn factorize_nalgebra(
+    case: &LinearCase,
+    method: Factorization,
+) -> Result<FactorizedSystem, String> {
     let matrix = DMatrix::from_row_slice(case.dimension, case.dimension, &case.matrix);
-    let rhs = DVector::from_column_slice(&case.rhs);
-    let solution = match method {
-        Factorization::Cholesky => matrix
-            .cholesky()
-            .ok_or_else(|| "nalgebra checked Cholesky rejected matrix".to_owned())?
-            .solve(&rhs),
-        Factorization::PivotedLblt => LBLT::new(matrix)
-            .solve(&rhs)
-            .ok_or_else(|| "nalgebra pivoted LBLT reported a zero pivot".to_owned())?,
+    let dimension = case.dimension;
+    let (has_2x2_pivot_block, solve_rhs): (bool, Box<RhsSolver>) = match method {
+        Factorization::Cholesky => {
+            let factor: Cholesky<f64, Dyn> = matrix
+                .cholesky()
+                .ok_or_else(|| "nalgebra checked Cholesky rejected matrix".to_owned())?;
+            let solve_rhs = move |rhs: &[f64]| {
+                if rhs.len() != dimension || rhs.iter().any(|value| !value.is_finite()) {
+                    return Err(
+                        "right-hand side must be finite and match the factorization".to_owned()
+                    );
+                }
+                let rhs = DVector::from_column_slice(rhs);
+                Ok(factor.solve(&rhs).iter().copied().collect())
+            };
+            (false, Box::new(solve_rhs))
+        }
+        Factorization::PivotedLblt => {
+            let factor: LBLT<f64, Dyn> = LBLT::new(matrix);
+            let d = factor.d();
+            let has_2x2_pivot_block =
+                (0..dimension.saturating_sub(1)).any(|index| d[(index + 1, index)] != 0.0);
+            let solve_rhs = move |rhs: &[f64]| {
+                if rhs.len() != dimension || rhs.iter().any(|value| !value.is_finite()) {
+                    return Err(
+                        "right-hand side must be finite and match the factorization".to_owned()
+                    );
+                }
+                let rhs = DVector::from_column_slice(rhs);
+                factor
+                    .solve(&rhs)
+                    .map(|solution| solution.iter().copied().collect())
+                    .ok_or_else(|| "nalgebra pivoted LBLT reported a zero pivot".to_owned())
+            };
+            (has_2x2_pivot_block, Box::new(solve_rhs))
+        }
     };
-    Ok(solution.iter().copied().collect())
+    #[cfg(not(test))]
+    let _ = has_2x2_pivot_block;
+    Ok(FactorizedSystem {
+        backend: Backend::Nalgebra,
+        method,
+        dimension,
+        #[cfg(test)]
+        has_2x2_pivot_block,
+        solve_rhs,
+    })
 }
 
 fn refine(
@@ -248,7 +372,20 @@ fn refine(
     backend: Backend,
     method: Factorization,
 ) -> Result<RefinementReport, String> {
-    let initial = solve(case, backend, method)?;
+    refine_with_factorizer(case, backend, method, FactorizedSystem::new)
+}
+
+fn refine_with_factorizer<F>(
+    case: &LinearCase,
+    backend: Backend,
+    method: Factorization,
+    factorizer: F,
+) -> Result<RefinementReport, String>
+where
+    F: FnOnce(&LinearCase, Backend, Factorization) -> Result<FactorizedSystem, String>,
+{
+    let factorization = factorizer(case, backend, method)?;
+    let initial = factorization.solve(case)?;
     let mut solution = initial.solution;
     let mut residual_inf = initial.residual_inf;
     let mut backward_error = initial.backward_error;
@@ -257,11 +394,11 @@ fn refine(
 
     for _ in 0..MAX_REFINEMENT_STEPS {
         let residual = residual_vector(case, &solution)?;
-        if infinity_norm(&residual) == 0.0 {
+        if infinity_norm(&residual, "refinement residual")? == 0.0 {
             break;
         }
         let correction_case = case.with_rhs(residual)?;
-        let correction = solve(&correction_case, backend, method)?;
+        let correction = factorization.solve(&correction_case)?;
         let candidate = solution
             .iter()
             .zip(correction.solution)
@@ -450,14 +587,65 @@ mod factorization_spike_cases {
 
     #[test]
     fn leading_zero_indefinite_case_requires_pivoted_lblt() -> Result<(), String> {
-        let matrix = vec![0.0, 2.0, 0.0, 2.0, 0.0, 1.0, 0.0, 1.0, -3.0];
-        let expected = vec![1.0, -2.0, 0.5];
-        let case = LinearCase::from_solution(3, matrix, &expected)?;
+        let matrix = vec![0.0, 2.0, 2.0, 0.0];
+        let expected = vec![1.0, -2.0];
+        let case = LinearCase::from_solution(2, matrix, &expected)?;
         for &backend in Backend::ALL {
-            let report = solve(&case, backend, Factorization::PivotedLblt)?;
+            let factorization = FactorizedSystem::new(&case, backend, Factorization::PivotedLblt)?;
+            assert!(
+                factorization.has_2x2_pivot_block,
+                "{} did not expose the mandatory 2-by-2 pivot block",
+                backend.label()
+            );
+            let report = factorization.solve(&case)?;
             assert_solution_close(&report.solution, &expected, 1.0e-13, backend.label());
             assert!(solve(&case, backend, Factorization::Cholesky).is_err());
         }
+        Ok(())
+    }
+
+    #[test]
+    fn nonfinite_residual_evidence_is_rejected() -> Result<(), String> {
+        let case = LinearCase::new(1, vec![f64::MAX], vec![0.0])?;
+        assert!(residual_metrics(&case, &[2.0]).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn refinement_constructs_exactly_one_factorization() -> Result<(), String> {
+        use std::cell::Cell;
+        use std::rc::Rc;
+
+        let case = LinearCase::new(1, vec![1.0], vec![1.0])?;
+        let factorization_count = Cell::new(0);
+        let solve_count = Rc::new(Cell::new(0));
+        let observed_solve_count = Rc::clone(&solve_count);
+        let report = refine_with_factorizer(
+            &case,
+            Backend::ALL[0],
+            Factorization::Cholesky,
+            |_, backend, method| {
+                factorization_count.set(factorization_count.get() + 1);
+                let solve_count = Rc::clone(&solve_count);
+                let solve_rhs = move |rhs: &[f64]| {
+                    let invocation = solve_count.get();
+                    solve_count.set(invocation + 1);
+                    let scale = if invocation == 0 { 1.0 - 1.0e-10 } else { 1.0 };
+                    Ok(rhs.iter().map(|value| value * scale).collect())
+                };
+                Ok(FactorizedSystem {
+                    backend,
+                    method,
+                    dimension: 1,
+                    #[cfg(test)]
+                    has_2x2_pivot_block: false,
+                    solve_rhs: Box::new(solve_rhs),
+                })
+            },
+        )?;
+        assert_eq!(factorization_count.get(), 1);
+        assert!(observed_solve_count.get() >= 2);
+        assert_eq!(report.accepted_steps, 1);
         Ok(())
     }
 

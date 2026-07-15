@@ -10,30 +10,35 @@ Baseline environment: Microsoft Windows NT 10.0.26200.0, 12th Gen Intel Core
 i7-1260P, `x86_64-pc-windows-msvc`, Rust 1.96.1, one benchmark process. Both
 candidates used default features disabled. Each timed iteration used a
 deterministic matrix and RHS, performed the requested checked Cholesky or
-pivoted LBLT solve, reviewed the original-unit residual, and attempted at most
-three explicit refinement corrections. A correction was accepted only if the
-original-unit infinity-norm residual strictly decreased.
+pivoted LBLT factorization exactly once, reused those factors for the initial
+solution and at most three explicit refinement corrections, and reviewed the
+original-unit residual. A correction was accepted only if the original-unit
+infinity-norm residual strictly decreased.
 
 Three consecutive runs on 2026-07-15 produced these total times for three
 iterations:
 
 | Factorization | Size | faer 0.24.4 | nalgebra 0.35.0 |
 | --- | ---: | ---: | ---: |
-| Cholesky | 32 x 32 | 0.1654--0.2684 ms | 0.0785--0.1049 ms |
-| Pivoted LBLT | 32 x 32 | 0.0829--0.1166 ms | 0.0578--0.0795 ms |
-| Cholesky | 64 x 64 | 0.8509--1.1879 ms | 0.3025--0.4242 ms |
-| Pivoted LBLT | 64 x 64 | 0.6630--1.0005 ms | 0.3426--0.5620 ms |
-| Cholesky | 128 x 128 | 2.2664--3.3045 ms | 1.2601--2.0680 ms |
-| Pivoted LBLT | 128 x 128 | 2.4950--3.4727 ms | 1.9469--2.5055 ms |
+| Cholesky | 32 x 32 | 0.1373--0.2164 ms | 0.0573--0.0939 ms |
+| Pivoted LBLT | 32 x 32 | 0.0670--0.1796 ms | 0.0491--0.0613 ms |
+| Cholesky | 64 x 64 | 0.4163--0.5373 ms | 0.2330--0.2596 ms |
+| Pivoted LBLT | 64 x 64 | 0.2936--0.3815 ms | 0.2733--0.3632 ms |
+| Cholesky | 128 x 128 | 1.4935--1.7552 ms | 0.7985--1.0767 ms |
+| Pivoted LBLT | 128 x 128 | 1.3904--1.7739 ms | 1.0141--1.3643 ms |
 
-Per-backend checksums, initial and final residuals, and accepted refinement
-counts were bit-identical across the three repeats. Checksums are not compared
-between candidates because valid rounding paths differ. Independent tests
-compare both solutions with analytic truth and require original-unit backward
-error no larger than `1e-8`.
+These ranges replace the pre-review measurements that reconstructed a
+factorization for every accepted correction. Nalgebra had the lower median in
+all six repaired measurements; the 64-square LBLT ranges overlap. Per-backend
+checksums, initial and final residuals, and accepted refinement counts were
+bit-identical across the three repeats. Checksums are not compared between
+candidates because valid rounding paths differ. Independent tests compare both
+solutions with analytic truth, inspect the mandatory 2-by-2 pivot block, and
+require finite original-unit evidence with backward error no larger than
+`1e-8`.
 
-Minimal-feature release binaries of the same harness were 207,872 bytes for
-nalgebra alone and 2,683,904 bytes for faer alone. The exact x86_64 Windows
+Minimal-feature release binaries of the repaired harness were 216,064 bytes for
+nalgebra alone and 2,692,608 bytes for faer alone. The exact x86_64 Windows
 graphs contained 13 and 41 external packages, and the candidate crate archives
 were 396,463 and 1,897,499 bytes. These are comparison-harness observations,
 not promises for a future GeoRBF library or adapter.

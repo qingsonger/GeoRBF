@@ -8,6 +8,7 @@
 - Base head: `8fee4315f7335c48d919cc5f04a217e6db829a07`
 - Review date: 2026-07-15
 - Result: three P1 findings; PR must remain Draft
+- Repair status: P1-1 through P1-3 implemented; fresh re-review required
 
 ## Scope and independence
 
@@ -45,6 +46,10 @@ matrix/vector norm, denominator, or backward error is nonfinite. Add the
 one-by-one counterexample as an independent regression and require
 `residual_metrics(&case, &[2.0])` to fail.
 
+Repair implementation: residual review now rejects every nonfinite residual
+entry, norm, denominator, and backward error. The finite-input one-by-one
+overflow counterexample is an independent regression.
+
 ### P1-2: refinement reconstructs the factorization for every correction
 
 `spikes/factorization-backends/src/main.rs:251` creates the initial solve, but
@@ -64,6 +69,11 @@ Required repair: separate factor construction from right-hand-side solves and
 reuse one factorization for the initial solution and all zero-to-three
 corrections. Add instrumented regression evidence that one `refine` call
 constructs exactly one factorization.
+
+Repair implementation: backend factor construction is separate from
+right-hand-side solves, and `refine` owns one factorization for its initial and
+correction solves. An injected factory and solve counter proves one
+factorization and multiple solves during an accepted correction.
 
 ### P1-3: the claimed mandatory 2-by-2 pivot case permits all 1-by-1 pivots
 
@@ -89,6 +99,11 @@ block. Verify its analytic solution and checked-Cholesky rejection for both
 backends, and inspect the block structure as well if the candidate API exposes
 it.
 
+Repair implementation: the truth case is now exactly `[[0, 2], [2, 0]]`, with
+analytic solution and checked-Cholesky rejection verified for both backends.
+The test inspects faer's block subdiagonal and nalgebra's block-diagonal `D` and
+requires each to expose the nonzero 2-by-2 pivot block.
+
 ## Independently verified evidence
 
 - The reviewed branch and remote PR head both equal `b194061163e3e15add68c044a9ed040b23f3bdd8`.
@@ -109,13 +124,26 @@ it.
 
 ## Disposition
 
-Keep PR #49 Draft. A fresh Repair task must address only P1-1, P1-2, and P1-3,
-add the specified regressions, run focused checks during repair and the final
-standard workspace gate on the stable repair head, update this record and the
-bounded handoff, commit, push, and stop for a fresh independent re-review. Do
-not begin REQ-IR-001.
+The bounded Repair task implemented only P1-1, P1-2, and P1-3 and added the
+specified regressions. Keep PR #49 Draft and stop for a fresh independent
+re-review; this repair record is implementation evidence, not an independent
+finding closure. Do not begin REQ-IR-001.
 
 The complete three-platform and benchmark-smoke ready-head gate remains an
 integration requirement, not a finding. External maintenance, license, unsafe,
 and advisory evidence was reviewed only through the bounded repository record
 and exact lockfile; unavailable audit tools were not claimed as executed.
+
+## Repair validation
+
+- Combined, faer-only, and nalgebra-only configurations each passed 8/8 tests;
+  the no-backend configuration failed with the required compile error, and
+  warning-denying all-target all-feature spike Clippy passed.
+- The optimized smoke workload and three consecutive complete 32/64/128
+  workloads passed. Repaired timing ranges and single-backend binary sizes are
+  recorded in `docs/benchmarks/REQ-SPIKE-001.md`.
+- The stable repair code/test head passed the complete standard workspace gate:
+  formatting, warning-denying workspace Clippy, all-feature workspace tests,
+  workspace doc tests, and all 58 requirement checks. `git diff --check` also
+  passed. The subsequent review-record and handoff edits are evidence-only and
+  change no code, tests, manifests, schemas, or build inputs.

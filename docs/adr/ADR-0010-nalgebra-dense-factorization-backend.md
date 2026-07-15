@@ -18,10 +18,11 @@ performance, and alternatives have been recorded.
 The reproducible excluded harness compared nalgebra 0.35.0 and faer 0.24.4
 with default features disabled. Both are pure Rust and provide checked LLT plus
 Bunch--Kaufman LBLT with symmetric 1-by-1 and 2-by-2 pivots. Both passed the
-same analytic SPD solution, leading-zero-diagonal indefinite solution,
-wrong-Cholesky-path, singular-system, ill-conditioned scaling, bounded
-refinement, finite-input, and deterministic-repeat cases on pinned Rust 1.96.1
-for x86_64 Windows MSVC.
+same analytic SPD solution, mandatory 2-by-2-pivot indefinite solution and
+factor inspection, wrong-Cholesky-path, singular-system, ill-conditioned
+scaling, bounded one-factorization refinement, overflowed-residual rejection,
+finite-input, and deterministic-repeat cases on pinned Rust 1.96.1 for x86_64
+Windows MSVC.
 
 ## Decision
 
@@ -61,17 +62,19 @@ constructor and solve are infallible at the type level, so the harness must
 reject its singular output through finite and original-unit residual review.
 
 Three consecutive optimized Windows runs covered 32, 64, and 128 square
-systems, three iterations each, including bounded refinement. Nalgebra was
-faster in every measured Cholesky and LBLT cell. At size 128 its three-
-iteration ranges were 1.2601--2.0680 ms for Cholesky and 1.9469--2.5055 ms for
-LBLT, compared with faer's 2.2664--3.3045 ms and 2.4950--3.4727 ms. Per-backend
+systems, three iterations each, with one factorization reused for bounded
+refinement. Nalgebra had the lower median in every measured Cholesky and LBLT
+cell, although the 64-square LBLT ranges overlap. At size 128 its three-
+iteration ranges were 0.7985--1.0767 ms for Cholesky and 1.0141--1.3643 ms for
+LBLT, compared with faer's 1.4935--1.7552 ms and 1.3904--1.7739 ms. Per-backend
 checksums, residuals, and accepted refinement counts were bit-identical across
 the three repeats. These small and medium dense measurements are a selection
 probe, not a final solver performance promise.
 
 The minimal x86_64 Windows dependency graphs contained 13 external packages
 for nalgebra and 41 for faer. Crates.io archives were 396,463 and 1,897,499
-bytes; the single-backend release harnesses were 207,872 and 2,683,904 bytes.
+bytes; the repaired single-backend release harnesses were 216,064 and 2,692,608
+bytes.
 All resolved licenses are permissive. The highest declared MSRV was Rust 1.89
 for nalgebra's graph and 1.85 for faer's, both below GeoRBF's pinned 1.96.1.
 

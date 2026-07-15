@@ -27,11 +27,14 @@ the PR is ready.
 The SPD cases use each candidate's checked Cholesky entry point. The symmetric
 indefinite cases use Bunch--Kaufman LBLT with symmetric pivoting, including a
 leading-zero-diagonal case that requires a 2-by-2 pivot block. Every returned
-solution must be finite and pass an original-unit normwise backward-error
-review. Singular and wrong-factorization-path cases must fail explicitly.
+solution and every residual, norm, denominator, and backward-error value must
+be finite and pass an original-unit normwise review. Singular and wrong-
+factorization-path cases must fail explicitly.
 
 The iterative-refinement experiment is bounded to three corrections. It
-refactors the unchanged matrix with the requested backend, accepts a correction
-only when the original-unit residual strictly decreases, and records both the
-initial and final residual. It never adds jitter, substitutes a diagonal,
-switches factorization, calls a pseudoinverse, or relaxes a hard equation.
+factorizes the unchanged matrix exactly once with the requested backend, reuses
+those factors for the initial solution and every correction, accepts a
+correction only when the original-unit residual strictly decreases, and records
+both the initial and final residual. It never adds jitter, substitutes a
+diagonal, switches factorization, calls a pseudoinverse, or relaxes a hard
+equation.
