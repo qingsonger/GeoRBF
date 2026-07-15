@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-CPD-001, Issue #45 (closed)
 - Implementation pull request: #46, squash-merged as `0c19373`
 - Integration-state branch: `codex/req-cpd-001-integration-state`
-- Integration-state pull request: pending creation
+- Integration-state pull request: #47 (Draft until final evidence is green)
 - Review record: `docs/reviews/PR-46-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-SPIKE-001 (`planned`)
@@ -49,7 +49,7 @@ fresh Implement task. Perform the mandatory preflight and use
 
 - Acceptance criteria and exclusions: GitHub Issue #45
 - Merged implementation: GitHub PR #46
-- Integration-state pull request: pending creation
+- Integration-state pull request: GitHub PR #47
 - Independent review and repair evidence:
   `docs/reviews/PR-46-INDEPENDENT-REVIEW.md`
 - Mathematical contract: `docs/math/CPD_AND_POLYNOMIALS.md`

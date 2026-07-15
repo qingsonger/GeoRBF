@@ -21,7 +21,7 @@ available in Git history through commit `a2be099`.
 | REQ-POLY-001 | #34 | #35 | #36 | `docs/reviews/PR-35-INDEPENDENT-REVIEW.md` |
 | REQ-FUNC-001 | #37 | #38 | #39 | `docs/reviews/PR-38-INDEPENDENT-REVIEW.md` |
 | REQ-SPIKE-002 | #40 | #41 | #42 | `docs/reviews/PR-41-INDEPENDENT-REVIEW.md` |
-| REQ-CPD-001 | #45 | #46 | pending | `docs/reviews/PR-46-INDEPENDENT-REVIEW.md` |
+| REQ-CPD-001 | #45 | #46 | #47 | `docs/reviews/PR-46-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
