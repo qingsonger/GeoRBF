@@ -82,6 +82,46 @@ Observations and center representers are separate collections. This distinction
 is retained even when an all-representer strategy initially gives them the same
 points and functionals.
 
+## Hard-equality field assembly
+
+`FieldProblem<D>` accepts provenance-bearing semantic hard equalities and a
+separate center-representer collection. The v1 dense all-representer path
+requires the observation expression `L_i` and same-index center expression
+`M_i` to be exactly equal while retaining their distinct types. A count,
+relation, enforcement, or expression mismatch is rejected before numerical
+assembly; no observation is silently converted into a center.
+
+For a strictly positive-definite kernel, assembly produces
+
+```text
+K_ij = L_i^(x) M_j^(y) k(x_i, c_j),
+K w = b.
+```
+
+For a conditionally positive-definite kernel of order `m`, the complete
+polynomial space through total degree `m-1` is generated automatically. With
+`P_i,alpha = L_i p_alpha` and `Q_j,alpha = M_j p_alpha`, assembly produces
+
+```text
+[ K   P ] [ w    ] = [ b ]
+[ Q^T 0 ] [ beta ]   [ 0 ].
+```
+
+Exact all-representer alignment makes `P=Q`. The implementation nevertheless
+computes the observation and center polynomial actions through their distinct
+roles and subjects the complete augmented matrix to a scale-derived symmetry
+review. CPD center actions also undergo the accepted RRQR/SVD rank decision,
+verified null-space construction, and `Z^T K Z` projection. Assembly performs
+no solve, jitter, regularization, pseudoinverse, constraint relaxation, or
+center selection.
+
+Only the upper kernel triangle is evaluated and then reflected. Before each
+atomic term pair is evaluated, the exact combined derivative demand is checked
+against kernel metadata. Away-only derivatives are rejected at coincident
+points. Kernel evaluation, contraction, polynomial action, allocation, rank,
+and non-finite failures retain their originating row, column, term, and
+functional provenance where applicable.
+
 The only v1 atomic functionals are value at a point and directional derivative
 at a point. A finite linear expression of atoms represents differences,
 coordinate derivatives, directional gradients, tangents, normal complements,

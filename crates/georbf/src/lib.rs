@@ -9,9 +9,8 @@
 //! dimension-generic polynomial spaces, atomic scalar-field functionals, and
 //! scale-aware CPD polynomial rank enforcement with null-space projection,
 //! plus provenance-preserving semantic and solver-neutral canonical problem
-//! intermediate representations.
-//! Field assembly and solvers are introduced by separately reviewed
-//! requirements.
+//! intermediate representations and symmetric dense hard-equality field
+//! assembly. Solvers are introduced by a separately reviewed requirement.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -20,6 +19,7 @@ pub mod anisotropy;
 pub mod coordinates;
 pub mod cpd;
 pub mod dimension;
+pub mod field;
 pub mod functional;
 pub mod geometry;
 pub mod kernel;
@@ -43,6 +43,11 @@ pub use cpd::{
     CpdWeights,
 };
 pub use dimension::{Dim, SupportedDimension};
+pub use field::{
+    CpdFieldAssembly, DenseFieldMatrix, DenseFieldSystem, FieldAssemblyDiagnostics,
+    FieldAssemblyError, FieldAssemblyStorage, FieldLinearizationError, FieldProblem,
+    FieldProblemError,
+};
 pub use functional::{
     CenterRepresenter, FunctionalAtom, FunctionalError, FunctionalExpr, FunctionalProvenance,
     FunctionalStorage, FunctionalTerm, KernelActionError, ObservationFunctional, ScalarFieldSample,

@@ -300,16 +300,16 @@ requirements:
     dependencies: [REQ-CPD-001, REQ-IR-001, REQ-ANISO-001]
     milestone: M3-v0.3.0
     priority: P0
-    issue: null
+    issue: 54
     pull_request: null
     tests: [analytic-fields, mixed-functionals, symmetry, invalid-capabilities]
     docs: [docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, rustdoc]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
+    rust_api: implemented
+    cli: "N/A: no fitting command exists before dense solving, fitted models, and versioned schemas"
+    c_api: "N/A: the stable C fitting ABI waits for solver/model requirements and API freeze"
+    cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than reimplementing assembly"
+    python_api: "N/A: no stable schema-backed fitting surface exists before solver and model integration"
+    benchmark: implemented
     status: planned
 
   - id: REQ-SOLVE-001

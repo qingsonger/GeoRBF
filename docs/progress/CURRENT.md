@@ -6,53 +6,58 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-IR-001 complete
-- Requirement: REQ-IR-001, Issue #51 (closed)
-- Implementation pull request: #52, squash-merged as `76f55e6`
-- Integration-state branch: `codex/req-ir-001-integration-state`
-- Integration-state pull request: #53 (Draft until final evidence is green)
-- Review record: `docs/reviews/PR-52-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-FIELD-001 (`planned`)
+- Mode: Implement / REQ-FIELD-001 complete
+- Requirement: REQ-FIELD-001, Issue #54
+- Branch: `codex/req-field-001-hard-equality-assembly`
+- Draft pull request: pending creation after the stable-head gate
+- Registry state: `planned` pending Draft PR linkage (not `integrated`)
+- Dependencies: complete closure through REQ-ANISO-001, REQ-CPD-001, and
+  REQ-IR-001 is `integrated`
 
-## Integration result
+## Implemented scope
 
-- A fresh read-only `math_reviewer` closed P2-1 and P2-2 and found no remaining
-  P0, P1, P2, or P3 issue in the complete implementation diff.
-- Exact Ready head `e610e29` passed the complete Windows, Ubuntu, and macOS CI
-  matrix with every benchmark smoke workload in run 29416668025.
-- PR #52 squash-merged exactly once as `76f55e6`; Issue #51 closed as
-  completed.
-- Post-merge `main` run 29417378257 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate.
-- This isolated integration-state change updates only registry and progress
-  evidence. It changes no production code, tests, manifest, schema, CI, build
-  input, API, numerical behavior, dependency, tag, or release.
+- Added public `FieldProblem<D>` for D=1/D=2/D=3 with distinct observation and
+  center collections, exact all-representer alignment, and hard-equality-only
+  validation.
+- Added upper-triangle mixed value/directional-derivative kernel assembly through
+  an explicit evaluator callback and metadata capability checks.
+- Added canonical center-weight/polynomial variable blocks and immutable
+  GeoRBF-owned symmetric dense matrix, right-hand side, and diagnostics.
+- Added automatic complete polynomial augmentation, CPD RRQR/SVD rank review,
+  verified null space, side-condition rows, and projected `Z^T K Z` evidence.
+- Added independent analytic/property/error tests, rustdoc, runnable example,
+  normative math/architecture updates, changelog fragment, deterministic
+  benchmark, and three-platform CI smoke routing.
+- CLI, C, C++, and Python are N/A until solver, model, schema, and binding
+  requirements establish a stable fitting surface.
 
 ## Validation state
 
-- The implementation and repair heads passed focused tests and the complete
-  local standard gate; the clean reviewer independently repeated that gate and
-  the D=1/D=2/D=3 problem-IR benchmark smoke.
-- Exact Ready-head and post-merge `main` three-platform gates are green as
-  recorded above.
-- The integration-state branch must pass the complete local standard gate and
-  `git diff --check` after its final evidence update.
+- Focused field tests: 5 passed.
+- Focused all-target warning-denying Clippy: passed.
+- Runnable example and D=1/D=2/D=3 benchmark smoke: passed.
+- Four local 100-iteration benchmark runs retained dimension-specific bit-stable
+  checksums; timing ranges are recorded in
+  `docs/benchmarks/REQ-FIELD-001.md`.
+- One complete stable-code-head gate passed: format, warning-denying workspace
+  Clippy, all-feature workspace tests, workspace doctests, the 58-requirement
+  registry check, and `git diff --check`.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh Implement task. Perform the mandatory preflight and use
-`cargo xtask requirements next`; do not start REQ-FIELD-001 in this task.
+After the Draft PR is created, open a fresh independent Review task. Review only
+REQ-FIELD-001 against Issue #54, its dependency closure, normative field/math
+documents, the complete PR diff, and validation evidence. Use a fresh read-only
+project `math_reviewer`; do not repair production code or begin REQ-SOLVE-001 in
+that Review task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #51
-- Merged implementation: GitHub PR #52
-- Integration-state pull request: GitHub PR #53
-- Independent review and repair evidence:
-  `docs/reviews/PR-52-INDEPENDENT-REVIEW.md`
-- Problem IR contract: `docs/architecture/PROBLEM_IR.md`
+- Acceptance criteria and exclusions: GitHub Issue #54
+- Requirement summary: `changes/REQ-FIELD-001.md`
+- Mathematical contract: `docs/math/MATH_SPEC.md`
+- Architecture contract: `docs/architecture/ARCHITECTURE.md`
+- Benchmark: `docs/benchmarks/REQ-FIELD-001.md`
 
 ## Checks not yet available
 

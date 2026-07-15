@@ -50,3 +50,7 @@ harness = false
 [[bench]]
 name = "problem_ir"
 harness = false
+
+[[bench]]
+name = "field_assembly"
+harness = false
