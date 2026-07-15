@@ -274,7 +274,7 @@ requirements:
     cpp_api: "N/A: dependency spike exposes no C++ API"
     python_api: "N/A: dependency spike exposes no Python API"
     benchmark: implemented
-    status: documented
+    status: integrated
 
   - id: REQ-IR-001
     title: Semantic and canonical problem IR

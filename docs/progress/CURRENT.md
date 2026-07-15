@@ -6,55 +6,55 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / ready-head integration sequence for PR #49
-- Requirement: REQ-SPIKE-001, Issue #48
-- Branch: `codex/req-spike-001-dense-factorization`
-- Draft pull request: #49
-- Clean re-review head: `7e365514c5541b6b3e8b594f6fc8ef18bbc90851`
+- Mode: Integration state / REQ-SPIKE-001 complete
+- Requirement: REQ-SPIKE-001, Issue #48 (closed)
+- Implementation pull request: #49, squash-merged as `2e4cfbc`
+- Integration-state branch: `codex/req-spike-001-integration-state`
+- Integration-state pull request: #50 (Draft until final evidence is green)
 - Review record: `docs/reviews/PR-49-INDEPENDENT-REVIEW.md`
-- Registry state: `documented` (not integrated)
-- Dependency: REQ-BOOTSTRAP-001 is `integrated`
+- Registry state in this change: `integrated`
+- Next eligible requirement: REQ-IR-001 (`planned`)
 
-## Re-review result
+## Integration result
 
-- A fresh read-only `math_reviewer` confirmed P3-2 is closed on exact head
-  `7e365514c5541b6b3e8b594f6fc8ef18bbc90851` and found no remaining P0, P1,
-  P2, or P3 issue in the complete PR diff.
-- Independent truth review reconfirmed the SPD and mandatory two-by-two-pivot
-  indefinite cases, finite original-unit backward-error evidence, one-factor
-  refinement, explicit failure, no hidden adjustment, dependency isolation,
-  truthful interfaces, CI claims, and requirement state.
-- The review evidence update changes only the review record and this handoff;
-  production code, tests, manifests, schemas, CI, and build inputs are
-  unchanged.
+- A fresh read-only `math_reviewer` closed P3-2 and found no remaining P0,
+  P1, P2, or P3 issue in the complete implementation diff.
+- Exact ready head `2665f0a` passed the complete Windows, Ubuntu, and macOS CI
+  matrix with every benchmark smoke workload in run 29406083900.
+- PR #49 squash-merged exactly once as `2e4cfbc`; Issue #48 closed as
+  completed.
+- Post-merge `main` run 29406759904 passed the same complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate.
+- This isolated integration-state change updates only registry and progress
+  evidence. It changes no production code, tests, manifest, schema, CI, build
+  input, API, numerical behavior, dependency, tag, or release.
 
-## Integration sequence
+## Validation state
 
-Synchronize the clean review evidence, mark PR #49 ready, and wait for the
-complete Windows, Ubuntu, and macOS correctness matrix and every benchmark
-smoke workload on that exact Ready head. Merge exactly once only if the full
-gate is green, then record truthful integration state in an isolated change.
-Do not begin REQ-IR-001 in this task.
-
-## Validation evidence
-
-- The independent reviewer reran spike formatting, warning-denying all-feature
-  Clippy, combined and both single-backend configurations with 8/8 tests each,
-  optimized smoke, all 58 requirement checks, and `git diff --check`; all
-  passed.
-- The primary task ran the complete standard workspace gate on exact reviewed
-  head `1ca34634aab1a46ee482b1d0737119c0327123db`; all five required checks and
-  `git diff --check` passed.
-- The documentation-only P3-2 repair reran all 58 requirement checks and
-  `git diff --check`; both passed.
-- Exact-head Draft CI run 29403767685 passed on Ubuntu. The reviewer relied on
-  that run for the required no-backend rejection and did not rerun it locally.
-- Exact repaired-head Draft CI run 29404916642 passed on Ubuntu.
 - The primary task ran the complete standard workspace gate and
-  `git diff --check` on exact clean-review head
-  `7e365514c5541b6b3e8b594f6fc8ef18bbc90851`; all passed.
-- No three-platform or benchmark-smoke Ready-head CI is claimed before that
-  event-triggered run completes.
+  `git diff --check` on exact clean-review head `7e36551`; all passed. Later
+  implementation-branch commits changed only review evidence and the bounded
+  handoff.
+- Exact ready-head and post-merge `main` three-platform gates are green as
+  recorded above.
+- The integration-state branch must pass the complete local standard gate and
+  `git diff --check` after its final evidence update.
+
+## Next task
+
+After the isolated integration-state pull request is green and merged, open a
+fresh Implement task. Perform the mandatory preflight and use
+`cargo xtask requirements next`; do not start REQ-IR-001 in this task.
+
+## Durable evidence
+
+- Acceptance criteria and exclusions: GitHub Issue #48
+- Merged implementation: GitHub PR #49
+- Integration-state pull request: GitHub PR #50
+- Independent review and repair evidence:
+  `docs/reviews/PR-49-INDEPENDENT-REVIEW.md`
+- Solver policy: `docs/architecture/SOLVER_POLICY.md`
+- Backend decision: `docs/adr/ADR-0010-nalgebra-dense-factorization-backend.md`
 
 ## Checks not yet available
 
