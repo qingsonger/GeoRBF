@@ -4,82 +4,70 @@ This file is a bounded handoff for the next task. Completed history belongs in
 `docs/progress/HISTORY.md`, requirement change fragments, independent review
 records, benchmark reports, Git, and GitHub.
 
-## Completed scope and terminal handoff
+## Active scope
 
-- Mode: Terminal handoff / REQ-SPIKE-002 complete
-- Requirement: REQ-SPIKE-002, Issue #40 (closed)
-- Implementation pull request: #41, squash-merged as `4c1ddeb`
-- Integration-state pull request: #42, squash-merged as
-  `d8ce7508c51f77b8d50245a8d1255ffad2d44c92`
-- Handoff repair: Issue #43, pull request #44
-- Review record: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
-- Handoff-repair review: `docs/reviews/PR-44-INDEPENDENT-REVIEW.md`
-- Registry state: `integrated`
-- Next eligible requirement: REQ-CPD-001 (`planned`)
-- Production dependency state: unchanged; the comparison crate is excluded
-  from the production workspace
+- Mode: Review clean; ready-head integration sequence next
+- Requirement: REQ-CPD-001, Issue #45
+- Pull request: #46 (Draft until this clean-review evidence is pushed)
+- Branch: `codex/req-cpd-001-rank-nullspace`
+- Exact cleanly reviewed head: `062bae329bbd2194b93d7708a428852c459eccfd`
+- Repair code/test head: `06ad419c06fd4c887c32be8a8dcd6ff9e1061c68`
+- Registry state: `documented` (not integrated)
+- Dependencies: REQ-KERNEL-002, REQ-POLY-001, REQ-FUNC-001, and
+  REQ-SPIKE-002 are integrated
 
-## Integration result
+## Review result
 
-- A second fresh read-only `math_reviewer` inspected the complete PR diff at
-  exact head `66ed708` without inheriting Repair reasoning.
-- P2-1, P2-2, and P3-1 are independently confirmed closed. No P0, P1, P2, or
-  P3 issue remains.
-- Exact ready head `3e6f4e1` passed the complete Windows, Ubuntu, and macOS CI
-  matrix with every benchmark smoke workload in run 29376057562.
-- PR #41 squash-merged exactly once as `4c1ddeb`; Issue #40 closed as
-  completed.
-- Post-merge `main` run 29376336046 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate.
-- Exact integration-state ready head `efd2221` passed the complete Windows,
-  Ubuntu, and macOS CI matrix in run 29380377235.
-- PR #42 squash-merged exactly once as
-  `d8ce7508c51f77b8d50245a8d1255ffad2d44c92`; post-merge `main` run
-  29380658715 passed the complete three-platform correctness, benchmark-smoke,
-  and requirement-registry gate on that exact commit.
-- The REQ-SPIKE-002 implementation and integration-state sequence is complete.
+- A fifth fresh read-only `math_reviewer` independently inspected the complete
+  PR diff at exact head `062bae3` without inheriting Repair reasoning.
+- P2-5 is closed: the fixed-stack exact binary accumulator retains the
+  representable `2^-104` near-cancellation residual, rejects the exact nonzero
+  `2^-1075` result as unrepresentable, and both public diagnostic paths have
+  independent regressions.
+- No P0, P1, P2, or P3 finding remains. The complete diff is consistent with
+  the scoped mathematical, numerical, architecture, interface, diagnostic,
+  allocation, benchmark, and requirement contracts.
 
 ## Validation state
 
-- The first fresh read-only independent reviewer inspected exact PR #44 head
-  `5c45a8732a0da827c0ca6957544bcc2eb2523ac8` and found P2-1: the
-  proposed handoff would immediately become stale after merge because it keeps
-  the completed Repair active and calls PR #44 Draft. No P0, P1, or P3 finding
-  was reported.
-- A fresh read-only independent re-review inspected exact repaired head
-  `c09d581a2f97d9b774a8e1e1ede81275460655a6`, confirmed P2-1 closed,
-  and found no new P0, P1, P2, or P3 issue. PR #44 is cleared to enter the
-  mandatory ready-head integration sequence.
-- On stable implementation code/test head `30bd495`, the focused spike matrix
-  and complete standard workspace gate passed. Later implementation-branch
-  commits changed documentation only.
-- Exact implementation and integration-state ready-head and post-merge `main`
-  three-platform gates are green as recorded above.
-- The complete local integration-state standard gate passed: formatting,
-  warning-denying workspace Clippy with all targets and features, workspace
-  tests with all features, workspace rustdoc, all 58 requirement checks, and
-  `git diff --check`.
-- This Issue #43 repair changes only bounded handoff and review evidence. The
-  diff against post-merge `main` proves that no production code, test,
-  manifest, schema, build input, API, numerical behavior, dependency, tag, or
-  release changed, so the immutable full-gate evidence above is reused.
+- The complete public `georbf` CPD target passes all 13 tests, and all six
+  private CPD diagnostic regressions pass.
+- On exact repair code/test head `06ad419`, the complete standard gate passed:
+  formatting, warning-denying workspace Clippy, all-feature workspace tests,
+  workspace doc tests, and all 58 requirement checks.
+- `git diff --check` passed. The subsequent handoff/review-evidence update is
+  documentation-only, so the stable code/test-head gate remains applicable.
+- The optimized one-iteration benchmark smoke retained checksum
+  `-4.97657470788226419e-14` and completed in 0.7554 ms locally, within the
+  recorded 0.706--1.125 ms complete-assembly baseline.
+- The independent reviewer reran the public CPD target (13/13), all six private
+  CPD regressions, formatting, all 58 requirement checks, and
+  `git diff --check`; all passed.
+- Exact reviewed-head Draft CI run 29394931421 passed its complete Ubuntu job
+  on `062bae3`. The ready Windows/Ubuntu/macOS and benchmark-smoke matrix has
+  not run and must be triggered on the clean-evidence head.
 
 ## Next task
 
-- PR #44 must pass the complete Windows, Ubuntu, and macOS ready-head CI and
-  every benchmark-smoke workload on its exact final head before it merges.
-- After PR #44 merges, open a fresh Implement preflight and use
-  `cargo xtask requirements next` to select the next atomic requirement.
-- Do not start REQ-CPD-001 in this Review task.
+- Push this documentation-only clean-review evidence and mark PR #46 ready.
+- Wait for the ready event to complete Windows, Ubuntu, macOS, and every
+  benchmark smoke workload on that exact head. Merge exactly once only when
+  the complete matrix is green.
+- Wait for the post-merge `main` gate, then record truthful integration state
+  through an isolated change. Stop without beginning another requirement.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #40
-- Decision: `docs/adr/ADR-0009-nalgebra-rank-review-backend.md`
-- Independent review: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
-- Change summary: `changes/REQ-SPIKE-002.md`
-- Benchmark and size baseline: `docs/benchmarks/REQ-SPIKE-002.md`
-- Reproducible harness: `spikes/rank-backends/`
+- Acceptance criteria and exclusions: GitHub Issue #45
+- Draft implementation: GitHub PR #46
+- Independent findings and Repair evidence:
+  `docs/reviews/PR-46-INDEPENDENT-REVIEW.md`
+- Mathematical contract: `docs/math/CPD_AND_POLYNOMIALS.md`
+- Solver policy: `docs/architecture/SOLVER_POLICY.md`
+- Backend decision and production re-audit:
+  `docs/adr/ADR-0009-nalgebra-rank-review-backend.md`
+- Change summary: `changes/REQ-CPD-001.md`
+- Benchmark and size baseline: `docs/benchmarks/REQ-CPD-001.md`
 
 ## Checks not yet available
 

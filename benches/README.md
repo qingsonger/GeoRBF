@@ -26,3 +26,15 @@ cargo bench -p georbf --bench atomic_functionals
 
 The fixed workload and measured local baseline are recorded in
 `docs/benchmarks/REQ-FUNC-001.md`.
+
+`REQ-CPD-001` adds a deterministic 64-center D=3 workload covering polynomial
+action assembly, equilibration, RRQR/SVD review, null-space construction, and
+verification:
+
+```text
+cargo bench -p georbf --bench cpd_rank_nullspace -- --smoke
+cargo bench -p georbf --bench cpd_rank_nullspace
+```
+
+The recorded baseline and dependency-size context are in
+`docs/benchmarks/REQ-CPD-001.md`.

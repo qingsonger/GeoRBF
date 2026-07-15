@@ -5,15 +5,18 @@
 //! polyharmonic/surface-spline kernels, smooth global-support kernels, and
 //! Wendland compact-support kernels for exactly one, two, or three dimensions,
 //! validated geological orientation conversions in two and three dimensions,
-//! fixed global anisotropy metrics with chain-rule derivatives, and complete
-//! dimension-generic polynomial spaces, and atomic scalar-field functionals.
-//! Assembly and solvers are introduced by separately reviewed requirements.
+//! fixed global anisotropy metrics with chain-rule derivatives, complete
+//! dimension-generic polynomial spaces, atomic scalar-field functionals, and
+//! scale-aware CPD polynomial rank enforcement with null-space projection.
+//! Field assembly and solvers are introduced by separately reviewed
+//! requirements.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
 pub mod anisotropy;
 pub mod coordinates;
+pub mod cpd;
 pub mod dimension;
 pub mod functional;
 pub mod geometry;
@@ -30,6 +33,11 @@ pub use anisotropy::{
 pub use coordinates::{
     AxisOrder, CoordinateMetadata, CoordinateMetadataError, CoordinateMetadataField, CrsMetadata,
     Handedness, VerticalDirection,
+};
+pub use cpd::{
+    CpdError, CpdIncompleteRankDiagnostics, CpdMatrix, CpdMatrixNorms, CpdNullSpace,
+    CpdNullSpaceQuality, CpdRankDecision, CpdRankDiagnostics, CpdStorage, CpdWeightOrigin,
+    CpdWeights,
 };
 pub use dimension::{Dim, SupportedDimension};
 pub use functional::{

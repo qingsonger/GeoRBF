@@ -35,7 +35,8 @@ The rank policy evaluated here is:
    dispatch. Preserve exact zero rows and columns for explicit diagnosis.
 2. Apply eight deterministic alternating infinity-norm row and column
    equilibration passes. Record cumulative row and column scales when this
-   policy moves into production.
+   policy moves into production. Reject both unrepresentable cumulative
+   multipliers and any scaling step that rounds a nonzero entry to zero.
 3. Form the dimensionless RRQR screen threshold
    `tau_qr = max(m,n) * eps * max_i(abs(R_ii))`.
 4. Form the SVD review threshold
@@ -47,8 +48,10 @@ The rank policy evaluated here is:
    scales, matrix norms, condition estimate, and scaled and original-unit
    residuals.
 6. Use `SVD::try_new` with a finite, recorded iteration limit and convert
-   non-convergence into a structured error. Do not call nalgebra's
-   pseudoinverse or minimum-norm solve as a rank-deficiency fallback.
+   non-convergence into a structured error. Preserve all completed
+   equilibration and RRQR evidence, and mark SVD-derived evidence and the final
+   decision unavailable. Do not call nalgebra's pseudoinverse or minimum-norm
+   solve as a rank-deficiency fallback.
 
 The exact fixed pass count and threshold multiplier are an initial recorded
 policy, not an authorization to hide ambiguous cases. The CPD implementation
@@ -110,3 +113,34 @@ GeoRBF-owned scaling, thresholds, diagnostics, null-space policy, and error
 mapping. This ADR does not integrate a production solver, authorize a
 pseudoinverse, or mark the backend as platform-verified before the exact PR
 head completes the repository's Windows, Ubuntu, and macOS gate.
+
+## REQ-CPD-001 production re-audit
+
+Re-audited on 2026-07-15 before production adoption. Crates.io still listed
+0.35.0 as the only non-yanked 0.35 patch release, with Apache-2.0 licensing and
+Rust 1.89 MSRV. The upstream repository was active on 2026-06-30 and was not
+archived or disabled. The selected minimal `std` feature remains compatible
+with GeoRBF's Rust 1.96.1 and pure-Rust Windows, Ubuntu, and macOS CI strategy.
+
+The production graph resolves 13 unique external packages including nalgebra.
+Every declared license is MIT, Apache-2.0, Zlib, or an OR-expression of those
+permissive licenses; the highest declared transitive MSRV is 1.89. An OSV batch
+query for every exact resolved package/version and GitHub's global and
+repository security-advisory APIs returned no known advisory for the graph or
+nalgebra 0.35.0. `cargo-audit` and `cargo-deny` remain unavailable locally, so
+the exact API queries are recorded as the performed vulnerability review, not
+as claims that those tools ran.
+
+A conservative source-line scan found the word `unsafe` on 2,661 Rust source
+lines across 9 of the 13 external packages. This is an exposure indicator, not
+an unsafe-block count or soundness proof. GeoRBF continues to forbid unsafe in
+its own core. The optimized 64-center CPD benchmark executable is 283,648 bytes
+on x86_64 Windows MSVC; this workload binary is a size observation, not a
+library or final CLI promise.
+
+The earlier alternatives remain unchanged: faer carries a materially larger
+graph for this dense scope, native-LAPACK options add platform and
+redistribution complexity, linfa-linalg lacks the required released
+column-pivoted QR path, and an in-repository QR/SVD implementation remains
+forbidden. The re-audit therefore confirms nalgebra 0.35.0 with exact pinning,
+default features disabled, and only `std` enabled.

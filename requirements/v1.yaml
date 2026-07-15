@@ -246,17 +246,17 @@ requirements:
     dependencies: [REQ-KERNEL-002, REQ-POLY-001, REQ-FUNC-001, REQ-SPIKE-002]
     milestone: M2-v0.2.0
     priority: P0
-    issue: null
-    pull_request: null
-    tests: [polynomial-reproduction, nullspace, degeneracy-1d-2d-3d, scale-invariance, rank-threshold, kkt-equivalence]
-    docs: [docs/math/CPD_AND_POLYNOMIALS.md, docs/architecture/SOLVER_POLICY.md]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
-    status: planned
+    issue: 45
+    pull_request: 46
+    tests: [polynomial-reproduction, nullspace, degeneracy-1d-2d-3d, scale-invariance, equilibration-underflow, scaled-nullspace-map, matrix-infinity-residuals, overflow-safe-original-residuals, extreme-action-range-residuals, exact-binary-original-residuals, rank-threshold, svd-non-convergence-evidence, kkt-equivalence]
+    docs: [docs/math/CPD_AND_POLYNOMIALS.md, docs/architecture/SOLVER_POLICY.md, docs/benchmarks/REQ-CPD-001.md, docs/reviews/PR-46-INDEPENDENT-REVIEW.md]
+    rust_api: implemented
+    cli: "N/A: no field schema or CLI CPD surface exists yet"
+    c_api: "N/A: no stable C binding surface exists yet"
+    cpp_api: "N/A: no stable C++ binding surface exists yet"
+    python_api: "N/A: no stable Python binding surface exists yet"
+    benchmark: implemented
+    status: documented
 
   - id: REQ-SPIKE-001
     title: Dense factorization backend spike

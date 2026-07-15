@@ -1,0 +1,650 @@
+//! Independent truth and mathematical-property tests for CPD rank enforcement.
+
+use std::error::Error;
+
+use georbf::{
+    CenterRepresenter, CpdError, CpdMatrix, CpdNullSpace, CpdRankDecision, CpdWeightOrigin, Dim,
+    FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm, Point, PolynomialSpace,
+    SupportedDimension, UnitDirection,
+};
+
+fn value_center<const D: usize>(
+    coordinates: [f64; D],
+    coefficient: f64,
+    provenance: u64,
+) -> Result<CenterRepresenter<D>, Box<dyn Error>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let atom = FunctionalAtom::value(
+        Point::try_new(coordinates)?,
+        FunctionalProvenance::new(provenance),
+    );
+    Ok(CenterRepresenter::new(FunctionalExpr::try_new([
+        FunctionalTerm::try_new(coefficient, atom)?,
+    ])?))
+}
+
+fn derivative_center<const D: usize>(
+    coordinates: [f64; D],
+    direction: [f64; D],
+    provenance: u64,
+) -> Result<CenterRepresenter<D>, Box<dyn Error>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let atom = FunctionalAtom::directional_derivative(
+        Point::try_new(coordinates)?,
+        UnitDirection::try_new(direction)?,
+        FunctionalProvenance::new(provenance),
+    );
+    Ok(CenterRepresenter::new(FunctionalExpr::try_new([
+        FunctionalTerm::try_new(1.0, atom)?,
+    ])?))
+}
+
+fn scaled_derivative_center<const D: usize>(
+    coordinates: [f64; D],
+    direction: [f64; D],
+    coefficient: f64,
+    provenance: u64,
+) -> Result<CenterRepresenter<D>, Box<dyn Error>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let atom = FunctionalAtom::directional_derivative(
+        Point::try_new(coordinates)?,
+        UnitDirection::try_new(direction)?,
+        FunctionalProvenance::new(provenance),
+    );
+    Ok(CenterRepresenter::new(FunctionalExpr::try_new([
+        FunctionalTerm::try_new(coefficient, atom)?,
+    ])?))
+}
+
+fn action_row_center(
+    action: [f64; 3],
+    provenance: u64,
+) -> Result<CenterRepresenter<2>, Box<dyn Error>> {
+    let point = Point::try_new([0.0, 0.0])?;
+    let atoms = [
+        FunctionalAtom::value(point, FunctionalProvenance::new(provenance)),
+        FunctionalAtom::directional_derivative(
+            point,
+            UnitDirection::try_new([1.0, 0.0])?,
+            FunctionalProvenance::new(provenance + 1),
+        ),
+        FunctionalAtom::directional_derivative(
+            point,
+            UnitDirection::try_new([0.0, 1.0])?,
+            FunctionalProvenance::new(provenance + 2),
+        ),
+    ];
+    let terms = action
+        .into_iter()
+        .zip(atoms)
+        .filter(|(coefficient, _)| *coefficient != 0.0)
+        .map(|(coefficient, atom)| FunctionalTerm::try_new(coefficient, atom))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(CenterRepresenter::new(FunctionalExpr::try_new(terms)?))
+}
+
+fn value_action_row_center(
+    action: [f64; 2],
+    provenance: u64,
+) -> Result<CenterRepresenter<1>, Box<dyn Error>> {
+    let atoms = [
+        FunctionalAtom::value(
+            Point::try_new([0.0])?,
+            FunctionalProvenance::new(provenance),
+        ),
+        FunctionalAtom::value(
+            Point::try_new([1.0])?,
+            FunctionalProvenance::new(provenance + 1),
+        ),
+    ];
+    let coefficients = [action[0] - action[1], action[1]];
+    let terms = coefficients
+        .into_iter()
+        .zip(atoms)
+        .filter(|(coefficient, _)| *coefficient != 0.0)
+        .map(|(coefficient, atom)| FunctionalTerm::try_new(coefficient, atom))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(CenterRepresenter::new(FunctionalExpr::try_new(terms)?))
+}
+
+fn assert_polynomial_reproduction(system: &CpdNullSpace, coefficients: &[f64]) {
+    assert_eq!(system.actions().columns(), coefficients.len());
+    let samples = (0..system.actions().rows())
+        .map(|row| {
+            coefficients
+                .iter()
+                .enumerate()
+                .map(|(column, coefficient)| {
+                    system.actions().get(row, column).unwrap_or(f64::NAN) * coefficient
+                })
+                .sum::<f64>()
+        })
+        .collect::<Vec<_>>();
+    for column in 0..system.basis().columns() {
+        let projected = samples
+            .iter()
+            .enumerate()
+            .map(|(row, sample)| {
+                let basis_value = system.basis().get(row, column).unwrap_or(f64::NAN);
+                basis_value * sample
+            })
+            .sum::<f64>();
+        assert!(projected.abs() < 1.0e-11);
+    }
+}
+
+fn assert_independent_null_space_properties(system: &CpdNullSpace) {
+    let actions = system.actions();
+    let basis = system.basis();
+    let side_condition_infinity = (0..actions.columns())
+        .map(|polynomial| {
+            let column_scale = (0..actions.rows())
+                .map(|row| actions.get(row, polynomial).unwrap_or(f64::NAN).abs())
+                .fold(0.0_f64, f64::max);
+            (0..basis.columns())
+                .map(|basis_column| {
+                    (0..actions.rows())
+                        .map(|row| {
+                            actions.get(row, polynomial).unwrap_or(f64::NAN) / column_scale
+                                * basis.get(row, basis_column).unwrap_or(f64::NAN)
+                        })
+                        .sum::<f64>()
+                        .abs()
+                })
+                .sum::<f64>()
+        })
+        .fold(0.0_f64, f64::max);
+    let orthonormality_infinity = (0..basis.columns())
+        .map(|left| {
+            (0..basis.columns())
+                .map(|right| {
+                    let product = (0..basis.rows())
+                        .map(|row| {
+                            basis.get(row, left).unwrap_or(f64::NAN)
+                                * basis.get(row, right).unwrap_or(f64::NAN)
+                        })
+                        .sum::<f64>();
+                    (product - f64::from(left == right)).abs()
+                })
+                .sum::<f64>()
+        })
+        .fold(0.0_f64, f64::max);
+
+    assert!(side_condition_infinity <= system.quality().tolerance);
+    assert!(orthonormality_infinity <= system.quality().tolerance);
+    assert!(
+        (system.quality().side_condition_residual - side_condition_infinity).abs() <= f64::EPSILON
+    );
+    assert!(
+        (system.quality().orthonormality_residual - orthonormality_infinity).abs() <= f64::EPSILON
+    );
+}
+
+#[test]
+fn assembles_complete_polynomial_actions_in_all_dimensions() -> Result<(), Box<dyn Error>> {
+    let one = [
+        value_center([-1.0], 1.0, 10)?,
+        value_center([0.0], 1.0, 11)?,
+        value_center([2.0], 1.0, 12)?,
+    ];
+    let one_system = CpdNullSpace::try_from_centers(&one, &PolynomialSpace::<1>::try_new(2)?)?;
+    assert_eq!(
+        one_system.actions().values(),
+        &[1.0, -1.0, 1.0, 0.0, 1.0, 2.0]
+    );
+    assert_polynomial_reproduction(&one_system, &[2.0, -0.5]);
+
+    let two = [
+        value_center([0.0, 0.0], 1.0, 20)?,
+        value_center([1.0, 0.0], 1.0, 21)?,
+        value_center([0.0, 1.0], 1.0, 22)?,
+        value_center([1.0, 1.0], 1.0, 23)?,
+    ];
+    let two_system = CpdNullSpace::try_from_centers(&two, &PolynomialSpace::<2>::try_new(2)?)?;
+    assert_eq!(two_system.actions().row(3), Some(&[1.0, 1.0, 1.0][..]));
+    assert_polynomial_reproduction(&two_system, &[2.0, -0.5, 3.0]);
+
+    let three = [
+        value_center([0.0, 0.0, 0.0], 1.0, 30)?,
+        value_center([1.0, 0.0, 0.0], 1.0, 31)?,
+        value_center([0.0, 1.0, 0.0], 1.0, 32)?,
+        value_center([0.0, 0.0, 1.0], 1.0, 33)?,
+        value_center([1.0, 1.0, 1.0], 1.0, 34)?,
+    ];
+    let three_system = CpdNullSpace::try_from_centers(&three, &PolynomialSpace::<3>::try_new(2)?)?;
+    assert_eq!(
+        three_system.actions().row(4),
+        Some(&[1.0, 1.0, 1.0, 1.0][..])
+    );
+    assert_polynomial_reproduction(&three_system, &[2.0, -0.5, 3.0, 1.25]);
+    assert_eq!(
+        three_system
+            .center_provenance(4)
+            .map(|terms| terms[0].identifier()),
+        Some(34)
+    );
+    Ok(())
+}
+
+#[test]
+fn directional_centers_act_on_polynomials_without_special_cases() -> Result<(), Box<dyn Error>> {
+    let centers = [
+        value_center([0.0, 0.0], 1.0, 1)?,
+        derivative_center([4.0, 5.0], [1.0, 0.0], 2)?,
+        derivative_center([4.0, 5.0], [0.0, 1.0], 3)?,
+        value_center([1.0, 1.0], 1.0, 4)?,
+    ];
+    let system = CpdNullSpace::try_from_centers(&centers, &PolynomialSpace::<2>::try_new(2)?)?;
+    assert_eq!(system.actions().row(1), Some(&[0.0, 1.0, 0.0][..]));
+    assert_eq!(system.actions().row(2), Some(&[0.0, 0.0, 1.0][..]));
+    assert_eq!(system.diagnostics().decision, CpdRankDecision::FullRank);
+
+    let zero_row = [
+        value_center([0.0, 0.0], 1.0, 10)?,
+        derivative_center([0.0, 0.0], [1.0, 0.0], 11)?,
+    ];
+    let zero_row_system =
+        CpdNullSpace::try_from_centers(&zero_row, &PolynomialSpace::<2>::try_new(1)?)?;
+    assert_eq!(zero_row_system.diagnostics().zero_rows, [1]);
+    Ok(())
+}
+
+#[test]
+fn null_space_is_orthonormal_and_expanded_weights_retain_provenance() -> Result<(), Box<dyn Error>>
+{
+    let centers = [
+        value_center([-2.0], 1.0, 1)?,
+        value_center([-1.0], 1.0, 2)?,
+        value_center([0.0], 1.0, 3)?,
+        value_center([1.0], 1.0, 4)?,
+        value_center([2.0], 1.0, 5)?,
+    ];
+    let system = CpdNullSpace::try_from_centers(&centers, &PolynomialSpace::<1>::try_new(2)?)?;
+    assert_eq!((system.basis().rows(), system.basis().columns()), (5, 3));
+    assert!(system.quality().side_condition_residual <= system.quality().tolerance);
+    assert!(system.quality().original_side_condition_residual < 1.0e-12);
+    assert!(system.quality().orthonormality_residual <= system.quality().tolerance);
+
+    let weights = system.try_expand_weights(&[1.0, -2.0, 0.5])?;
+    assert_eq!(weights.origin(), CpdWeightOrigin::PolynomialNullSpace);
+    assert!(weights.side_condition_residual() <= weights.tolerance());
+    assert!(weights.original_side_condition_residual() < 1.0e-12);
+    let constant = weights.values().iter().sum::<f64>();
+    let linear = weights
+        .values()
+        .iter()
+        .zip([-2.0, -1.0, 0.0, 1.0, 2.0])
+        .map(|(weight, x)| weight * x)
+        .sum::<f64>();
+    assert!(constant.abs() < 1.0e-12);
+    assert!(linear.abs() < 1.0e-12);
+    Ok(())
+}
+
+#[test]
+fn exact_degeneracy_is_reported_in_d1_d2_and_d3() -> Result<(), Box<dyn Error>> {
+    let one = [
+        value_center([1.0], 1.0, 1)?,
+        value_center([1.0], 1.0, 2)?,
+        value_center([1.0], 1.0, 3)?,
+    ];
+    assert_deficient(CpdNullSpace::try_from_centers(
+        &one,
+        &PolynomialSpace::<1>::try_new(2)?,
+    ))?;
+
+    let two = [
+        value_center([0.0, 0.0], 1.0, 1)?,
+        value_center([1.0, 2.0], 1.0, 2)?,
+        value_center([2.0, 4.0], 1.0, 3)?,
+        value_center([3.0, 6.0], 1.0, 4)?,
+    ];
+    assert_deficient(CpdNullSpace::try_from_centers(
+        &two,
+        &PolynomialSpace::<2>::try_new(2)?,
+    ))?;
+
+    let three = [
+        value_center([0.0, 0.0, 0.0], 1.0, 1)?,
+        value_center([1.0, 0.0, 0.0], 1.0, 2)?,
+        value_center([0.0, 1.0, 0.0], 1.0, 3)?,
+        value_center([1.0, 1.0, 0.0], 1.0, 4)?,
+        value_center([2.0, -1.0, 0.0], 1.0, 5)?,
+    ];
+    assert_deficient(CpdNullSpace::try_from_centers(
+        &three,
+        &PolynomialSpace::<3>::try_new(2)?,
+    ))?;
+    Ok(())
+}
+
+fn assert_deficient(result: Result<CpdNullSpace, CpdError>) -> Result<(), Box<dyn Error>> {
+    match result {
+        Err(CpdError::RankDeficient { diagnostics }) => {
+            assert_eq!(diagnostics.decision, CpdRankDecision::Deficient);
+            assert!(diagnostics.svd_rank < diagnostics.columns);
+            Ok(())
+        }
+        other => Err(std::io::Error::other(format!(
+            "expected clear rank deficiency, got {other:?}"
+        ))
+        .into()),
+    }
+}
+
+#[test]
+fn coordinate_units_and_nonzero_functional_scaling_preserve_rank() -> Result<(), Box<dyn Error>> {
+    let baseline = [
+        value_center([0.0, 0.0], 1.0, 1)?,
+        value_center([1.0, 0.0], 1.0, 2)?,
+        value_center([0.0, 1.0], 1.0, 3)?,
+        value_center([1.0, 1.0], 1.0, 4)?,
+    ];
+    let rescaled = [
+        value_center([0.0, 0.0], 2.0_f64.powi(-20), 1)?,
+        value_center([1.0e6, 0.0], -2.0_f64.powi(18), 2)?,
+        value_center([0.0, 1.0e6], 2.0_f64.powi(10), 3)?,
+        value_center([1.0e6, 1.0e6], -2.0_f64.powi(-12), 4)?,
+    ];
+    let space = PolynomialSpace::<2>::try_new(2)?;
+    let first = CpdNullSpace::try_from_centers(&baseline, &space)?;
+    let second = CpdNullSpace::try_from_centers(&rescaled, &space)?;
+    assert_eq!(first.diagnostics().decision, second.diagnostics().decision);
+    assert_eq!(first.diagnostics().svd_rank, second.diagnostics().svd_rank);
+    assert_eq!(second.diagnostics().equilibration_passes, 8);
+    assert!(
+        second
+            .diagnostics()
+            .row_scales
+            .iter()
+            .all(|scale| scale.is_finite() && *scale > 0.0)
+    );
+    Ok(())
+}
+
+#[test]
+fn extreme_scale_equilibration_never_erases_a_full_rank_action() -> Result<(), Box<dyn Error>> {
+    let centers = [
+        value_action_row_center([1.0e308, 1.0e-16], 10)?,
+        value_action_row_center([1.0e308, 2.0e-16], 20)?,
+    ];
+    let space = PolynomialSpace::<1>::try_new(2)?;
+    let actions = centers
+        .iter()
+        .map(|center| center.expression().try_apply_polynomial(&space))
+        .collect::<Result<Vec<_>, _>>()?;
+    assert_eq!(actions, [vec![1.0e308, 1.0e-16], vec![1.0e308, 2.0e-16]]);
+
+    let result = CpdNullSpace::try_from_centers(&centers, &space);
+    match result {
+        Ok(system) => assert_eq!(system.diagnostics().decision, CpdRankDecision::FullRank),
+        Err(CpdError::UnrepresentableEquilibrationScale { .. }) => {}
+        other => {
+            return Err(std::io::Error::other(format!(
+                "full-rank extreme-scale action was misclassified: {other:?}"
+            ))
+            .into());
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn extreme_row_scales_preserve_the_original_null_space() -> Result<(), Box<dyn Error>> {
+    let constant_space = PolynomialSpace::<1>::try_new(1)?;
+    for coefficient in [1.0, 1.0e200] {
+        let centers = [
+            value_center([-1.0], coefficient, 10)?,
+            value_center([1.0], coefficient, 20)?,
+        ];
+        let system = CpdNullSpace::try_from_centers(&centers, &constant_space)?;
+        assert_eq!(system.diagnostics().decision, CpdRankDecision::FullRank);
+        assert_independent_null_space_properties(&system);
+    }
+
+    let linear_space = PolynomialSpace::<1>::try_new(2)?;
+    let derivative_scaled = [
+        value_center([0.0], 1.0, 30)?,
+        scaled_derivative_center([0.0], [1.0], 1.0e-308, 40)?,
+        scaled_derivative_center([1.0], [1.0], 1.0e-308, 50)?,
+    ];
+    let system = CpdNullSpace::try_from_centers(&derivative_scaled, &linear_space)?;
+    assert_eq!(
+        system.actions().values(),
+        &[1.0, 0.0, 0.0, 1.0e-308, 0.0, 1.0e-308]
+    );
+    assert_eq!(system.diagnostics().decision, CpdRankDecision::FullRank);
+    assert_independent_null_space_properties(&system);
+    Ok(())
+}
+
+#[test]
+fn extreme_action_range_preserves_original_unit_residuals() -> Result<(), Box<dyn Error>> {
+    let centers = [
+        value_center([0.0], 1.0e308, 10)?,
+        value_center([0.0], 1.0e-308, 20)?,
+        value_center([0.0], 1.0e-308, 30)?,
+    ];
+    let system = CpdNullSpace::try_from_centers(&centers, &PolynomialSpace::<1>::try_new(1)?)?;
+    assert_eq!(system.actions().values(), &[1.0e308, 1.0e-308, 1.0e-308]);
+
+    let independent_residuals = (0..system.basis().columns())
+        .map(|basis_column| {
+            (0..system.actions().rows())
+                .map(|row| {
+                    system.actions().get(row, 0).unwrap_or(f64::NAN)
+                        * system.basis().get(row, basis_column).unwrap_or(f64::NAN)
+                })
+                .sum::<f64>()
+                .abs()
+        })
+        .collect::<Vec<_>>();
+    let independent_matrix_infinity = independent_residuals.iter().sum::<f64>();
+    assert!(independent_matrix_infinity.is_finite());
+    assert!(independent_matrix_infinity > 0.0);
+    assert!(
+        (system.quality().original_side_condition_residual - independent_matrix_infinity).abs()
+            <= independent_matrix_infinity * 1.0e-12
+    );
+
+    for (basis_column, independent_residual) in independent_residuals.into_iter().enumerate() {
+        let mut reduced = vec![0.0; system.basis().columns()];
+        reduced[basis_column] = 1.0;
+        let weights = system.try_expand_weights(&reduced)?;
+        assert!(
+            (weights.original_side_condition_residual() - independent_residual).abs()
+                <= independent_matrix_infinity * 1.0e-12
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn near_cancellation_residual_matches_independent_double_double_truth() -> Result<(), Box<dyn Error>>
+{
+    let epsilon = f64::EPSILON;
+    let centers = [
+        value_center([0.0], 1.0 + epsilon, 10)?,
+        value_center([1.0], -1.0, 20)?,
+    ];
+    let system = CpdNullSpace::try_from_centers(&centers, &PolynomialSpace::<1>::try_new(1)?)?;
+    assert_eq!(system.basis().columns(), 1);
+
+    let first_action = system.actions().get(0, 0).unwrap_or(f64::NAN);
+    let second_action = system.actions().get(1, 0).unwrap_or(f64::NAN);
+    let first_basis = system.basis().get(0, 0).unwrap_or(f64::NAN);
+    let second_basis = system.basis().get(1, 0).unwrap_or(f64::NAN);
+    let first_product = first_action * first_basis;
+    let second_product = second_action * second_basis;
+    let rounded_sum = first_product + second_product;
+    let addition_error = if first_product.abs() >= second_product.abs() {
+        (first_product - rounded_sum) + second_product
+    } else {
+        (second_product - rounded_sum) + first_product
+    };
+    let independent = (rounded_sum
+        + (first_action.mul_add(first_basis, -first_product)
+            + second_action.mul_add(second_basis, -second_product)
+            + addition_error))
+        .abs();
+    assert!(independent.is_finite());
+    assert!(independent > 0.0);
+    assert_eq!(
+        system.quality().original_side_condition_residual.to_bits(),
+        independent.to_bits()
+    );
+
+    let weights = system.try_expand_weights(&[1.0])?;
+    assert_eq!(weights.values(), &[first_basis, second_basis]);
+    assert_eq!(
+        weights.original_side_condition_residual().to_bits(),
+        independent.to_bits()
+    );
+    Ok(())
+}
+
+#[test]
+fn threshold_adjacent_analytic_determinant_is_rejected_as_ambiguous() -> Result<(), Box<dyn Error>>
+{
+    // These already-equilibrated action matrices have one singular value 1.
+    // The other two satisfy s_max*s_min=|1-2a| and
+    // s_max^2+s_min^2=4+2a^2. The binary coefficients make the determinant an
+    // exact integer multiple of epsilon, so this closed-form truth is
+    // independent of nalgebra's RRQR and SVD implementations.
+    for (ulps, expected_rank) in [(12_u64, 2_usize), (15, 3)] {
+        let coefficient = f64::from_bits(0.5_f64.to_bits() + ulps);
+        let centers = [
+            action_row_center([1.0, 0.0, 1.0], 10)?,
+            action_row_center([0.0, 1.0, 1.0], 20)?,
+            action_row_center([coefficient, coefficient, 1.0], 30)?,
+        ];
+        let (analytic_rank, analytic_smallest, analytic_threshold) =
+            analytic_rank_truth(coefficient);
+        assert_eq!(analytic_rank, expected_rank);
+        assert!((analytic_smallest / analytic_threshold - 1.0).abs() < 0.15);
+
+        let result = CpdNullSpace::try_from_centers(&centers, &PolynomialSpace::<2>::try_new(2)?);
+        let diagnostics = match result {
+            Err(CpdError::AmbiguousRank { diagnostics }) => diagnostics,
+            other => {
+                return Err(std::io::Error::other(format!(
+                    "expected guarded ambiguous rank, got {other:?}"
+                ))
+                .into());
+            }
+        };
+        assert!(diagnostics.threshold_adjacent || diagnostics.rank_disagreement);
+        assert_eq!(diagnostics.decision, CpdRankDecision::Ambiguous);
+        assert_eq!(diagnostics.svd_rank, expected_rank);
+    }
+    Ok(())
+}
+
+fn analytic_rank_truth(coefficient: f64) -> (usize, f64, f64) {
+    let determinant = (1.0 - 2.0 * coefficient).abs();
+    let frobenius_squared = 4.0 + 2.0 * coefficient * coefficient;
+    let discriminant =
+        (frobenius_squared * frobenius_squared - 4.0 * determinant * determinant).sqrt();
+    let largest = frobenius_squared.midpoint(discriminant).sqrt();
+    let smallest = determinant / largest;
+    let threshold = 3.0 * f64::EPSILON * largest;
+    (2 + usize::from(smallest > threshold), smallest, threshold)
+}
+
+#[test]
+fn polynomial_reproduction_and_projected_kkt_paths_agree() -> Result<(), Box<dyn Error>> {
+    let centers = [
+        value_center([-1.0], 1.0, 1)?,
+        value_center([0.0], 1.0, 2)?,
+        value_center([1.0], 1.0, 3)?,
+    ];
+    let system = CpdNullSpace::try_from_centers(&centers, &PolynomialSpace::<1>::try_new(2)?)?;
+    let z = system.basis().values();
+    assert_eq!(z.len(), 3);
+
+    // Any polynomial sample Q*a is orthogonal to Z, so the projected solve
+    // has zero RBF weights and the polynomial coefficients reproduce it.
+    let polynomial_samples = [2.0, 3.0, 4.0];
+    let projected_polynomial = z
+        .iter()
+        .zip(polynomial_samples)
+        .map(|(basis, sample)| basis * sample)
+        .sum::<f64>();
+    assert!(projected_polynomial.abs() < 1.0e-12);
+
+    let identity =
+        CpdMatrix::try_from_row_major(3, 3, vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])?;
+    let projected = system.try_project_symmetric_energy(&identity)?;
+    assert!((projected.values()[0] - 1.0).abs() < 1.0e-12);
+
+    // For K=I and b=[1,-2,4], the projected solution equals the analytic KKT
+    // projection b - Q(Q^T Q)^-1 Q^T b.
+    let b = [1.0, -2.0, 4.0];
+    let reduced_rhs = z.iter().zip(b).map(|(basis, rhs)| basis * rhs).sum::<f64>();
+    let projected_weights = system.try_expand_weights(&[reduced_rhs / projected.values()[0]])?;
+    let mean = b.iter().sum::<f64>() / 3.0;
+    let linear = (-b[0]).midpoint(b[2]);
+    let kkt_weights = [b[0] - (mean - linear), b[1] - mean, b[2] - (mean + linear)];
+    for (projected_weight, kkt_weight) in projected_weights.values().iter().zip(kkt_weights) {
+        assert!((projected_weight - kkt_weight).abs() < 1.0e-12);
+    }
+    Ok(())
+}
+
+#[test]
+fn invalid_inputs_and_projection_fail_without_fallback() -> Result<(), Box<dyn Error>> {
+    let space = PolynomialSpace::<1>::try_new(1)?;
+    assert!(matches!(
+        CpdNullSpace::try_from_centers(&[], &space),
+        Err(CpdError::EmptyCenters)
+    ));
+    assert!(matches!(
+        CpdMatrix::try_from_row_major(1, 2, vec![1.0]),
+        Err(CpdError::MatrixLengthMismatch { .. })
+    ));
+    assert!(matches!(
+        CpdMatrix::try_from_row_major(1, 1, vec![f64::NAN]),
+        Err(CpdError::NonFiniteMatrixEntry { .. })
+    ));
+
+    let centers = [value_center([0.0], 1.0, 1)?, value_center([1.0], 1.0, 2)?];
+    let system = CpdNullSpace::try_from_centers(&centers, &space)?;
+    assert!(matches!(
+        system.try_expand_weights(&[]),
+        Err(CpdError::ReducedLengthMismatch { .. })
+    ));
+    assert!(matches!(
+        system.try_expand_weights(&[f64::INFINITY]),
+        Err(CpdError::NonFiniteReducedCoordinate { .. })
+    ));
+    let nonsymmetric = CpdMatrix::try_from_row_major(2, 2, vec![1.0, 1.0, 0.0, 1.0])?;
+    assert!(matches!(
+        system.try_project_symmetric_energy(&nonsymmetric),
+        Err(CpdError::EnergyNotSymmetric { .. })
+    ));
+    Ok(())
+}
+
+#[test]
+fn diagnostics_and_basis_are_deterministic_and_thread_safe() -> Result<(), Box<dyn Error>> {
+    fn assert_send_sync<T: Send + Sync>() {}
+    assert_send_sync::<CpdNullSpace>();
+
+    let centers = [
+        value_center([-1.0], 1.0, 1)?,
+        value_center([0.0], 1.0, 2)?,
+        value_center([1.0], 1.0, 3)?,
+        value_center([2.0], 1.0, 4)?,
+    ];
+    let space = PolynomialSpace::<1>::try_new(2)?;
+    let first = CpdNullSpace::try_from_centers(&centers, &space)?;
+    let second = CpdNullSpace::try_from_centers(&centers, &space)?;
+    assert_eq!(first, second);
+    Ok(())
+}
