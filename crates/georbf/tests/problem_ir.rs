@@ -72,6 +72,15 @@ fn affine(terms: &[(usize, f64)], constant: f64) -> Result<AffineExpression, Pro
     )
 }
 
+fn assert_affine_terms(expression: &AffineExpression, expected: &[(usize, f64)]) {
+    let actual = expression
+        .terms()
+        .iter()
+        .map(|term| (term.variable(), term.coefficient()))
+        .collect::<Vec<_>>();
+    assert_eq!(actual, expected);
+}
+
 #[test]
 fn provenance_retains_every_semantic_source_field() -> TestResult {
     let provenance = SemanticProvenance::try_new(
@@ -151,20 +160,37 @@ fn equality_bounds_and_cones_map_with_exact_constant_shifts() -> TestResult {
         vec![("field", 0, 2), ("level", 2, 1)]
     );
     assert_eq!(canonical.equalities().len(), 1);
-    assert_eq!(canonical.equalities()[0].rhs(), 8.0);
-    assert_eq!(canonical.equalities()[0].row().constant(), 0.0);
+    let equality = &canonical.equalities()[0];
+    assert_affine_terms(equality.row(), &[(0, 2.0), (2, -1.0)]);
+    assert_eq!(equality.rhs(), 8.0);
+    assert_eq!(equality.row().constant(), 0.0);
     assert_eq!(
-        canonical.equalities()[0].provenance().observation_id(),
+        equality.provenance().observation_id(),
         ObservationId::new(1)
     );
-    assert_eq!(canonical.linear_bounds()[0].lower(), Some(0.0));
-    assert_eq!(canonical.linear_bounds()[0].upper(), Some(5.0));
-    assert_eq!(canonical.linear_bounds()[0].row().constant(), 0.0);
+
+    let linear_bound = &canonical.linear_bounds()[0];
+    assert_affine_terms(linear_bound.row(), &[(1, 3.0)]);
+    assert_eq!(linear_bound.lower(), Some(0.0));
+    assert_eq!(linear_bound.upper(), Some(5.0));
+    assert_eq!(linear_bound.row().constant(), 0.0);
+
     let cone = &canonical.second_order_cones()[0];
+    assert_affine_terms(&cone.lhs()[0], &[(0, 1.0)]);
+    assert_affine_terms(&cone.lhs()[1], &[(1, -2.0)]);
+    assert_affine_terms(cone.rhs(), &[(0, 0.5), (2, 4.0)]);
     assert_eq!(cone.lhs()[0].constant(), 1.0);
     assert_eq!(cone.lhs()[1].constant(), 1.0);
     assert_eq!(cone.rhs().constant(), 3.0);
+    assert_eq!(cone.provenance().observation_id(), ObservationId::new(3));
     assert_eq!(cone.provenance().source().path(), "observations/3.csv");
+    assert_eq!(cone.provenance().source().line().get(), 1);
+    assert_eq!(cone.provenance().original_units(), "m");
+    assert_eq!(
+        cone.provenance().field_path(),
+        "fields.scalar.observations[3]"
+    );
+    assert_eq!(cone.provenance().constraint_group(), Some("test-group"));
 
     assert_eq!(canonical.scaling().variable(), &[1.0, 1.0, 1.0]);
     assert_eq!(canonical.scaling().equality(), &[1.0]);
