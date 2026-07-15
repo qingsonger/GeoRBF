@@ -23,6 +23,13 @@ therefore preserve the original `Q^T Z = 0` side condition. Binding diagnostics
 now report actual matrix infinity norms, and original-unit residuals use scaled
 arithmetic so overflowing intermediate products cannot be discarded as zero.
 
+A third repair makes mapped-basis normalization and original-unit residual
+evaluation product-exponent aware. For the D=1 order-one action
+`Q=[1e308,1e-308,1e-308]^T`, both null-space quality and unit-coordinate
+expanded weights now retain the independently representable nonzero residual
+instead of reconstructing zero from an underflowed column normalization.
+Unrepresentable original-unit sums remain structured errors.
+
 Clearly full-rank inputs construct and verify an orthonormal basis for
 `null(Q^T)`. Reduced coordinates expand only as provenance-bearing `w = Z y`
 weights with a rechecked polynomial side condition. A finite symmetric-energy

@@ -352,7 +352,7 @@ impl CpdNullSpace {
         }
 
         let basis = construct_null_space(&rank_diagnosis.scaled_actions, &diagnostics.row_scales)?;
-        let quality = verify_null_space(&actions, &basis);
+        let quality = verify_null_space(&actions, &basis)?;
         if quality.side_condition_residual > quality.tolerance
             || quality.orthonormality_residual > quality.tolerance
             || !quality.original_side_condition_residual.is_finite()
@@ -689,6 +689,13 @@ pub enum CpdError {
         /// Recorded verification evidence.
         quality: CpdNullSpaceQuality,
     },
+    /// An original-unit null-space residual could not be represented finitely.
+    UnrepresentableOriginalNullSpaceResidual {
+        /// Polynomial column being checked.
+        polynomial: usize,
+        /// Null-space basis column being checked.
+        basis_column: usize,
+    },
     /// Reduced coordinates did not match the nullity.
     ReducedLengthMismatch {
         /// Required reduced length.
@@ -839,6 +846,13 @@ impl fmt::Display for CpdError {
                 quality.original_side_condition_residual,
                 quality.orthonormality_residual,
                 quality.tolerance
+            ),
+            Self::UnrepresentableOriginalNullSpaceResidual {
+                polynomial,
+                basis_column,
+            } => write!(
+                formatter,
+                "original-unit null-space residual for polynomial column {polynomial} and basis column {basis_column} is not representable"
             ),
             Self::ReducedLengthMismatch { expected, actual } => {
                 write!(
@@ -1227,12 +1241,12 @@ fn construct_null_space(
             actual: constructed,
         });
     }
-    let maximum_row_scale = row_scales.iter().copied().fold(0.0_f64, f64::max);
     for column in 0..nullity {
         let offset = column * scaled_actions.rows;
-        for row in 0..scaled_actions.rows {
-            columns[offset + row] *= row_scales[row] / maximum_row_scale;
-        }
+        normalize_products_in_place(
+            &mut columns[offset..offset + scaled_actions.rows],
+            row_scales,
+        );
         for _ in 0..2 {
             for previous in 0..column {
                 let previous_offset = previous * scaled_actions.rows;
@@ -1264,7 +1278,10 @@ fn construct_null_space(
     CpdMatrix::try_from_row_major(scaled_actions.rows, nullity, row_major)
 }
 
-fn verify_null_space(actions: &CpdMatrix, basis: &CpdMatrix) -> CpdNullSpaceQuality {
+fn verify_null_space(
+    actions: &CpdMatrix,
+    basis: &CpdMatrix,
+) -> Result<CpdNullSpaceQuality, CpdError> {
     let mut side_condition_residual = 0.0_f64;
     let mut original_side_condition_residual = 0.0_f64;
     for polynomial in 0..actions.columns {
@@ -1284,9 +1301,24 @@ fn verify_null_space(actions: &CpdMatrix, basis: &CpdMatrix) -> CpdNullSpaceQual
                 })
                 .sum::<f64>()
                 .abs();
-            let original_residual = rescale_residual(residual, column_scale, 1.0);
+            let original_residual = original_dot_abs(actions.rows, |row| {
+                (
+                    actions.values[row * actions.columns + polynomial],
+                    basis.values[row * basis.columns + basis_column],
+                )
+            })
+            .ok_or(CpdError::UnrepresentableOriginalNullSpaceResidual {
+                polynomial,
+                basis_column,
+            })?;
             side_condition_row_sum += residual;
             original_side_condition_row_sum += original_residual;
+            if !original_side_condition_row_sum.is_finite() {
+                return Err(CpdError::UnrepresentableOriginalNullSpaceResidual {
+                    polynomial,
+                    basis_column,
+                });
+            }
         }
         side_condition_residual = side_condition_residual.max(side_condition_row_sum);
         original_side_condition_residual =
@@ -1306,12 +1338,12 @@ fn verify_null_space(actions: &CpdMatrix, basis: &CpdMatrix) -> CpdNullSpaceQual
         }
         orthonormality_residual = orthonormality_residual.max(row_sum);
     }
-    CpdNullSpaceQuality {
+    Ok(CpdNullSpaceQuality {
         side_condition_residual,
         original_side_condition_residual,
         orthonormality_residual,
         tolerance: verification_tolerance(actions.rows),
-    }
+    })
 }
 
 fn weight_residuals(actions: &CpdMatrix, weights: &[f64]) -> (f64, f64) {
@@ -1338,8 +1370,17 @@ fn weight_residuals(actions: &CpdMatrix, weights: &[f64]) -> (f64, f64) {
             })
             .sum::<f64>()
             .abs();
-        let original_value = rescale_residual(value, column_scale, weight_scale);
+        let original_value = original_dot_abs(actions.rows, |row| {
+            (
+                actions.values[row * actions.columns + polynomial],
+                weights[row],
+            )
+        })
+        .unwrap_or(f64::NAN);
         residual = residual.max(value);
+        if !original_value.is_finite() {
+            return (residual, f64::NAN);
+        }
         original_residual = original_residual.max(original_value);
     }
     (residual, original_residual)
@@ -1361,28 +1402,138 @@ fn stable_norm(values: &[f64]) -> f64 {
             .sqrt()
 }
 
-fn rescale_residual(normalized: f64, first_scale: f64, second_scale: f64) -> f64 {
-    if normalized == 0.0 {
-        return 0.0;
+#[derive(Clone, Copy)]
+struct BinaryProduct {
+    mantissa: f64,
+    exponent: i32,
+}
+
+fn normalize_products_in_place(values: &mut [f64], scales: &[f64]) {
+    let maximum_exponent = values
+        .iter()
+        .copied()
+        .zip(scales.iter().copied())
+        .filter_map(|(value, scale)| binary_product(value, scale))
+        .map(|product| product.exponent)
+        .max();
+    let Some(maximum_exponent) = maximum_exponent else {
+        values.fill(0.0);
+        return;
+    };
+
+    for (value, scale) in values.iter_mut().zip(scales.iter().copied()) {
+        let Some(product) = binary_product(*value, scale) else {
+            *value = 0.0;
+            continue;
+        };
+        let shift = product.exponent - maximum_exponent;
+        // A product is decomposed before the common power-of-two normalization,
+        // so neither factor can overflow or underflow prematurely. A component
+        // more than the complete f64 exponent range below the largest mapped
+        // component is necessarily unrepresentable in the returned basis; the
+        // original-unit verifier does not reuse this normalization.
+        *value = if shift < -1074 {
+            0.0
+        } else {
+            product.mantissa * power_of_two(shift)
+        };
     }
-    let factors = [normalized, first_scale, second_scale];
-    for [first, second, third] in [
-        [0, 1, 2],
-        [0, 2, 1],
-        [1, 2, 0],
-        [1, 0, 2],
-        [2, 0, 1],
-        [2, 1, 0],
-    ] {
-        let partial = factors[first] * factors[second];
-        if partial.is_finite() && partial != 0.0 {
-            let result = partial * factors[third];
-            if result.is_finite() && result != 0.0 {
-                return result;
-            }
+}
+
+fn original_dot_abs<F>(length: usize, factors: F) -> Option<f64>
+where
+    F: Fn(usize) -> (f64, f64),
+{
+    let maximum_exponent = (0..length)
+        .filter_map(|index| {
+            let (first, second) = factors(index);
+            binary_product(first, second)
+        })
+        .map(|product| product.exponent)
+        .max();
+    let Some(maximum_exponent) = maximum_exponent else {
+        return Some(0.0);
+    };
+
+    let mut sum = 0.0_f64;
+    let mut correction = 0.0_f64;
+    for index in 0..length {
+        let (first, second) = factors(index);
+        let Some(product) = binary_product(first, second) else {
+            continue;
+        };
+        let shift = product.exponent - maximum_exponent;
+        if shift < -1074 {
+            return None;
         }
+        let term = product.mantissa * power_of_two(shift);
+        if term == 0.0 {
+            return None;
+        }
+        let next = sum + term;
+        correction += if sum.abs() >= term.abs() {
+            (sum - next) + term
+        } else {
+            (term - next) + sum
+        };
+        sum = next;
     }
-    f64::NAN
+    let normalized = sum + correction;
+    if normalized == 0.0 {
+        return Some(0.0);
+    }
+    let (mantissa, exponent) = binary_decompose(normalized);
+    let restored_exponent = maximum_exponent.checked_add(exponent)?;
+    if restored_exponent < -1074 {
+        return Some(0.0);
+    }
+    if restored_exponent > 1023 {
+        return None;
+    }
+    let restored = mantissa * power_of_two(restored_exponent);
+    if restored.is_finite() && restored != 0.0 {
+        Some(restored.abs())
+    } else {
+        None
+    }
+}
+
+fn binary_product(first: f64, second: f64) -> Option<BinaryProduct> {
+    if first == 0.0 || second == 0.0 {
+        return None;
+    }
+    let (first_mantissa, first_exponent) = binary_decompose(first);
+    let (second_mantissa, second_exponent) = binary_decompose(second);
+    let mut mantissa = first_mantissa * second_mantissa;
+    let mut exponent = first_exponent + second_exponent;
+    if mantissa.abs() >= 2.0 {
+        mantissa *= 0.5;
+        exponent += 1;
+    }
+    Some(BinaryProduct { mantissa, exponent })
+}
+
+fn binary_decompose(value: f64) -> (f64, i32) {
+    debug_assert!(value.is_finite() && value != 0.0);
+    let bits = value.to_bits();
+    let magnitude_bits = bits & 0x7fff_ffff_ffff_ffff;
+    let biased_exponent = ((magnitude_bits >> 52) & 0x7ff) as i32;
+    let exponent = if biased_exponent == 0 {
+        let fraction = magnitude_bits & 0x000f_ffff_ffff_ffff;
+        63 - fraction.leading_zeros().cast_signed() - 1074
+    } else {
+        biased_exponent - 1023
+    };
+    (value / power_of_two(exponent), exponent)
+}
+
+fn power_of_two(exponent: i32) -> f64 {
+    debug_assert!((-1074..=1023).contains(&exponent));
+    if exponent >= -1022 {
+        f64::from_bits(u64::from((exponent + 1023).cast_unsigned()) << 52)
+    } else {
+        f64::from_bits(1_u64 << (exponent + 1074))
+    }
 }
 
 fn rank_threshold(values: &[f64], dimension: usize) -> Result<f64, CpdError> {
@@ -1452,7 +1603,7 @@ mod tests {
         let entry = 0.75 * tolerance;
         let actions = CpdMatrix::try_from_row_major(2, 1, vec![1.0, 0.0])?;
         let basis = CpdMatrix::try_from_row_major(2, 2, vec![entry, entry, 0.5, 0.25])?;
-        let quality = verify_null_space(&actions, &basis);
+        let quality = verify_null_space(&actions, &basis)?;
 
         let expected_side = 2.0 * entry;
         assert!((quality.side_condition_residual - expected_side).abs() <= f64::EPSILON);
@@ -1491,6 +1642,15 @@ mod tests {
         assert!(original_residual.is_finite());
         assert!(original_residual > 0.0);
         assert!((original_residual / independent_residual - 1.0).abs() < 0.25);
+        Ok(())
+    }
+
+    #[test]
+    fn original_weight_residual_does_not_discard_unrepresentable_sum() -> Result<(), Box<dyn Error>>
+    {
+        let actions = CpdMatrix::try_from_row_major(2, 1, vec![1.0e308, 1.0e308])?;
+        let (_, original_residual) = weight_residuals(&actions, &[1.0, 1.0]);
+        assert!(original_residual.is_nan());
         Ok(())
     }
 

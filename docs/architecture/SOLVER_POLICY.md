@@ -46,9 +46,10 @@ individual nonzero entry that becomes unrepresentable. Bounded SVD
 non-convergence retains completed equilibration and RRQR evidence while
 marking every SVD-derived field and the final rank decision unavailable.
 Null-space QR uses that same safely equilibrated matrix, maps the basis back
-through the recorded row scaling, and reorthogonalizes before binding
-matrix-infinity residual checks. Original-unit residuals are restored from
-scaled arithmetic and fail explicitly when the result is unrepresentable.
+through exponent-aware products with the recorded row scaling, and
+reorthogonalizes before binding matrix-infinity residual checks. Original-unit
+residuals use product-wise binary-exponent accumulation instead of column-max
+normalization and fail explicitly when the result is unrepresentable.
 
 Regularization is None, Explicit(value), or AutomaticWithin(maximum). Any
 automatic choice records requested and actual solver, amount added, original

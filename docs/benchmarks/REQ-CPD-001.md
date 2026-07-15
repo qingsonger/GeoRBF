@@ -25,3 +25,7 @@ but action assembly reuses one polynomial value/gradient scratch allocation
 across all centers and performs no per-center or per-element allocation. Ready
 PR and `main` CI run the one-iteration `--smoke` workload on Windows, Ubuntu,
 and macOS.
+
+The P2-4 product-exponent residual repair retained the deterministic smoke
+checksum `-4.97657470788226419e-14` for one iteration; the local observation
+was 1.1175 ms on the baseline environment and is not a new timing promise.

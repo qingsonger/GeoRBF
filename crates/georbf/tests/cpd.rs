@@ -425,6 +425,47 @@ fn extreme_row_scales_preserve_the_original_null_space() -> Result<(), Box<dyn E
 }
 
 #[test]
+fn extreme_action_range_preserves_original_unit_residuals() -> Result<(), Box<dyn Error>> {
+    let centers = [
+        value_center([0.0], 1.0e308, 10)?,
+        value_center([0.0], 1.0e-308, 20)?,
+        value_center([0.0], 1.0e-308, 30)?,
+    ];
+    let system = CpdNullSpace::try_from_centers(&centers, &PolynomialSpace::<1>::try_new(1)?)?;
+    assert_eq!(system.actions().values(), &[1.0e308, 1.0e-308, 1.0e-308]);
+
+    let independent_residuals = (0..system.basis().columns())
+        .map(|basis_column| {
+            (0..system.actions().rows())
+                .map(|row| {
+                    system.actions().get(row, 0).unwrap_or(f64::NAN)
+                        * system.basis().get(row, basis_column).unwrap_or(f64::NAN)
+                })
+                .sum::<f64>()
+                .abs()
+        })
+        .collect::<Vec<_>>();
+    let independent_matrix_infinity = independent_residuals.iter().sum::<f64>();
+    assert!(independent_matrix_infinity.is_finite());
+    assert!(independent_matrix_infinity > 0.0);
+    assert!(
+        (system.quality().original_side_condition_residual - independent_matrix_infinity).abs()
+            <= independent_matrix_infinity * 1.0e-12
+    );
+
+    for (basis_column, independent_residual) in independent_residuals.into_iter().enumerate() {
+        let mut reduced = vec![0.0; system.basis().columns()];
+        reduced[basis_column] = 1.0;
+        let weights = system.try_expand_weights(&reduced)?;
+        assert!(
+            (weights.original_side_condition_residual() - independent_residual).abs()
+                <= independent_matrix_infinity * 1.0e-12
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn threshold_adjacent_analytic_determinant_is_rejected_as_ambiguous() -> Result<(), Box<dyn Error>>
 {
     // These already-equilibrated action matrices have one singular value 1.
