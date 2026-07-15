@@ -29,3 +29,5 @@ and macOS.
 The P2-4 product-exponent residual repair retained the deterministic smoke
 checksum `-4.97657470788226419e-14` for one iteration; the local observation
 was 1.1175 ms on the baseline environment and is not a new timing promise.
+The P2-5 exact-binary accumulation repair retained the same checksum and took
+0.7554 ms in the equivalent one-iteration local smoke workload.

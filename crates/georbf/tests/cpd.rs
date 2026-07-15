@@ -466,6 +466,50 @@ fn extreme_action_range_preserves_original_unit_residuals() -> Result<(), Box<dy
 }
 
 #[test]
+fn near_cancellation_residual_matches_independent_double_double_truth() -> Result<(), Box<dyn Error>>
+{
+    let epsilon = f64::EPSILON;
+    let centers = [
+        value_center([0.0], 1.0 + epsilon, 10)?,
+        value_center([1.0], -1.0, 20)?,
+    ];
+    let system = CpdNullSpace::try_from_centers(&centers, &PolynomialSpace::<1>::try_new(1)?)?;
+    assert_eq!(system.basis().columns(), 1);
+
+    let first_action = system.actions().get(0, 0).unwrap_or(f64::NAN);
+    let second_action = system.actions().get(1, 0).unwrap_or(f64::NAN);
+    let first_basis = system.basis().get(0, 0).unwrap_or(f64::NAN);
+    let second_basis = system.basis().get(1, 0).unwrap_or(f64::NAN);
+    let first_product = first_action * first_basis;
+    let second_product = second_action * second_basis;
+    let rounded_sum = first_product + second_product;
+    let addition_error = if first_product.abs() >= second_product.abs() {
+        (first_product - rounded_sum) + second_product
+    } else {
+        (second_product - rounded_sum) + first_product
+    };
+    let independent = (rounded_sum
+        + (first_action.mul_add(first_basis, -first_product)
+            + second_action.mul_add(second_basis, -second_product)
+            + addition_error))
+        .abs();
+    assert!(independent.is_finite());
+    assert!(independent > 0.0);
+    assert_eq!(
+        system.quality().original_side_condition_residual.to_bits(),
+        independent.to_bits()
+    );
+
+    let weights = system.try_expand_weights(&[1.0])?;
+    assert_eq!(weights.values(), &[first_basis, second_basis]);
+    assert_eq!(
+        weights.original_side_condition_residual().to_bits(),
+        independent.to_bits()
+    );
+    Ok(())
+}
+
+#[test]
 fn threshold_adjacent_analytic_determinant_is_rejected_as_ambiguous() -> Result<(), Box<dyn Error>>
 {
     // These already-equilibrated action matrices have one singular value 1.

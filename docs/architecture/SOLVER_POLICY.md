@@ -48,8 +48,9 @@ marking every SVD-derived field and the final rank decision unavailable.
 Null-space QR uses that same safely equilibrated matrix, maps the basis back
 through exponent-aware products with the recorded row scaling, and
 reorthogonalizes before binding matrix-infinity residual checks. Original-unit
-residuals use product-wise binary-exponent accumulation instead of column-max
-normalization and fail explicitly when the result is unrepresentable.
+residuals use a fixed stack exact-binary superaccumulator, round only the final
+signed sum, and fail explicitly when a nonzero result would round to zero or
+overflow instead of fabricating a finite diagnostic.
 
 Regularization is None, Explicit(value), or AutomaticWithin(maximum). Any
 automatic choice records requested and actual solver, amount added, original

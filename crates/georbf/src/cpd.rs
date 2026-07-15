@@ -1444,58 +1444,208 @@ fn original_dot_abs<F>(length: usize, factors: F) -> Option<f64>
 where
     F: Fn(usize) -> (f64, f64),
 {
-    let maximum_exponent = (0..length)
-        .filter_map(|index| {
-            let (first, second) = factors(index);
-            binary_product(first, second)
-        })
-        .map(|product| product.exponent)
-        .max();
-    let Some(maximum_exponent) = maximum_exponent else {
-        return Some(0.0);
-    };
-
-    let mut sum = 0.0_f64;
-    let mut correction = 0.0_f64;
+    let mut accumulator = ExactDotAccumulator::default();
     for index in 0..length {
         let (first, second) = factors(index);
-        let Some(product) = binary_product(first, second) else {
-            continue;
+        accumulator.try_add_product(first, second)?;
+    }
+    accumulator.try_abs_f64()
+}
+
+const EXACT_PRODUCT_MIN_EXPONENT: i32 = -2148;
+// Exact f64 products occupy exponents -2148 through 2047. Sixty-seven signed
+// two's-complement limbs also retain the at-most-64 carry bits from summing a
+// `usize`-bounded number of products, plus guard bits, on supported targets.
+const EXACT_DOT_LIMBS: usize = 67;
+
+#[derive(Clone)]
+struct ExactDotAccumulator {
+    words: [u64; EXACT_DOT_LIMBS],
+}
+
+impl Default for ExactDotAccumulator {
+    fn default() -> Self {
+        Self {
+            words: [0; EXACT_DOT_LIMBS],
+        }
+    }
+}
+
+impl ExactDotAccumulator {
+    fn try_add_product(&mut self, first: f64, second: f64) -> Option<()> {
+        if first == 0.0 || second == 0.0 {
+            return Some(());
+        }
+        let (first_negative, first_significand, first_exponent) = exact_factor(first)?;
+        let (second_negative, second_significand, second_exponent) = exact_factor(second)?;
+        let product = u128::from(first_significand) * u128::from(second_significand);
+        let exponent = first_exponent.checked_add(second_exponent)?;
+        let shift = usize::try_from(exponent.checked_sub(EXACT_PRODUCT_MIN_EXPONENT)?).ok()?;
+        let term_negative = first_negative != second_negative;
+        add_shifted_signed_product(&mut self.words, product, shift, term_negative)?;
+        Some(())
+    }
+
+    fn try_abs_f64(&self) -> Option<f64> {
+        let mut magnitude = self.words;
+        if magnitude[EXACT_DOT_LIMBS - 1] >> 63 != 0 {
+            twos_complement_in_place(&mut magnitude);
+        }
+        let Some(highest_bit) = highest_set_bit(&magnitude) else {
+            return Some(0.0);
         };
-        let shift = product.exponent - maximum_exponent;
-        if shift < -1074 {
+        let exact_exponent = i32::try_from(highest_bit)
+            .ok()?
+            .checked_add(EXACT_PRODUCT_MIN_EXPONENT)?;
+        if exact_exponent > 1023 {
             return None;
         }
-        let term = product.mantissa * power_of_two(shift);
-        if term == 0.0 {
-            return None;
+
+        let normal = exact_exponent >= -1022;
+        let retained_exponent = if normal { exact_exponent - 52 } else { -1074 };
+        let shift = usize::try_from(retained_exponent - EXACT_PRODUCT_MIN_EXPONENT).ok()?;
+        let mut significand = shifted_low_u64(&magnitude, shift);
+        let halfway = shift.checked_sub(1)?;
+        let round_up = bit_is_set(&magnitude, halfway)
+            && (any_bits_below(&magnitude, halfway) || significand & 1 == 1);
+        if round_up {
+            significand = significand.checked_add(1)?;
         }
-        let next = sum + term;
-        correction += if sum.abs() >= term.abs() {
-            (sum - next) + term
+
+        if normal {
+            let mut rounded_exponent = exact_exponent;
+            if significand == 1_u64 << 53 {
+                significand >>= 1;
+                rounded_exponent += 1;
+            }
+            if rounded_exponent > 1023 || !(1_u64 << 52..1_u64 << 53).contains(&significand) {
+                return None;
+            }
+            let biased = u64::try_from(rounded_exponent + 1023).ok()?;
+            let fraction = significand - (1_u64 << 52);
+            Some(f64::from_bits((biased << 52) | fraction))
+        } else if significand == 0 || significand > 1_u64 << 52 {
+            None
+        } else if significand == 1_u64 << 52 {
+            Some(f64::MIN_POSITIVE)
         } else {
-            (term - next) + sum
-        };
-        sum = next;
+            Some(f64::from_bits(significand))
+        }
     }
-    let normalized = sum + correction;
-    if normalized == 0.0 {
-        return Some(0.0);
-    }
-    let (mantissa, exponent) = binary_decompose(normalized);
-    let restored_exponent = maximum_exponent.checked_add(exponent)?;
-    if restored_exponent < -1074 {
-        return Some(0.0);
-    }
-    if restored_exponent > 1023 {
+}
+
+fn exact_factor(value: f64) -> Option<(bool, u64, i32)> {
+    if !value.is_finite() || value == 0.0 {
         return None;
     }
-    let restored = mantissa * power_of_two(restored_exponent);
-    if restored.is_finite() && restored != 0.0 {
-        Some(restored.abs())
+    let bits = value.to_bits();
+    let negative = bits >> 63 != 0;
+    let magnitude = bits & 0x7fff_ffff_ffff_ffff;
+    let biased_exponent = ((magnitude >> 52) & 0x7ff) as i32;
+    let fraction = magnitude & 0x000f_ffff_ffff_ffff;
+    if biased_exponent == 0 {
+        Some((negative, fraction, -1074))
     } else {
-        None
+        Some((
+            negative,
+            (1_u64 << 52) | fraction,
+            biased_exponent - 1023 - 52,
+        ))
     }
+}
+
+fn add_shifted_signed_product(
+    words: &mut [u64; EXACT_DOT_LIMBS],
+    product: u128,
+    shift: usize,
+    negative: bool,
+) -> Option<()> {
+    let word = shift / 64;
+    let offset = shift % 64;
+    let low = u64::try_from(product & u128::from(u64::MAX)).ok()?;
+    let high = u64::try_from(product >> 64).ok()?;
+    let parts = if offset == 0 {
+        [low, high, 0]
+    } else {
+        [
+            low << offset,
+            (low >> (64 - offset)) | (high << offset),
+            high >> (64 - offset),
+        ]
+    };
+    words.get(word.checked_add(2)?)?;
+
+    let mut carry_or_borrow = false;
+    for (index, target) in words.iter_mut().enumerate().skip(word) {
+        let part = parts.get(index - word).copied().unwrap_or(0);
+        if negative {
+            let (difference, first_borrow) = target.overflowing_sub(part);
+            let (difference, second_borrow) =
+                difference.overflowing_sub(u64::from(carry_or_borrow));
+            *target = difference;
+            carry_or_borrow = first_borrow || second_borrow;
+        } else {
+            let (sum, first_carry) = target.overflowing_add(part);
+            let (sum, second_carry) = sum.overflowing_add(u64::from(carry_or_borrow));
+            *target = sum;
+            carry_or_borrow = first_carry || second_carry;
+        }
+        if index >= word + 2 && !carry_or_borrow {
+            break;
+        }
+    }
+    Some(())
+}
+
+fn twos_complement_in_place(words: &mut [u64; EXACT_DOT_LIMBS]) {
+    for word in words.iter_mut() {
+        *word = !*word;
+    }
+    let mut carry = true;
+    for word in words.iter_mut() {
+        let (sum, next_carry) = word.overflowing_add(u64::from(carry));
+        *word = sum;
+        carry = next_carry;
+        if !carry {
+            break;
+        }
+    }
+}
+
+fn highest_set_bit(words: &[u64; EXACT_DOT_LIMBS]) -> Option<usize> {
+    words
+        .iter()
+        .rposition(|word| *word != 0)
+        .map(|word| word * 64 + (63 - words[word].leading_zeros() as usize))
+}
+
+fn shifted_low_u64(words: &[u64; EXACT_DOT_LIMBS], shift: usize) -> u64 {
+    let word = shift / 64;
+    let offset = shift % 64;
+    let low = words.get(word).copied().unwrap_or(0) >> offset;
+    if offset == 0 {
+        low
+    } else {
+        low | (words.get(word + 1).copied().unwrap_or(0) << (64 - offset))
+    }
+}
+
+fn bit_is_set(words: &[u64; EXACT_DOT_LIMBS], bit: usize) -> bool {
+    words
+        .get(bit / 64)
+        .is_some_and(|word| word & (1_u64 << (bit % 64)) != 0)
+}
+
+fn any_bits_below(words: &[u64; EXACT_DOT_LIMBS], exclusive: usize) -> bool {
+    let full_words = exclusive / 64;
+    if words[..full_words].iter().any(|word| *word != 0) {
+        return true;
+    }
+    let remainder = exclusive % 64;
+    remainder != 0
+        && words
+            .get(full_words)
+            .is_some_and(|word| word & ((1_u64 << remainder) - 1) != 0)
 }
 
 fn binary_product(first: f64, second: f64) -> Option<BinaryProduct> {
@@ -1596,6 +1746,20 @@ mod tests {
     use std::error::Error;
 
     use super::*;
+    use crate::{FunctionalAtom, FunctionalExpr, FunctionalTerm, Point};
+
+    fn value_center_for_residual_test(
+        coordinate: f64,
+        provenance: u64,
+    ) -> Result<CenterRepresenter<1>, Box<dyn Error>> {
+        let atom = FunctionalAtom::value(
+            Point::try_new([coordinate])?,
+            FunctionalProvenance::new(provenance),
+        );
+        Ok(CenterRepresenter::new(FunctionalExpr::try_new([
+            FunctionalTerm::try_new(1.0, atom)?,
+        ])?))
+    }
 
     #[test]
     fn binding_verifier_reports_matrix_infinity_norms() -> Result<(), Box<dyn Error>> {
@@ -1651,6 +1815,80 @@ mod tests {
         let actions = CpdMatrix::try_from_row_major(2, 1, vec![1.0e308, 1.0e308])?;
         let (_, original_residual) = weight_residuals(&actions, &[1.0, 1.0]);
         assert!(original_residual.is_nan());
+        Ok(())
+    }
+
+    #[test]
+    fn original_residuals_preserve_exact_binary_cancellation() -> Result<(), Box<dyn Error>> {
+        let epsilon = f64::EPSILON;
+        let expected = epsilon * epsilon;
+        let factors = [(1.0 + epsilon, 1.0 - epsilon), (-1.0, 1.0)];
+        assert_eq!(
+            original_dot_abs(factors.len(), |index| factors[index]),
+            Some(expected)
+        );
+        assert_eq!(
+            original_dot_abs(2, |index| [(1.0, 1.0), (-1.0, 1.0)][index]),
+            Some(0.0)
+        );
+        assert_eq!(
+            original_dot_abs(1, |_| (f64::MIN_POSITIVE, f64::EPSILON)),
+            Some(f64::from_bits(1))
+        );
+
+        let actions = CpdMatrix::try_from_row_major(2, 1, vec![1.0 + epsilon, -1.0])?;
+        let basis = CpdMatrix::try_from_row_major(2, 1, vec![1.0 - epsilon, 1.0])?;
+        let quality = verify_null_space(&actions, &basis)?;
+        assert_eq!(
+            quality.original_side_condition_residual.to_bits(),
+            expected.to_bits()
+        );
+
+        let centers = [
+            value_center_for_residual_test(-1.0, 1)?,
+            value_center_for_residual_test(1.0, 2)?,
+        ];
+        let mut system =
+            CpdNullSpace::try_from_centers(&centers, &PolynomialSpace::<1>::try_new(1)?)?;
+        system.actions = actions;
+        system.basis = basis;
+        let weights = system.try_expand_weights(&[1.0])?;
+        assert_eq!(
+            weights.original_side_condition_residual().to_bits(),
+            expected.to_bits()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn original_residual_callers_reject_nonzero_below_subnormal_range() -> Result<(), Box<dyn Error>>
+    {
+        let tiny = 0.5 * f64::EPSILON;
+        let factors = [(f64::MIN_POSITIVE, tiny)];
+        assert_eq!(original_dot_abs(1, |index| factors[index]), None);
+
+        let actions = CpdMatrix::try_from_row_major(1, 1, vec![f64::MIN_POSITIVE])?;
+        let basis = CpdMatrix::try_from_row_major(1, 1, vec![tiny])?;
+        assert!(matches!(
+            verify_null_space(&actions, &basis),
+            Err(CpdError::UnrepresentableOriginalNullSpaceResidual {
+                polynomial: 0,
+                basis_column: 0,
+            })
+        ));
+
+        let centers = [
+            value_center_for_residual_test(-1.0, 1)?,
+            value_center_for_residual_test(1.0, 2)?,
+        ];
+        let mut system =
+            CpdNullSpace::try_from_centers(&centers, &PolynomialSpace::<1>::try_new(1)?)?;
+        system.actions = actions;
+        system.basis = basis;
+        assert!(matches!(
+            system.try_expand_weights(&[1.0]),
+            Err(CpdError::UnrepresentableOriginalWeightResidual)
+        ));
         Ok(())
     }
 

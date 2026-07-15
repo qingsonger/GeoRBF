@@ -30,6 +30,14 @@ expanded weights now retain the independently representable nonzero residual
 instead of reconstructing zero from an underflowed column normalization.
 Unrepresentable original-unit sums remain structured errors.
 
+A fourth repair replaces per-product floating-point rounding with a fixed
+stack exact-binary accumulator. The representable near-cancellation residual
+`((1+2^-52)(1-2^-52))-1 = -2^-104` is retained through both null-space and
+expanded-weight diagnostics, while the exact product `2^-1022 * 2^-53 =
+2^-1075` reaches the corresponding structured unrepresentable-residual error
+instead of becoming zero. A public D=1 order-one regression compares both
+diagnostic paths with independent double-double truth.
+
 Clearly full-rank inputs construct and verify an orthonormal basis for
 `null(Q^T)`. Reduced coordinates expand only as provenance-bearing `w = Z y`
 weights with a rechecked polynomial side condition. A finite symmetric-energy
