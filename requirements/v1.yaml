@@ -249,7 +249,7 @@ requirements:
     issue: 45
     pull_request: 46
     tests: [polynomial-reproduction, nullspace, degeneracy-1d-2d-3d, scale-invariance, rank-threshold, kkt-equivalence]
-    docs: [docs/math/CPD_AND_POLYNOMIALS.md, docs/architecture/SOLVER_POLICY.md, docs/benchmarks/REQ-CPD-001.md]
+    docs: [docs/math/CPD_AND_POLYNOMIALS.md, docs/architecture/SOLVER_POLICY.md, docs/benchmarks/REQ-CPD-001.md, docs/reviews/PR-46-INDEPENDENT-REVIEW.md]
     rust_api: implemented
     cli: "N/A: no field schema or CLI CPD surface exists yet"
     c_api: "N/A: no stable C binding surface exists yet"

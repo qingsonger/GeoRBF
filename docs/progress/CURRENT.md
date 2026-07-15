@@ -6,76 +6,60 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active scope
 
-- Mode: Implement complete; independent Review required next
+- Mode: Review complete; Repair required next
 - Requirement: REQ-CPD-001, Issue #45
-- Draft implementation pull request: #46
+- Draft pull request: #46
 - Branch: `codex/req-cpd-001-rank-nullspace`
+- Reviewed implementation head: `85f2ae3207c8f0677463fc4bd00944e5d71cbd0a`
 - Registry state: `documented` (not integrated)
 - Dependencies: REQ-KERNEL-002, REQ-POLY-001, REQ-FUNC-001, and
   REQ-SPIKE-002 are integrated
 
-## Implementation result
+## Independent review result
 
-- Added GeoRBF-owned row-major CPD matrices, rank diagnostics, center and
-  atomic-functional provenance, orthonormal polynomial null spaces,
-  provenance-bearing `w = Z y`, and finite symmetric `Z^T K Z` projection.
-- `Q[j, alpha] = M_j p_alpha` assembly reuses polynomial scratch across
-  centers for Value and DirectionalDerivative representers in D=1, D=2, and
-  D=3.
-- The private nalgebra 0.35.0 adapter applies eight recorded alternating
-  infinity-norm equilibration passes, column-pivoted RRQR screening, bounded
-  SVD review, and a factor-16 ambiguity guard. Deficiency, threshold
-  adjacency, disagreement, non-convergence, and verification failures are
-  explicit; no coordinate mutation, jitter, pseudoinverse, or hidden
-  regularization is used.
-- Rust API, rustdoc, example, diagnostics, independent property tests,
-  benchmark baseline, three-platform ready-PR smoke routing, normative docs,
-  ADR production re-audit, and change fragment are updated.
-- CLI, C, C++, and Python are N/A because no field schema, fitted model, or
-  stable binding surface exists yet.
+- P1-1: `equilibrate` checks cumulative multipliers but can silently round a
+  nonzero entry to zero during row division. The exactly full-rank action
+  matrix `[[1e308,1e-16],[1e308,2e-16]]` becomes rank one before RRQR/SVD and
+  can be reported as deficient instead of preserved or rejected as an
+  unrepresentable scale.
+- P2-1: bounded SVD non-convergence returns only the iteration limit after
+  equilibration and RRQR evidence has already been computed. The structured
+  error must retain the available norms, scales, zero indices, and RRQR
+  evidence while marking SVD-derived fields and the final decision unavailable.
+- Full independent reasoning, exact code references, and the minimum required
+  regressions are in `docs/reviews/PR-46-INDEPENDENT-REVIEW.md`.
+- No P0 or P3 finding was reported. PR #46 must remain Draft until both
+  findings are repaired and a later fresh independent re-review is clean.
 
 ## Validation state
 
-- Focused CPD tests pass for polynomial reproduction in D=1/D=2/D=3,
-  null-space residual and orthonormality, value/derivative assembly, exact
-  degeneracy, unit and nonzero functional-scale invariance, exact-binary
-  analytic threshold cases on both sides of the SVD cutoff, deterministic
-  repeatability, structured errors, and projected/KKT equivalence.
-- The runnable example and the 64-center D=3 benchmark smoke workload pass.
-  Four 100-iteration benchmark runs and the optimized binary size are recorded
-  in `docs/benchmarks/REQ-CPD-001.md`.
-- The complete local standard gate passed after the final code, test,
-  manifest, lockfile, workflow, and registry changes: formatting,
-  warning-denying workspace Clippy with all targets and features, workspace
-  tests with all features, workspace rustdoc, all 58 requirement checks, and
-  `git diff --check`. This bounded-handoff update is documentation-only.
-- Initial Draft CI run 29384467033 on implementation commit `b219ec6` stopped
-  at one Ubuntu rustfmt line-layout difference. The closure was rewritten into
-  a cross-platform-stable two-statement form and the complete local gate then
-  passed. The replacement Draft CI belongs to the final pushed head.
-- The production dependency graph has 13 unique external packages, permissive
-  licenses, maximum declared MSRV 1.89, and no findings from exact OSV and
-  GitHub advisory queries. Unsafe-source exposure and size evidence are
-  recorded in ADR-0009 and the benchmark report.
+- Draft CI run 29386068937 passed on exact reviewed head `85f2ae3`; the ready
+  three-platform and benchmark-smoke job was correctly skipped.
+- The implementation task's complete local standard gate remains applicable
+  to the unchanged production, tests, manifests, schemas, and build inputs.
+- This Review changes only the review record, its requirement-registry link,
+  and this bounded handoff. All 58 requirement checks and `git diff --check`
+  pass.
 
 ## Next task
 
-- Open a fresh Review task for Draft PR #46 and only REQ-CPD-001.
-- Supply the reviewer only the requirement show/deps summaries, normative CPD
-  and solver documents, ADR-0004/0007/0009, PR diff, and validation/benchmark
-  evidence. Use the project read-only `math_reviewer` because this is a
-  mathematical and numerical change.
-- Record P0-P3 findings and independent truth reasoning. Do not repair
-  production code in that Review task and do not start another requirement.
-- If the review is clean, a later fresh Review/integration task must mark the
-  PR ready, wait for exact-head Windows/Ubuntu/macOS and all benchmark-smoke
-  CI, merge exactly once only when green, and then record truthful integration
-  state.
+- Open a fresh Repair task for PR #46 and only findings P1-1 and P2-1. Do not
+  broaden REQ-CPD-001 or begin another requirement.
+- First reproduce P1-1 with the exact full-rank extreme-scale action and add a
+  regression that forbids `RankDeficient`. Add a forced-SVD-non-convergence
+  seam and regression that verifies preservation of all available rank
+  evidence for P2-1.
+- Implement the smallest fixes, run focused checks while iterating, then run
+  the complete standard gate once after the final code change on a stable
+  head.
+- Update the review evidence and bounded handoff, commit, push, and stop for a
+  fresh independent re-review. Do not mark the PR ready or merge it in Repair.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #45
 - Draft implementation: GitHub PR #46
+- Independent findings: `docs/reviews/PR-46-INDEPENDENT-REVIEW.md`
 - Mathematical contract: `docs/math/CPD_AND_POLYNOMIALS.md`
 - Solver policy: `docs/architecture/SOLVER_POLICY.md`
 - Backend decision and production re-audit:
