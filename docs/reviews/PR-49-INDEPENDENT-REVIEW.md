@@ -179,6 +179,11 @@ Required repair: change only the ADR evidence count from six to eight, update
 the bounded review and handoff evidence, and stop for another fresh independent
 re-review. Do not change production or test code and do not begin REQ-IR-001.
 
+Repair implementation: ADR-0010 now records all eight independent harness
+tests. This bounded repair changes only the ADR, this review record, and the
+handoff; it does not change production code, tests, manifests, schemas, or
+build inputs.
+
 No new P0, P1, or P2 finding was identified. The reviewer also found no other
 P3 issue in the formulae, factorization semantics, truth cases, original-unit
 residual review, refinement policy, hidden-adjustment exclusions, determinism,
@@ -197,7 +202,9 @@ benchmark record, dependency isolation, interfaces, CI, or requirement state.
   Windows, Ubuntu, macOS, and benchmark-smoke matrix correctly remained
   unexecuted while the PR was Draft.
 
-The re-review result is one P3 finding. Keep PR #49 Draft and stop for the
-bounded documentation-only Repair. No complete workspace gate was rerun by the
-reviewer; the unchanged repair head retains the complete local gate recorded
-above, and the exact head passed Draft CI.
+The re-review result was one P3 finding, and the bounded documentation-only
+Repair has implemented it. The repair reran all 58 requirement checks and
+`git diff --check`; both passed. No complete workspace gate was rerun because
+the repair changes no code, tests, manifests, schemas, or build inputs; the
+stable code/test head retains the complete local gate recorded above. Keep PR
+#49 Draft and stop for a fresh independent re-review of the repaired PR head.

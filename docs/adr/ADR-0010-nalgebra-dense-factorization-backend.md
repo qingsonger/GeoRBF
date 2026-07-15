@@ -53,7 +53,7 @@ Later production adoption must follow this policy:
 
 ## Evidence and tradeoffs
 
-All six independent harness tests passed for the combined and both single-
+All eight independent harness tests passed for the combined and both single-
 backend configurations. The indefinite truth case has a zero leading diagonal
 and requires a 2-by-2 pivot; checked Cholesky rejects it for both candidates.
 The singular inconsistent case is not reported as success. Nalgebra exposes a

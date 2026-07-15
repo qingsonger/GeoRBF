@@ -6,33 +6,31 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / address PR #49 re-review finding P3-1 only
+- Mode: Review / fresh independent re-review of PR #49 P3-1 repair
 - Requirement: REQ-SPIKE-001, Issue #48
 - Branch: `codex/req-spike-001-dense-factorization`
 - Draft pull request: #49
-- Re-reviewed repair head: `7b9226e656eddbafbc6f5f17e7726fc3f8d4c770`
+- P3-1 repair base: `c7d8d43aaa3b837f56af1fe9084ce388d3099dd6`
 - Review record: `docs/reviews/PR-49-INDEPENDENT-REVIEW.md`
 - Registry state: `documented` (not integrated)
 - Dependency: REQ-BOOTSTRAP-001 is `integrated`
 
-## Re-review result
+## Repair result
 
-- A fresh read-only `math_reviewer` independently inspected the complete
-  14-file diff at the exact repair head and closed original findings P1-1,
-  P1-2, and P1-3.
-- New P3-1: ADR-0010 says all six independent harness tests passed, but the
-  repaired harness and review evidence contain eight tests. The accepted ADR's
-  evidence count must change from six to eight.
-- No new P0, P1, or P2 finding was identified, and no other P3 finding was
-  identified.
+- P3-1 is implemented: ADR-0010 now says that all eight independent harness
+  tests passed, consistent with the repaired harness and 8/8 review evidence.
+- The review record now distinguishes the re-review finding from its bounded
+  documentation-only repair.
+- Only the ADR, review record, and this handoff changed. Production code,
+  tests, manifests, schemas, and build inputs are unchanged.
 
 ## Next task
 
-Open a fresh Repair task for only P3-1. Change the ADR-0010 evidence count from
-six to eight, update the review record and bounded handoff, run the applicable
-documentation and requirement checks, commit, push, and stop. Do not change
-production or test code, do not mark PR #49 ready, and do not begin
-REQ-IR-001. A fresh independent re-review must follow.
+Open a fresh Review task and supply a read-only independent reviewer with the
+bounded requirement context, normative documents, complete PR diff, validation
+evidence, and exact repaired PR head. Confirm P3-1 is closed and check for new
+findings. Follow the repository's re-review and integration sequence only if
+the review is clean. Do not begin REQ-IR-001 in this task.
 
 ## Validation evidence
 
@@ -40,6 +38,8 @@ REQ-IR-001. A fresh independent re-review must follow.
   each passed 8/8. Spike formatting, warning-denying all-feature Clippy, the
   required no-backend rejection, optimized smoke, all 58 requirement checks,
   and `git diff --check` passed.
+- The documentation-only P3-1 repair reran all 58 requirement checks and
+  `git diff --check`; both passed.
 - The stable repair head retains the recorded complete local workspace gate and
   passed exact-head Draft CI run 29402438886. The independent reviewer did not
   rerun the complete workspace gate.
