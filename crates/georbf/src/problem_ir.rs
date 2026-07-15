@@ -16,6 +16,9 @@ use std::error::Error;
 use std::fmt;
 use std::num::NonZeroUsize;
 
+#[cfg(test)]
+use std::cell::Cell;
+
 use crate::dimension::{Dim, SupportedDimension};
 use crate::functional::ObservationFunctional;
 
@@ -134,6 +137,23 @@ impl SemanticProvenance {
     #[must_use]
     pub fn constraint_group(&self) -> Option<&str> {
         self.constraint_group.as_deref()
+    }
+
+    fn try_clone_for_canonical(&self) -> Result<Self, ProblemIrError> {
+        Ok(Self {
+            observation_id: self.observation_id,
+            source: SourceLocation {
+                path: try_clone_provenance_text(&self.source.path)?,
+                line: self.source.line,
+            },
+            original_units: try_clone_provenance_text(&self.original_units)?,
+            field_path: try_clone_provenance_text(&self.field_path)?,
+            constraint_group: self
+                .constraint_group
+                .as_deref()
+                .map(try_clone_provenance_text)
+                .transpose()?,
+        })
     }
 }
 
@@ -541,7 +561,10 @@ where
                     equalities.push(CanonicalEquality {
                         row: affine.without_constant(),
                         rhs,
-                        provenance: constraint.provenance.clone(),
+                        provenance: constraint
+                            .provenance
+                            .try_clone_for_canonical()
+                            .map_err(CanonicalizationError::Ir)?,
                     });
                 }
                 SemanticRelation::LinearBound {
@@ -577,7 +600,10 @@ where
                         row: affine.without_constant(),
                         lower: shifted_lower,
                         upper: shifted_upper,
-                        provenance: constraint.provenance.clone(),
+                        provenance: constraint
+                            .provenance
+                            .try_clone_for_canonical()
+                            .map_err(CanonicalizationError::Ir)?,
                     });
                 }
                 SemanticRelation::SecondOrderCone { lhs, rhs } => {
@@ -606,7 +632,10 @@ where
                     cones.push(CanonicalSecondOrderCone {
                         lhs: canonical_lhs,
                         rhs: canonical_rhs,
-                        provenance: constraint.provenance.clone(),
+                        provenance: constraint
+                            .provenance
+                            .try_clone_for_canonical()
+                            .map_err(CanonicalizationError::Ir)?,
                     });
                 }
             }
@@ -1101,6 +1130,8 @@ pub enum ProblemIrStorage {
     CanonicalCones,
     /// Rows within one canonical cone.
     CanonicalConeRows,
+    /// Owned semantic provenance copied into canonical rows and cones.
+    CanonicalProvenance,
     /// Explicit identity scaling vectors.
     Scaling,
 }
@@ -1320,6 +1351,31 @@ fn validate_text(value: &str, field: SemanticMetadataField) -> Result<(), Proble
     }
 }
 
+#[cfg(test)]
+std::thread_local! {
+    static FORCE_PROVENANCE_COPY_ALLOCATION_FAILURE: Cell<bool> = const { Cell::new(false) };
+}
+
+fn try_clone_provenance_text(value: &str) -> Result<String, ProblemIrError> {
+    #[cfg(test)]
+    if FORCE_PROVENANCE_COPY_ALLOCATION_FAILURE.with(|force| force.replace(false)) {
+        return Err(ProblemIrError::AllocationFailed {
+            storage: ProblemIrStorage::CanonicalProvenance,
+            requested: value.len(),
+        });
+    }
+
+    let mut cloned = String::new();
+    cloned
+        .try_reserve_exact(value.len())
+        .map_err(|_| ProblemIrError::AllocationFailed {
+            storage: ProblemIrStorage::CanonicalProvenance,
+            requested: value.len(),
+        })?;
+    cloned.push_str(value);
+    Ok(cloned)
+}
+
 fn validate_relation_scalar(value: f64) -> Result<(), ProblemIrError> {
     if value.is_finite() {
         Ok(())
@@ -1450,4 +1506,93 @@ fn count_coefficients(
         }
     }
     Ok(count)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use crate::functional::{FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm};
+    use crate::geometry::Point;
+
+    use super::*;
+
+    type TestResult = Result<(), Box<dyn Error>>;
+
+    struct ForcedProvenanceCopyAllocationFailure;
+
+    impl ForcedProvenanceCopyAllocationFailure {
+        fn new() -> Self {
+            FORCE_PROVENANCE_COPY_ALLOCATION_FAILURE.with(|force| force.set(true));
+            Self
+        }
+    }
+
+    impl Drop for ForcedProvenanceCopyAllocationFailure {
+        fn drop(&mut self) {
+            FORCE_PROVENANCE_COPY_ALLOCATION_FAILURE.with(|force| force.set(false));
+        }
+    }
+
+    fn test_expression() -> Result<SemanticExpression<1>, Box<dyn Error>> {
+        let atom = FunctionalAtom::value(Point::try_new([0.0])?, FunctionalProvenance::new(1));
+        let term = FunctionalTerm::try_new(1.0, atom)?;
+        let functional = ObservationFunctional::new(FunctionalExpr::try_new([term])?);
+        Ok(SemanticExpression::try_new(functional, 0.0)?)
+    }
+
+    fn assert_provenance_copy_allocation_failure(relation: SemanticRelation<1>) -> TestResult {
+        let source_path = "input.yaml";
+        let provenance = SemanticProvenance::try_new(
+            ObservationId::new(1),
+            SourceLocation::try_new(source_path.to_owned(), NonZeroUsize::MIN)?,
+            "m".to_owned(),
+            "fields.scalar".to_owned(),
+            Some("group".to_owned()),
+        )?;
+        let constraint = SemanticConstraint::try_new(provenance, relation, Enforcement::Hard)?;
+        let problem = SemanticProblemIr::try_new([constraint], ExecutionOptions::default())?;
+        let block = VariableBlock::try_new("z".to_owned(), NonZeroUsize::MIN)?;
+
+        let _failure = ForcedProvenanceCopyAllocationFailure::new();
+        let result = problem.try_compile::<ProblemIrError>([block], |_, _| {
+            AffineExpression::try_new([AffineTerm::try_new(0, 1.0)?], 0.0)
+        });
+
+        assert!(matches!(
+            result,
+            Err(CanonicalizationError::Ir(
+                ProblemIrError::AllocationFailed {
+                    storage: ProblemIrStorage::CanonicalProvenance,
+                    requested,
+                }
+            )) if requested == source_path.len()
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn equality_provenance_copy_allocation_failure_is_structured() -> TestResult {
+        assert_provenance_copy_allocation_failure(SemanticRelation::Equality {
+            expression: test_expression()?,
+            target: 0.0,
+        })
+    }
+
+    #[test]
+    fn linear_bound_provenance_copy_allocation_failure_is_structured() -> TestResult {
+        assert_provenance_copy_allocation_failure(SemanticRelation::LinearBound {
+            expression: test_expression()?,
+            lower: Some(0.0),
+            upper: None,
+        })
+    }
+
+    #[test]
+    fn cone_provenance_copy_allocation_failure_is_structured() -> TestResult {
+        assert_provenance_copy_allocation_failure(SemanticRelation::SecondOrderCone {
+            lhs: vec![test_expression()?],
+            rhs: test_expression()?,
+        })
+    }
 }

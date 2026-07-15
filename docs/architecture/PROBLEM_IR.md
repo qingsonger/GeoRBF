@@ -50,9 +50,11 @@ scaling, required solver capabilities, and a checked numeric-storage estimate.
 It contains no level, horizon, normal, tangent, stratigraphy, lithology, kernel,
 or third-party linear-algebra type. Canonicalization validates sparse ordering,
 finite nonzero coefficients, variable indices, shifted-scalar overflow,
-allocation, and estimate arithmetic before returning an immutable result. It
-does not scale, regularize, add jitter or hidden variables, relax constraints,
-or select a solver.
+allocation, and estimate arithmetic before returning an immutable result.
+Every owned provenance string is deep-copied through a fallible reservation;
+failure returns `AllocationFailed` before any partial canonical problem can be
+observed. Canonicalization does not scale, regularize, add jitter or hidden
+variables, relax constraints, or select a solver.
 
 Centers and observations remain separate through both forms. Later semantic
 compilers and assembly requirements add their own finite-value, unit,

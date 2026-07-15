@@ -28,8 +28,12 @@ relaxation.
 Independent tests cover exact equality/bound/cone mappings, affine constant
 shifts, provenance, deterministic order, D=1/D=2/D=3, malformed metadata and
 relations, sparse ordering and indices, source-aware linearizer failures,
-unsupported soft paths, allocation/count overflow, unsupported-dimension
-compile failure, and `Send + Sync`. Rustdoc, a runnable example, normative
-architecture documentation, and a deterministic benchmark are synchronized.
-CLI, C, C++, Python, schemas, and persistence are N/A because no fitting,
-schema, fitted-model, or stable binding surface exists yet.
+unsupported soft paths, allocation/count overflow, isolated fallible
+provenance-copy failures for equality/bound/cone canonicalization,
+unsupported-dimension compile failure, and `Send + Sync`. Canonical provenance
+deep copies reserve every owned string fallibly and return structured
+`AllocationFailed` diagnostics without exposing a partial result. Rustdoc, a
+runnable example, normative architecture documentation, and a deterministic
+benchmark are synchronized. CLI, C, C++, Python, schemas, and persistence are
+N/A because no fitting, schema, fitted-model, or stable binding surface exists
+yet.
