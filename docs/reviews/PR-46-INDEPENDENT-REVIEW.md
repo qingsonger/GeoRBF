@@ -504,3 +504,51 @@ required independent regressions, run focused checks and the final standard
 gate, update repair evidence and the bounded handoff, commit, push, and stop
 for another fresh independent re-review. This Review task must not repair
 production code, mark the PR ready, merge it, or begin another requirement.
+
+## Repair evidence pending fresh re-review: P2-5
+
+Repair code/test head `06ad419c06fd4c887c32be8a8dcd6ff9e1061c68`
+addresses only P2-5:
+
+- original-unit dot products now enter every exact finite `f64` significand
+  product into a fixed 67-limb signed binary accumulator and round the complete
+  sum once, without heap allocation or per-product floating-point rounding;
+- exact zero remains zero, finite normal and subnormal results use
+  round-to-nearest-even, an exact nonzero result that would round to zero
+  reaches the existing structured `UnrepresentableOriginal*Residual` path,
+  and overflow remains structured rather than fabricated;
+- private caller regressions require the exact `2^-104` cancellation residual
+  through null-space and expanded-weight diagnostics, and require the exact
+  `2^-1075` product to map to both structured error variants; and
+- a public D=1 order-one system compares the null-space and unit-coordinate
+  expanded-weight residuals with independent fused double-double truth.
+
+The complete public CPD target passes all 13 tests, and all six private CPD
+diagnostic regressions pass. On exact repair code/test head `06ad419`, the
+complete standard gate passed:
+
+```text
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo test --doc --workspace
+cargo xtask requirements check
+```
+
+The requirement checker reports all 58 v1 entries valid, and
+`git diff --check` passes. The optimized one-iteration benchmark smoke retained
+checksum `-4.97657470788226419e-14` and completed in 0.7554 ms on the recorded
+local environment, within the existing local 0.706--1.125 ms complete-assembly
+baseline.
+
+`cargo-nextest`, `cargo-deny`, `cargo-audit`, and `cargo-semver-checks` remain
+unavailable locally; Miri is unavailable for pinned Rust 1.96.1. Sanitizers,
+executable fuzzing, mutation testing, allocation instrumentation, and
+API/ABI/schema snapshot checks remain assigned to later requirements and
+release gates. Local `actionlint` is unavailable. This review-evidence and
+bounded-handoff update changes documentation only, so the immutable
+code/test-head gate remains applicable.
+
+PR #46 remains Draft. This Repair task must stop after pushing for a fresh
+independent re-review; it must not mark the PR ready, merge it, or begin
+another requirement.
