@@ -283,7 +283,7 @@ requirements:
     milestone: M3-v0.3.0
     priority: P0
     issue: 51
-    pull_request: null
+    pull_request: 52
     tests: [provenance, deterministic-compilation, invalid-paths]
     docs: [docs/architecture/PROBLEM_IR.md, rustdoc]
     rust_api: implemented
@@ -292,7 +292,7 @@ requirements:
     cpp_api: "N/A: the C ABI does not yet expose a stable problem surface"
     python_api: "N/A: no stable schema-backed fitting surface exists yet"
     benchmark: implemented
-    status: in_progress
+    status: documented
 
   - id: REQ-FIELD-001
     title: Unified hard-equality field assembly

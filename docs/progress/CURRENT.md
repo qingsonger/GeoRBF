@@ -9,8 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement / REQ-IR-001 complete
 - Requirement: REQ-IR-001, Issue #51
 - Branch: `codex/req-ir-001-semantic-canonical-ir`
-- Draft pull request: pending creation after the implementation commit is pushed
-- Registry state before Draft PR creation: `in_progress` (not `integrated`)
+- Draft pull request: #52
+- Registry state: `documented` (not `integrated`)
 - Dependencies: complete closure through REQ-FUNC-001 is `integrated`
 
 ## Implemented scope
