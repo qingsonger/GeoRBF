@@ -290,3 +290,22 @@ run 29404916642 passed on Ubuntu. The complete Windows, Ubuntu, and macOS
 matrix and every benchmark smoke workload remain required on the final Ready
 head before the PR may merge. This clean re-review authorizes that integration
 sequence but does not itself mark REQ-SPIKE-001 integrated.
+
+## Integration evidence
+
+- Clean-review evidence was pushed in documentation-only commit
+  `2665f0a06769809cfe57c6752cf99f51d1de16ac`, and PR #49 was marked ready
+  without changing the independently reviewed implementation.
+- Ready-head CI run 29406083900 passed Windows, Ubuntu, and macOS on exact head
+  `2665f0a06769809cfe57c6752cf99f51d1de16ac`, including every benchmark smoke
+  workload.
+- PR #49 squash-merged exactly once as
+  `2e4cfbc7e84dbbf692751c7046cbb8af86dec924`; Issue #48 closed as completed.
+- Post-merge `main` CI run 29406759904 passed the complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate on exact merge
+  commit `2e4cfbc7e84dbbf692751c7046cbb8af86dec924`.
+
+The isolated integration-state change records REQ-SPIKE-001 as `integrated`
+and advances the bounded handoff without starting REQ-IR-001. It changes no
+production code, tests, manifests, schemas, CI, build inputs, APIs, numerical
+behavior, dependencies, tags, or releases.
