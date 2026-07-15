@@ -6,55 +6,56 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active scope
 
-- Mode: Review complete; fresh Repair required next
+- Mode: Repair complete; fresh Review required next
 - Requirement: REQ-CPD-001, Issue #45
 - Draft pull request: #46
 - Branch: `codex/req-cpd-001-rank-nullspace`
 - Reviewed head: `9d7177eb034ae07e8ef04a915a0fa06664b8450e`
-- Repair code/test head: `10d3892381356ed5453e1c58b5daceefee037dda`
+- Repair code/test head: `6af215f2758360513fce2b2cdf0d63914dd11bc7`
 - Registry state: `documented` (not integrated)
 - Dependencies: REQ-KERNEL-002, REQ-POLY-001, REQ-FUNC-001, and
   REQ-SPIKE-002 are integrated
 
-## Review result
+## Repair result
 
-- The fresh independent `math_reviewer` closed P1-2, P2-2, and P2-3 and found
-  no P0, P1, or P3 issue on exact reviewed head `9d7177e`.
-- New P2-4 remains: for D=1, order one, and
-  `Q=[1e308,1e-308,1e-308]^T`, mapped row-scale normalization and both
-  residual helpers can underflow nonzero terms. Direct evaluation gives the
-  finite representable residual `-sqrt(2)*1e-308`, while null-space quality
-  and expanded-weight diagnostics fabricate `0.0` in original units.
-- This is a diagnostic and provenance failure rather than a rank or
-  feasibility misclassification because the scaled residual remains within
-  the documented tolerance. PR #46 remains Draft.
+- P2-4 is repaired on exact code/test head `6af215f`. Mapped basis products are
+  exponent-aware, and original-unit residuals use product-wise binary-exponent
+  accumulation rather than reconstructing from an underflowed column
+  normalization.
+- The independent D=1 order-one regression for
+  `Q=[1e308,1e-308,1e-308]^T` directly recomputes every `Q^T Z` entry and all
+  unit-coordinate expanded-weight residuals. The reported original-unit
+  matrix-infinity residual is finite, nonzero, and matches independent truth.
+- Unrepresentable restored residuals are explicit structured errors and cannot
+  be discarded through `f64::max`. PR #46 remains Draft pending fresh review.
 
 ## Validation state
 
-- All three focused regressions and the complete `georbf` CPD test target pass.
-- On exact repair code/test head `10d3892`, the complete standard gate passed:
+- The complete public `georbf` CPD target and all four private CPD diagnostic
+  regressions pass.
+- On exact repair code/test head `6af215f`, the complete standard gate passed:
   formatting, warning-denying workspace Clippy, all-feature workspace tests,
   workspace doc tests, and all 58 requirement checks.
 - `git diff --check` passed. The subsequent handoff/review-evidence update is
   documentation-only, so the stable code/test-head gate remains applicable.
-- Four consecutive repaired benchmark runs were deterministic and established
-  the updated 0.706--1.125 ms local complete-assembly baseline.
+- The optimized one-iteration benchmark smoke retained checksum
+  `-4.97657470788226419e-14` and completed in 1.1175 ms locally; the previously
+  recorded 0.706--1.125 ms complete-assembly baseline remains the timing record.
 - Exact reviewed-head Draft CI run 29390599350 passed Ubuntu on head `9d7177e`.
   The ready three-platform and benchmark-smoke matrix must remain skipped
   until a later clean re-review.
 
 ## Next task
 
-- Open a fresh Repair task for PR #46 only and repair P2-4 without expanding
-  REQ-CPD-001 or starting other work.
-- Add an independent D=1 order-one regression for
-  `Q=[1e308,1e-308,1e-308]^T`. Recompute `Q^T Z` and a unit-coordinate
-  expanded-weight residual directly in original units; require the truthful
-  finite nonzero matrix-infinity residual or an explicit structured
-  unrepresentable-arithmetic error, never a fabricated zero.
-- Make normalization exponent-aware or reject nonzero-to-zero normalization,
-  run focused checks and the final standard gate after the last code change,
-  update repair evidence, commit, push, and stop for a fresh re-review.
+- Open a fresh Review/re-review task for PR #46 only and use the independent
+  project `math_reviewer` with bounded requirement, dependency, normative
+  document, complete-diff, and validation context.
+- Confirm P2-4 is closed and inspect the complete repaired head for new P0-P3
+  findings. Record evidence without repairing production code in that task.
+- If the review is clean, follow the mandatory integration sequence: mark the
+  PR ready, wait for Windows/Ubuntu/macOS and benchmark-smoke CI on that exact
+  ready head, merge only when all are green, then record truthful integration
+  state and stop.
 - Do not begin another requirement in this task.
 
 ## Durable evidence

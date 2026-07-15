@@ -379,3 +379,50 @@ required independent regression, run focused checks and the final standard
 gate, update the repair evidence and bounded handoff, commit, push, and stop
 for another fresh independent re-review. This Review task must not repair
 production code, mark the PR ready, merge it, or begin another requirement.
+
+## Repair evidence pending fresh re-review: P2-4
+
+Repair code/test head `6af215f2758360513fce2b2cdf0d63914dd11bc7`
+addresses only P2-4:
+
+- mapped basis columns now decompose each row-scale product before a common
+  power-of-two normalization, so neither multiplication order nor an early
+  `row_scale / maximum` division can erase a counterbalancing factor;
+- original-unit null-space and expanded-weight residuals are accumulated from
+  product-wise binary mantissas and exponents with compensated summation,
+  independently of the column-max normalization used for the relative
+  tolerance check;
+- a non-finite restored null-space residual is the structured
+  `UnrepresentableOriginalNullSpaceResidual`, while an unrepresentable
+  expanded-weight residual remains `UnrepresentableOriginalWeightResidual`;
+  neither path folds NaN into zero; and
+- the independent public-API regression assembles the exact D=1 order-one
+  action `Q=[1e308,1e-308,1e-308]^T`, directly recomputes every `Q^T Z`
+  entry in original units, and checks every unit-coordinate expanded weight.
+  The reported matrix-infinity residual is finite, nonzero, and matches the
+  independent result.
+
+The focused public CPD target and four private CPD diagnostic regressions
+pass. On exact repair code/test head `6af215f`, the complete standard gate
+passed:
+
+```text
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo test --doc --workspace
+cargo xtask requirements check
+```
+
+The requirement checker reports all 58 v1 entries valid, and
+`git diff --check` passes. The one-iteration optimized benchmark smoke retained
+checksum `-4.97657470788226419e-14` and completed in 1.1175 ms on the recorded
+local environment. `cargo-nextest`, `cargo-deny`, `cargo-audit`, and
+`cargo-semver-checks` remain unavailable locally; Miri is unavailable for
+pinned Rust 1.96.1. Sanitizers, executable fuzzing, mutation testing,
+allocation instrumentation, and API/ABI/schema snapshot checks remain assigned
+to later requirements and release gates. Local `actionlint` is unavailable.
+
+PR #46 remains Draft. This Repair task must stop after pushing for a fresh
+independent re-review; it must not mark the PR ready, merge it, or begin another
+requirement.
