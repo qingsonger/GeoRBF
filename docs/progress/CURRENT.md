@@ -4,63 +4,53 @@ This file is a bounded handoff for the next task. Completed history belongs in
 `docs/progress/HISTORY.md`, requirement change fragments, independent review
 records, benchmark reports, Git, and GitHub.
 
-## Active scope
+## Active repository work
 
-- Mode: Review clean; ready-head integration sequence next
-- Requirement: REQ-CPD-001, Issue #45
-- Pull request: #46 (Draft until this clean-review evidence is pushed)
-- Branch: `codex/req-cpd-001-rank-nullspace`
-- Exact cleanly reviewed head: `062bae329bbd2194b93d7708a428852c459eccfd`
-- Repair code/test head: `06ad419c06fd4c887c32be8a8dcd6ff9e1061c68`
-- Registry state: `documented` (not integrated)
-- Dependencies: REQ-KERNEL-002, REQ-POLY-001, REQ-FUNC-001, and
-  REQ-SPIKE-002 are integrated
+- Mode: Integration state / REQ-CPD-001 complete
+- Requirement: REQ-CPD-001, Issue #45 (closed)
+- Implementation pull request: #46, squash-merged as `0c19373`
+- Integration-state branch: `codex/req-cpd-001-integration-state`
+- Integration-state pull request: pending creation
+- Review record: `docs/reviews/PR-46-INDEPENDENT-REVIEW.md`
+- Registry state in this change: `integrated`
+- Next eligible requirement: REQ-SPIKE-001 (`planned`)
 
-## Review result
+## Integration result
 
-- A fifth fresh read-only `math_reviewer` independently inspected the complete
-  PR diff at exact head `062bae3` without inheriting Repair reasoning.
-- P2-5 is closed: the fixed-stack exact binary accumulator retains the
-  representable `2^-104` near-cancellation residual, rejects the exact nonzero
-  `2^-1075` result as unrepresentable, and both public diagnostic paths have
-  independent regressions.
-- No P0, P1, P2, or P3 finding remains. The complete diff is consistent with
-  the scoped mathematical, numerical, architecture, interface, diagnostic,
-  allocation, benchmark, and requirement contracts.
+- A fifth fresh read-only `math_reviewer` closed P2-5 and found no remaining
+  P0, P1, P2, or P3 issue in the complete implementation diff.
+- Exact ready head `bf69ed4` passed the complete Windows, Ubuntu, and macOS CI
+  matrix with every benchmark smoke workload in run 29396342123.
+- PR #46 squash-merged exactly once as `0c19373`; Issue #45 closed as
+  completed.
+- Post-merge `main` run 29396715017 passed the same complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate.
+- This isolated integration-state change updates only registry and progress
+  evidence. It changes no production code, tests, manifest, schema, build
+  input, API, numerical behavior, dependency, tag, or release.
 
 ## Validation state
 
-- The complete public `georbf` CPD target passes all 13 tests, and all six
-  private CPD diagnostic regressions pass.
-- On exact repair code/test head `06ad419`, the complete standard gate passed:
-  formatting, warning-denying workspace Clippy, all-feature workspace tests,
-  workspace doc tests, and all 58 requirement checks.
-- `git diff --check` passed. The subsequent handoff/review-evidence update is
-  documentation-only, so the stable code/test-head gate remains applicable.
-- The optimized one-iteration benchmark smoke retained checksum
-  `-4.97657470788226419e-14` and completed in 0.7554 ms locally, within the
-  recorded 0.706--1.125 ms complete-assembly baseline.
-- The independent reviewer reran the public CPD target (13/13), all six private
-  CPD regressions, formatting, all 58 requirement checks, and
-  `git diff --check`; all passed.
-- Exact reviewed-head Draft CI run 29394931421 passed its complete Ubuntu job
-  on `062bae3`. The ready Windows/Ubuntu/macOS and benchmark-smoke matrix has
-  not run and must be triggered on the clean-evidence head.
+- On stable implementation code/test head `06ad419`, the focused CPD suite and
+  complete standard workspace gate passed. Later implementation-branch commits
+  changed only review evidence and the bounded handoff.
+- Exact ready-head and post-merge `main` three-platform gates are green as
+  recorded above.
+- The integration-state branch must pass the complete local standard gate and
+  `git diff --check` after its final evidence update.
 
 ## Next task
 
-- Push this documentation-only clean-review evidence and mark PR #46 ready.
-- Wait for the ready event to complete Windows, Ubuntu, macOS, and every
-  benchmark smoke workload on that exact head. Merge exactly once only when
-  the complete matrix is green.
-- Wait for the post-merge `main` gate, then record truthful integration state
-  through an isolated change. Stop without beginning another requirement.
+After the isolated integration-state pull request is green and merged, open a
+fresh Implement task. Perform the mandatory preflight and use
+`cargo xtask requirements next`; do not start REQ-SPIKE-001 in this task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #45
-- Draft implementation: GitHub PR #46
-- Independent findings and Repair evidence:
+- Merged implementation: GitHub PR #46
+- Integration-state pull request: pending creation
+- Independent review and repair evidence:
   `docs/reviews/PR-46-INDEPENDENT-REVIEW.md`
 - Mathematical contract: `docs/math/CPD_AND_POLYNOMIALS.md`
 - Solver policy: `docs/architecture/SOLVER_POLICY.md`
