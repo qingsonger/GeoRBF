@@ -9,8 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement complete; independent Review next
 - Requirement: REQ-SPIKE-001, Issue #48
 - Branch: `codex/req-spike-001-dense-factorization`
-- Pull request: pending Draft creation
-- Registry state: `planned` until the Draft PR number is recorded
+- Pull request: #49 (Draft)
+- Registry state: `documented` (not integrated)
 - Dependency: REQ-BOOTSTRAP-001 is integrated
 
 ## Implementation result
@@ -35,8 +35,12 @@ records, benchmark reports, Git, and GitHub.
 - Spike Clippy with all targets, all features, and warnings denied passes.
 - The negative no-backend configuration fails with the required compile error.
 - The optimized smoke and complete 32/64/128 comparison workloads pass.
-- The final stable-head standard workspace gate and `git diff --check` must be
-  recorded after the last implementation or evidence change.
+- On the final implementation code/test head plus the PR-number registry and
+  handoff update, the complete standard gate passed: formatting, warning-
+  denying workspace Clippy, all-feature workspace tests, workspace doc tests,
+  and all 58 requirement checks. `git diff --check` also passed.
+- The subsequent validation-evidence sentence changes only this bounded
+  handoff, so that stable code/test and registry gate remains applicable.
 
 ## Next task
 
