@@ -6,31 +6,35 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / fresh independent re-review of PR #49 P3-2 repair
+- Mode: Review / ready-head integration sequence for PR #49
 - Requirement: REQ-SPIKE-001, Issue #48
 - Branch: `codex/req-spike-001-dense-factorization`
 - Draft pull request: #49
-- P3-2 repair base: `c9d5fa96b3c75679ce497873f88c530cc85a9480`
+- Clean re-review head: `7e365514c5541b6b3e8b594f6fc8ef18bbc90851`
 - Review record: `docs/reviews/PR-49-INDEPENDENT-REVIEW.md`
 - Registry state: `documented` (not integrated)
 - Dependency: REQ-BOOTSTRAP-001 is `integrated`
 
-## Repair result
+## Re-review result
 
-- P3-2 is implemented: the review record's top-level result and repair-status
-  fields now say that P3-1 is implemented and that P3-2 requires a fresh
-  independent re-review.
-- The review record and this bounded handoff now agree on the next task.
-- Only the review record and this handoff changed. Production code, tests,
-  manifests, schemas, and build inputs are unchanged.
+- A fresh read-only `math_reviewer` confirmed P3-2 is closed on exact head
+  `7e365514c5541b6b3e8b594f6fc8ef18bbc90851` and found no remaining P0, P1,
+  P2, or P3 issue in the complete PR diff.
+- Independent truth review reconfirmed the SPD and mandatory two-by-two-pivot
+  indefinite cases, finite original-unit backward-error evidence, one-factor
+  refinement, explicit failure, no hidden adjustment, dependency isolation,
+  truthful interfaces, CI claims, and requirement state.
+- The review evidence update changes only the review record and this handoff;
+  production code, tests, manifests, schemas, CI, and build inputs are
+  unchanged.
 
-## Next task
+## Integration sequence
 
-Open a fresh Review task and supply a read-only independent reviewer with the
-bounded requirement context, normative documents, complete PR diff, validation
-evidence, and exact repaired PR head. Confirm P3-2 is closed and check for new
-findings. Follow the repository's re-review and integration sequence only if
-the review is clean. Do not begin REQ-IR-001 in this task.
+Synchronize the clean review evidence, mark PR #49 ready, and wait for the
+complete Windows, Ubuntu, and macOS correctness matrix and every benchmark
+smoke workload on that exact Ready head. Merge exactly once only if the full
+gate is green, then record truthful integration state in an isolated change.
+Do not begin REQ-IR-001 in this task.
 
 ## Validation evidence
 
@@ -45,8 +49,12 @@ the review is clean. Do not begin REQ-IR-001 in this task.
   `git diff --check`; both passed.
 - Exact-head Draft CI run 29403767685 passed on Ubuntu. The reviewer relied on
   that run for the required no-backend rejection and did not rerun it locally.
-- No three-platform or benchmark-smoke ready-head CI is claimed while the PR
-  remains Draft.
+- Exact repaired-head Draft CI run 29404916642 passed on Ubuntu.
+- The primary task ran the complete standard workspace gate and
+  `git diff --check` on exact clean-review head
+  `7e365514c5541b6b3e8b594f6fc8ef18bbc90851`; all passed.
+- No three-platform or benchmark-smoke Ready-head CI is claimed before that
+  event-triggered run completes.
 
 ## Checks not yet available
 

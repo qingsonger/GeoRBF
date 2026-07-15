@@ -8,9 +8,9 @@
 - Re-reviewed repair head: `7b9226e656eddbafbc6f5f17e7726fc3f8d4c770`
 - Base head: `8fee4315f7335c48d919cc5f04a217e6db829a07`
 - Review date: 2026-07-15
-- Result: original P1-1 through P1-3 closed; P3-1 implemented; P3-2 requires
-  fresh independent re-review; PR must remain Draft
-- Repair status: P3-2 implemented; fresh independent re-review required
+- Result: clean re-review; P1-1 through P1-3, P3-1, and P3-2 are closed; no
+  P0, P1, P2, or P3 finding remains
+- Repair status: none; proceed through the ready-head integration sequence
 
 ## Scope and independence
 
@@ -254,3 +254,39 @@ REQ-IR-001.
 
 The re-review result is one P3 finding. Keep PR #49 Draft and stop for a fresh
 bounded Repair of P3-2 only.
+
+## Fresh independent re-review of the P3-2 repair
+
+A new read-only `math_reviewer` independently reviewed exact head
+`7e365514c5541b6b3e8b594f6fc8ef18bbc90851` against base
+`8fee4315f7335c48d919cc5f04a217e6db829a07`. It received only the bounded
+requirement summary and dependency closure, Issue #48 acceptance criteria,
+normative documents and ADRs, the complete 14-file PR diff, validation and
+benchmark evidence, and the exact repaired head. It made no repository or
+remote changes and did not inherit implementation reasoning.
+
+The reviewer confirmed P3-2 is closed: the top-level result and repair-status
+fields now agree with the bounded handoff that P3-1 was implemented and P3-2
+required this fresh re-review. The P3-2 repair changes only this review record
+and `docs/progress/CURRENT.md` relative to the stable code and test head. It
+changes no production code, tests, manifests, schemas, CI, or build inputs.
+
+No P0, P1, P2, or P3 finding remains. Independent truth review reconfirmed
+that the SPD case is positive definite; `[[0, 2], [2, 0]]` is nonsingular and
+indefinite and requires a symmetric 2-by-2 first pivot; the ill-conditioned
+case preserves positive definiteness by positive diagonal congruence; and the
+residual, correction, and normwise backward-error formulae have the correct
+signs and dimensions. Every accepted numeric diagnostic is finite, one factor
+object serves the initial and correction solves, and corrections are accepted
+only for strict original-unit residual decrease. No jitter, diagonal
+substitution, pseudoinverse, factorization fallback, constraint relaxation,
+hidden regularization, production dependency, or user-interface exposure was
+found. The eight existing tests cover the required independent regressions.
+
+The primary task ran the complete standard workspace gate and
+`git diff --check` on exact reviewed head
+`7e365514c5541b6b3e8b594f6fc8ef18bbc90851`; all passed. Exact-head Draft CI
+run 29404916642 passed on Ubuntu. The complete Windows, Ubuntu, and macOS
+matrix and every benchmark smoke workload remain required on the final Ready
+head before the PR may merge. This clean re-review authorizes that integration
+sequence but does not itself mark REQ-SPIKE-001 integrated.
