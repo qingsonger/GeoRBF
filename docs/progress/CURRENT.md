@@ -41,14 +41,15 @@ records, benchmark reports, Git, and GitHub.
 
 ## Validation state
 
-- A fresh read-only independent reviewer inspected exact PR #44 head
+- The first fresh read-only independent reviewer inspected exact PR #44 head
   `5c45a8732a0da827c0ca6957544bcc2eb2523ac8` and found P2-1: the
   proposed handoff would immediately become stale after merge because it keeps
   the completed Repair active and calls PR #44 Draft. No P0, P1, or P3 finding
   was reported.
-- The focused Repair replaces those transient state claims with this terminal
-  handoff. A fresh independent re-review must report no P0-P3 finding before
-  PR #44 can enter the ready-head integration sequence.
+- A fresh read-only independent re-review inspected exact repaired head
+  `c09d581a2f97d9b774a8e1e1ede81275460655a6`, confirmed P2-1 closed,
+  and found no new P0, P1, P2, or P3 issue. PR #44 is cleared to enter the
+  mandatory ready-head integration sequence.
 - On stable implementation code/test head `30bd495`, the focused spike matrix
   and complete standard workspace gate passed. Later implementation-branch
   commits changed documentation only.
@@ -65,12 +66,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task
 
-- Before PR #44 merges, open a fresh Review/re-review task for that PR. Verify
-  P2-1 is closed without inheriting this Repair reasoning; if no P0-P3 finding
-  remains, follow the mandatory ready-head CI and merge sequence.
+- PR #44 must pass the complete Windows, Ubuntu, and macOS ready-head CI and
+  every benchmark-smoke workload on its exact final head before it merges.
 - After PR #44 merges, open a fresh Implement preflight and use
   `cargo xtask requirements next` to select the next atomic requirement.
-- Do not start REQ-CPD-001 in the Repair or Review task.
+- Do not start REQ-CPD-001 in this Review task.
 
 ## Durable evidence
 
