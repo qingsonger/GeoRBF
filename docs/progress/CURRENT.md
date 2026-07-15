@@ -6,10 +6,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / REQ-FIELD-001 complete
+- Mode: Review / REQ-FIELD-001 findings recorded
 - Requirement: REQ-FIELD-001, Issue #54
 - Branch: `codex/req-field-001-hard-equality-assembly`
 - Draft pull request: #55
+- Review record: `docs/reviews/PR-55-INDEPENDENT-REVIEW.md`
 - Registry state: `documented` (not `integrated`)
 - Dependencies: complete closure through REQ-ANISO-001, REQ-CPD-001, and
   REQ-IR-001 is `integrated`
@@ -43,14 +44,22 @@ records, benchmark reports, Git, and GitHub.
   gate: format, warning-denying workspace
   Clippy, all-feature workspace tests, workspace doctests, the 58-requirement
   registry check, and `git diff --check`.
+- A fresh read-only `math_reviewer` reviewed exact head `ab28b3c` and found no
+  P0 or P1 issue, four P2 findings, and one P3 finding. It independently passed
+  the five field tests, runnable example, D=1/D=2/D=3 benchmark smoke, and all
+  58 requirement-registry checks. Draft Ubuntu CI run 29422460418 passed on the
+  same head.
 
 ## Next task
 
-Open a fresh independent Review task for Draft PR #55. Review only REQ-FIELD-001
-against Issue #54, its dependency closure, normative field/math
-documents, the complete PR diff, and validation evidence. Use a fresh read-only
-project `math_reviewer`; do not repair production code or begin REQ-SOLVE-001 in
-that Review task.
+Open a fresh Repair task for Draft PR #55. Address only P2-1 through P2-4 and
+P3-1 in `docs/reviews/PR-55-INDEPENDENT-REVIEW.md`: remove the infallible
+kernel-error allocation, reuse CPD observation polynomial scratch, complete
+D=1/D=2/D=3 invalid-capability coverage, add independent CPD augmented-matrix
+truth, and correct the variable-block allocation diagnostic. Add the specified
+regressions, run focused checks and the final stable-head standard gate, update
+review evidence and this bounded handoff, commit, push, and stop for a fresh
+independent re-review. Do not begin REQ-SOLVE-001.
 
 ## Durable evidence
 
@@ -59,6 +68,7 @@ that Review task.
 - Mathematical contract: `docs/math/MATH_SPEC.md`
 - Architecture contract: `docs/architecture/ARCHITECTURE.md`
 - Benchmark: `docs/benchmarks/REQ-FIELD-001.md`
+- Independent review: `docs/reviews/PR-55-INDEPENDENT-REVIEW.md`
 
 ## Checks not yet available
 

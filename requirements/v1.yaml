@@ -303,7 +303,7 @@ requirements:
     issue: 54
     pull_request: 55
     tests: [analytic-fields, mixed-functionals, symmetry, invalid-capabilities]
-    docs: [docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, rustdoc]
+    docs: [docs/math/MATH_SPEC.md, docs/architecture/ARCHITECTURE.md, docs/reviews/PR-55-INDEPENDENT-REVIEW.md, rustdoc]
     rust_api: implemented
     cli: "N/A: no fitting command exists before dense solving, fitted models, and versioned schemas"
     c_api: "N/A: the stable C fitting ABI waits for solver/model requirements and API freeze"
