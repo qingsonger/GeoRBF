@@ -426,3 +426,81 @@ to later requirements and release gates. Local `actionlint` is unavailable.
 PR #46 remains Draft. This Repair task must stop after pushing for a fresh
 independent re-review; it must not mark the PR ready, merge it, or begin another
 requirement.
+
+## Fresh re-review of the extreme-range residual repair
+
+- Date: 2026-07-15
+- Reviewed head: `cf4976ee7e575da1856d5871f6f6f744fccd43d4`
+- Repair code/test head: `6af215f2758360513fce2b2cdf0d63914dd11bc7`
+- Base: `98593115d73f1347a67deaa2d6d8d77a2d1aee87`
+- Result: P2-4 closed; one new P2 finding; PR #46 must remain Draft
+
+A fourth fresh read-only `math_reviewer` received only the bounded requirement
+and dependency summaries, Issue #45 acceptance criteria, normative documents
+and ADRs, the complete PR and P2-4 repair diffs, and validation evidence. It
+did not inherit the Repair reasoning, independently inspected the exact repaired
+head, and made no repository or remote changes.
+
+### Closed: P2-4 extreme-range original-unit residuals
+
+The original reproducer `Q=[1e308,1e-308,1e-308]^T` is closed. Exponent-aware
+mapped-basis products and product-wise original-unit accumulation preserve the
+finite nonzero residual for every `Q^T Z` column and the corresponding
+unit-coordinate expanded weights. The independent reviewer reran the focused
+public regression on the exact reviewed head and confirmed its reported
+original-unit residual is nonzero.
+
+### P2-5: original-unit accumulation can still fabricate zero
+
+`original_dot_abs` in `crates/georbf/src/cpd.rs:1481-1513` has two independent
+false-zero paths:
+
+- At lines 1487-1488, a nonzero restored exponent below the minimum subnormal
+  exponent returns `Some(0.0)`. The single exact product
+  `2^-1022 * 2^-53 = 2^-1075` is nonzero but unrepresentable and must instead
+  reach the structured `UnrepresentableOriginal*Residual` path.
+- At lines 1505-1513, each mantissa product is rounded to one `f64` before the
+  compensated sum. With `epsilon=2^-52`, the exact two-term dot product
+  `((1+epsilon)(1-epsilon)) + (-1)(1)` is
+  `-epsilon^2 = -2^-104`, which is finite and representable. The first product
+  nevertheless rounds to `1.0`, cancels the second product exactly, and the
+  helper reports zero. Independent exact binary-rational arithmetic gives the
+  residual magnitude `4.930380657631324e-32`.
+
+The helper supplies both null-space original residuals at
+`crates/georbf/src/cpd.rs:1304` and expanded-weight original residuals at line
+1373. The defect can therefore make public diagnostics and `Q^T w = 0`
+provenance report a fabricated zero. Because the relative residual can remain
+within tolerance and rank or feasibility is not misclassified, this is P2.
+
+Required repair and regressions:
+
+- test the two-term near-cancellation above and require the exact
+  `epsilon^2` magnitude rather than zero;
+- test `f64::MIN_POSITIVE * (0.5 * f64::EPSILON)` and require the helper to
+  report unrepresentable arithmetic, with both public callers mapping it to
+  their structured `UnrepresentableOriginal*Residual` errors; and
+- add a public D=1 order-one near-cancellation action/basis or unit-coordinate
+  expanded-weight case whose original-unit residual is checked against
+  independent exact-binary or double-double truth.
+
+## Fourth-review validation and disposition
+
+- Exact reviewed-head Draft CI run 29392843498 passed its complete Ubuntu
+  correctness job; the ready Windows, Ubuntu, macOS, and benchmark-smoke matrix
+  was correctly skipped.
+- The complete standard gate passed on exact repair code/test head `6af215f`.
+  The exact final-head delta changes only this review record and the bounded
+  handoff, so that immutable code/test evidence remains applicable.
+- The reviewer found no P0, P1, or P3 issue. Formulae, signs, D=1/D=2/D=3
+  polynomial spaces, derivative actions, equilibration, rank thresholds,
+  ambiguity handling, scaled null-space mapping, matrix infinity norms, hard
+  failures, absence of hidden regularization, projection/KKT equivalence,
+  determinism, allocation shape, interface dispositions, and evidence were
+  otherwise consistent with the scoped contracts.
+
+PR #46 must remain Draft. A fresh Repair task must address only P2-5, add the
+required independent regressions, run focused checks and the final standard
+gate, update repair evidence and the bounded handoff, commit, push, and stop
+for another fresh independent re-review. This Review task must not repair
+production code, mark the PR ready, merge it, or begin another requirement.
