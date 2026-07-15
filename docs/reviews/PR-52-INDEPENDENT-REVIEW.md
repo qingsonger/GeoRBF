@@ -5,9 +5,10 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/52
 - Branch: `codex/req-ir-001-semantic-canonical-ir`
 - Reviewed head: `dc88b999f02e31934dc1daa06a4909a87aed69ab`
+- Fresh re-reviewed head: `133c8680cbd32e539dd855b7c59e1f374cc15f43`
 - Base head: `46a6d48115c5a01d2f200cc956a41a1dcc3158fa`
 - Review date: 2026-07-15
-- Result: P2-1 repaired; fresh independent re-review required; PR must remain Draft
+- Result: P2-1 closed; P2-2 found; bounded Repair required; PR must remain Draft
 
 ## Scope and independence
 
@@ -101,12 +102,54 @@ No production code, public API, manifest, schema, build input, dependency,
 benchmark, or interface disposition changed. The requirement remains
 `documented`, and this repair evidence does not independently close P2-1.
 
+## Fresh independent re-review of the P2-1 repair
+
+A new read-only `math_reviewer` independently reviewed exact head
+`133c8680cbd32e539dd855b7c59e1f374cc15f43` against base
+`46a6d48115c5a01d2f200cc956a41a1dcc3158fa`. It received only the bounded
+requirement summary and integrated dependency closure, Issue #51 acceptance
+criteria, scoped normative documents, the complete 15-file PR diff, validation
+and benchmark evidence, and the exact repaired head. It made no repository or
+remote changes and did not inherit implementation or Repair reasoning.
+
+The reviewer confirmed P2-1 is closed. The exact regression now compares the
+complete equality, linear-bound, both SOC-left, and SOC-right sparse
+`(variable, coefficient)` sequences, including negative coefficients and
+noncontiguous variable indices. It also compares complete cone provenance.
+Independent arithmetic reconfirmed the equality right-hand side of 8, the
+closed bound `[0, 5]`, and retained SOC constants of 1, 1, and 3.
+
+### P2-2: canonicalization provenance copies cannot report allocation failure
+
+`crates/georbf/src/problem_ir.rs:544`, `:580`, and `:609` use
+`constraint.provenance.clone()`. Although the canonical row collections use
+fallible reservations, cloning `SemanticProvenance` deep-copies its owned
+strings through ordinary infallible allocation. An allocation failure there
+therefore reaches the global allocation-error handler instead of returning the
+documented structured `AllocationFailed` error from canonicalization. This
+violates Issue #51's explicit allocation-failure acceptance criterion and the
+fallible compilation contract.
+
+Required repair: replace these provenance copies with a fallible deep-copy
+path and use it consistently for equality, linear-bound, and SOC
+canonicalization. Add isolated allocation-failure regressions at each of the
+three provenance-copy paths and verify that compilation returns
+`CanonicalizationError::Ir(ProblemIrError::AllocationFailed { .. })` without
+abort, panic, or partial result. Keep the repair bounded to P2-2 and do not
+begin REQ-FIELD-001.
+
+No P0, P1, or P3 finding was found. SPD/CPD classification, center limits,
+polynomial and rank decisions, solver infeasibility, rotation invariance,
+anisotropy and positive definiteness, Hessian capability, and actual QP/SOCP
+solution remain explicitly outside this solver-neutral IR requirement.
+
 ## Disposition
 
-Keep PR #52 Draft. A fresh independent re-review must inspect the repaired PR
-head without inheriting the Repair reasoning, verify whether P2-1 is closed,
-and check for new findings. Do not mark the PR ready, merge it, or begin
-REQ-FIELD-001 in this Repair task.
+Keep PR #52 Draft. A fresh bounded Repair task must address only P2-2, add the
+required regressions, rerun focused checks and the final standard gate after
+the last code change, update evidence, push, and stop for another fresh
+independent re-review. Do not mark the PR ready, merge it, or begin
+REQ-FIELD-001 in this Review task.
 
 SPD/CPD classification, center limits, polynomial and rank decisions, solver
 infeasibility, rotation invariance, anisotropy and positive definiteness, and
