@@ -20,6 +20,7 @@ available in Git history through commit `a2be099`.
 | REQ-ANISO-001 | #28 | #29 | #30 | `docs/reviews/PR-29-INDEPENDENT-REVIEW.md` |
 | REQ-POLY-001 | #34 | #35 | #36 | `docs/reviews/PR-35-INDEPENDENT-REVIEW.md` |
 | REQ-FUNC-001 | #37 | #38 | #39 | `docs/reviews/PR-38-INDEPENDENT-REVIEW.md` |
+| REQ-SPIKE-002 | #40 | #41 | #42 | `docs/reviews/PR-41-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
@@ -35,4 +36,4 @@ GitHub. This file is an index, not a second completion registry.
 ## Milestone transition
 
 M0 and M1 are complete. The isolated Issue #31 workflow-efficiency repair is
-integrated. M2 continues with REQ-SPIKE-002 after REQ-FUNC-001 integration.
+integrated. M2 continues with REQ-CPD-001 after REQ-SPIKE-002 integration.

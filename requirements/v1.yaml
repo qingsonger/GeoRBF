@@ -238,7 +238,7 @@ requirements:
     cpp_api: "N/A: dependency spike exposes no C++ API"
     python_api: "N/A: dependency spike exposes no Python API"
     benchmark: implemented
-    status: documented
+    status: integrated
 
   - id: REQ-CPD-001
     title: CPD rank checks and null-space projection

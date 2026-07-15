@@ -6,53 +6,50 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / PR #41 clean re-review; ready-head integration sequence next
-- Requirement: REQ-SPIKE-002, Issue #40
-- Branch: `codex/req-spike-002-rrqr-svd-backend`
-- Pull request: #41, Draft until clean-review evidence is synchronized
-- Exact cleanly re-reviewed head: `66ed708a097bd55235f9a4be012c44870a2ffe33`
-- Actual repair code/test head: `30bd49520131ff085fd538c93ad767455cdade43`
+- Mode: Integration state / REQ-SPIKE-002 complete
+- Requirement: REQ-SPIKE-002, Issue #40 (closed)
+- Implementation pull request: #41, squash-merged as `4c1ddeb`
+- Integration-state branch: `codex/req-spike-002-integration-state`
+- Integration-state pull request: #42 (Draft until final evidence is green)
 - Review record: `docs/reviews/PR-41-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `documented`
-- Dependency: REQ-BOOTSTRAP-001 is `integrated`
+- Registry state in this change: `integrated`
+- Next eligible requirement: REQ-CPD-001 (`planned`)
 - Production dependency state: unchanged; the comparison crate is excluded
   from the production workspace
 
-## Review result
+## Integration result
 
 - A second fresh read-only `math_reviewer` inspected the complete PR diff at
   exact head `66ed708` without inheriting Repair reasoning.
 - P2-1, P2-2, and P3-1 are independently confirmed closed. No P0, P1, P2, or
   P3 issue remains.
-- The threshold regressions bracket the strict SVD threshold under independent
-  analytic truth; the zero-backend path fails at compile time; the valid
-  repair object and parent resolve exactly.
-- This clean-review record changes documentation only. No production code,
-  test, manifest, schema, build input, requirement status, mathematical claim,
-  or interface changed.
+- Exact ready head `3e6f4e1` passed the complete Windows, Ubuntu, and macOS CI
+  matrix with every benchmark smoke workload in run 29376057562.
+- PR #41 squash-merged exactly once as `4c1ddeb`; Issue #40 closed as
+  completed.
+- Post-merge `main` run 29376336046 passed the same complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate.
+- This isolated integration-state change updates only registry and progress
+  evidence. It changes no production code, tests, manifest, schema, build
+  input, API, numerical behavior, dependency, tag, or release.
 
 ## Validation state
 
-- Focused `cargo xtask requirements show REQ-SPIKE-002`,
-  `cargo xtask requirements deps REQ-SPIKE-002`,
-  `cargo xtask requirements check`, and `git diff --check` passed.
-- On stable code/test head `30bd495`, spike formatting, warning-denying
-  Clippy, all three 6/6 feature-test configurations, the expected zero-backend
-  compile failure, the release smoke workload, workspace formatting,
-  warning-denying Clippy, all 139 tests, all 25 doctests and compile-fail
-  tests, all 58 requirement checks, and `git diff --check` passed.
-- Draft Ubuntu CI run 29375239847 passed on exact reviewed head `66ed708`.
-- The ready-head Windows/Ubuntu/macOS and benchmark-smoke gate has not run and
-  must be triggered only after the clean-review evidence commit is pushed and
-  PR #41 is marked ready.
+- On stable implementation code/test head `30bd495`, the focused spike matrix
+  and complete standard workspace gate passed. Later implementation-branch
+  commits changed documentation only.
+- Exact ready-head and post-merge `main` three-platform gates are green as
+  recorded above.
+- The complete local integration-state standard gate passed: formatting,
+  warning-denying workspace Clippy with all targets and features, workspace
+  tests with all features, workspace rustdoc, all 58 requirement checks, and
+  `git diff --check`.
 
 ## Next task
 
-Synchronize the clean review evidence to PR #41, mark it ready, and wait for
-the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact ready
-head. Merge exactly once only when that CI is green, wait for post-merge `main`
-CI, then record truthful integration state through an isolated change. Do not
-start REQ-CPD-001 in this task.
+After the isolated integration-state pull request is green and merged, open a
+fresh Implement task. Perform the mandatory preflight and use
+`cargo xtask requirements next`; do not start REQ-CPD-001 in this task.
 
 ## Durable evidence
 
