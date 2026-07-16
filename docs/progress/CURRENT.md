@@ -6,11 +6,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete / fresh independent re-review required
+- Mode: Re-review complete / fresh integration Review required
 - Requirement: REQ-MODEL-001, Issue #60
 - Branch: `codex/req-model-001-immutable-fitted-field`
 - Draft pull request: #61
-- Reviewed head: `14d21d1`
+- Re-reviewed head: `a890e45`
 - Review record: `docs/reviews/PR-61-INDEPENDENT-REVIEW.md`
 - Registry state: `implemented`
 - Dependencies: REQ-SOLVE-001 and REQ-COORD-001 are `integrated`
@@ -77,15 +77,27 @@ records, benchmark reports, Git, and GitHub.
   warning-denying workspace Clippy, all-feature workspace tests, workspace
   Rustdoc including compile-fail dimension boundaries, all 58 requirement
   checks, and `git diff --check`.
+- Exact repair head `a890e45` passed Draft Ubuntu CI run 29484112529:
+  format, warning-denying workspace Clippy, all-feature workspace tests,
+  workspace Rustdoc, spike gates, and all 58 requirement checks.
+- A fresh bounded independent re-review closed P2-1 and P3-1 and found no new
+  P0-P3 issue. Independent checks on exact repair head `a890e45` passed all six
+  model tests, all thirteen global-anisotropy tests, all five field-assembly
+  tests, all 29 `georbf` Rustdoc tests, and `git diff --check`.
+- The re-review evidence update changes only the review record and this bounded
+  handoff. It changes no production code, tests, manifest, schema, CI, build
+  input, benchmark input, API, or numerical behavior, so the repair task's
+  complete local standard gate remains valid.
 
 ## Next task
 
-Open a fresh read-only independent Review task for the exact pushed PR #61
-repair head. Supply only the REQ-MODEL-001 summary and dependency closure,
-Issue #60 criteria, M3 plan, scoped normative documents, PR diff, the original
-review findings, and the repair validation evidence. Verify only P2-1 and P3-1
-plus regression risk, update the independent review record, and stop. Keep the
-PR Draft during this re-review; do not mark it ready, merge it, or begin
+Open a fresh Review task for only PR #61. Verify that the pushed head still
+matches reviewed repair head `a890e45`, synchronize the clean re-review
+evidence, and mark the PR Ready. Wait for the complete Windows, Ubuntu, macOS,
+and benchmark-smoke CI triggered by that ready event on the exact head. Merge
+exactly once only when every required check is green, then record truthful
+integration state through the repository's isolated integration-state
+workflow. Stop after REQ-MODEL-001 is truthfully integrated; do not begin
 REQ-EXEC-001 in the same task.
 
 ## Durable evidence
