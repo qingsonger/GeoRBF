@@ -594,6 +594,20 @@ impl<const D: usize> SpatialKernelJetPrefix<D>
 where
     Dim<D>: SupportedDimension,
 {
+    pub(crate) const fn from_query_derivatives(
+        available_through: KernelDerivativeOrder,
+        value: f64,
+        first: Option<[f64; D]>,
+        second: Option<[[f64; D]; D]>,
+    ) -> Self {
+        Self {
+            available_through,
+            value,
+            first,
+            second,
+        }
+    }
+
     /// Constructs a value-only jet prefix at coincident points.
     ///
     /// # Errors

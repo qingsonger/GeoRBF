@@ -6,60 +6,111 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-SOLVE-001 complete
-- Requirement: REQ-SOLVE-001, Issue #57 (closed)
-- Implementation pull request: #58, squash-merged as `3ccf784`
-- Integration-state branch: `codex/req-solve-001-integration-state`
-- Integration-state pull request: #59 (Draft until final evidence is green)
-- Review record: `docs/reviews/PR-58-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-MODEL-001 (`planned`)
+- Mode: Re-review complete / fresh integration Review required
+- Requirement: REQ-MODEL-001, Issue #60
+- Branch: `codex/req-model-001-immutable-fitted-field`
+- Draft pull request: #61
+- Re-reviewed head: `a890e45`
+- Review record: `docs/reviews/PR-61-INDEPENDENT-REVIEW.md`
+- Registry state: `implemented`
+- Dependencies: REQ-SOLVE-001 and REQ-COORD-001 are `integrated`
 
-## Integration result
+## Implemented scope
 
-- A fresh read-only `math_reviewer` confirmed P1-1 is closed and found no P0,
-  P1, P2, or P3 issue in the complete implementation and repair diff.
-- Exact Ready head `1ca3c17` passed the complete Windows, Ubuntu, and macOS CI
-  matrix with every benchmark-smoke workload in run 29474665806.
-- PR #58 squash-merged exactly once as `3ccf784`; Issue #57 closed as
-  completed.
-- Post-merge `main` run 29475146095 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate.
-- This isolated integration-state change updates only registry and progress
-  evidence. It changes no production code, tests, manifest, schema, CI, build
-  input, API, numerical behavior, dependency, tag, or release.
+- Added immutable `FittedField<D>` for D=1/D=2/D=3 with one concrete retained
+  kernel definition, optional constant global anisotropy, coordinate metadata,
+  affine normalization, centers, coefficients, capabilities, general
+  assembly/solve diagnostics, and complete CPD polynomial-action, RRQR/SVD
+  rank, verified null-space, quality, provenance, and projected-energy evidence.
+- Added one high-level fit boundary that consumes the normalized-coordinate
+  `FieldProblem<D>`, assembles and solves with the same retained kernel, and
+  discards builder, canonical, dense-system, and factorization state.
+- Added original-coordinate scalar value, Cartesian gradient, and
+  capability-gated Hessian evaluation, including exact center-variable signs,
+  mixed second/third derivative contractions, anisotropy chain rules, and
+  normalization chain rules.
+- Added complete polynomial Hessians, deterministic borrowed model-record
+  inputs including complete CPD assembly evidence, structured fit/evaluation
+  failures, exact center capability rejection, and immutable `Send + Sync`
+  multithread reads.
+- Clarified that global anisotropy consumes points and returns pre-transform
+  derivatives in its caller's current coordinate system. In fitted models that
+  caller system is normalized model coordinates; external original-coordinate
+  derivatives are produced afterward by the retained affine normalization.
+- Added six independent analytic/property tests, Rustdoc, a runnable example,
+  deterministic D=1/D=2/D=3 benchmark and baseline, CI benchmark smoke routing,
+  architecture/model-format updates, and a requirement change fragment.
+- CLI, C, C++, and Python are N/A until M8 schema/CLI and M9 binding
+  requirements define stable external model surfaces.
 
 ## Validation state
 
-- The implementation and repair heads passed focused checks and the complete
-  local standard gate; the clean reviewer independently repeated all public
-  and private solver regressions, workspace Rustdoc, the example, benchmark
-  smoke, all 58 requirement checks, and `git diff --check`.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state registry head passed the complete local
-  standard gate and `git diff --check`. This subsequent validation-note update
-  changes only bounded handoff evidence, so that immutable-head gate remains
-  applicable.
+- Focused model tests: six passed, covering Gaussian original-coordinate truth,
+  combined anisotropy/normalization derivatives, directional-center signs
+  through third order, CPD quadratic truth plus deterministic complete
+  four-center/three-term rank, 4-by-1 null-space, quality, and nonempty
+  projected-energy evidence, Matérn capability boundaries, and concurrent
+  bit-identical reads.
+- All five focused field-assembly tests and all thirteen focused
+  global-anisotropy tests passed.
+- Existing polynomial integration tests: ten passed after adding Hessians.
+- Runnable immutable-model example: passed.
+- D=1/D=2/D=3 optimized benchmark smoke: passed with deterministic checksums.
+- Four 100-iteration local benchmark runs retained dimension-specific
+  bit-identical checksums; timings and executable size are recorded in
+  `docs/benchmarks/REQ-MODEL-001.md`.
+- Exact implementation head `8652bb4` passed one complete local
+  standard gate: format, warning-denying workspace Clippy, all-feature
+  workspace tests, workspace Rustdoc including the D=4 compile-fail boundary,
+  all 58 requirement checks, and `git diff --check`.
+- The subsequent PR-link handoff update changes only the completion registry
+  and this bounded evidence file; it changes no production code, tests,
+  manifest, schema, CI, build input, benchmark input, or numerical behavior.
+- Exact reviewed head `14d21d1` passed Draft Ubuntu CI run 29480459334:
+  format, warning-denying workspace Clippy, all-feature workspace tests,
+  workspace Rustdoc, spike gates, and all 58 requirement checks.
+- A fresh read-only `xhigh` mathematical review found P2-1 and P3-1. The
+  bounded repair now retains and exposes the discarded CPD evidence and
+  clarifies the anisotropy caller-coordinate contract without changing
+  numerical behavior.
+- The complete local standard gate passed on the final repair tree: format,
+  warning-denying workspace Clippy, all-feature workspace tests, workspace
+  Rustdoc including compile-fail dimension boundaries, all 58 requirement
+  checks, and `git diff --check`.
+- Exact repair head `a890e45` passed Draft Ubuntu CI run 29484112529:
+  format, warning-denying workspace Clippy, all-feature workspace tests,
+  workspace Rustdoc, spike gates, and all 58 requirement checks.
+- A fresh bounded independent re-review closed P2-1 and P3-1 and found no new
+  P0-P3 issue. Independent checks on exact repair head `a890e45` passed all six
+  model tests, all thirteen global-anisotropy tests, all five field-assembly
+  tests, all 29 `georbf` Rustdoc tests, and `git diff --check`.
+- The re-review evidence update changes only the review record and this bounded
+  handoff. It changes no production code, tests, manifest, schema, CI, build
+  input, benchmark input, API, or numerical behavior, so the repair task's
+  complete local standard gate remains valid.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh Implement task. Perform the mandatory preflight and use
-`cargo xtask requirements next`; do not start REQ-MODEL-001 in this task.
+Open a fresh Review task for only PR #61. Verify that the current PR head
+differs from re-reviewed repair head `a890e45` only by the review record and
+bounded-handoff evidence, synchronize that clean evidence, and mark the PR
+Ready. Wait for the complete Windows, Ubuntu, macOS, and benchmark-smoke CI
+triggered by that ready event on the exact head. Merge exactly once only when
+every required check is green, then record truthful integration state through
+the repository's isolated integration-state workflow. Stop after
+REQ-MODEL-001 is truthfully integrated; do not begin REQ-EXEC-001 in the same
+task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #57
-- Merged implementation: GitHub PR #58
-- Integration-state pull request: GitHub PR #59
-- Requirement summary: `changes/REQ-SOLVE-001.md`
-- Independent review and repair evidence:
-  `docs/reviews/PR-58-INDEPENDENT-REVIEW.md`
-- Solver policy: `docs/architecture/SOLVER_POLICY.md`
-- Backend decision and production re-audit:
-  `docs/adr/ADR-0010-nalgebra-dense-factorization-backend.md`
-- Benchmark: `docs/benchmarks/REQ-SOLVE-001.md`
+- Acceptance criteria and exclusions: GitHub Issue #60
+- Implementation: GitHub PR #61
+- Independent review: `docs/reviews/PR-61-INDEPENDENT-REVIEW.md`
+- Requirement summary: `changes/REQ-MODEL-001.md`
+- Architecture: `docs/architecture/ARCHITECTURE.md`
+- Deterministic model inputs: `docs/architecture/MODEL_FORMAT.md`
+- Mathematical field representation: `docs/math/MATH_SPEC.md`
+- Benchmark: `docs/benchmarks/REQ-MODEL-001.md`
 
 ## Checks not yet available
 

@@ -217,13 +217,21 @@ concepts on this coordinate contract.
 
 ## Global anisotropy
 
-A fixed global anisotropy acts on the original point-pair displacement as
+A fixed global anisotropy acts on points `x` and `y` in its caller's current
+coordinate system as
 
 ```text
 z = A(x-y),
 r_A(x,y) = ||z||,
 B = A^T A.
 ```
+
+The anisotropy layer maps derivatives from transformed `z` coordinates back
+to that caller coordinate system. It does not label the caller system as a
+fitted model's external original-coordinate convention. In `FittedField`, the
+caller supplies normalized model-coordinate points to anisotropy; the fitted
+model subsequently maps those derivatives to external original coordinates
+through `S^-T` and `S^-T H S^-1`.
 
 Only D=1, D=2, and D=3 exist. `A` is finite with a finitely representable
 inverse, and the stored finite `B` is SPD. Isotropic, spheroidal, and
@@ -240,7 +248,8 @@ from overflowing the exact expansion. There is no hidden symmetry tolerance,
 jitter, clipping, regularization, or pseudoinverse. Ellipsoidal orthogonality
 and maximum condition-number tolerances exist only as explicit caller inputs.
 
-For a transformed-coordinate kernel jet, the constant-map chain rule is
+For a transformed-coordinate kernel jet, the constant-map chain rule back to
+the caller's current coordinate system is
 
 ```text
 g_x[i]       = sum_a A[a,i] g_z[a],

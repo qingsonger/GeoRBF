@@ -74,3 +74,16 @@ cargo bench -p georbf --bench dense_equality_solver
 
 The fixed workload and local baseline are recorded in
 `docs/benchmarks/REQ-SOLVE-001.md`.
+
+`REQ-MODEL-001` adds deterministic immutable fitted-field value, gradient, and
+Hessian evaluation for D=1, D=2, and D=3. Each model has twelve Gaussian value
+centers, and each timed iteration evaluates 128 prebuilt query points without
+refitting:
+
+```text
+cargo bench -p georbf --bench fitted_field_evaluation -- --smoke
+cargo bench -p georbf --bench fitted_field_evaluation
+```
+
+The fixed workload and local baseline are recorded in
+`docs/benchmarks/REQ-MODEL-001.md`.

@@ -1,5 +1,10 @@
 //! Fixed global anisotropy metrics and their Cartesian chain rule.
 //!
+//! The points supplied to this layer are interpreted in the caller's current
+//! coordinate system. In a fitted field that caller system is the normalized
+//! model coordinate system; mapping derivatives to the retained external
+//! original-coordinate convention is a separate fitted-model operation.
+//!
 //! A metric is available only in the supported dimensions:
 //!
 //! ```compile_fail
@@ -366,6 +371,10 @@ where
 
 /// A fixed invertible global transform `r_A(x,y) = ||A(x-y)||`.
 ///
+/// `x` and `y` are points in the caller's current coordinate system. The
+/// transform and returned derivatives stay in that caller system; this type
+/// does not identify them with a fitted model's external original coordinates.
+///
 /// The stored metric is `B=A^T A`. Length parameters use the active coordinate
 /// length unit: an axis length `ell` contributes inverse scale `1/ell` to `A`.
 /// Construction never inserts jitter, regularizes, symmetrizes input, computes
@@ -548,7 +557,8 @@ where
         &self.diagnostics
     }
 
-    /// Forms `A(x-y)` directly and computes its stable radial separation.
+    /// Forms `A(x-y)` directly in the caller's current coordinate system and
+    /// computes its stable radial separation.
     ///
     /// # Errors
     ///
@@ -593,15 +603,18 @@ where
 
     /// Applies the constant-linear-map chain rule through third order.
     ///
-    /// The input jet is interpreted in transformed coordinates `z=A(x-y)`.
-    /// The returned [`SpatialKernelJet`] stores original-query derivatives and
-    /// therefore retains its existing exact minus sign for every center
-    /// argument requested through its accessors.
+    /// The input jet is interpreted in transformed coordinates `z=A(x-y)`,
+    /// where `x` and `y` belong to the caller's current coordinate system. The
+    /// returned [`SpatialKernelJet`] stores query derivatives before the
+    /// anisotropy transform in that same caller system. These are not
+    /// necessarily a fitted model's external original-coordinate derivatives.
+    /// Every center argument requested through the jet accessors still
+    /// contributes its existing exact minus sign.
     ///
     /// # Errors
     ///
-    /// Returns the first original-coordinate derivative component whose
-    /// complete product-and-sum evaluation is not finitely representable.
+    /// Returns the first caller-coordinate derivative component whose complete
+    /// product-and-sum evaluation is not finitely representable.
     #[allow(clippy::needless_range_loop)]
     pub fn try_transform_spatial_jet(
         &self,

@@ -11,7 +11,9 @@
 //! plus provenance-preserving semantic and solver-neutral canonical problem
 //! intermediate representations and symmetric dense hard-equality field
 //! assembly, plus checked dense equality solving with explicit numerical
-//! policy and original-unit diagnostics.
+//! policy and original-unit diagnostics, and immutable fitted fields with
+//! capability-gated original-coordinate value, gradient, and Hessian
+//! evaluation.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -25,6 +27,7 @@ pub mod functional;
 pub mod geometry;
 pub mod kernel;
 pub mod kernel_calculus;
+pub mod model;
 pub mod orientation;
 pub mod polynomial;
 pub mod problem_ir;
@@ -71,6 +74,12 @@ pub use kernel_calculus::{
     KernelArgument, KernelCalculusError, RadialDerivativeOrder, RadialExpansionCoefficient,
     RadialExpansionCoefficients, RadialJet, RadialJetLocation, RadialSeparation, SpatialKernelJet,
     SpatialKernelJetPrefix,
+};
+pub use model::{
+    FittedField, FittedFieldCapabilities, FittedFieldComponent, FittedFieldDiagnostics,
+    FittedFieldEvaluation, FittedFieldEvaluationError, FittedFieldFitError, FittedFieldOutput,
+    FittedFieldRecord, FittedFieldSecondOrderEvaluation, FittedFieldStorage, KernelDefinition,
+    KernelDefinitionEvaluationError,
 };
 pub use orientation::{
     LinearOrientation, OrientationAngleField, OrientationError, OrientationPolarity,

@@ -37,10 +37,14 @@ reprojection, or construct anisotropy.
 The global-anisotropy layer depends on validated geometry, affine matrix
 inversion, and kernel-calculus jets. It owns fixed D=1/D=2/D=3 distance
 transforms, SPD metrics, explicit condition diagnostics, displacement mapping,
-and the constant-map chain rule through third order. It performs no axis
-estimation, local mixing, kernel-family selection, observation construction,
-assembly, fitting, or solver work. Arbitrary location-dependent metrics remain
-forbidden; the later local-trend layer uses the accepted SPD mixture design.
+and the constant-map chain rule through third order in its caller's current
+coordinate system. It does not identify that system with a fitted model's
+external original coordinates; fitted fields call it in normalized model
+coordinates and apply the affine normalization chain rule afterward. It
+performs no axis estimation, local mixing, kernel-family selection, observation
+construction, assembly, fitting, or solver work. Arbitrary location-dependent
+metrics remain forbidden; the later local-trend layer uses the accepted SPD
+mixture design.
 
 The kernel-calculus layer accepts validated point separations and a
 caller-supplied radial jet. D=2/D=3 away jets include cancellation-resistant
@@ -100,6 +104,23 @@ rows over center-weight and polynomial variable blocks, appends CPD side rows,
 and returns an immutable GeoRBF-owned row-major dense system with symmetry and
 CPD diagnostics. It does not factor, solve, regularize, select centers, construct
 geological semantics, or expose nalgebra types.
+
+The fitted-model layer consumes one `FieldProblem<D>`, one concrete configured
+kernel definition, optional constant global anisotropy, coordinate metadata,
+normalization, and an explicit dense-solve policy. It uses that same retained
+kernel definition for assembly and evaluation, then discards the semantic
+builder, canonical problem, dense matrix, right-hand side, and factorization
+workspace. `FittedField<D>` owns centers, center functionals, coefficients,
+complete CPD polynomial space, capabilities, general assembly/solve
+diagnostics, and the accepted CPD RRQR/SVD rank decision, verified null-space,
+and projected-energy evidence when applicable.
+Original-coordinate queries are normalized before evaluation; gradients use
+`S^-T`, and Hessians use `S^-T H S^-1`. Directional-derivative centers retain
+the kernel-calculus center-argument sign and require mixed second or third
+derivatives for query gradients or Hessians. Exact center coincidences are
+rejected when metadata declares only away-from-center support. The layer
+performs no finite differences, hidden coefficient repair, persistence I/O,
+schema migration, contouring, or adapter-side evaluation.
 
 ## Runtime behavior
 

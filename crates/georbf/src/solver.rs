@@ -707,6 +707,10 @@ impl DenseSolution {
     pub const fn diagnostics(&self) -> &DenseSolveDiagnostics {
         &self.diagnostics
     }
+
+    pub(crate) fn into_parts(self) -> (Vec<f64>, DenseSolveDiagnostics) {
+        (self.values, self.diagnostics)
+    }
 }
 
 /// Structured failure from rank review, factorization, refinement, or residual checks.
