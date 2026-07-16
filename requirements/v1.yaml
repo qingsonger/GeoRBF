@@ -337,7 +337,7 @@ requirements:
     milestone: M3-v0.3.0
     priority: P0
     issue: 60
-    pull_request: null
+    pull_request: 61
     tests: [analytic-value-gradient-hessian, capability-boundaries, multithread-read]
     docs: [docs/architecture/ARCHITECTURE.md, docs/architecture/MODEL_FORMAT.md, docs/benchmarks/REQ-MODEL-001.md, rustdoc, crates/georbf/examples/immutable_fitted_field.rs]
     rust_api: implemented
@@ -346,7 +346,7 @@ requirements:
     cpp_api: "N/A: the future C++ RAII wrapper consumes the frozen M9 C fitted-model ABI"
     python_api: "N/A: Python fitted-model construction and evaluation parity are deferred to the M9 binding requirement"
     benchmark: implemented
-    status: in_progress
+    status: implemented
 
   - id: REQ-EXEC-001
     title: Deterministic execution controls

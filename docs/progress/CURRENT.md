@@ -9,8 +9,9 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement complete / fresh independent Review required
 - Requirement: REQ-MODEL-001, Issue #60
 - Branch: `codex/req-model-001-immutable-fitted-field`
-- Draft pull request: pending first push
-- Registry state: `in_progress` until the Draft PR number is recorded
+- Draft pull request: #61
+- Stable implementation head: `8652bb4`
+- Registry state: `implemented`
 - Dependencies: REQ-SOLVE-001 and REQ-COORD-001 are `integrated`
 
 ## Implemented scope
@@ -47,24 +48,27 @@ records, benchmark reports, Git, and GitHub.
 - Four 100-iteration local benchmark runs retained dimension-specific
   bit-identical checksums; timings and executable size are recorded in
   `docs/benchmarks/REQ-MODEL-001.md`.
-- The final stable code/test/manifest/CI/registry tree passed one complete local
+- Exact implementation head `8652bb4` passed one complete local
   standard gate: format, warning-denying workspace Clippy, all-feature
   workspace tests, workspace Rustdoc including the D=4 compile-fail boundary,
   all 58 requirement checks, and `git diff --check`.
+- The subsequent PR-link handoff update changes only the completion registry
+  and this bounded evidence file; it changes no production code, tests,
+  manifest, schema, CI, build input, benchmark input, or numerical behavior.
+- Draft PR #61 CI has not yet completed on the PR-link evidence head.
 
 ## Next task
 
-After the implementation commit is pushed and the Draft PR number is recorded,
-open a fresh Review task for only REQ-MODEL-001. Supply the bounded requirement
-and dependency summaries, Issue #60 acceptance criteria, M3 plan, scoped
-architecture/model-format/math contracts, complete PR diff, tests, and
+Open a fresh Review task for only PR #61 and REQ-MODEL-001. Supply the bounded
+requirement and dependency summaries, Issue #60 acceptance criteria, M3 plan,
+scoped architecture/model-format/math contracts, complete PR diff, tests, and
 benchmark evidence to a fresh read-only `math_reviewer`. Record findings
-without repairing production code in the same task. Do not begin
-REQ-EXEC-001.
+without repairing production code in the same task. Do not begin REQ-EXEC-001.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #60
+- Implementation: GitHub PR #61
 - Requirement summary: `changes/REQ-MODEL-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - Deterministic model inputs: `docs/architecture/MODEL_FORMAT.md`
