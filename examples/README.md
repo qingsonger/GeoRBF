@@ -111,3 +111,13 @@ residual review. Run it with:
 ```text
 cargo run -p georbf --example dense_equality_solver
 ```
+
+`REQ-MODEL-001` adds
+`crates/georbf/examples/immutable_fitted_field.rs`, which consumes a normalized
+hard-equality problem, fits an immutable Gaussian field, evaluates value,
+gradient, and Hessian at an original-coordinate query, and prints retained
+capabilities:
+
+```text
+cargo run -p georbf --example immutable_fitted_field
+```

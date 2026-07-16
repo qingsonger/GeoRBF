@@ -37,6 +37,21 @@ kernel and polynomial coefficients, solved level values, capabilities,
 diagnostics, build version, and checksums. It does not depend on an input
 builder after loading.
 
+`REQ-MODEL-001` establishes the in-memory deterministic input order but does
+not declare a public persistence schema. `FittedField<D>` retains the configured
+kernel variant and parameters, optional global-anisotropy matrices and
+diagnostics, center representers in assembly order, center weights in the same
+order, complete polynomial multi-indices in canonical basis order, polynomial
+coefficients in that basis order, coordinate metadata, affine normalization,
+value/gradient/Hessian capabilities, build version, and complete assembly and
+solve evidence. A borrowed record view exposes those inputs without copying or
+reordering them.
+
+The current fitted model has no schema version, checksum, migration behavior,
+or file reader/writer because those are owned by `REQ-SCHEMA-001`. Callers must
+not treat the Rust enum discriminants, debug output, or memory layout as a
+stable wire format.
+
 Readers reject unsupported versions, missing required fields, inconsistent
 dimensions, nonfinite coefficients, invalid transforms, capability conflicts,
 and checksum failures with structured field paths. Semantic and tolerance

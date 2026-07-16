@@ -77,6 +77,8 @@ pub enum PolynomialOutput {
     Values,
     /// One Cartesian gradient per basis term.
     Gradients,
+    /// One Cartesian Hessian per basis term.
+    Hessians,
 }
 
 /// Error returned while constructing or evaluating a complete polynomial space.
@@ -115,6 +117,15 @@ pub enum PolynomialSpaceError {
         /// Cartesian derivative axis, or `None` for a value.
         derivative_axis: Option<usize>,
     },
+    /// A monomial second derivative is not finitely representable.
+    NonFiniteHessianEvaluation {
+        /// Zero-based basis-term index in deterministic order.
+        term_index: usize,
+        /// First Cartesian derivative axis.
+        row: usize,
+        /// Second Cartesian derivative axis.
+        column: usize,
+    },
 }
 
 impl fmt::Display for PolynomialSpaceError {
@@ -151,6 +162,14 @@ impl fmt::Display for PolynomialSpaceError {
             } => write!(
                 formatter,
                 "polynomial term {term_index} value is not finite"
+            ),
+            Self::NonFiniteHessianEvaluation {
+                term_index,
+                row,
+                column,
+            } => write!(
+                formatter,
+                "polynomial term {term_index} second derivative ({row}, {column}) is not finite"
             ),
         }
     }
@@ -284,6 +303,29 @@ where
         Ok(())
     }
 
+    /// Evaluates every Cartesian basis Hessian into caller-provided storage.
+    ///
+    /// The output remains unchanged on error. Repeated-axis derivatives use
+    /// the exact falling factorial, mixed derivatives lower both exponents,
+    /// and no coordinate division is performed.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PolynomialSpaceError::OutputLengthMismatch`] unless
+    /// `hessians` has exactly [`Self::term_count`] entries. Returns
+    /// [`PolynomialSpaceError::NonFiniteHessianEvaluation`] when a result is
+    /// not finitely representable.
+    pub fn try_evaluate_hessians(
+        &self,
+        point: Point<D>,
+        hessians: &mut [[[f64; D]; D]],
+    ) -> Result<(), PolynomialSpaceError> {
+        self.validate_output_length(PolynomialOutput::Hessians, hessians.len())?;
+        self.validate_hessians(point)?;
+        self.write_hessians(point, hessians);
+        Ok(())
+    }
+
     /// Evaluates every basis value and Cartesian gradient.
     ///
     /// Both outputs remain unchanged on error.
@@ -308,6 +350,36 @@ where
         Ok(())
     }
 
+    /// Evaluates every basis value, gradient, and Hessian.
+    ///
+    /// All outputs remain unchanged on error.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PolynomialSpaceError::OutputLengthMismatch`] for an invalid
+    /// output length, [`PolynomialSpaceError::NonFiniteEvaluation`] for a
+    /// non-representable value or gradient, or
+    /// [`PolynomialSpaceError::NonFiniteHessianEvaluation`] for a
+    /// non-representable Hessian component.
+    pub fn try_evaluate_through_second(
+        &self,
+        point: Point<D>,
+        values: &mut [f64],
+        gradients: &mut [[f64; D]],
+        hessians: &mut [[[f64; D]; D]],
+    ) -> Result<(), PolynomialSpaceError> {
+        self.validate_output_length(PolynomialOutput::Values, values.len())?;
+        self.validate_output_length(PolynomialOutput::Gradients, gradients.len())?;
+        self.validate_output_length(PolynomialOutput::Hessians, hessians.len())?;
+        self.validate_values(point)?;
+        self.validate_gradients(point)?;
+        self.validate_hessians(point)?;
+        self.write_values(point, values);
+        self.write_gradients(point, gradients);
+        self.write_hessians(point, hessians);
+        Ok(())
+    }
+
     fn validate_output_length(
         &self,
         output: PolynomialOutput,
@@ -327,7 +399,7 @@ where
 
     fn validate_values(&self, point: Point<D>) -> Result<(), PolynomialSpaceError> {
         for (term_index, term) in self.terms.iter().enumerate() {
-            if !evaluate_monomial(term.exponents, *point.components(), None).is_finite() {
+            if !evaluate_monomial(term.exponents, *point.components(), &[]).is_finite() {
                 return Err(PolynomialSpaceError::NonFiniteEvaluation {
                     term_index,
                     derivative_axis: None,
@@ -340,7 +412,7 @@ where
     fn validate_gradients(&self, point: Point<D>) -> Result<(), PolynomialSpaceError> {
         for (term_index, term) in self.terms.iter().enumerate() {
             for axis in 0..D {
-                if !evaluate_monomial(term.exponents, *point.components(), Some(axis)).is_finite() {
+                if !evaluate_monomial(term.exponents, *point.components(), &[axis]).is_finite() {
                     return Err(PolynomialSpaceError::NonFiniteEvaluation {
                         term_index,
                         derivative_axis: Some(axis),
@@ -351,16 +423,46 @@ where
         Ok(())
     }
 
+    fn validate_hessians(&self, point: Point<D>) -> Result<(), PolynomialSpaceError> {
+        for (term_index, term) in self.terms.iter().enumerate() {
+            for row in 0..D {
+                for column in 0..D {
+                    if !evaluate_monomial(term.exponents, *point.components(), &[row, column])
+                        .is_finite()
+                    {
+                        return Err(PolynomialSpaceError::NonFiniteHessianEvaluation {
+                            term_index,
+                            row,
+                            column,
+                        });
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn write_values(&self, point: Point<D>, values: &mut [f64]) {
         for (value, term) in values.iter_mut().zip(&self.terms) {
-            *value = evaluate_monomial(term.exponents, *point.components(), None);
+            *value = evaluate_monomial(term.exponents, *point.components(), &[]);
         }
     }
 
     fn write_gradients(&self, point: Point<D>, gradients: &mut [[f64; D]]) {
         for (gradient, term) in gradients.iter_mut().zip(&self.terms) {
             for (axis, component) in gradient.iter_mut().enumerate() {
-                *component = evaluate_monomial(term.exponents, *point.components(), Some(axis));
+                *component = evaluate_monomial(term.exponents, *point.components(), &[axis]);
+            }
+        }
+    }
+
+    fn write_hessians(&self, point: Point<D>, hessians: &mut [[[f64; D]; D]]) {
+        for (hessian, term) in hessians.iter_mut().zip(&self.terms) {
+            for (row, values) in hessian.iter_mut().enumerate() {
+                for (column, component) in values.iter_mut().enumerate() {
+                    *component =
+                        evaluate_monomial(term.exponents, *point.components(), &[row, column]);
+                }
             }
         }
     }
@@ -441,18 +543,18 @@ fn append_exact_degree<const D: usize>(
 fn evaluate_monomial<const D: usize>(
     mut exponents: [usize; D],
     coordinates: [f64; D],
-    derivative_axis: Option<usize>,
+    derivative_axes: &[usize],
 ) -> f64 {
-    let coefficient = if let Some(axis) = derivative_axis {
+    let mut coefficient = 1.0;
+    for axis in derivative_axes {
+        let axis = *axis;
         let exponent = exponents[axis];
         if exponent == 0 {
             return 0.0;
         }
         exponents[axis] -= 1;
-        exponent as f64
-    } else {
-        1.0
-    };
+        coefficient *= exponent as f64;
+    }
 
     if exponents
         .iter()

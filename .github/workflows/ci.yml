@@ -151,5 +151,7 @@ jobs:
         run: cargo bench -p georbf --bench field_assembly -- --smoke
       - name: Smoke-test dense equality solver benchmark
         run: cargo bench -p georbf --bench dense_equality_solver -- --smoke
+      - name: Smoke-test immutable fitted-field benchmark
+        run: cargo bench -p georbf --bench fitted_field_evaluation -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check

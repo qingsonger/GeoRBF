@@ -487,6 +487,11 @@ where
     pub const fn diagnostics(&self) -> FieldAssemblyDiagnostics {
         self.diagnostics
     }
+
+    pub(crate) fn into_model_parts(self) -> (FieldAssemblyDiagnostics, Option<PolynomialSpace<D>>) {
+        let polynomial_space = self.cpd.map(|cpd| cpd.polynomial_space);
+        (self.diagnostics, polynomial_space)
+    }
 }
 
 /// One immutable all-representer hard-equality scalar-field problem.
@@ -578,6 +583,10 @@ where
     /// Borrows center representers in deterministic all-representer order.
     pub fn centers(&self) -> &[CenterRepresenter<D>] {
         &self.centers
+    }
+
+    pub(crate) fn into_centers(self) -> Vec<CenterRepresenter<D>> {
+        self.centers
     }
 
     /// Assembles a symmetric dense equality system without solving it.

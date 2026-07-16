@@ -58,3 +58,7 @@ harness = false
 [[bench]]
 name = "dense_equality_solver"
 harness = false
+
+[[bench]]
+name = "fitted_field_evaluation"
+harness = false

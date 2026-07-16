@@ -101,6 +101,21 @@ and returns an immutable GeoRBF-owned row-major dense system with symmetry and
 CPD diagnostics. It does not factor, solve, regularize, select centers, construct
 geological semantics, or expose nalgebra types.
 
+The fitted-model layer consumes one `FieldProblem<D>`, one concrete configured
+kernel definition, optional constant global anisotropy, coordinate metadata,
+normalization, and an explicit dense-solve policy. It uses that same retained
+kernel definition for assembly and evaluation, then discards the semantic
+builder, canonical problem, dense matrix, right-hand side, and factorization
+workspace. `FittedField<D>` owns centers, center functionals, coefficients,
+complete CPD polynomial space, capabilities, and assembly/solve diagnostics.
+Original-coordinate queries are normalized before evaluation; gradients use
+`S^-T`, and Hessians use `S^-T H S^-1`. Directional-derivative centers retain
+the kernel-calculus center-argument sign and require mixed second or third
+derivatives for query gradients or Hessians. Exact center coincidences are
+rejected when metadata declares only away-from-center support. The layer
+performs no finite differences, hidden coefficient repair, persistence I/O,
+schema migration, contouring, or adapter-side evaluation.
+
 ## Runtime behavior
 
 Long operations accept cancellation, progress, explicit thread count, and
