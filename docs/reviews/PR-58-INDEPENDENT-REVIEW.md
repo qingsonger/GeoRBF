@@ -160,3 +160,28 @@ showing callers cannot bypass the checked boundary.
 No other P0, P1, P2, or P3 finding was found. PR #58 must remain Draft for a
 new bounded Repair task addressing only this remaining P1-1 path, followed by
 another fresh independent re-review.
+
+## Second bounded repair response
+
+The next Repair task addressed only the remaining public conversion bypass.
+`DenseEqualitySystem::try_from_field` is now private, while public
+`try_solve_field` remains the sole assembled-field solver boundary and
+continues to enforce the smaller retained field or explicit solver memory
+limit before the solver-owned copy.
+
+A new compile-fail Rustdoc regression references the former public conversion
+directly. It compiled, and therefore failed as expected, before the visibility
+repair; after the repair it fails to compile at the external API boundary and
+the regression passes. The existing assembled-field truth case and one-byte
+field-limit pre-copy rejection also pass unchanged.
+
+After the final production and Rustdoc change, the stable repair worktree
+passed formatting, warning-denying workspace Clippy, all-feature workspace
+tests, workspace doctests, and all 58 requirement checks. The subsequent
+review-record and bounded-handoff validation notes are Markdown-only evidence
+updates and do not change production, test, manifest, schema, or build inputs.
+
+This is repair evidence, not independent finding closure. PR #58 remains
+Draft, REQ-SOLVE-001 remains `implemented`, and a fresh read-only re-review
+must confirm P1-1 is closed without new P0-P3 findings before any Ready or
+integration action.

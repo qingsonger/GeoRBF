@@ -105,10 +105,12 @@ while the solver-owned copy exists.
 Estimate overflow and a peak above the effective limit are structured errors
 returned before backend dispatch. `try_solve_field` applies the smaller of the
 solver limit and `ExecutionOptions::memory_limit_bytes`, and performs this
-check before copying the assembled field matrix. Accepted diagnostics retain
-both the estimate and effective limit. The estimate is deliberately
-conservative payload accounting rather than a promise about allocator or OS
-resident-set overhead.
+check before copying the assembled field matrix. It is the only public field-
+to-solver boundary: the internal solver-owned conversion is private, so a
+caller cannot copy a field system while discarding its retained execution
+limit. Accepted diagnostics retain both the estimate and effective limit. The
+estimate is deliberately conservative payload accounting rather than a
+promise about allocator or OS resident-set overhead.
 
 This requirement exposes `None` and `Explicit(value)` regularization only.
 Explicit regularization is validated before use and records both the original

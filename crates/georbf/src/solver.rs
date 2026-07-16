@@ -5,6 +5,16 @@
 //! Cholesky or symmetric-pivoted Bunch--Kaufman LBLT explicitly, performs
 //! RRQR screening and bounded SVD review, and rejects hidden fallback or
 //! unrequested regularization.
+//!
+//! Assembled field systems cross the checked [`try_solve_field`] boundary;
+//! callers cannot bypass its retained field execution limit through a direct
+//! solver-owned conversion.
+//!
+//! ```compile_fail
+//! use georbf::DenseEqualitySystem;
+//!
+//! let _ = DenseEqualitySystem::try_from_field::<1>;
+//! ```
 
 use std::error::Error;
 use std::fmt;
@@ -316,12 +326,13 @@ impl DenseEqualitySystem {
         })
     }
 
-    /// Copies an assembled field system into the solver-owned boundary.
+    /// Copies an assembled field system after the caller has enforced the
+    /// field-context peak estimate and effective execution limit.
     ///
     /// # Errors
     ///
     /// Returns a structured allocation or validation error.
-    pub fn try_from_field<const D: usize>(
+    fn try_from_field<const D: usize>(
         system: &DenseFieldSystem<D>,
     ) -> Result<Self, DenseEqualitySystemError>
     where
