@@ -375,7 +375,7 @@ requirements:
     issue: 63
     pull_request: 64
     tests: [error-variants, observation-level-paths, no-core-output]
-    docs: [docs/architecture/ARCHITECTURE.md, changes/REQ-DIAG-001.md, rustdoc]
+    docs: [docs/architecture/ARCHITECTURE.md, changes/REQ-DIAG-001.md, docs/reviews/PR-64-INDEPENDENT-REVIEW.md, rustdoc]
     rust_api: implemented
     cli: "N/A: the stage-0 CLI has no core operation whose structured diagnostics cross the adapter boundary"
     c_api: "N/A: stable C status values and last-error transport belong to the M9 C ABI requirement"
