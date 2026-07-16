@@ -43,14 +43,20 @@ schema, level-DAG, convex-solver, or execution-control requirements.
 - Focused warning-denying Clippy passes.
 - Focused Rustdoc passes.
 - `git diff --check` passes.
-- The complete standard workspace gate is still pending on the final stable
-  implementation head.
+- Exact implementation, test, documentation, and registry head `9ef9a22`
+  passed the complete local standard gate: format, warning-denying workspace
+  Clippy for all targets and features, all-feature workspace tests, workspace
+  Rustdoc, all 58 requirement checks, and `git diff --check`.
+- This final validation-note update changes only `docs/progress/CURRENT.md`.
+  It changes no production code, test, manifest, schema, CI, build input,
+  registry, API, numerical behavior, dependency, tag, or release state.
 
 ## Next task
 
-Run the complete standard gate once on the final stable implementation head,
-record the exact evidence, push, and stop. Independent Review of Draft PR #64
-must run in a fresh task and must not inherit this implementation reasoning.
+Open a fresh independent Review task for Draft PR #64 and REQ-DIAG-001. Supply
+only the requirement summary and dependency closure, architecture contract, PR
+diff, and validation evidence. Record findings without repairing production
+code or starting another requirement in that Review task.
 
 ## Durable evidence
 
