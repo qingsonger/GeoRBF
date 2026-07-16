@@ -10,7 +10,8 @@
 //! scale-aware CPD polynomial rank enforcement with null-space projection,
 //! plus provenance-preserving semantic and solver-neutral canonical problem
 //! intermediate representations and symmetric dense hard-equality field
-//! assembly. Solvers are introduced by a separately reviewed requirement.
+//! assembly, plus checked dense equality solving with explicit numerical
+//! policy and original-unit diagnostics.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -27,6 +28,7 @@ pub mod kernel_calculus;
 pub mod orientation;
 pub mod polynomial;
 pub mod problem_ir;
+pub mod solver;
 pub mod transform;
 pub mod units;
 
@@ -82,6 +84,12 @@ pub use problem_ir::{
     ProblemIrStorage, SemanticConstraint, SemanticExpression, SemanticMetadataField,
     SemanticProblemIr, SemanticProvenance, SemanticRelation, SoftLoss, SourceLocation,
     VariableBlock,
+};
+pub use solver::{
+    ConditionPolicy, DenseEqualitySystem, DenseEqualitySystemError, DenseFactorization,
+    DenseIncompleteRankDiagnostics, DenseMatrixNorms, DenseRankDecision, DenseRankDiagnostics,
+    DenseResidualDiagnostics, DenseSolution, DenseSolveDiagnostics, DenseSolveError,
+    DenseSolveOptions, DenseSolverConfigurationError, Regularization, try_solve_field,
 };
 pub use transform::{AffineNormalization, TransformError, TransformOperation};
 pub use units::{AngleUnit, LengthUnit, UnitError};

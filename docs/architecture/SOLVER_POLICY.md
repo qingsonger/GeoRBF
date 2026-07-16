@@ -72,3 +72,27 @@ Regularization is None, Explicit(value), or AutomaticWithin(maximum). Any
 automatic choice records requested and actual solver, amount added, original
 and effective rank, condition estimates, and trigger. No pseudoinverse, jitter,
 or fallback may hide failure.
+
+## Dense equality implementation
+
+`REQ-SOLVE-001` implements the square dense equality path behind GeoRBF-owned
+row-major types. The caller must select checked Cholesky or symmetric-pivoted
+Bunch--Kaufman LBLT; the recorded requested and actual choices are identical
+because factorization fallback is forbidden. Every effective matrix receives
+the fixed eight-pass RRQR screen and bounded SVD review above before one
+factorization. SVD is diagnostic in this requirement: no pseudoinverse,
+minimum-norm solution, or SVD-based solve is exposed.
+
+The factorization uses a symmetric congruence scaling derived from the recorded
+row and column equilibration multipliers. The right-hand side and solution are
+mapped consistently, and every accepted result is reviewed against the matrix
+in original units with the fixed-stack exact-binary accumulator. Refinement
+reuses that one factorization, is bounded at eight requested steps, and accepts
+a candidate only when its exact original-unit infinity residual strictly
+decreases. The final backward-error tolerance is `128*n*epsilon`.
+
+This requirement exposes `None` and `Explicit(value)` regularization only.
+Explicit regularization is validated before use and records both the original
+and effective rank decisions, the exact amount applied, and the final residual
+against the unmodified matrix. `AutomaticWithin(maximum)` remains a normative
+future policy, not a placeholder success path in the current API.
