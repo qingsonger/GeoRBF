@@ -91,14 +91,15 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task
 
-Open a fresh Review task for only PR #61. Verify that the pushed head still
-matches reviewed repair head `a890e45`, synchronize the clean re-review
-evidence, and mark the PR Ready. Wait for the complete Windows, Ubuntu, macOS,
-and benchmark-smoke CI triggered by that ready event on the exact head. Merge
-exactly once only when every required check is green, then record truthful
-integration state through the repository's isolated integration-state
-workflow. Stop after REQ-MODEL-001 is truthfully integrated; do not begin
-REQ-EXEC-001 in the same task.
+Open a fresh Review task for only PR #61. Verify that the current PR head
+differs from re-reviewed repair head `a890e45` only by the review record and
+bounded-handoff evidence, synchronize that clean evidence, and mark the PR
+Ready. Wait for the complete Windows, Ubuntu, macOS, and benchmark-smoke CI
+triggered by that ready event on the exact head. Merge exactly once only when
+every required check is green, then record truthful integration state through
+the repository's isolated integration-state workflow. Stop after
+REQ-MODEL-001 is truthfully integrated; do not begin REQ-EXEC-001 in the same
+task.
 
 ## Durable evidence
 

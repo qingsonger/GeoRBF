@@ -198,8 +198,9 @@ No P0, P1, P2, or P3 finding remains.
 ## Disposition
 
 PR #61 remains Draft and REQ-MODEL-001 remains `implemented`. A fresh Review
-task may now perform the mandatory integration sequence: verify the unchanged
-reviewed head, mark the PR Ready, wait for the complete Windows, Ubuntu, macOS,
-and benchmark-smoke CI on that exact ready head, merge exactly once only when
-that CI is green, and record truthful integration state. Do not begin
-REQ-EXEC-001 in this task.
+task may now perform the mandatory integration sequence: verify that the
+current PR head differs from re-reviewed repair head `a890e45` only by this
+review and bounded-handoff evidence, mark the PR Ready, wait for the complete
+Windows, Ubuntu, macOS, and benchmark-smoke CI on that exact ready head, merge
+exactly once only when that CI is green, and record truthful integration
+state. Do not begin REQ-EXEC-001 in this task.
