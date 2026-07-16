@@ -5,9 +5,10 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/58
 - Branch: `codex/req-solve-001-dense-equality-solvers`
 - Reviewed head: `0b3ae418b0668cfcf343a6357af299b0c1f60219`
+- Re-reviewed repair head: `9361de7c4215eb8b663e24aec35165e0ee5ffad0`
 - Base head: `66d9796963f57769f0d5c05dc535c3ae19e53d65`
 - Review date: 2026-07-16
-- Result: one P1 finding; PR remains Draft
+- Result: P1-1 remains open after repair; PR remains Draft
 
 ## Scope and independence
 
@@ -113,5 +114,49 @@ without new P0-P3 findings.
 ## Disposition
 
 PR #58 remains Draft and REQ-SOLVE-001 remains `implemented`. The bounded
-repair response is ready for a fresh independent re-review. Do not begin
-REQ-MODEL-001.
+repair response required the fresh independent re-review recorded below. Do
+not begin REQ-MODEL-001.
+
+## Fresh independent re-review
+
+A fresh read-only project reviewer inspected exact repair head `9361de7` using
+only the bounded requirement and dependency summaries, Issue #57 acceptance
+criteria, scoped normative documents, the complete PR and repair diffs, and
+recorded validation evidence. It independently reran all eleven public solver
+tests, all three private solver regressions, the runnable example, the
+two-iteration 64-by-64 Cholesky/LBLT benchmark smoke, all 58 requirement
+checks, and `git diff --check`; all passed and the worktree remained clean.
+Draft Ubuntu CI run 29469494039 also passed on that exact head.
+
+The reviewer confirmed that the conservative six-matrix peak covers the
+worst-case RRQR live set, the field path separately counts the assembled
+matrix and right-hand side, the SVD and factorization paths fit within the
+matrix/vector/index budgets, and checked estimate arithmetic and the directly
+used solve paths reject before nalgebra dispatch. It also independently
+verified the SPD and mandatory-2-by-2-pivot indefinite truth cases and found no
+hidden regularization, factorization fallback, pseudoinverse, or changed
+factorization during refinement.
+
+### P1-1 remains open: public field conversion bypasses its memory limit
+
+`DenseEqualitySystem::try_from_field` remains public at
+`crates/georbf/src/solver.rs:324-332`. It copies the assembled matrix and
+right-hand side at lines 330-331 without checking a peak estimate or the
+field's `ExecutionOptions`, and the returned solver-owned system does not
+retain that field memory limit. A caller can therefore bypass the checked
+`try_solve_field` path at lines 977-998, perform the solver-owned copy despite
+an insufficient field limit, and later solve using options that have lost the
+field limit. The regression at `crates/georbf/tests/solver.rs:161-176` covers
+only `try_solve_field` and does not exercise this public bypass.
+
+Required repair: make the unchecked conversion private so the checked field
+solve is the only public boundary, or make the conversion retain and enforce
+the effective field/solver limit before copying. If the public conversion is
+retained, add a direct regression using a one-byte field limit that proves a
+structured pre-copy memory failure and proves the limit cannot be lost before
+solve. If it becomes private, add appropriate API or compile-fail coverage
+showing callers cannot bypass the checked boundary.
+
+No other P0, P1, P2, or P3 finding was found. PR #58 must remain Draft for a
+new bounded Repair task addressing only this remaining P1-1 path, followed by
+another fresh independent re-review.

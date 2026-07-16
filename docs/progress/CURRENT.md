@@ -6,26 +6,29 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete / awaiting fresh independent re-review
+- Mode: Review complete / P1-1 remains open
 - Requirement: REQ-SOLVE-001, Issue #57
 - Branch: `codex/req-solve-001-dense-equality-solvers`
 - Draft pull request: #58
 - Registry state: `implemented`
 - Dependencies: REQ-SPIKE-001, REQ-SPIKE-002, and REQ-FIELD-001 are integrated
 
-## Repair state
+## Review result
 
-- The bounded Repair task addressed only P1-1 from the independent review.
-- Every solve now requires a nonzero explicit memory limit. Checked peak
-  arithmetic covers GeoRBF and nalgebra matrix, decomposition, pivot, solve,
-  residual, and refinement storage before backend dispatch; overflow and an
-  insufficient limit are structured errors and accepted diagnostics retain
-  the estimate and limit.
-- `DenseFieldSystem` retains `ExecutionOptions`; `try_solve_field` applies the
-  smaller field or solver limit and checks the field-inclusive estimate before
-  copying the assembled matrix.
-- The implementer has recorded repair evidence but has not independently
-  closed P1-1. PR #58 remains Draft and the registry remains `implemented`.
+- A fresh read-only reviewer re-reviewed exact repair head `9361de7`, reran
+  the focused solver truth/error tests, example, benchmark smoke, requirement
+  checks, and `git diff --check`, and found no new P0, P2, or P3 issue.
+- The conservative peak model covers the reviewed nalgebra and GeoRBF live
+  storage, and the directly used `try_solve` and `try_solve_field` paths check
+  their effective limits before backend dispatch or field copying.
+- P1-1 remains open because public
+  `DenseEqualitySystem::try_from_field` copies an assembled field matrix and
+  right-hand side without checking or retaining its `ExecutionOptions` memory
+  limit. Callers can bypass `try_solve_field`, lose the field limit, and later
+  solve using only a new solver limit.
+- The existing field-limit regression covers only `try_solve_field`; it does
+  not exercise the public conversion bypass. Full evidence and required repair
+  options are in `docs/reviews/PR-58-INDEPENDENT-REVIEW.md`.
 
 ## Validation state
 
@@ -38,18 +41,20 @@ records, benchmark reports, Git, and GitHub.
 - After the final production, test, registry, and build-input change, the
   stable repair head passed formatting, warning-denying workspace Clippy, all-
   feature workspace tests, workspace doctests, and requirement validation.
-- The prior Draft Ubuntu CI was green on the reviewed code. Fresh Draft CI for
-  the pushed repair head remains remote evidence for the next task; the Ready-
-  only three-platform and benchmark-smoke matrix has not run.
+- Draft Ubuntu CI run 29469494039 passed on exact repair head `9361de7`. The
+  Ready-only three-platform and benchmark-smoke matrix has not run.
+- This Review task changes only the review record and bounded handoff.
+  Production code, tests, manifests, schemas, CI, benchmark inputs, and
+  dependencies remain unchanged from the fully checked repair head.
 
 ## Next task
 
-Open a fresh Review task for PR #58. Supply the read-only independent reviewer
-only the bounded requirement/dependency summaries, normative documents, the
-PR diff including this repair, and validation evidence. Independently verify
-that P1-1's peak model, limit enforcement, field propagation, and regressions
-are complete and check for new P0-P3 findings. Do not repair production code in
-that task and do not begin REQ-MODEL-001.
+Open a fresh Repair task for PR #58 and address only the remaining P1-1 public
+conversion bypass recorded in the review document. Reproduce it and add the
+required regression before the smallest repair; rerun focused checks and the
+complete stable-head standard gate, update repair evidence and this bounded
+handoff, push, and stop for another fresh independent re-review. Do not begin
+REQ-MODEL-001.
 
 ## Durable evidence
 
