@@ -149,5 +149,7 @@ jobs:
         run: cargo bench -p georbf --bench problem_ir -- --smoke
       - name: Smoke-test hard-equality field assembly benchmark
         run: cargo bench -p georbf --bench field_assembly -- --smoke
+      - name: Smoke-test dense equality solver benchmark
+        run: cargo bench -p georbf --bench dense_equality_solver -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check

@@ -102,3 +102,12 @@ Gaussian hard-equality system. Run it with:
 ```text
 cargo run -p georbf --example field_assembly
 ```
+
+`REQ-SOLVE-001` adds `crates/georbf/examples/dense_equality_solver.rs`, which
+solves an analytic SPD system through explicit checked Cholesky, no
+regularization, bounded refinement, condition estimation, and original-unit
+residual review. Run it with:
+
+```text
+cargo run -p georbf --example dense_equality_solver
+```

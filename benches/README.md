@@ -60,3 +60,17 @@ cargo bench -p georbf --bench field_assembly
 
 The fixed workload and local baseline are recorded in
 `docs/benchmarks/REQ-FIELD-001.md`.
+
+`REQ-SOLVE-001` adds deterministic 64-by-64 checked-Cholesky and mandatory-
+pivot symmetric-indefinite solve workloads. Each iteration includes
+equilibration, RRQR/SVD rank review, condition estimation, one explicit
+factorization, bounded refinement, and scaled plus original-unit residual
+review:
+
+```text
+cargo bench -p georbf --bench dense_equality_solver -- --smoke
+cargo bench -p georbf --bench dense_equality_solver
+```
+
+The fixed workload and local baseline are recorded in
+`docs/benchmarks/REQ-SOLVE-001.md`.

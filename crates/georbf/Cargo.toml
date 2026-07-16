@@ -54,3 +54,7 @@ harness = false
 [[bench]]
 name = "field_assembly"
 harness = false
+
+[[bench]]
+name = "dense_equality_solver"
+harness = false

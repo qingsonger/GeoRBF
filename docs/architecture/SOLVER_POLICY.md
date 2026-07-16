@@ -72,3 +72,48 @@ Regularization is None, Explicit(value), or AutomaticWithin(maximum). Any
 automatic choice records requested and actual solver, amount added, original
 and effective rank, condition estimates, and trigger. No pseudoinverse, jitter,
 or fallback may hide failure.
+
+## Dense equality implementation
+
+`REQ-SOLVE-001` implements the square dense equality path behind GeoRBF-owned
+row-major types. The caller must select checked Cholesky or symmetric-pivoted
+Bunch--Kaufman LBLT; the recorded requested and actual choices are identical
+because factorization fallback is forbidden. Every effective matrix receives
+the fixed eight-pass RRQR screen and bounded SVD review above before one
+factorization. SVD is diagnostic in this requirement: no pseudoinverse,
+minimum-norm solution, or SVD-based solve is exposed.
+
+The factorization uses a symmetric congruence scaling derived from the recorded
+row and column equilibration multipliers. The right-hand side and solution are
+mapped consistently, and every accepted result is reviewed against the matrix
+in original units with the fixed-stack exact-binary accumulator. Refinement
+reuses that one factorization, is bounded at eight requested steps, and accepts
+a candidate only when its exact original-unit infinity residual strictly
+decreases. The final backward-error tolerance is `128*n*epsilon`.
+
+Every dense solve also requires a nonzero explicit memory limit. Before any
+nalgebra dispatch, checked `usize` arithmetic computes a conservative peak
+payload covering six simultaneous `n*n` scalar matrix buffers, 32 `n`-scalar
+vectors, two `n`-entry backend pivot/index-pair buffers, retained diagnostic
+objects, and the fixed exact-dot workspace. These terms cover equilibration,
+the source and effective matrices, the nalgebra matrix and RRQR clone, the
+materialized `R` matrix, bounded-SVD bidiagonal work, Cholesky or LBLT storage,
+the LBLT `D` inspection, solves, residuals, and refinement candidates. A field
+solve additionally counts the still-live assembled matrix and right-hand side
+while the solver-owned copy exists.
+
+Estimate overflow and a peak above the effective limit are structured errors
+returned before backend dispatch. `try_solve_field` applies the smaller of the
+solver limit and `ExecutionOptions::memory_limit_bytes`, and performs this
+check before copying the assembled field matrix. It is the only public field-
+to-solver boundary: the internal solver-owned conversion is private, so a
+caller cannot copy a field system while discarding its retained execution
+limit. Accepted diagnostics retain both the estimate and effective limit. The
+estimate is deliberately conservative payload accounting rather than a
+promise about allocator or OS resident-set overhead.
+
+This requirement exposes `None` and `Explicit(value)` regularization only.
+Explicit regularization is validated before use and records both the original
+and effective rank decisions, the exact amount applied, and the final residual
+against the unmodified matrix. `AutomaticWithin(maximum)` remains a normative
+future policy, not a placeholder success path in the current API.

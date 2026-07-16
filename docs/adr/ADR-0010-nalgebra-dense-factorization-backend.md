@@ -118,3 +118,40 @@ private numerical adapter and only after the production re-audit. This ADR does
 not integrate a new solver, promise platform verification before the exact PR
 head completes ready CI, authorize hidden regularization, or change any Rust,
 CLI, C, C++, or Python interface.
+
+## REQ-SOLVE-001 production re-audit
+
+Re-audited on 2026-07-16 before dense-solver adoption. `REQ-CPD-001` had
+already pinned nalgebra exactly at 0.35.0 with default features disabled and
+only `std` enabled, so this requirement adds no dependency, feature, lockfile,
+license, MSRV, or unsafe-audit surface. Crates.io still reported 0.35.0 as the
+current release. The package declares Apache-2.0 and Rust 1.89, below the
+workspace's pinned Rust 1.96.1. The upstream repository was active on
+2026-06-30 and was neither archived nor disabled.
+
+The `georbf` normal graph remains 13 unique external packages including
+nalgebra. Every declared license is MIT, Apache-2.0, Zlib, or a permissive
+OR-expression, and the highest declared MSRV remains 1.89. An OSV batch query
+covered all 19 exact registry packages in the complete workspace resolution
+and returned no advisory; GitHub reported no repository security advisory.
+`cargo-audit` and `cargo-deny` remain unavailable locally, so those exact API
+queries are the performed vulnerability review rather than a claim that the
+unavailable tools ran.
+
+The selected backend remains private to `solver.rs`; public matrices,
+policies, solutions, diagnostics, and errors are GeoRBF-owned, and the core
+continues to deny unsafe code. The optimized Windows 64-by-64 solver benchmark
+executable is 301,568 bytes. This is a workload-binary observation, not a
+library or final CLI promise. The previously rejected alternatives remain
+unchanged: faer expands this dense scope materially, native LAPACK adds
+platform and redistribution choices, and handwritten or non-pivoted production
+factorizations violate the accepted numerical contract.
+
+The PR #58 repair also audited nalgebra's owned allocation shapes: column-
+pivoted QR owns its input clone, diagonal, and pivot sequence and materializes
+`R`; SVD consumes a matrix through bidiagonal storage and linear work vectors
+when singular vectors are disabled; Cholesky owns one matrix; LBLT owns one
+matrix plus pivot pairs and materializes `D` for pivot evidence; each solve
+owns its right-hand side/result vector. The production adapter now includes
+those paths in checked conservative peak accounting and rejects estimate
+overflow or an insufficient explicit limit before backend dispatch.
