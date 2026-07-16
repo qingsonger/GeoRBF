@@ -310,7 +310,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than reimplementing assembly"
     python_api: "N/A: no stable schema-backed fitting surface exists before solver and model integration"
     benchmark: implemented
-    status: documented
+    status: integrated
 
   - id: REQ-SOLVE-001
     title: Dense equality solvers and numerical policy
