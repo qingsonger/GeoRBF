@@ -6,11 +6,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement
+- Mode: Implement complete / awaiting independent Review
 - Requirement: REQ-SOLVE-001, Issue #57
 - Branch: `codex/req-solve-001-dense-equality-solvers`
-- Draft pull request: pending initial push
-- Registry state: `in_progress` until the Draft PR is linked
+- Draft pull request: #58
+- Registry state: `implemented`
 - Dependencies: REQ-SPIKE-001, REQ-SPIKE-002, and REQ-FIELD-001 are integrated
 
 ## Implemented scope
@@ -43,20 +43,26 @@ records, benchmark reports, Git, and GitHub.
 - The runnable example and two-iteration benchmark smoke pass.
 - Four consecutive 100-iteration benchmark runs have bit-identical checksums;
   timing and binary-size evidence is in `docs/benchmarks/REQ-SOLVE-001.md`.
-- The complete stable-head standard gate passed: formatting, workspace
+- The final content including the PR #58 registry link and `implemented` state
+  passed the complete standard gate: formatting, workspace
   all-target/all-feature Clippy, workspace tests, doctests, all 58 requirement
-  checks, and `git diff --check`.
+  checks, and `git diff --check`. This subsequent sentence changes handoff
+  evidence only, so that immutable-content gate remains applicable.
+- Draft PR #58 CI was triggered after the initial push. Its result is not an
+  Implement-mode prerequisite and must be checked during the fresh Review task.
 
 ## Next task
 
-Push the validated implementation, open and link a Draft PR, update this
-handoff and the registry to `implemented`, and stop. A fresh Review task must
-independently review the single
-REQ-SOLVE-001 PR; do not repair findings or begin REQ-MODEL-001 in that task.
+Open a fresh Review task that independently reviews only PR #58 and
+REQ-SOLVE-001 with the project `math_reviewer`. Do not repair production code
+or begin REQ-MODEL-001 in that task. If findings exist, record them and stop for
+a separate Repair task; if none exist, follow the fresh re-review/integration
+sequence in `docs/CODEX_WORKFLOW.md`.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #57
+- Implementation: GitHub PR #58
 - Requirement summary: `changes/REQ-SOLVE-001.md`
 - Solver policy: `docs/architecture/SOLVER_POLICY.md`
 - Backend decision and production re-audit:

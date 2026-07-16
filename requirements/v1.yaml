@@ -319,7 +319,7 @@ requirements:
     milestone: M3-v0.3.0
     priority: P0
     issue: 57
-    pull_request: null
+    pull_request: 58
     tests: [solver-truth, rank-failure, scale-invariance, condition-diagnostics, original-unit-residuals, explicit-regularization]
     docs: [docs/architecture/SOLVER_POLICY.md, docs/adr/ADR-0010-nalgebra-dense-factorization-backend.md, docs/benchmarks/REQ-SOLVE-001.md, rustdoc]
     rust_api: implemented
@@ -328,7 +328,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than exposing a separate numerical implementation"
     python_api: "N/A: no stable schema-backed fitting surface exists before fitted-model and binding requirements"
     benchmark: implemented
-    status: in_progress
+    status: implemented
 
   - id: REQ-MODEL-001
     title: Immutable fitted field evaluation
