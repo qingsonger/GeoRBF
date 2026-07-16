@@ -5,9 +5,11 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/55
 - Branch: `codex/req-field-001-hard-equality-assembly`
 - Reviewed head: `ab28b3c49820e3bb05bc10201fdab7fcec9ba84f`
+- Repair code/test head: `b8c1367c019c4891a2f7b1ef20a453f07d96ebf4`
+- Clean re-reviewed head: `e55ad1689f6eebb17b1e0b962729e323c8cbe840`
 - Base head: `5c5acfcbf11172eddc0c4390b1207e02db9ded33`
-- Review date: 2026-07-15
-- Result: four P2 findings and one P3 finding; Repair required
+- Review dates: 2026-07-15 and 2026-07-16
+- Result: P2-1 through P2-4 and P3-1 closed; no P0-P3 finding remains
 
 ## Scope and independence
 
@@ -190,3 +192,60 @@ status changed. PR #55 remains Draft and REQ-FIELD-001 remains `documented`;
 this repair evidence does not independently close the findings. A fresh
 read-only re-review must inspect the exact repaired PR head before the ready-CI
 integration sequence. Do not begin REQ-SOLVE-001.
+
+## Fresh independent re-review of the repaired head
+
+A new read-only project `math_reviewer` independently reviewed the complete
+16-file PR diff on exact evidence head
+`e55ad1689f6eebb17b1e0b962729e323c8cbe840` against base
+`5c5acfcbf11172eddc0c4390b1207e02db9ded33`. It received only the bounded
+requirement and integrated dependency summaries, Issue #54 acceptance
+criteria, the M3 plan, scoped mathematical, architecture, CPD, regularization,
+and rank-backend contracts, the complete diff, validation and benchmark
+evidence, and the original findings. It made no repository or remote changes
+and did not inherit the Repair task's reasoning.
+
+The reviewer independently confirmed every original finding is closed:
+
+- P2-1: `KernelActionError` is stored inline, evaluator-error mapping performs
+  no allocation, and the isolated failure regression retains the field row,
+  center column, and both atomic-term provenances.
+- P2-2: one fallibly allocated polynomial value scratch and one gradient
+  scratch are reused across all CPD observation rows. Constant-allocation
+  regressions cover three and seventeen observations, while independent matrix
+  truth verifies unchanged polynomial actions.
+- P2-3: the coincident Mat茅rn 1/2 rejection covers D=1, D=2, and D=3, checks
+  both first-order demands, term indices `(1, 1)`, away-only capability and
+  coincidence, and proves zero evaluator dispatches.
+- P2-4: the D=1 `phi(r)=r^3` fixture compares the complete 5-by-5 augmented
+  matrix and `P=Q`, both rank decisions of two, `Q^T Z`, unit orthogonality,
+  alignment with `[1,2,-1]/sqrt(6)`, and `Z^T K Z=4/3`.
+- P3-1: variable-block collection reservation uses the distinct
+  `VariableBlocks` category, and its isolated regression verifies the exact
+  requested count of two.
+
+Independent Gaussian differentiation confirmed
+`grad_x k=-d k/ell^2`, `grad_y k=d k/ell^2`, and the mixed directional action
+`(u dot v/ell^2 - (u dot d)(v dot d)/ell^4) k`. The CPD fixture independently
+gives `null(Q^T)=span([1,2,-1])` and projected energy `8/6=4/3`. The reviewer
+found complete polynomial augmentation, hard equalities, symmetry, derivative
+capability rejection, and the absence of solves, jitter, regularization,
+pseudoinverse, constraint softening, or center selection to be intact. No new
+P0, P1, P2, or P3 finding was found.
+
+The reviewer passed the five public field integration tests, the three private
+allocation and error-path regressions, formatting, warning-denying focused
+Clippy, the runnable example, D=1/D=2/D=3 benchmark smoke with the recorded
+checksums, all 58 requirement checks, and `git diff --check`. Draft Ubuntu CI
+run 29463442762 also passed on exact reviewed head `e55ad16`. The complete
+standard workspace gate passed on repair code/test head `b8c1367`; the later
+reviewed head changes only the requirement summary, bounded handoff, and review
+evidence, so that immutable code/test-head gate remains applicable.
+
+## Clean re-review disposition
+
+PR #55 may enter the mandatory integration sequence. Synchronize this clean
+review evidence, mark the resulting exact head Ready, and wait for the complete
+Windows, Ubuntu, and macOS correctness matrix with every benchmark smoke
+workload. Merge exactly once only when that full gate is green, then record
+truthful integration state in an isolated change. Do not begin REQ-SOLVE-001.
