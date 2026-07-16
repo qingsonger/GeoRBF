@@ -141,3 +141,52 @@ PR #55 must remain Draft and REQ-FIELD-001 must remain `documented`. A fresh
 Repair task should address only P2-1 through P2-4 and P3-1, add the specified
 regressions, rerun focused checks and the final stable-head standard gate, push,
 and stop for a new independent re-review. Do not begin REQ-SOLVE-001.
+
+## Repair evidence pending fresh re-review
+
+Repair code/test head `b8c1367c019c4891a2f7b1ef20a453f07d96ebf4`
+addresses only P2-1 through P2-4 and P3-1:
+
+- the field assembly error now stores `KernelActionError` inline, so evaluator
+  and contraction failures retain both atomic-term provenances and their field
+  row/column without allocating on the error-mapping path; an armed test-only
+  allocation failpoint remains unconsumed when the evaluator fails;
+- CPD observation polynomial actions write directly into their final row and
+  reuse one fallibly allocated value scratch and one gradient scratch across
+  every observation; test-only counters remain exactly `(1, 1)` for both three
+  and seventeen rows, while the independent augmented-matrix truth is unchanged;
+- the coincident Matérn 1/2 rejection now covers D=1, D=2, and D=3, reaches the
+  nonzero directional term indices `(1, 1)`, compares both first-order demands,
+  the away-only classification and coincidence flag, and proves zero evaluator
+  dispatches in every dimension;
+- the D=1 `phi(r)=r^3` fixture independently compares the complete 5-by-5
+  augmented matrix, `P=Q=[[1,-1],[0,1],[1,1]]`, RRQR and SVD ranks of two,
+  full-rank decision, `Q^T Z`, unit orthogonality and sign-independent alignment
+  with `[1,2,-1]/sqrt(6)`, and `Z^T K Z=4/3`; and
+- variable-block collection reservation has its own `VariableBlocks` storage
+  category, with a targeted failpoint regression proving the exact requested
+  block count of two rather than reporting sparse affine-term storage.
+
+The five public field integration tests and three private allocation/error-path
+regressions pass. Warning-denying all-target/all-feature focused Clippy, the
+runnable example, and D=1/D=2/D=3 optimized benchmark smoke passed; benchmark
+checksums remained `1.61140766744821190e3`, `1.35292609211012223e3`, and
+`1.19221674654189542e3` respectively.
+
+On exact repair code/test head `b8c1367`, the complete standard gate passed:
+
+```text
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo test --doc --workspace
+cargo xtask requirements check
+git diff --check
+```
+
+The registry checker reports all 58 v1 requirements valid. No manifest, schema,
+dependency, CI route, benchmark input, adapter disposition, or requirement
+status changed. PR #55 remains Draft and REQ-FIELD-001 remains `documented`;
+this repair evidence does not independently close the findings. A fresh
+read-only re-review must inspect the exact repaired PR head before the ready-CI
+integration sequence. Do not begin REQ-SOLVE-001.

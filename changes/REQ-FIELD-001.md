@@ -31,6 +31,14 @@ nonsmooth-center capability rejection before evaluator dispatch. Rustdoc, a
 runnable example, deterministic benchmark, CI smoke route, mathematical and
 architecture contracts, registry, and bounded handoff are synchronized.
 
+Review repair removes allocation from kernel-action error mapping, reuses one
+fallibly allocated value/gradient scratch pair across every CPD observation,
+and precisely distinguishes variable-block collection allocation failures.
+Regressions cover allocation failpoints and constant scratch allocation,
+coincident invalid capability in D=1/D=2/D=3, the complete independent 5-by-5
+CPD augmented matrix, both rank decisions, `Q^T Z`, orthonormality, and the
+projected scalar `Z^T K Z=4/3`.
+
 CLI, C, C++, and Python are N/A because REQ-SOLVE-001 has not yet introduced a
 solver, REQ-MODEL-001 has not introduced fitted models, and schema/binding
 requirements have not frozen a user-facing fitting surface. All mathematics
