@@ -373,7 +373,7 @@ requirements:
     milestone: M3-v0.3.0
     priority: P0
     issue: 63
-    pull_request: null
+    pull_request: 64
     tests: [error-variants, observation-level-paths, no-core-output]
     docs: [docs/architecture/ARCHITECTURE.md, changes/REQ-DIAG-001.md, rustdoc]
     rust_api: implemented
@@ -382,7 +382,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper maps the frozen C ABI and does not define an independent error taxonomy"
     python_api: "N/A: Python exception mapping belongs to the M9 binding requirement"
     benchmark: "N/A: diagnostic construction is not a hot path"
-    status: in_progress
+    status: implemented
 
   - id: REQ-LEVEL-001
     title: Explicit level variables and order DAG

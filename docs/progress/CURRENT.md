@@ -9,8 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement
 - Requirement: REQ-DIAG-001, Issue #63
 - Branch: `codex/req-diag-001-structured-diagnostics`
-- Pull request: pending Draft creation
-- Registry state: `in_progress`
+- Pull request: #64 (Draft)
+- Registry state: `implemented`
 - Dependencies: REQ-IR-001 and its complete closure are `integrated`
 
 ## Scope
@@ -48,14 +48,14 @@ schema, level-DAG, convex-solver, or execution-control requirements.
 
 ## Next task
 
-Finish focused workspace regression checks, create the Draft implementation PR,
-record its real number, run the complete standard gate once on the final stable
-head, update this bounded handoff, commit, push, and stop. Independent Review
+Run the complete standard gate once on the final stable implementation head,
+record the exact evidence, push, and stop. Independent Review of Draft PR #64
 must run in a fresh task and must not inherit this implementation reasoning.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #63
+- Draft implementation: GitHub PR #64
 - Requirement summary: `changes/REQ-DIAG-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - Implementation and tests: `crates/georbf/src/diagnostics.rs` and
