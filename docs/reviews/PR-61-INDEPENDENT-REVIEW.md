@@ -197,10 +197,29 @@ No P0, P1, P2, or P3 finding remains.
 
 ## Disposition
 
-PR #61 remains Draft and REQ-MODEL-001 remains `implemented`. A fresh Review
-task may now perform the mandatory integration sequence: verify that the
-current PR head differs from re-reviewed repair head `a890e45` only by this
-review and bounded-handoff evidence, mark the PR Ready, wait for the complete
-Windows, Ubuntu, macOS, and benchmark-smoke CI on that exact ready head, merge
-exactly once only when that CI is green, and record truthful integration
-state. Do not begin REQ-EXEC-001 in this task.
+The integration task confirmed that exact current head
+`da24b0af73507ec12cac28447c2319d6ad56e717` differs from re-reviewed repair
+head `a890e45abb643c9838199f5b25e5c67c23f56400` only through this review record
+and the bounded handoff. Those evidence-only commits change no production
+code, tests, manifests, schemas, CI, benchmark input, dependency, API, or
+numerical behavior.
+
+Exact Ready head `da24b0af73507ec12cac28447c2319d6ad56e717` passed the complete
+Windows, Ubuntu, and macOS correctness matrix with every benchmark-smoke
+workload in CI run 29497804566. PR #61 then squash-merged exactly once as
+`6a12aeb791bedb39000126ae584422a3b5b904c8`, and Issue #60 closed as
+completed. Post-merge `main` run 29498504443 passed the same complete
+three-platform correctness, benchmark-smoke, and requirement-registry gate on
+that exact merge commit.
+
+The isolated integration-state change updates only the registry, this review
+evidence, the history index, and the bounded handoff. It changes no production
+code, tests, manifests, schemas, CI, build inputs, APIs, numerical behavior,
+dependencies, tags, or releases. REQ-MODEL-001 may therefore be recorded as
+`integrated`; the next requirement must begin only in a fresh task after the
+isolated integration-state pull request is green and merged.
+
+The isolated integration-state registry tree passed the complete local
+standard gate and `git diff --check`. The subsequent validation note is
+documentation-only and changes no production, test, manifest, schema, CI, or
+build input.
