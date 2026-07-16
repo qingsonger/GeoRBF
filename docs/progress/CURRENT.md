@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-SOLVE-001, Issue #57 (closed)
 - Implementation pull request: #58, squash-merged as `3ccf784`
 - Integration-state branch: `codex/req-solve-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #59 (Draft until final evidence is green)
 - Review record: `docs/reviews/PR-58-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-MODEL-001 (`planned`)
@@ -52,7 +52,7 @@ fresh Implement task. Perform the mandatory preflight and use
 
 - Acceptance criteria and exclusions: GitHub Issue #57
 - Merged implementation: GitHub PR #58
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #59
 - Requirement summary: `changes/REQ-SOLVE-001.md`
 - Independent review and repair evidence:
   `docs/reviews/PR-58-INDEPENDENT-REVIEW.md`

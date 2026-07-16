@@ -254,3 +254,5 @@ code, tests, manifests, schemas, CI, build inputs, APIs, numerical behavior,
 dependencies, tags, or releases. REQ-SOLVE-001 may therefore be recorded as
 `integrated`; REQ-MODEL-001 must begin only in a fresh task after the isolated
 integration-state pull request is green and merged.
+
+The isolated integration-state evidence is published in PR #59.
