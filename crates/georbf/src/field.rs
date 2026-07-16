@@ -18,6 +18,9 @@ use std::error::Error;
 use std::fmt;
 use std::num::NonZeroUsize;
 
+#[cfg(test)]
+use std::cell::Cell;
+
 use crate::Point;
 use crate::cpd::{CpdError, CpdMatrix, CpdNullSpace};
 use crate::dimension::{Dim, SupportedDimension};
@@ -45,8 +48,14 @@ pub enum FieldAssemblyStorage {
     KernelActions,
     /// Observation-side polynomial-action matrix.
     PolynomialActions,
+    /// Reused polynomial-value scratch for observation actions.
+    PolynomialValues,
+    /// Reused polynomial-gradient scratch for observation actions.
+    PolynomialGradients,
     /// Sparse affine terms for one canonical equality.
     AffineTerms,
+    /// Canonical variable-block collection.
+    VariableBlocks,
     /// Full augmented dense matrix.
     DenseMatrix,
     /// Augmented equality right-hand side.
@@ -223,7 +232,7 @@ pub enum FieldAssemblyError<E> {
         /// Center column index.
         center_index: usize,
         /// Provenance-bearing kernel action diagnostic.
-        source: Box<KernelActionError<E>>,
+        source: KernelActionError<E>,
     },
     /// Observation-side complete-polynomial action failed.
     PolynomialAction {
@@ -327,7 +336,7 @@ where
 {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            Self::KernelAction { source, .. } => Some(source.as_ref()),
+            Self::KernelAction { source, .. } => Some(source),
             Self::PolynomialAction { source, .. } => Some(source),
             Self::PolynomialSpace(source) => Some(source),
             Self::Cpd(source) => Some(source),
@@ -620,7 +629,7 @@ where
                     .map_err(|source| FieldAssemblyError::KernelAction {
                         observation_index: row,
                         center_index: column,
-                        source: Box::new(source),
+                        source,
                     })?;
                 kernel_actions[row * centers + column] = value;
                 kernel_actions[column * centers + row] = value;
@@ -646,19 +655,30 @@ where
         let mut observation_polynomial =
             try_zeroed(polynomial_entries, FieldAssemblyStorage::PolynomialActions)?;
         if let Some((space, _)) = &cpd_state {
+            let mut polynomial_values =
+                try_zeroed(polynomial_count, FieldAssemblyStorage::PolynomialValues)?;
+            let mut polynomial_gradients = try_filled(
+                polynomial_count,
+                [0.0; D],
+                FieldAssemblyStorage::PolynomialGradients,
+            )?;
             for row in 0..centers {
-                let values = observation_at(&self.semantic, row)
+                let start = row * polynomial_count;
+                observation_at(&self.semantic, row)
                     .ok_or(FieldAssemblyError::InvalidProblemState {
                         observation_index: row,
                     })?
                     .expression()
-                    .try_apply_polynomial(space)
+                    .try_apply_polynomial_with_scratch(
+                        space,
+                        &mut observation_polynomial[start..start + polynomial_count],
+                        &mut polynomial_values,
+                        &mut polynomial_gradients,
+                    )
                     .map_err(|source| FieldAssemblyError::PolynomialAction {
                         observation_index: row,
                         source,
                     })?;
-                observation_polynomial[row * polynomial_count..(row + 1) * polynomial_count]
-                    .copy_from_slice(&values);
             }
         }
 
@@ -666,12 +686,11 @@ where
             .checked_add(polynomial_count)
             .ok_or(FieldAssemblyError::CountOverflow)?;
         let mut blocks = Vec::new();
-        blocks
-            .try_reserve_exact(usize::from(polynomial_count != 0) + 1)
-            .map_err(|_| FieldAssemblyError::AllocationFailed {
-                storage: FieldAssemblyStorage::AffineTerms,
-                requested: usize::from(polynomial_count != 0) + 1,
-            })?;
+        try_reserve_exact(
+            &mut blocks,
+            usize::from(polynomial_count != 0) + 1,
+            FieldAssemblyStorage::VariableBlocks,
+        )?;
         blocks.push(
             VariableBlock::try_new(
                 try_owned_name("center_weights")?,
@@ -859,6 +878,16 @@ fn try_zeroed<E>(
     count: usize,
     storage: FieldAssemblyStorage,
 ) -> Result<Vec<f64>, FieldAssemblyError<E>> {
+    try_filled(count, 0.0, storage)
+}
+
+fn try_filled<T: Clone, E>(
+    count: usize,
+    value: T,
+    storage: FieldAssemblyStorage,
+) -> Result<Vec<T>, FieldAssemblyError<E>> {
+    #[cfg(test)]
+    test_allocation_attempt(storage, count)?;
     let mut values = Vec::new();
     values
         .try_reserve_exact(count)
@@ -866,14 +895,31 @@ fn try_zeroed<E>(
             storage,
             requested: count,
         })?;
-    values.resize(count, 0.0);
+    values.resize(count, value);
     Ok(values)
+}
+
+fn try_reserve_exact<T, E>(
+    values: &mut Vec<T>,
+    count: usize,
+    storage: FieldAssemblyStorage,
+) -> Result<(), FieldAssemblyError<E>> {
+    #[cfg(test)]
+    test_allocation_attempt(storage, count)?;
+    values
+        .try_reserve_exact(count)
+        .map_err(|_| FieldAssemblyError::AllocationFailed {
+            storage,
+            requested: count,
+        })
 }
 
 fn try_copy<E>(
     values: &[f64],
     storage: FieldAssemblyStorage,
 ) -> Result<Vec<f64>, FieldAssemblyError<E>> {
+    #[cfg(test)]
+    test_allocation_attempt(storage, values.len())?;
     let mut copied = Vec::new();
     copied
         .try_reserve_exact(values.len())
@@ -886,6 +932,8 @@ fn try_copy<E>(
 }
 
 fn try_owned_name<E>(value: &str) -> Result<String, FieldAssemblyError<E>> {
+    #[cfg(test)]
+    test_allocation_attempt(FieldAssemblyStorage::VariableBlockName, value.len())?;
     let mut owned = String::new();
     owned
         .try_reserve_exact(value.len())
@@ -895,6 +943,43 @@ fn try_owned_name<E>(value: &str) -> Result<String, FieldAssemblyError<E>> {
         })?;
     owned.push_str(value);
     Ok(owned)
+}
+
+#[cfg(test)]
+std::thread_local! {
+    static FORCED_ALLOCATION_FAILURE: Cell<Option<FieldAssemblyStorage>> = const { Cell::new(None) };
+    static FORCE_NEXT_ALLOCATION_FAILURE: Cell<bool> = const { Cell::new(false) };
+    static POLYNOMIAL_VALUE_ALLOCATIONS: Cell<usize> = const { Cell::new(0) };
+    static POLYNOMIAL_GRADIENT_ALLOCATIONS: Cell<usize> = const { Cell::new(0) };
+}
+
+#[cfg(test)]
+fn test_allocation_attempt<E>(
+    storage: FieldAssemblyStorage,
+    requested: usize,
+) -> Result<(), FieldAssemblyError<E>> {
+    let force_next = FORCE_NEXT_ALLOCATION_FAILURE.with(|force| force.replace(false));
+    let force_storage = FORCED_ALLOCATION_FAILURE.with(|force| {
+        if force.get() == Some(storage) {
+            force.set(None);
+            true
+        } else {
+            false
+        }
+    });
+    if force_next || force_storage {
+        return Err(FieldAssemblyError::AllocationFailed { storage, requested });
+    }
+    match storage {
+        FieldAssemblyStorage::PolynomialValues => {
+            POLYNOMIAL_VALUE_ALLOCATIONS.with(|count| count.set(count.get().saturating_add(1)));
+        }
+        FieldAssemblyStorage::PolynomialGradients => {
+            POLYNOMIAL_GRADIENT_ALLOCATIONS.with(|count| count.set(count.get().saturating_add(1)));
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 fn symmetry_diagnostics(
@@ -925,5 +1010,190 @@ fn symmetry_diagnostics(
         maximum_absolute_entry,
         normalized_asymmetry,
         symmetry_tolerance: SYMMETRY_TOLERANCE_FACTOR * dimension_scale * f64::EPSILON,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+    use std::fmt;
+    use std::io;
+
+    use super::*;
+    use crate::{
+        Enforcement, ExecutionOptions, FunctionalAtom, FunctionalExpr, FunctionalProvenance,
+        FunctionalTerm, Gaussian, ObservationId, PolyharmonicSpline, RadialSeparation,
+        SemanticConstraint, SemanticExpression, SemanticProvenance, SourceLocation,
+        SpatialKernelJet,
+    };
+
+    type TestResult = Result<(), Box<dyn Error>>;
+
+    #[derive(Debug)]
+    struct EvaluatorFailure;
+
+    impl fmt::Display for EvaluatorFailure {
+        fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            formatter.write_str("forced evaluator failure")
+        }
+    }
+
+    impl Error for EvaluatorFailure {}
+
+    struct ForcedStorageAllocationFailure;
+
+    impl ForcedStorageAllocationFailure {
+        fn new(storage: FieldAssemblyStorage) -> Self {
+            FORCED_ALLOCATION_FAILURE.with(|force| force.set(Some(storage)));
+            Self
+        }
+    }
+
+    impl Drop for ForcedStorageAllocationFailure {
+        fn drop(&mut self) {
+            FORCED_ALLOCATION_FAILURE.with(|force| force.set(None));
+        }
+    }
+
+    fn value_problem(count: usize) -> Result<FieldProblem<1>, Box<dyn Error>> {
+        let mut constraints = Vec::new();
+        let mut centers = Vec::new();
+        constraints.try_reserve_exact(count)?;
+        centers.try_reserve_exact(count)?;
+        for index in 0..count {
+            let coordinate = f64::from(u32::try_from(index)?);
+            let term_provenance = FunctionalProvenance::new(u64::try_from(index)? + 100);
+            let expression = FunctionalExpr::try_new([FunctionalTerm::try_new(
+                1.0,
+                FunctionalAtom::value(Point::try_new([coordinate])?, term_provenance),
+            )?])?;
+            let observation = ObservationFunctional::new(expression.clone());
+            centers.push(CenterRepresenter::new(expression));
+            let line = NonZeroUsize::new(index.checked_add(1).ok_or("line overflow")?)
+                .ok_or("zero line")?;
+            let semantic_provenance = SemanticProvenance::try_new(
+                ObservationId::new(u64::try_from(index)?),
+                SourceLocation::try_new("field-unit.csv".to_owned(), line)?,
+                "m".to_owned(),
+                format!("field.equalities[{index}]"),
+                Some("field-unit".to_owned()),
+            )?;
+            constraints.push(SemanticConstraint::try_new(
+                semantic_provenance,
+                SemanticRelation::Equality {
+                    expression: SemanticExpression::try_new(observation, 0.0)?,
+                    target: 0.0,
+                },
+                Enforcement::Hard,
+            )?);
+        }
+        let semantic = SemanticProblemIr::try_new(constraints, ExecutionOptions::default())?;
+        Ok(FieldProblem::try_new(semantic, centers)?)
+    }
+
+    fn assemble_cpd(
+        problem: &FieldProblem<1>,
+        kernel: PolyharmonicSpline,
+    ) -> Result<DenseFieldSystem<1>, FieldAssemblyError<io::Error>> {
+        problem.try_assemble(kernel.metadata(), |query, center, demand| {
+            let separation = RadialSeparation::try_new(query, center)
+                .map_err(|error| io::Error::other(error.to_string()))?;
+            if separation.is_center() {
+                let value = kernel
+                    .radial_value(0.0)
+                    .map_err(|error| io::Error::other(error.to_string()))?;
+                return match demand {
+                    KernelDerivativeOrder::Value => {
+                        SpatialKernelJetPrefix::try_center_value(separation, value)
+                            .map_err(|error| io::Error::other(error.to_string()))
+                    }
+                    KernelDerivativeOrder::First => {
+                        SpatialKernelJetPrefix::try_center_through_first(separation, value)
+                            .map_err(|error| io::Error::other(error.to_string()))
+                    }
+                    KernelDerivativeOrder::Second => {
+                        let second = kernel
+                            .radial_derivative(0.0, KernelDerivativeOrder::Second)
+                            .map_err(|error| io::Error::other(error.to_string()))?
+                            .ok_or_else(|| io::Error::other("missing center Hessian"))?;
+                        SpatialKernelJetPrefix::try_center_through_second(separation, value, second)
+                            .map_err(|error| io::Error::other(error.to_string()))
+                    }
+                    KernelDerivativeOrder::Third => {
+                        Err(io::Error::other("unexpected third-order demand"))
+                    }
+                };
+            }
+            let radial = kernel
+                .radial_jet(separation)
+                .map_err(|error| io::Error::other(error.to_string()))?;
+            Ok(SpatialKernelJet::try_new(separation, radial)
+                .map_err(|error| io::Error::other(error.to_string()))?
+                .into())
+        })
+    }
+
+    fn scratch_allocation_counts(problem: &FieldProblem<1>) -> TestResult {
+        let kernel = PolyharmonicSpline::try_new(3)?;
+        POLYNOMIAL_VALUE_ALLOCATIONS.with(|count| count.set(0));
+        POLYNOMIAL_GRADIENT_ALLOCATIONS.with(|count| count.set(0));
+        let _system = assemble_cpd(problem, kernel)?;
+        let values = POLYNOMIAL_VALUE_ALLOCATIONS.with(Cell::get);
+        let gradients = POLYNOMIAL_GRADIENT_ALLOCATIONS.with(Cell::get);
+        assert_eq!((values, gradients), (1, 1));
+        Ok(())
+    }
+
+    #[test]
+    fn evaluator_error_mapping_allocates_nothing_and_retains_provenance() -> TestResult {
+        let problem = value_problem(1)?;
+        let kernel = Gaussian::try_new(1.0)?;
+        let result = problem.try_assemble(kernel.metadata(), |_, _, _| {
+            FORCE_NEXT_ALLOCATION_FAILURE.with(|force| force.set(true));
+            Err::<SpatialKernelJetPrefix<1>, _>(EvaluatorFailure)
+        });
+        let failpoint_remained_armed =
+            FORCE_NEXT_ALLOCATION_FAILURE.with(|force| force.replace(false));
+        assert!(failpoint_remained_armed);
+        let Err(FieldAssemblyError::KernelAction {
+            observation_index: 0,
+            center_index: 0,
+            source:
+                KernelActionError::Evaluation {
+                    observation_term_index: 0,
+                    observation_provenance,
+                    center_term_index: 0,
+                    center_provenance,
+                    source: EvaluatorFailure,
+                },
+        }) = result
+        else {
+            return Err("unexpected evaluator result".into());
+        };
+        assert_eq!(observation_provenance.identifier(), 100);
+        assert_eq!(center_provenance.identifier(), 100);
+        Ok(())
+    }
+
+    #[test]
+    fn observation_polynomial_scratch_allocation_is_constant_in_row_count() -> TestResult {
+        scratch_allocation_counts(&value_problem(3)?)?;
+        scratch_allocation_counts(&value_problem(17)?)?;
+        Ok(())
+    }
+
+    #[test]
+    fn variable_block_reservation_failure_reports_exact_storage_and_count() -> TestResult {
+        let problem = value_problem(3)?;
+        let kernel = PolyharmonicSpline::try_new(3)?;
+        let _failure = ForcedStorageAllocationFailure::new(FieldAssemblyStorage::VariableBlocks);
+        assert!(matches!(
+            assemble_cpd(&problem, kernel),
+            Err(FieldAssemblyError::AllocationFailed {
+                storage: FieldAssemblyStorage::VariableBlocks,
+                requested: 2,
+            })
+        ));
+        Ok(())
     }
 }

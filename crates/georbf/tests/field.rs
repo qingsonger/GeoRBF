@@ -5,13 +5,13 @@ use std::io;
 use std::num::NonZeroUsize;
 
 use georbf::{
-    CenterRepresenter, Enforcement, ExecutionOptions, FieldAssemblyError, FieldProblem,
-    FieldProblemError, FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm,
-    Gaussian, KernelArgument, KernelDerivativeCapability, KernelDerivativeOrder, Matern,
-    MaternSmoothness, ObservationFunctional, ObservationId, Point, PolyharmonicSpline,
-    RadialSeparation, SemanticConstraint, SemanticExpression, SemanticProblemIr,
-    SemanticProvenance, SemanticRelation, SourceLocation, SpatialKernelJet, SpatialKernelJetPrefix,
-    UnitDirection,
+    CenterRepresenter, CpdRankDecision, DenseFieldSystem, Enforcement, ExecutionOptions,
+    FieldAssemblyError, FieldProblem, FieldProblemError, FunctionalAtom, FunctionalExpr,
+    FunctionalProvenance, FunctionalTerm, Gaussian, KernelArgument, KernelDerivativeCapability,
+    KernelDerivativeOrder, Matern, MaternSmoothness, ObservationFunctional, ObservationId, Point,
+    PolyharmonicSpline, RadialSeparation, SemanticConstraint, SemanticExpression,
+    SemanticProblemIr, SemanticProvenance, SemanticRelation, SourceLocation, SpatialKernelJet,
+    SpatialKernelJetPrefix, UnitDirection,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -276,6 +276,92 @@ fn analytic_mixed_field_assembly_is_symmetric_in_d1_d2_d3() -> TestResult {
     Ok(())
 }
 
+fn verify_cpd_augmented_matrix(system: &DenseFieldSystem<1>) {
+    assert_eq!(system.center_count(), 3);
+    assert_eq!(system.polynomial_count(), 2);
+    assert_eq!(system.matrix().dimension(), 5);
+    let expected_augmented = [
+        0.0, 3.0, 8.0, 1.0, -1.0, 3.0, 0.0, -3.0, 0.0, 1.0, 8.0, -3.0, 0.0, 1.0, 1.0, 1.0, 0.0,
+        1.0, 0.0, 0.0, -1.0, 1.0, 1.0, 0.0, 0.0,
+    ];
+    for (actual, expected) in system.matrix().values().iter().zip(expected_augmented) {
+        assert!((actual - expected).abs() <= 8.0 * f64::EPSILON);
+    }
+    assert_eq!(system.rhs()[3..], [0.0, 0.0]);
+    assert_eq!(
+        system.diagnostics().normalized_asymmetry.to_bits(),
+        0.0_f64.to_bits()
+    );
+}
+
+fn verify_cpd_rank_and_null_space(system: &DenseFieldSystem<1>) -> TestResult {
+    let cpd = system.cpd().ok_or("CPD evidence")?;
+    assert_eq!(cpd.polynomial_space().term_count(), 2);
+    assert_eq!(
+        cpd.null_space().actions().values(),
+        [1.0, -1.0, 0.0, 1.0, 1.0, 1.0]
+    );
+    let rank = cpd.null_space().diagnostics();
+    assert_eq!(rank.rrqr_rank, 2);
+    assert_eq!(rank.svd_rank, 2);
+    assert_eq!(rank.decision, CpdRankDecision::FullRank);
+    assert_eq!(
+        (
+            cpd.null_space().actions().rows(),
+            cpd.null_space().actions().columns()
+        ),
+        (3, 2)
+    );
+    assert_eq!(
+        (
+            cpd.projected_energy().rows(),
+            cpd.projected_energy().columns()
+        ),
+        (1, 1)
+    );
+    assert!(
+        cpd.null_space().quality().side_condition_residual <= cpd.null_space().quality().tolerance
+    );
+    let basis = cpd.null_space().basis();
+    assert_eq!((basis.rows(), basis.columns()), (3, 1));
+    let expected_null = [
+        1.0 / 6.0_f64.sqrt(),
+        2.0 / 6.0_f64.sqrt(),
+        -1.0 / 6.0_f64.sqrt(),
+    ];
+    let alignment = basis
+        .values()
+        .iter()
+        .zip(expected_null)
+        .map(|(actual, expected)| actual * expected)
+        .sum::<f64>()
+        .abs();
+    assert!((alignment - 1.0).abs() <= 32.0 * f64::EPSILON);
+    for polynomial in 0..2 {
+        let mut side_action = 0.0;
+        for row in 0..3 {
+            side_action += cpd
+                .null_space()
+                .actions()
+                .get(row, polynomial)
+                .ok_or("side action")?
+                * basis.get(row, 0).ok_or("basis value")?;
+        }
+        assert!(side_action.abs() <= cpd.null_space().quality().tolerance);
+    }
+    let orthonormality = basis
+        .values()
+        .iter()
+        .map(|value| value * value)
+        .sum::<f64>();
+    assert!((orthonormality - 1.0).abs() <= cpd.null_space().quality().tolerance);
+    assert!(
+        (cpd.projected_energy().get(0, 0).ok_or("projected scalar")? - 4.0 / 3.0).abs()
+            <= 64.0 * f64::EPSILON
+    );
+    Ok(())
+}
+
 #[test]
 fn cpd_assembly_adds_complete_polynomial_rows_and_null_space() -> TestResult {
     let points = [-1.0, 0.0, 1.0];
@@ -338,33 +424,8 @@ fn cpd_assembly_adds_complete_polynomial_rows_and_null_space() -> TestResult {
         )
     })?;
 
-    assert_eq!(system.center_count(), 3);
-    assert_eq!(system.polynomial_count(), 2);
-    assert_eq!(system.matrix().dimension(), 5);
-    assert_eq!(system.rhs()[3..], [0.0, 0.0]);
-    assert_eq!(
-        system.diagnostics().normalized_asymmetry.to_bits(),
-        0.0_f64.to_bits()
-    );
-    let cpd = system.cpd().ok_or("CPD evidence")?;
-    assert_eq!(cpd.polynomial_space().term_count(), 2);
-    assert_eq!(
-        (
-            cpd.null_space().actions().rows(),
-            cpd.null_space().actions().columns()
-        ),
-        (3, 2)
-    );
-    assert_eq!(
-        (
-            cpd.projected_energy().rows(),
-            cpd.projected_energy().columns()
-        ),
-        (1, 1)
-    );
-    assert!(
-        cpd.null_space().quality().side_condition_residual <= cpd.null_space().quality().tolerance
-    );
+    verify_cpd_augmented_matrix(&system);
+    verify_cpd_rank_and_null_space(&system)?;
     Ok(())
 }
 
@@ -389,33 +450,57 @@ fn construction_rejects_nonmatching_observation_and_center_roles() -> TestResult
     Ok(())
 }
 
-#[test]
-fn nonsmooth_center_derivative_demand_fails_before_evaluation() -> TestResult {
-    let point = Point::try_new([0.0])?;
-    let expression = FunctionalExpr::try_new([FunctionalTerm::try_new(
-        1.0,
-        FunctionalAtom::directional_derivative(
-            point,
-            UnitDirection::try_new([1.0])?,
-            FunctionalProvenance::new(1),
-        ),
-    )?])?;
+fn verify_nonsmooth_center_rejection<const D: usize>(
+    value_point: [f64; D],
+    derivative_point: [f64; D],
+    direction: [f64; D],
+) -> TestResult
+where
+    georbf::Dim<D>: georbf::SupportedDimension,
+{
+    let expression = FunctionalExpr::try_new([
+        FunctionalTerm::try_new(
+            1.0,
+            FunctionalAtom::value(Point::try_new(value_point)?, FunctionalProvenance::new(10)),
+        )?,
+        FunctionalTerm::try_new(
+            1.0,
+            FunctionalAtom::directional_derivative(
+                Point::try_new(derivative_point)?,
+                UnitDirection::try_new(direction)?,
+                FunctionalProvenance::new(11),
+            ),
+        )?,
+    ])?;
     let problem = build_problem(vec![expression])?;
     let kernel = Matern::try_new(MaternSmoothness::OneHalf, 1.0)?;
     let mut evaluations = 0;
     let result = problem.try_assemble(kernel.metadata(), |_, _, _| {
         evaluations += 1;
-        Err::<georbf::SpatialKernelJetPrefix<1>, _>(io::Error::other("must not evaluate"))
+        Err::<georbf::SpatialKernelJetPrefix<D>, _>(io::Error::other("must not evaluate"))
     });
     assert_eq!(evaluations, 0);
     assert!(matches!(
         result,
         Err(FieldAssemblyError::UnsupportedDerivativeCapability {
+            observation_index: 0,
+            observation_term_index: 1,
+            center_index: 0,
+            center_term_index: 1,
+            observation_order: KernelDerivativeOrder::First,
+            center_order: KernelDerivativeOrder::First,
             capability: KernelDerivativeCapability::SupportedAwayFromCenters,
             coincident: true,
-            ..
         })
     ));
+    Ok(())
+}
+
+#[test]
+fn nonsmooth_center_derivative_demand_fails_before_evaluation_in_d1_d2_d3() -> TestResult {
+    verify_nonsmooth_center_rejection([0.0], [1.0], [1.0])?;
+    verify_nonsmooth_center_rejection([0.0, 0.0], [1.0, 0.0], [1.0, 2.0])?;
+    verify_nonsmooth_center_rejection([0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 2.0, -1.0])?;
     Ok(())
 }
 
