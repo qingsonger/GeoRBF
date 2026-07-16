@@ -6,11 +6,12 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement complete / fresh independent Review required
+- Mode: Review complete / bounded Repair required
 - Requirement: REQ-MODEL-001, Issue #60
 - Branch: `codex/req-model-001-immutable-fitted-field`
 - Draft pull request: #61
-- Stable implementation head: `8652bb4`
+- Reviewed head: `14d21d1`
+- Review record: `docs/reviews/PR-61-INDEPENDENT-REVIEW.md`
 - Registry state: `implemented`
 - Dependencies: REQ-SOLVE-001 and REQ-COORD-001 are `integrated`
 
@@ -18,8 +19,9 @@ records, benchmark reports, Git, and GitHub.
 
 - Added immutable `FittedField<D>` for D=1/D=2/D=3 with one concrete retained
   kernel definition, optional constant global anisotropy, coordinate metadata,
-  affine normalization, centers, coefficients, capabilities, and complete
-  assembly/solve diagnostics.
+  affine normalization, centers, coefficients, capabilities, and general
+  assembly/solve diagnostics. The review found that CPD-specific rank,
+  null-space, and projected-energy assembly evidence is not yet retained.
 - Added one high-level fit boundary that consumes the normalized-coordinate
   `FieldProblem<D>`, assembles and solves with the same retained kernel, and
   discards builder, canonical, dense-system, and factorization state.
@@ -55,20 +57,30 @@ records, benchmark reports, Git, and GitHub.
 - The subsequent PR-link handoff update changes only the completion registry
   and this bounded evidence file; it changes no production code, tests,
   manifest, schema, CI, build input, benchmark input, or numerical behavior.
-- Draft PR #61 CI has not yet completed on the PR-link evidence head.
+- Exact reviewed head `14d21d1` passed Draft Ubuntu CI run 29480459334:
+  format, warning-denying workspace Clippy, all-feature workspace tests,
+  workspace Rustdoc, spike gates, and all 58 requirement checks.
+- A fresh read-only `xhigh` mathematical review found one P2 and one P3
+  finding. A separately adjudicated proposed normalization-semantics P1 was
+  rejected because Issue #60 explicitly establishes normalized-model-coordinate
+  kernel evaluation followed by the `S` derivative chain rule.
 
 ## Next task
 
-Open a fresh Review task for only PR #61 and REQ-MODEL-001. Supply the bounded
-requirement and dependency summaries, Issue #60 acceptance criteria, M3 plan,
-scoped architecture/model-format/math contracts, complete PR diff, tests, and
-benchmark evidence to a fresh read-only `math_reviewer`. Record findings
-without repairing production code in the same task. Do not begin REQ-EXEC-001.
+Open a fresh Repair task for only PR #61 findings P2-1 and P3-1. Retain and
+expose complete CPD rank, verified null-space, and projected-energy assembly
+evidence in immutable fitted-model diagnostics, with the required deterministic
+regression. Clarify that global anisotropy consumes points in its caller's
+current coordinate system and distinguish those derivatives from external
+original-coordinate fitted-model outputs. Run focused checks during repair,
+then the complete standard gate on the stable final head, update evidence,
+push, and stop for a fresh independent re-review. Do not begin REQ-EXEC-001.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #60
 - Implementation: GitHub PR #61
+- Independent review: `docs/reviews/PR-61-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-MODEL-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - Deterministic model inputs: `docs/architecture/MODEL_FORMAT.md`
