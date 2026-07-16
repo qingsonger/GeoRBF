@@ -263,8 +263,9 @@ truthful integration state in an isolated change. Do not begin REQ-SOLVE-001.
 - Post-merge `main` CI run 29464518016 passed the complete three-platform
   correctness, benchmark-smoke, and registry gate on exact merge commit
   `aea272cedf43dfa8fd7b59ed31324fa582fcc858`.
-- The integration-state pull request is pending creation and contains only the
-  registry and evidence changes described below.
+- Integration-state PR #56 contains only the registry and evidence changes
+  described below and remains Draft until its exact final evidence head is
+  green.
 
 The isolated integration-state change records REQ-FIELD-001 as `integrated`
 and advances the bounded handoff without starting REQ-SOLVE-001. It changes no

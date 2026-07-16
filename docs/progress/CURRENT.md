@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-FIELD-001, Issue #54 (closed)
 - Implementation pull request: #55, squash-merged as `aea272c`
 - Integration-state branch: `codex/req-field-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #56 (Draft until final evidence is green)
 - Review record: `docs/reviews/PR-55-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-SOLVE-001 (`planned`)
@@ -38,8 +38,10 @@ records, benchmark reports, Git, and GitHub.
   requirement checks, and `git diff --check`.
 - Exact Ready-head and post-merge `main` three-platform gates are green as
   recorded above.
-- The integration-state branch must pass the complete local standard gate and
-  `git diff --check` after its final evidence update.
+- Exact integration-state head `c4c5af5` passed the complete local standard
+  gate and `git diff --check`. This subsequent PR-link update changes only
+  review, history, and bounded handoff evidence, so that immutable-head gate
+  remains applicable.
 
 ## Next task
 
@@ -51,7 +53,7 @@ fresh Implement task. Perform the mandatory preflight and use
 
 - Acceptance criteria and exclusions: GitHub Issue #54
 - Merged implementation: GitHub PR #55
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #56
 - Requirement summary: `changes/REQ-FIELD-001.md`
 - Mathematical contract: `docs/math/MATH_SPEC.md`
 - Architecture contract: `docs/architecture/ARCHITECTURE.md`
