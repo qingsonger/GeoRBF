@@ -6,9 +6,10 @@
 - Branch: `codex/req-solve-001-dense-equality-solvers`
 - Reviewed head: `0b3ae418b0668cfcf343a6357af299b0c1f60219`
 - Re-reviewed repair head: `9361de7c4215eb8b663e24aec35165e0ee5ffad0`
+- Clean re-reviewed repair head: `56397625cca96252d9fce171bceedb5f1e8e9fda`
 - Base head: `66d9796963f57769f0d5c05dc535c3ae19e53d65`
 - Review date: 2026-07-16
-- Result: P1-1 remains open after repair; PR remains Draft
+- Result: clean second re-review; P1-1 is closed and no P0-P3 finding remains
 
 ## Scope and independence
 
@@ -185,3 +186,48 @@ This is repair evidence, not independent finding closure. PR #58 remains
 Draft, REQ-SOLVE-001 remains `implemented`, and a fresh read-only re-review
 must confirm P1-1 is closed without new P0-P3 findings before any Ready or
 integration action.
+
+## Second fresh independent re-review
+
+A fresh read-only project `math_reviewer` independently inspected exact repair
+head `56397625cca96252d9fce171bceedb5f1e8e9fda` against base
+`66d9796963f57769f0d5c05dc535c3ae19e53d65`. It received only the bounded
+requirement and dependency summaries, Issue #57 acceptance criteria, the M3
+plan, scoped normative documents, complete PR and repair diffs, and recorded
+validation evidence. It made no repository or remote changes.
+
+P1-1 is closed. `DenseEqualitySystem::try_from_field` is private at
+`crates/georbf/src/solver.rs:335`, while public `try_solve_field` selects the
+smaller retained field or explicit solver memory limit, includes the still-live
+field matrix and right-hand side in the peak estimate, and enforces that limit
+before invoking the private copy at lines 995-1008. The compile-fail Rustdoc at
+lines 13-17 passed and proves an external caller cannot use the former direct
+conversion. The focused repair changed no numerical path or memory estimate.
+
+The reviewer also checked the complete PR for formulae, signs, dimensions,
+SPD and indefinite selection, congruence scaling, rank and condition policy,
+hard constraints, explicit regularization, hidden fallback or pseudoinverse,
+unchanged-factorization refinement, exact original-unit residuals,
+allocations, diagnostics, interface dispositions, and benchmark routing. It
+found no P0, P1, P2, or P3 issue.
+
+Independent bounded validation passed all eleven public solver tests, all
+three private solver regressions, the complete workspace Rustdoc set including
+the new compile-fail case, the runnable example, the two-iteration 64-by-64
+Cholesky/LBLT benchmark smoke, all 58 requirement checks, and
+`git diff --check`. Draft Ubuntu CI run 29470504173 also passed on exact
+re-reviewed head `5639762`; the Ready-only Windows, Ubuntu, macOS, and
+benchmark-smoke matrix has not run.
+
+Residual coverage gaps remain non-findings: no production regression forces
+an accepted refinement correction; independent row scaling reaches the
+private rank review rather than the public symmetric solve; exact-accumulator
+tests do not exhaust cancellation, underflow rejection, or overflow
+boundaries; and memory accounting is conservative payload estimation rather
+than allocator or operating-system resident-set instrumentation.
+
+PR #58 remains Draft and REQ-SOLVE-001 remains `implemented`. A fresh Review
+task may now perform the mandatory integration sequence: mark the PR Ready,
+wait for the complete three-platform and benchmark-smoke CI on that exact
+ready head, merge exactly once only if it is green, and record truthful
+integration state. Do not begin REQ-MODEL-001 in this task.
