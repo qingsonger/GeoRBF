@@ -231,3 +231,26 @@ task may now perform the mandatory integration sequence: mark the PR Ready,
 wait for the complete three-platform and benchmark-smoke CI on that exact
 ready head, merge exactly once only if it is green, and record truthful
 integration state. Do not begin REQ-MODEL-001 in this task.
+
+## Integration result
+
+The fresh integration task confirmed that post-review commit
+`1ca3c171307f3abf250b30e06e321bf96d1dc9dd` changes only this review record
+and the bounded handoff relative to independently reviewed repair head
+`56397625cca96252d9fce171bceedb5f1e8e9fda`. It changes no production code,
+test, manifest, schema, CI, benchmark input, or dependency.
+
+Exact Ready head `1ca3c171307f3abf250b30e06e321bf96d1dc9dd` passed the complete Windows,
+Ubuntu, and macOS correctness matrix with every benchmark-smoke workload in CI
+run 29474665806. PR #58 then squash-merged exactly once as
+`3ccf7842b6e3cf4ef3fd783051b237847ea4c501`, and Issue #57 closed as completed.
+Post-merge `main` run 29475146095 passed the same complete three-platform
+correctness, benchmark-smoke, and requirement-registry gate on that exact
+merge commit.
+
+The isolated integration-state change updates only the registry, this review
+evidence, the history index, and the bounded handoff. It changes no production
+code, tests, manifests, schemas, CI, build inputs, APIs, numerical behavior,
+dependencies, tags, or releases. REQ-SOLVE-001 may therefore be recorded as
+`integrated`; REQ-MODEL-001 must begin only in a fresh task after the isolated
+integration-state pull request is green and merged.
