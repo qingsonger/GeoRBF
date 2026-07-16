@@ -328,7 +328,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper consumes the frozen C ABI rather than exposing a separate numerical implementation"
     python_api: "N/A: no stable schema-backed fitting surface exists before fitted-model and binding requirements"
     benchmark: implemented
-    status: implemented
+    status: integrated
 
   - id: REQ-MODEL-001
     title: Immutable fitted field evaluation

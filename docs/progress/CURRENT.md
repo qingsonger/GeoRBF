@@ -6,53 +6,56 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete / clean re-review; integration sequence required
-- Requirement: REQ-SOLVE-001, Issue #57
-- Branch: `codex/req-solve-001-dense-equality-solvers`
-- Draft pull request: #58
-- Registry state: `implemented`
-- Dependencies: REQ-SPIKE-001, REQ-SPIKE-002, and REQ-FIELD-001 are integrated
+- Mode: Integration state / REQ-SOLVE-001 complete
+- Requirement: REQ-SOLVE-001, Issue #57 (closed)
+- Implementation pull request: #58, squash-merged as `3ccf784`
+- Integration-state branch: `codex/req-solve-001-integration-state`
+- Integration-state pull request: #59 (Draft until final evidence is green)
+- Review record: `docs/reviews/PR-58-INDEPENDENT-REVIEW.md`
+- Registry state in this change: `integrated`
+- Next eligible requirement: REQ-MODEL-001 (`planned`)
 
-## Review result
+## Integration result
 
-- A fresh read-only `math_reviewer` inspected exact repair head `5639762`
-  against base `66d9796` and found no P0, P1, P2, or P3 issue.
-- P1-1 is closed: `DenseEqualitySystem::try_from_field` is private, and public
-  `try_solve_field` enforces the smaller retained field or solver limit before
-  the private copy while counting the still-live field matrix and right-hand
-  side.
-- The compile-fail Rustdoc proves external callers cannot invoke the former
-  conversion. The repair changed no solver mathematics or peak estimate.
-- Complete independent evidence and residual non-finding risks are recorded in
-  `docs/reviews/PR-58-INDEPENDENT-REVIEW.md`.
+- A fresh read-only `math_reviewer` confirmed P1-1 is closed and found no P0,
+  P1, P2, or P3 issue in the complete implementation and repair diff.
+- Exact Ready head `1ca3c17` passed the complete Windows, Ubuntu, and macOS CI
+  matrix with every benchmark-smoke workload in run 29474665806.
+- PR #58 squash-merged exactly once as `3ccf784`; Issue #57 closed as
+  completed.
+- Post-merge `main` run 29475146095 passed the same complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate.
+- This isolated integration-state change updates only registry and progress
+  evidence. It changes no production code, tests, manifest, schema, CI, build
+  input, API, numerical behavior, dependency, tag, or release.
 
 ## Validation state
 
-- The fresh reviewer independently passed all eleven public solver tests, all
-  three private solver regressions, workspace Rustdoc including the new
-  compile-fail case, the runnable example, two-iteration 64-by-64 Cholesky/LBLT
-  benchmark smoke, all 58 requirement checks, and `git diff --check`.
-- Exact repair head `5639762` had already passed the complete local standard
-  gate after its final production and Rustdoc change. This Review task changes
-  only the review record and bounded handoff.
-- Draft Ubuntu CI run 29470504173 passed on exact repair head `5639762`. The
-  Ready-only Windows, Ubuntu, macOS, and benchmark-smoke matrix has not run.
+- The implementation and repair heads passed focused checks and the complete
+  local standard gate; the clean reviewer independently repeated all public
+  and private solver regressions, workspace Rustdoc, the example, benchmark
+  smoke, all 58 requirement checks, and `git diff --check`.
+- Exact implementation Ready-head and post-merge `main` three-platform gates
+  are green as recorded above.
+- The isolated integration-state registry head passed the complete local
+  standard gate and `git diff --check`. This subsequent validation-note update
+  changes only bounded handoff evidence, so that immutable-head gate remains
+  applicable.
 
 ## Next task
 
-Open a fresh Review/integration task for PR #58. Confirm the post-review head
-changes only review evidence and this bounded handoff, synchronize PR evidence,
-mark the PR Ready, and wait for the complete Windows, Ubuntu, macOS, and
-benchmark-smoke CI on that exact ready head. Merge exactly once only when that
-CI is green, then record truthful integration state in an isolated change.
-Stop without beginning REQ-MODEL-001.
+After the isolated integration-state pull request is green and merged, open a
+fresh Implement task. Perform the mandatory preflight and use
+`cargo xtask requirements next`; do not start REQ-MODEL-001 in this task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #57
-- Implementation: GitHub PR #58
+- Merged implementation: GitHub PR #58
+- Integration-state pull request: GitHub PR #59
 - Requirement summary: `changes/REQ-SOLVE-001.md`
-- Independent review: `docs/reviews/PR-58-INDEPENDENT-REVIEW.md`
+- Independent review and repair evidence:
+  `docs/reviews/PR-58-INDEPENDENT-REVIEW.md`
 - Solver policy: `docs/architecture/SOLVER_POLICY.md`
 - Backend decision and production re-audit:
   `docs/adr/ADR-0010-nalgebra-dense-factorization-backend.md`
