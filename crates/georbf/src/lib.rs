@@ -13,7 +13,8 @@
 //! assembly, plus checked dense equality solving with explicit numerical
 //! policy and original-unit diagnostics, and immutable fitted fields with
 //! capability-gated original-coordinate value, gradient, and Hessian
-//! evaluation.
+//! evaluation, plus stable source-aware structured error codes for adapter and
+//! orchestration boundaries.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -21,6 +22,7 @@
 pub mod anisotropy;
 pub mod coordinates;
 pub mod cpd;
+pub mod diagnostics;
 pub mod dimension;
 pub mod field;
 pub mod functional;
@@ -46,6 +48,13 @@ pub use cpd::{
     CpdError, CpdIncompleteRankDiagnostics, CpdMatrix, CpdMatrixNorms, CpdNullSpace,
     CpdNullSpaceQuality, CpdRankDecision, CpdRankDiagnostics, CpdStorage, CpdWeightOrigin,
     CpdWeights,
+};
+pub use diagnostics::{
+    CancellationDiagnostic, CapabilityDiagnostic, ConditioningDiagnostic, ContrastDiagnostic,
+    DiagnosticPath, DiagnosticPathError, DiagnosticPathField, DiagnosticTextField,
+    DiagnosticValueError, ErrorCategory, ErrorCode, GaugeDiagnostic, GeoRbfError,
+    InfeasibilityDiagnostic, InputDiagnostic, LevelId, MemoryDiagnostic, RankDiagnostic,
+    VersionDiagnostic,
 };
 pub use dimension::{Dim, SupportedDimension};
 pub use field::{

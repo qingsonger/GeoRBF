@@ -122,6 +122,18 @@ rejected when metadata declares only away-from-center support. The layer
 performs no finite differences, hidden coefficient repair, persistence I/O,
 schema migration, contouring, or adapter-side evaluation.
 
+The diagnostics layer owns source-aware orchestration and adapter-boundary
+failures. A `DiagnosticPath` can retain an input path and one-based line,
+semantic field path, stable observation identifier, stable level identifier,
+and optional constraint group without exposing a schema or language-specific
+object. `GeoRbfError` distinguishes input, capability, rank, gauge, contrast,
+infeasibility, conditioning, memory, cancellation, and version failures.
+Every category has an explicit numeric and symbolic `ErrorCode`; these values
+are stable public data, while Rust enum layout, `Debug` text, and memory layout
+are not ABI or persistence formats. Backend-specific rank, residual, and
+factorization records remain in their numerical layers and can be retained as
+more detailed evidence beside this common boundary taxonomy.
+
 ## Runtime behavior
 
 Long operations accept cancellation, progress, explicit thread count, and
@@ -129,6 +141,12 @@ determinism through interfaces. The core emits no stdout or stderr output.
 User input returns structured errors rather than panicking. A fitted model is
 immutable, `Send + Sync`, independent of its builder, and deterministic to
 serialize.
+
+Diagnostic display text is deterministic and begins with the symbolic error
+code, but adapters branch on `ErrorCode` and typed evidence rather than parsing
+display strings. CLI exit statuses, the stable C status ABI, the C++ exception
+or result policy, Python exception classes, and persisted schema fields remain
+separate later requirements that map to this one Rust source of truth.
 
 Dense assembly computes only required symmetric work in blocks and reuses
 per-thread storage. Compact-support paths use a neighborhood index and sparse
