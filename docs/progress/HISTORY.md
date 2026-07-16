@@ -24,6 +24,7 @@ available in Git history through commit `a2be099`.
 | REQ-CPD-001 | #45 | #46 | #47 | `docs/reviews/PR-46-INDEPENDENT-REVIEW.md` |
 | REQ-SPIKE-001 | #48 | #49 | #50 | `docs/reviews/PR-49-INDEPENDENT-REVIEW.md` |
 | REQ-IR-001 | #51 | #52 | #53 | `docs/reviews/PR-52-INDEPENDENT-REVIEW.md` |
+| REQ-FIELD-001 | #54 | #55 | #56 | `docs/reviews/PR-55-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
@@ -39,4 +40,4 @@ GitHub. This file is an index, not a second completion registry.
 ## Milestone transition
 
 M0, M1, and M2 are complete. The isolated Issue #31 workflow-efficiency repair
-is integrated. M3 continues with REQ-FIELD-001 after REQ-IR-001 integration.
+is integrated. M3 continues with REQ-SOLVE-001 after REQ-FIELD-001 integration.

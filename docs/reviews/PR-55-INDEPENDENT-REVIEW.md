@@ -249,3 +249,25 @@ review evidence, mark the resulting exact head Ready, and wait for the complete
 Windows, Ubuntu, and macOS correctness matrix with every benchmark smoke
 workload. Merge exactly once only when that full gate is green, then record
 truthful integration state in an isolated change. Do not begin REQ-SOLVE-001.
+
+## Integration evidence
+
+- Clean-review evidence was pushed in documentation-only commit
+  `eb914ebebdc66956769a03bb983be52a95c691ce`, and PR #55 was marked Ready
+  without changing the independently reviewed implementation.
+- Ready-head CI run 29464034282 passed Windows, Ubuntu, and macOS on exact head
+  `eb914ebebdc66956769a03bb983be52a95c691ce`, including every benchmark smoke
+  workload and the requirement-registry gate.
+- PR #55 squash-merged exactly once as
+  `aea272cedf43dfa8fd7b59ed31324fa582fcc858`; Issue #54 closed as completed.
+- Post-merge `main` CI run 29464518016 passed the complete three-platform
+  correctness, benchmark-smoke, and registry gate on exact merge commit
+  `aea272cedf43dfa8fd7b59ed31324fa582fcc858`.
+- Integration-state PR #56 contains only the registry and evidence changes
+  described below and remains Draft until its exact final evidence head is
+  green.
+
+The isolated integration-state change records REQ-FIELD-001 as `integrated`
+and advances the bounded handoff without starting REQ-SOLVE-001. It changes no
+production code, tests, manifests, schemas, CI, build inputs, APIs, numerical
+behavior, dependencies, tags, or releases.
