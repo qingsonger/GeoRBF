@@ -13,6 +13,8 @@ selected factorization, at most four refinement corrections, and scaled plus
 exact-binary original-unit residual review. The SPD workload selects checked
 Cholesky. The indefinite workload consists of 32 coupled two-variable blocks
 with a zero leading diagonal and selects symmetric-pivoted Bunch--Kaufman LBLT.
+Both workloads supply an explicit 64 MiB solver memory limit; the checked
+64-by-64 peak estimate is enforced before each timed backend dispatch.
 
 Baseline environment: Microsoft Windows NT 10.0.26200.0, 12th Gen Intel Core
 i7-1260P, `x86_64-pc-windows-msvc`, Rust 1.96.1, one benchmark process and one

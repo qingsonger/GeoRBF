@@ -6,45 +6,50 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete / awaiting Repair
+- Mode: Repair complete / awaiting fresh independent re-review
 - Requirement: REQ-SOLVE-001, Issue #57
 - Branch: `codex/req-solve-001-dense-equality-solvers`
 - Draft pull request: #58
 - Registry state: `implemented`
 - Dependencies: REQ-SPIKE-001, REQ-SPIKE-002, and REQ-FIELD-001 are integrated
 
-## Independent review finding
+## Repair state
 
-- P1-1: `solver.rs` constructs and clones nalgebra matrices and allocates
-  RRQR, SVD, factorization, and solve workspaces without checked peak-memory
-  estimation or an explicit limit. Those backend allocations bypass the
-  structured allocation errors, so a finite user-sized system can pass the
-  fallible GeoRBF-owned copies and then abort or panic in the backend.
-- Required repair: add checked peak-working-set arithmetic, enforce an explicit
-  solver memory limit including applicable field execution limits, and add
-  pre-dispatch limit and estimate-overflow regressions.
-- No other P0-P3 finding was found. PR #58 remains Draft and the registry stays
-  `implemented` pending Repair and fresh re-review.
+- The bounded Repair task addressed only P1-1 from the independent review.
+- Every solve now requires a nonzero explicit memory limit. Checked peak
+  arithmetic covers GeoRBF and nalgebra matrix, decomposition, pivot, solve,
+  residual, and refinement storage before backend dispatch; overflow and an
+  insufficient limit are structured errors and accepted diagnostics retain
+  the estimate and limit.
+- `DenseFieldSystem` retains `ExecutionOptions`; `try_solve_field` applies the
+  smaller field or solver limit and checks the field-inclusive estimate before
+  copying the assembled matrix.
+- The implementer has recorded repair evidence but has not independently
+  closed P1-1. PR #58 remains Draft and the registry remains `implemented`.
 
 ## Validation state
 
-- Draft Ubuntu CI run 29467512174 passed on exact reviewed head `0b3ae41`.
-  The Ready-only three-platform and benchmark-smoke matrix did not run.
-- Nine public solver tests, the forced-SVD regression, runnable example,
-  two-iteration Cholesky/LBLT benchmark smoke, all 58 requirement checks, and
-  `git diff --check` passed during Review.
-- The implementation head already passed the complete standard gate recorded
-  in the requirement evidence. This task changes only review and bounded-
-  handoff documentation, so that immutable-code gate remains applicable.
+- Eleven public solver tests and all three private solver regressions passed,
+  including pre-dispatch peak-limit rejection, field-limit propagation, and
+  checked estimate overflow.
+- The runnable example, two-iteration 64-by-64 Cholesky/LBLT benchmark smoke,
+  all 58 requirement checks, focused warning-denying Clippy, and
+  `git diff --check` passed on the repair worktree.
+- After the final production, test, registry, and build-input change, the
+  stable repair head passed formatting, warning-denying workspace Clippy, all-
+  feature workspace tests, workspace doctests, and requirement validation.
+- The prior Draft Ubuntu CI was green on the reviewed code. Fresh Draft CI for
+  the pushed repair head remains remote evidence for the next task; the Ready-
+  only three-platform and benchmark-smoke matrix has not run.
 
 ## Next task
 
-Open a fresh Repair task for PR #58 and address only P1-1 from
-`docs/reviews/PR-58-INDEPENDENT-REVIEW.md`. Reproduce the missing memory-policy
-boundary, add the required regressions, implement the smallest complete repair,
-run focused checks and the final stable-head standard gate, update review
-evidence and this bounded handoff, push, and stop for a fresh independent
-re-review. Do not begin REQ-MODEL-001.
+Open a fresh Review task for PR #58. Supply the read-only independent reviewer
+only the bounded requirement/dependency summaries, normative documents, the
+PR diff including this repair, and validation evidence. Independently verify
+that P1-1's peak model, limit enforcement, field propagation, and regressions
+are complete and check for new P0-P3 findings. Do not repair production code in
+that task and do not begin REQ-MODEL-001.
 
 ## Durable evidence
 

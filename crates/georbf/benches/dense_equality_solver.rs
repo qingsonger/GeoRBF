@@ -2,6 +2,7 @@
 
 use std::error::Error;
 use std::hint::black_box;
+use std::num::NonZeroUsize;
 use std::time::Instant;
 
 use georbf::{
@@ -72,6 +73,7 @@ fn run(
         Regularization::None,
         ConditionPolicy::default(),
         4,
+        NonZeroUsize::new(64 * 1024 * 1024).ok_or("memory limit")?,
     )?;
     let mut checksum = 0.0;
     let started = Instant::now();

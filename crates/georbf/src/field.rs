@@ -34,7 +34,7 @@ use crate::kernel_calculus::SpatialKernelJetPrefix;
 use crate::polynomial::{PolynomialSpace, PolynomialSpaceError};
 use crate::problem_ir::{
     AffineExpression, AffineTerm, CanonicalProblem, CanonicalizationError, Enforcement,
-    ProblemIrError, SemanticProblemIr, SemanticRelation, VariableBlock,
+    ExecutionOptions, ProblemIrError, SemanticProblemIr, SemanticRelation, VariableBlock,
 };
 
 const SYMMETRY_TOLERANCE_FACTOR: f64 = 64.0;
@@ -430,6 +430,7 @@ where
     Dim<D>: SupportedDimension,
 {
     canonical: CanonicalProblem,
+    execution: ExecutionOptions,
     matrix: DenseFieldMatrix,
     rhs: Vec<f64>,
     center_count: usize,
@@ -444,6 +445,11 @@ where
     /// Borrows canonical observation equalities before CPD side-row augmentation.
     pub const fn canonical_problem(&self) -> &CanonicalProblem {
         &self.canonical
+    }
+
+    /// Returns the execution limits retained from the semantic problem.
+    pub const fn execution_options(&self) -> ExecutionOptions {
+        self.execution
     }
 
     /// Borrows the symmetric dense matrix, including CPD polynomial rows.
@@ -800,6 +806,7 @@ where
 
         Ok(DenseFieldSystem {
             canonical,
+            execution: self.semantic.execution_options(),
             matrix: DenseFieldMatrix {
                 dimension: system_dimension,
                 values: dense,

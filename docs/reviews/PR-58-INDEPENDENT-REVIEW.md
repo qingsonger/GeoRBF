@@ -81,10 +81,37 @@ power-of-two case while independent row scaling reaches only private rank
 review; and the exact accumulator regression does not cover cancellation,
 underflow rejection, or overflow boundaries.
 
+## Repair response
+
+The subsequent bounded Repair task addressed only P1-1. `DenseSolveOptions`
+now requires a nonzero explicit memory limit, and checked arithmetic estimates
+the conservative peak before nalgebra dispatch across GeoRBF matrices and
+vectors, RRQR and materialized `R`, bounded-SVD work, Cholesky/LBLT and pivot
+storage, solves, residuals, and refinement candidates. Estimate overflow and
+an insufficient limit are structured `DenseSolveError` variants. Accepted
+diagnostics retain the estimate and effective limit.
+
+`DenseFieldSystem` now retains its semantic `ExecutionOptions`.
+`try_solve_field` applies the smaller field or solver memory limit, counts the
+still-live field matrix and right-hand side, and enforces the limit before the
+solver-owned input copy. The adapter's RRQR helper also bounds the lifetime of
+the QR and materialized `R` allocations before SVD begins.
+
+New regressions prove that a limit between input storage and estimated peak is
+rejected before backend dispatch, an applicable field execution limit is
+enforced before the input copy, and estimate overflow is structured. Eleven
+public solver tests, all three private solver regressions, the runnable
+example, the two-iteration 64-by-64 Cholesky/LBLT benchmark smoke, all 58
+requirement checks, and `git diff --check` passed. The complete stable-head
+standard gate also passed after the final production, test, registry, and
+build-input change.
+
+This is implementation evidence, not an independent finding closure. A fresh
+read-only re-review must verify the peak model and confirm that P1-1 is closed
+without new P0-P3 findings.
+
 ## Disposition
 
-PR #58 must remain Draft and REQ-SOLVE-001 must remain `implemented`. A fresh
-Repair task should address only P1-1, add the specified regressions, run focused
-checks during repair and the complete standard gate on the stable final head,
-update this review evidence and the bounded handoff, push, and stop for a fresh
-independent re-review. Do not begin REQ-MODEL-001.
+PR #58 remains Draft and REQ-SOLVE-001 remains `implemented`. The bounded
+repair response is ready for a fresh independent re-review. Do not begin
+REQ-MODEL-001.

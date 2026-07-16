@@ -146,3 +146,12 @@ library or final CLI promise. The previously rejected alternatives remain
 unchanged: faer expands this dense scope materially, native LAPACK adds
 platform and redistribution choices, and handwritten or non-pivoted production
 factorizations violate the accepted numerical contract.
+
+The PR #58 repair also audited nalgebra's owned allocation shapes: column-
+pivoted QR owns its input clone, diagonal, and pivot sequence and materializes
+`R`; SVD consumes a matrix through bidiagonal storage and linear work vectors
+when singular vectors are disabled; Cholesky owns one matrix; LBLT owns one
+matrix plus pivot pairs and materializes `D` for pivot evidence; each solve
+owns its right-hand side/result vector. The production adapter now includes
+those paths in checked conservative peak accounting and rejects estimate
+overflow or an insufficient explicit limit before backend dispatch.

@@ -320,7 +320,7 @@ requirements:
     priority: P0
     issue: 57
     pull_request: 58
-    tests: [solver-truth, rank-failure, scale-invariance, condition-diagnostics, original-unit-residuals, explicit-regularization]
+    tests: [solver-truth, rank-failure, scale-invariance, condition-diagnostics, original-unit-residuals, explicit-regularization, memory-policy]
     docs: [docs/architecture/SOLVER_POLICY.md, docs/adr/ADR-0010-nalgebra-dense-factorization-backend.md, docs/benchmarks/REQ-SOLVE-001.md, rustdoc]
     rust_api: implemented
     cli: "N/A: no stable fitting command exists before immutable fitted models and versioned schemas"

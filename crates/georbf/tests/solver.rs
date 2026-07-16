@@ -5,24 +5,41 @@ use std::io;
 use std::num::NonZeroUsize;
 
 use georbf::{
-    CenterRepresenter, ConditionPolicy, DenseEqualitySystem, DenseFactorization, DenseRankDecision,
-    DenseSolveError, DenseSolveOptions, Enforcement, ExecutionOptions, FieldProblem,
-    FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm, Gaussian,
+    CenterRepresenter, ConditionPolicy, DenseEqualitySystem, DenseFactorization, DenseFieldSystem,
+    DenseRankDecision, DenseSolveError, DenseSolveOptions, Enforcement, ExecutionOptions,
+    FieldProblem, FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm, Gaussian,
     ObservationFunctional, ObservationId, Point, RadialSeparation, Regularization,
     SemanticConstraint, SemanticExpression, SemanticProblemIr, SemanticProvenance,
     SemanticRelation, SourceLocation, SpatialKernelJet, try_solve_field,
 };
+
+const TEST_MEMORY_LIMIT_BYTES: usize = 64 * 1024 * 1024;
 
 fn options(
     factorization: DenseFactorization,
     regularization: Regularization,
     condition_policy: ConditionPolicy,
 ) -> Result<DenseSolveOptions, Box<dyn Error>> {
+    options_with_limit(
+        factorization,
+        regularization,
+        condition_policy,
+        TEST_MEMORY_LIMIT_BYTES,
+    )
+}
+
+fn options_with_limit(
+    factorization: DenseFactorization,
+    regularization: Regularization,
+    condition_policy: ConditionPolicy,
+    memory_limit_bytes: usize,
+) -> Result<DenseSolveOptions, Box<dyn Error>> {
     Ok(DenseSolveOptions::try_new(
         factorization,
         regularization,
         condition_policy,
         4,
+        NonZeroUsize::new(memory_limit_bytes).ok_or("memory limit")?,
     )?)
 }
 
@@ -48,6 +65,11 @@ fn checked_cholesky_matches_independent_spd_truth() -> Result<(), Box<dyn Error>
     assert_close(solution.values(), &[1.0, 2.0], 8.0 * f64::EPSILON);
     let diagnostics = solution.diagnostics();
     assert_eq!(
+        diagnostics.estimated_peak_memory_bytes,
+        system.try_estimated_peak_memory_bytes()?
+    );
+    assert_eq!(diagnostics.memory_limit_bytes, TEST_MEMORY_LIMIT_BYTES);
+    assert_eq!(
         diagnostics.requested_factorization,
         DenseFactorization::Cholesky
     );
@@ -72,8 +94,9 @@ fn checked_cholesky_matches_independent_spd_truth() -> Result<(), Box<dyn Error>
     Ok(())
 }
 
-#[test]
-fn assembled_field_system_crosses_solver_boundary() -> Result<(), Box<dyn Error>> {
+fn assembled_field_system(
+    execution: ExecutionOptions,
+) -> Result<DenseFieldSystem<1>, Box<dyn Error>> {
     let point = Point::try_new([0.0])?;
     let expression = FunctionalExpr::try_new([FunctionalTerm::try_new(
         1.0,
@@ -101,11 +124,11 @@ fn assembled_field_system_crosses_solver_boundary() -> Result<(), Box<dyn Error>
         Enforcement::Hard,
     )?;
     let problem = FieldProblem::try_new(
-        SemanticProblemIr::try_new([constraint], ExecutionOptions::default())?,
+        SemanticProblemIr::try_new([constraint], execution)?,
         [CenterRepresenter::new(expression)],
     )?;
     let kernel = Gaussian::try_new(1.0)?;
-    let assembled = problem.try_assemble(kernel.metadata(), |query, center, _| {
+    Ok(problem.try_assemble(kernel.metadata(), |query, center, _| {
         let separation = RadialSeparation::try_new(query, center)
             .map_err(|error| io::Error::other(error.to_string()))?;
         let radial = kernel
@@ -116,7 +139,12 @@ fn assembled_field_system_crosses_solver_boundary() -> Result<(), Box<dyn Error>
                 .map_err(|error| io::Error::other(error.to_string()))?
                 .into(),
         )
-    })?;
+    })?)
+}
+
+#[test]
+fn assembled_field_system_crosses_solver_boundary() -> Result<(), Box<dyn Error>> {
+    let assembled = assembled_field_system(ExecutionOptions::default())?;
     let solution = try_solve_field(
         &assembled,
         options(
@@ -126,6 +154,53 @@ fn assembled_field_system_crosses_solver_boundary() -> Result<(), Box<dyn Error>
         )?,
     )?;
     assert_close(solution.values(), &[3.0], f64::EPSILON);
+    Ok(())
+}
+
+#[test]
+fn field_execution_memory_limit_is_enforced_before_solver_copy() -> Result<(), Box<dyn Error>> {
+    let field_limit = NonZeroUsize::new(1).ok_or("field memory limit")?;
+    let assembled = assembled_field_system(ExecutionOptions::new(true, None, Some(field_limit)))?;
+    let result = try_solve_field(
+        &assembled,
+        options(
+            DenseFactorization::Cholesky,
+            Regularization::None,
+            ConditionPolicy::default(),
+        )?,
+    );
+    assert!(matches!(
+        result,
+        Err(DenseSolveError::MemoryLimitExceeded { limit_bytes: 1, .. })
+    ));
+    Ok(())
+}
+
+#[test]
+fn peak_limit_between_input_and_working_set_rejects_before_backend_dispatch()
+-> Result<(), Box<dyn Error>> {
+    let system =
+        DenseEqualitySystem::try_from_row_major(2, vec![4.0, 1.0, 1.0, 3.0], vec![6.0, 7.0])?;
+    let input_bytes = (4 + 2) * size_of::<f64>();
+    let limit_bytes = input_bytes + 1;
+    let result = system.try_solve(options_with_limit(
+        DenseFactorization::Cholesky,
+        Regularization::None,
+        ConditionPolicy::default(),
+        limit_bytes,
+    )?);
+    match result {
+        Err(DenseSolveError::MemoryLimitExceeded {
+            estimated_peak_bytes,
+            limit_bytes: actual_limit,
+        }) => {
+            assert!(estimated_peak_bytes > input_bytes);
+            assert_eq!(actual_limit, limit_bytes);
+        }
+        other => {
+            return Err(format!("expected structured memory-limit failure, got {other:?}").into());
+        }
+    }
     Ok(())
 }
 

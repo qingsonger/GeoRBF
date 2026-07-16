@@ -8,6 +8,7 @@
 
 use std::error::Error;
 use std::fmt;
+use std::num::NonZeroUsize;
 
 use nalgebra::{
     DMatrix, DVector, Dyn,
@@ -22,6 +23,9 @@ const SVD_MAX_ITERATIONS: usize = 10_000;
 const AMBIGUITY_FACTOR: f64 = 16.0;
 const RESIDUAL_FACTOR: f64 = 128.0;
 const MAX_REFINEMENT_STEPS: usize = 8;
+const PEAK_MATRIX_BUFFERS: usize = 6;
+const PEAK_VECTOR_BUFFERS: usize = 32;
+const PEAK_INDEX_PAIR_BUFFERS: usize = 2;
 
 /// Explicit dense factorization used for a square equality system.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -129,6 +133,7 @@ pub struct DenseSolveOptions {
     regularization: Regularization,
     condition_policy: ConditionPolicy,
     maximum_refinement_steps: usize,
+    memory_limit_bytes: NonZeroUsize,
 }
 
 impl DenseSolveOptions {
@@ -137,12 +142,14 @@ impl DenseSolveOptions {
     /// # Errors
     ///
     /// Rejects a nonpositive or nonfinite explicit regularization amount and
-    /// an unbounded refinement count.
+    /// an unbounded refinement count. The nonzero memory limit is mandatory so
+    /// no backend allocation path is dispatched without a finite policy cap.
     pub fn try_new(
         factorization: DenseFactorization,
         regularization: Regularization,
         condition_policy: ConditionPolicy,
         maximum_refinement_steps: usize,
+        memory_limit_bytes: NonZeroUsize,
     ) -> Result<Self, DenseSolverConfigurationError> {
         if let Regularization::Explicit(value) = regularization
             && (!value.is_finite() || value <= 0.0)
@@ -160,6 +167,7 @@ impl DenseSolveOptions {
             regularization,
             condition_policy,
             maximum_refinement_steps,
+            memory_limit_bytes,
         })
     }
 
@@ -182,6 +190,17 @@ impl DenseSolveOptions {
     #[must_use]
     pub const fn maximum_refinement_steps(self) -> usize {
         self.maximum_refinement_steps
+    }
+
+    /// Returns the explicit peak-working-set limit in bytes.
+    #[must_use]
+    pub const fn memory_limit_bytes(self) -> NonZeroUsize {
+        self.memory_limit_bytes
+    }
+
+    const fn with_memory_limit_bytes(mut self, memory_limit_bytes: NonZeroUsize) -> Self {
+        self.memory_limit_bytes = memory_limit_bytes;
+        self
     }
 }
 
@@ -331,6 +350,19 @@ impl DenseEqualitySystem {
         &self.rhs
     }
 
+    /// Returns the checked conservative peak-working-set estimate for a direct solve.
+    ///
+    /// The estimate includes GeoRBF-owned input, equilibration and refinement
+    /// buffers plus nalgebra RRQR, SVD, factorization, and solve storage.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DenseSolveError::MemoryEstimateOverflow`] if the byte
+    /// arithmetic cannot be represented by `usize`.
+    pub fn try_estimated_peak_memory_bytes(&self) -> Result<usize, DenseSolveError> {
+        estimate_peak_memory_bytes(self.dimension, SolveMemoryContext::OwnedSystem)
+    }
+
     /// Solves this system with one explicit numerical policy.
     ///
     /// # Errors
@@ -338,7 +370,9 @@ impl DenseEqualitySystem {
     /// Returns structured rank, conditioning, scaling, factorization, finite-
     /// result, or residual-review errors without changing the requested problem.
     pub fn try_solve(&self, options: DenseSolveOptions) -> Result<DenseSolution, DenseSolveError> {
-        solve_validated(self, options)
+        let estimated_peak_memory_bytes = self.try_estimated_peak_memory_bytes()?;
+        enforce_memory_limit(estimated_peak_memory_bytes, options.memory_limit_bytes)?;
+        solve_validated(self, options, estimated_peak_memory_bytes)
     }
 }
 
@@ -607,6 +641,10 @@ pub struct DenseResidualDiagnostics {
 #[derive(Clone, Debug, PartialEq)]
 #[must_use]
 pub struct DenseSolveDiagnostics {
+    /// Conservative peak-working-set estimate checked before backend dispatch.
+    pub estimated_peak_memory_bytes: usize,
+    /// Effective explicit memory limit, after applying a field execution limit.
+    pub memory_limit_bytes: usize,
     /// Caller-requested factorization.
     pub requested_factorization: DenseFactorization,
     /// Actually used factorization; always identical without fallback.
@@ -672,6 +710,18 @@ pub enum DenseSolveError {
         storage: DenseSolverStorage,
         /// Requested entries.
         requested: usize,
+    },
+    /// Checked peak-working-set byte arithmetic overflowed.
+    MemoryEstimateOverflow {
+        /// Matrix dimension whose estimate could not be represented.
+        dimension: usize,
+    },
+    /// The conservative peak-working-set estimate exceeds the effective limit.
+    MemoryLimitExceeded {
+        /// Checked conservative peak estimate.
+        estimated_peak_bytes: usize,
+        /// Explicit effective policy limit.
+        limit_bytes: usize,
     },
     /// A rank threshold dimension could not be represented safely.
     DimensionTooLarge {
@@ -766,6 +816,17 @@ impl fmt::Display for DenseSolveError {
                     "could not allocate {requested} entries for {storage}"
                 )
             }
+            Self::MemoryEstimateOverflow { dimension } => write!(
+                formatter,
+                "peak-working-set estimate for dimension {dimension} overflows"
+            ),
+            Self::MemoryLimitExceeded {
+                estimated_peak_bytes,
+                limit_bytes,
+            } => write!(
+                formatter,
+                "estimated peak working set {estimated_peak_bytes} bytes exceeds explicit limit {limit_bytes} bytes"
+            ),
             Self::DimensionTooLarge { dimension } => {
                 write!(
                     formatter,
@@ -848,6 +909,66 @@ impl Error for DenseSolveError {
     }
 }
 
+#[derive(Clone, Copy)]
+enum SolveMemoryContext {
+    OwnedSystem,
+    FieldSystem,
+}
+
+fn estimate_peak_memory_bytes(
+    dimension: usize,
+    context: SolveMemoryContext,
+) -> Result<usize, DenseSolveError> {
+    let overflow = || DenseSolveError::MemoryEstimateOverflow { dimension };
+    let entries = dimension.checked_mul(dimension).ok_or_else(overflow)?;
+    let matrix_bytes = entries.checked_mul(size_of::<f64>()).ok_or_else(overflow)?;
+    let vector_bytes = dimension
+        .checked_mul(size_of::<f64>())
+        .ok_or_else(overflow)?;
+    let matrix_payload = matrix_bytes
+        .checked_mul(PEAK_MATRIX_BUFFERS)
+        .ok_or_else(overflow)?;
+    let vector_payload = vector_bytes
+        .checked_mul(PEAK_VECTOR_BUFFERS)
+        .ok_or_else(overflow)?;
+    let index_payload = dimension
+        .checked_mul(size_of::<(usize, usize)>())
+        .and_then(|bytes| bytes.checked_mul(PEAK_INDEX_PAIR_BUFFERS))
+        .ok_or_else(overflow)?;
+    let fixed_payload = size_of::<DenseRankDiagnostics>()
+        .checked_mul(2)
+        .and_then(|bytes| bytes.checked_add(size_of::<DenseSolveDiagnostics>()))
+        .and_then(|bytes| bytes.checked_add(size_of::<ExactDotAccumulator>()))
+        .ok_or_else(overflow)?;
+    let field_source_payload = match context {
+        SolveMemoryContext::OwnedSystem => 0,
+        SolveMemoryContext::FieldSystem => matrix_bytes
+            .checked_add(vector_bytes)
+            .ok_or_else(overflow)?,
+    };
+
+    matrix_payload
+        .checked_add(vector_payload)
+        .and_then(|bytes| bytes.checked_add(index_payload))
+        .and_then(|bytes| bytes.checked_add(fixed_payload))
+        .and_then(|bytes| bytes.checked_add(field_source_payload))
+        .ok_or_else(overflow)
+}
+
+fn enforce_memory_limit(
+    estimated_peak_bytes: usize,
+    memory_limit_bytes: NonZeroUsize,
+) -> Result<(), DenseSolveError> {
+    let limit_bytes = memory_limit_bytes.get();
+    if estimated_peak_bytes > limit_bytes {
+        return Err(DenseSolveError::MemoryLimitExceeded {
+            estimated_peak_bytes,
+            limit_bytes,
+        });
+    }
+    Ok(())
+}
+
 /// Solves one assembled field system through the solver-owned matrix boundary.
 ///
 /// # Errors
@@ -860,9 +981,21 @@ pub fn try_solve_field<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
-    DenseEqualitySystem::try_from_field(system)
-        .map_err(DenseSolveError::InvalidSystem)?
-        .try_solve(options)
+    let field_memory_limit = system.execution_options().memory_limit_bytes();
+    let effective_memory_limit = field_memory_limit.map_or(options.memory_limit_bytes, |field| {
+        if field.get() < options.memory_limit_bytes.get() {
+            field
+        } else {
+            options.memory_limit_bytes
+        }
+    });
+    let options = options.with_memory_limit_bytes(effective_memory_limit);
+    let estimated_peak_memory_bytes =
+        estimate_peak_memory_bytes(system.matrix().dimension(), SolveMemoryContext::FieldSystem)?;
+    enforce_memory_limit(estimated_peak_memory_bytes, effective_memory_limit)?;
+    let owned =
+        DenseEqualitySystem::try_from_field(system).map_err(DenseSolveError::InvalidSystem)?;
+    solve_validated(&owned, options, estimated_peak_memory_bytes)
 }
 
 #[derive(Clone, Debug)]
@@ -881,6 +1014,7 @@ enum SvdReviewMode {
 fn solve_validated(
     system: &DenseEqualitySystem,
     options: DenseSolveOptions,
+    estimated_peak_memory_bytes: usize,
 ) -> Result<DenseSolution, DenseSolveError> {
     let original_rank = diagnose_rank(&system.matrix, system.dimension, SvdReviewMode::Bounded)?;
     let amount = options.regularization.amount();
@@ -1010,6 +1144,8 @@ fn solve_validated(
     let condition_warning =
         effective_rank.diagnostics.condition_estimate > options.condition_policy.warning_threshold;
     let diagnostics = DenseSolveDiagnostics {
+        estimated_peak_memory_bytes,
+        memory_limit_bytes: options.memory_limit_bytes.get(),
         requested_factorization: options.factorization,
         actual_factorization: options.factorization,
         requested_regularization: options.regularization,
@@ -1057,6 +1193,22 @@ fn exact_symmetry_review(matrix: &[f64], dimension: usize) -> Result<(), DenseEq
     Ok(())
 }
 
+fn diagnose_rrqr(
+    backend: &DMatrix<f64>,
+    dimension: usize,
+) -> Result<(Vec<f64>, f64, usize), DenseSolveError> {
+    let qr = backend.clone().col_piv_qr();
+    let r = qr.r();
+    let mut diagonal = try_with_capacity(dimension, DenseSolverStorage::RrqrDiagonal)?;
+    diagonal.extend((0..dimension).map(|index| r[(index, index)].abs()));
+    if diagonal.iter().any(|value| !value.is_finite()) {
+        return Err(DenseSolveError::NonFiniteRankEvidence);
+    }
+    let threshold = rank_threshold(&diagonal, dimension)?;
+    let rank = diagonal.iter().filter(|value| **value > threshold).count();
+    Ok((diagonal, threshold, rank))
+}
+
 fn diagnose_rank(
     matrix: &[f64],
     dimension: usize,
@@ -1069,18 +1221,7 @@ fn diagnose_rank(
         return Err(DenseSolveError::UnrepresentableMatrixNorms);
     }
     let backend = DMatrix::from_row_slice(dimension, dimension, &equilibrated.values);
-    let qr = backend.clone().col_piv_qr();
-    let r = qr.r();
-    let mut rrqr_diagonal = try_with_capacity(dimension, DenseSolverStorage::RrqrDiagonal)?;
-    rrqr_diagonal.extend((0..dimension).map(|index| r[(index, index)].abs()));
-    if rrqr_diagonal.iter().any(|value| !value.is_finite()) {
-        return Err(DenseSolveError::NonFiniteRankEvidence);
-    }
-    let rrqr_threshold = rank_threshold(&rrqr_diagonal, dimension)?;
-    let rrqr_rank = rrqr_diagonal
-        .iter()
-        .filter(|value| **value > rrqr_threshold)
-        .count();
+    let (rrqr_diagonal, rrqr_threshold, rrqr_rank) = diagnose_rrqr(&backend, dimension)?;
     let svd = match svd_mode {
         SvdReviewMode::Bounded => SVD::try_new(
             backend,
@@ -1765,7 +1906,20 @@ fn any_bits_below(words: &[u64; EXACT_DOT_LIMBS], exclusive: usize) -> bool {
 mod tests {
     use std::error::Error;
 
-    use super::{DenseRankDecision, DenseSolveError, SvdReviewMode, diagnose_rank};
+    use super::{
+        DenseRankDecision, DenseSolveError, SolveMemoryContext, SvdReviewMode, diagnose_rank,
+        estimate_peak_memory_bytes,
+    };
+
+    #[test]
+    fn peak_memory_estimate_overflow_is_structured() {
+        assert!(matches!(
+            estimate_peak_memory_bytes(usize::MAX, SolveMemoryContext::OwnedSystem),
+            Err(DenseSolveError::MemoryEstimateOverflow {
+                dimension: usize::MAX
+            })
+        ));
+    }
 
     #[test]
     fn forced_svd_nonconvergence_retains_rrqr_evidence() -> Result<(), Box<dyn Error>> {

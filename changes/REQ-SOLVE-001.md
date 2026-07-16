@@ -30,11 +30,21 @@ regularization, condition warning, 2-by-2 pivot use, initial/final scaled and
 original-unit residuals, accepted corrections, and the `128*n*epsilon` residual
 tolerance.
 
+Every solve now requires an explicit nonzero memory limit. Checked arithmetic
+estimates the conservative peak across GeoRBF input, effective, equilibration,
+scaling, residual, and refinement buffers and nalgebra RRQR, materialized-R,
+SVD, Cholesky/LBLT, pivot, and solve storage. Estimate overflow or a limit below
+the peak fails structurally before backend dispatch. Field solves retain and
+apply their `ExecutionOptions` limit before the solver-owned matrix copy, using
+the smaller field or solver limit. Accepted diagnostics record the checked
+estimate and effective limit.
+
 Independent tests cover analytic SPD truth, a mandatory 2-by-2 indefinite
 pivot, wrong-Cholesky rejection, exact rank failure, uniform unit scaling,
 independent row-scale rank invariance, condition warning and rejection,
 exact-binary residual roundoff, explicit regularization, malformed input,
-forced SVD non-convergence, and the assembled `DenseFieldSystem<D>` boundary.
+forced SVD non-convergence, peak-limit pre-dispatch rejection, estimate
+overflow, field-limit propagation, and the assembled `DenseFieldSystem<D>` boundary.
 Rustdoc, a runnable example, a deterministic 64-by-64 Cholesky/LBLT benchmark,
 three-platform benchmark smoke routing, production dependency re-audit,
 registry, and bounded handoff are synchronized.
