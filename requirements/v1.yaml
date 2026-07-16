@@ -341,12 +341,12 @@ requirements:
     tests: [analytic-value-gradient-hessian, cpd-diagnostics-retention, capability-boundaries, multithread-read]
     docs: [docs/architecture/ARCHITECTURE.md, docs/architecture/MODEL_FORMAT.md, docs/benchmarks/REQ-MODEL-001.md, docs/reviews/PR-61-INDEPENDENT-REVIEW.md, rustdoc, crates/georbf/examples/immutable_fitted_field.rs]
     rust_api: implemented
-    cli: "N/A: the stable schema-backed project and model command surface is deferred to M8 CLI and schema requirements"
-    c_api: "N/A: stable opaque fitted-model handles and ABI parity are deferred to the M9 C API requirement"
+    cli: "N/A: the stable schema-backed project and model command surface belongs to M8 CLI and schema requirements"
+    c_api: "N/A: stable opaque fitted-model handles and ABI parity belong to the M9 C API requirement"
     cpp_api: "N/A: the future C++ RAII wrapper consumes the frozen M9 C fitted-model ABI"
-    python_api: "N/A: Python fitted-model construction and evaluation parity are deferred to the M9 binding requirement"
+    python_api: "N/A: Python fitted-model construction and evaluation parity belongs to the M9 binding requirement"
     benchmark: implemented
-    status: implemented
+    status: integrated
 
   - id: REQ-EXEC-001
     title: Deterministic execution controls
