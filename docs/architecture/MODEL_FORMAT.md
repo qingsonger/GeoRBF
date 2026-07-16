@@ -43,9 +43,10 @@ kernel variant and parameters, optional global-anisotropy matrices and
 diagnostics, center representers in assembly order, center weights in the same
 order, complete polynomial multi-indices in canonical basis order, polynomial
 coefficients in that basis order, coordinate metadata, affine normalization,
-value/gradient/Hessian capabilities, build version, and complete assembly and
-solve evidence. A borrowed record view exposes those inputs without copying or
-reordering them.
+value/gradient/Hessian capabilities, build version, general assembly and solve
+evidence, and complete CPD polynomial-action, RRQR/SVD rank, verified
+null-space, and projected-energy evidence when applicable. A borrowed record
+view exposes those inputs without copying or reordering them.
 
 The current fitted model has no schema version, checksum, migration behavior,
 or file reader/writer because those are owned by `REQ-SCHEMA-001`. Callers must

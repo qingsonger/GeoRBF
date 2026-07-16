@@ -338,7 +338,7 @@ requirements:
     priority: P0
     issue: 60
     pull_request: 61
-    tests: [analytic-value-gradient-hessian, capability-boundaries, multithread-read]
+    tests: [analytic-value-gradient-hessian, cpd-diagnostics-retention, capability-boundaries, multithread-read]
     docs: [docs/architecture/ARCHITECTURE.md, docs/architecture/MODEL_FORMAT.md, docs/benchmarks/REQ-MODEL-001.md, docs/reviews/PR-61-INDEPENDENT-REVIEW.md, rustdoc, crates/georbf/examples/immutable_fitted_field.rs]
     rust_api: implemented
     cli: "N/A: the stable schema-backed project and model command surface is deferred to M8 CLI and schema requirements"

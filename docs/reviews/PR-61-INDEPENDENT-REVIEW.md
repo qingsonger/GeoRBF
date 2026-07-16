@@ -116,9 +116,38 @@ normalization and anisotropy transforms, D=3 analytic evaluation truth, and
 mixed-axis polynomial Hessians. The complete Ready-head platform and benchmark
 gate remains intentionally pending.
 
+## Bounded repair evidence
+
+A subsequent Repair task addressed only P2-1 and P3-1. This section records
+implementer evidence and is not a fresh independent re-review.
+
+- `DenseFieldSystem::into_model_parts` now transfers the complete immutable
+  `CpdFieldAssembly<D>` instead of extracting and discarding only its
+  polynomial space.
+- `FittedFieldDiagnostics<D>` retains that evidence and exposes it through
+  both fitted-model diagnostics and `FittedFieldRecord::cpd_assembly`.
+  Polynomial evaluation borrows the same retained assembly object's complete
+  polynomial space, avoiding a duplicate or reconstructable approximation.
+- The CPD model regression now uses four centers with three polynomial terms,
+  repeats the fit, and checks deterministic polynomial-action order, matching
+  complete evidence, full RRQR/SVD rank, a verified 4-by-1 null space and
+  quality bounds, and a finite positive nonempty 1-by-1 projected energy.
+- The mathematical specification, architecture, model-format contract, and
+  anisotropy Rustdoc now state that global anisotropy consumes points and
+  returns pre-transform derivatives in its caller's current coordinate system.
+  They separately identify the fitted-model normalization chain rule that
+  produces external original-coordinate outputs. No numerical behavior or
+  existing combined anisotropy/normalization truth test changed.
+- Focused checks passed: all six model tests, all five field-assembly tests,
+  and all thirteen global-anisotropy tests.
+- The complete local standard gate passed on the final repair tree: format,
+  warning-denying workspace Clippy, all-feature workspace tests, workspace
+  Rustdoc including compile-fail dimension boundaries, all 58 requirement
+  checks, and `git diff --check`.
+
 ## Disposition
 
-PR #61 must remain Draft and REQ-MODEL-001 remains `implemented`. A fresh
-Repair task must address only P2-1 and P3-1, add the required CPD diagnostic
-regression, rerun focused checks and the complete stable-head standard gate,
-push, and stop for a fresh independent re-review. Do not begin REQ-EXEC-001.
+The bounded repair evidence indicates that P2-1 and P3-1 were addressed, but
+this independent review result is not self-updating. PR #61 must remain Draft
+and REQ-MODEL-001 remains `implemented` until a fresh read-only independent
+re-review examines the exact repair head. Do not begin REQ-EXEC-001.

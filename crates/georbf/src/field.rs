@@ -488,9 +488,10 @@ where
         self.diagnostics
     }
 
-    pub(crate) fn into_model_parts(self) -> (FieldAssemblyDiagnostics, Option<PolynomialSpace<D>>) {
-        let polynomial_space = self.cpd.map(|cpd| cpd.polynomial_space);
-        (self.diagnostics, polynomial_space)
+    pub(crate) fn into_model_parts(
+        self,
+    ) -> (FieldAssemblyDiagnostics, Option<CpdFieldAssembly<D>>) {
+        (self.diagnostics, self.cpd)
     }
 }
 

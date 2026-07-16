@@ -37,10 +37,14 @@ reprojection, or construct anisotropy.
 The global-anisotropy layer depends on validated geometry, affine matrix
 inversion, and kernel-calculus jets. It owns fixed D=1/D=2/D=3 distance
 transforms, SPD metrics, explicit condition diagnostics, displacement mapping,
-and the constant-map chain rule through third order. It performs no axis
-estimation, local mixing, kernel-family selection, observation construction,
-assembly, fitting, or solver work. Arbitrary location-dependent metrics remain
-forbidden; the later local-trend layer uses the accepted SPD mixture design.
+and the constant-map chain rule through third order in its caller's current
+coordinate system. It does not identify that system with a fitted model's
+external original coordinates; fitted fields call it in normalized model
+coordinates and apply the affine normalization chain rule afterward. It
+performs no axis estimation, local mixing, kernel-family selection, observation
+construction, assembly, fitting, or solver work. Arbitrary location-dependent
+metrics remain forbidden; the later local-trend layer uses the accepted SPD
+mixture design.
 
 The kernel-calculus layer accepts validated point separations and a
 caller-supplied radial jet. D=2/D=3 away jets include cancellation-resistant
@@ -107,7 +111,9 @@ normalization, and an explicit dense-solve policy. It uses that same retained
 kernel definition for assembly and evaluation, then discards the semantic
 builder, canonical problem, dense matrix, right-hand side, and factorization
 workspace. `FittedField<D>` owns centers, center functionals, coefficients,
-complete CPD polynomial space, capabilities, and assembly/solve diagnostics.
+complete CPD polynomial space, capabilities, general assembly/solve
+diagnostics, and the accepted CPD RRQR/SVD rank decision, verified null-space,
+and projected-energy evidence when applicable.
 Original-coordinate queries are normalized before evaluation; gradients use
 `S^-T`, and Hessians use `S^-T H S^-1`. Directional-derivative centers retain
 the kernel-calculus center-argument sign and require mixed second or third

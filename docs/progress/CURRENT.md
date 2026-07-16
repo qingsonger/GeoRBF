@@ -6,7 +6,7 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete / bounded Repair required
+- Mode: Repair complete / fresh independent re-review required
 - Requirement: REQ-MODEL-001, Issue #60
 - Branch: `codex/req-model-001-immutable-fitted-field`
 - Draft pull request: #61
@@ -19,9 +19,9 @@ records, benchmark reports, Git, and GitHub.
 
 - Added immutable `FittedField<D>` for D=1/D=2/D=3 with one concrete retained
   kernel definition, optional constant global anisotropy, coordinate metadata,
-  affine normalization, centers, coefficients, capabilities, and general
-  assembly/solve diagnostics. The review found that CPD-specific rank,
-  null-space, and projected-energy assembly evidence is not yet retained.
+  affine normalization, centers, coefficients, capabilities, general
+  assembly/solve diagnostics, and complete CPD polynomial-action, RRQR/SVD
+  rank, verified null-space, quality, provenance, and projected-energy evidence.
 - Added one high-level fit boundary that consumes the normalized-coordinate
   `FieldProblem<D>`, assembles and solves with the same retained kernel, and
   discards builder, canonical, dense-system, and factorization state.
@@ -30,8 +30,13 @@ records, benchmark reports, Git, and GitHub.
   mixed second/third derivative contractions, anisotropy chain rules, and
   normalization chain rules.
 - Added complete polynomial Hessians, deterministic borrowed model-record
-  inputs, structured fit/evaluation failures, exact center capability
-  rejection, and immutable `Send + Sync` multithread reads.
+  inputs including complete CPD assembly evidence, structured fit/evaluation
+  failures, exact center capability rejection, and immutable `Send + Sync`
+  multithread reads.
+- Clarified that global anisotropy consumes points and returns pre-transform
+  derivatives in its caller's current coordinate system. In fitted models that
+  caller system is normalized model coordinates; external original-coordinate
+  derivatives are produced afterward by the retained affine normalization.
 - Added six independent analytic/property tests, Rustdoc, a runnable example,
   deterministic D=1/D=2/D=3 benchmark and baseline, CI benchmark smoke routing,
   architecture/model-format updates, and a requirement change fragment.
@@ -42,8 +47,12 @@ records, benchmark reports, Git, and GitHub.
 
 - Focused model tests: six passed, covering Gaussian original-coordinate truth,
   combined anisotropy/normalization derivatives, directional-center signs
-  through third order, CPD quadratic polynomial truth, Matérn capability
-  boundaries, deterministic record order, and concurrent bit-identical reads.
+  through third order, CPD quadratic truth plus deterministic complete
+  four-center/three-term rank, 4-by-1 null-space, quality, and nonempty
+  projected-energy evidence, Matérn capability boundaries, and concurrent
+  bit-identical reads.
+- All five focused field-assembly tests and all thirteen focused
+  global-anisotropy tests passed.
 - Existing polynomial integration tests: ten passed after adding Hessians.
 - Runnable immutable-model example: passed.
 - D=1/D=2/D=3 optimized benchmark smoke: passed with deterministic checksums.
@@ -60,21 +69,24 @@ records, benchmark reports, Git, and GitHub.
 - Exact reviewed head `14d21d1` passed Draft Ubuntu CI run 29480459334:
   format, warning-denying workspace Clippy, all-feature workspace tests,
   workspace Rustdoc, spike gates, and all 58 requirement checks.
-- A fresh read-only `xhigh` mathematical review found one P2 and one P3
-  finding. A separately adjudicated proposed normalization-semantics P1 was
-  rejected because Issue #60 explicitly establishes normalized-model-coordinate
-  kernel evaluation followed by the `S` derivative chain rule.
+- A fresh read-only `xhigh` mathematical review found P2-1 and P3-1. The
+  bounded repair now retains and exposes the discarded CPD evidence and
+  clarifies the anisotropy caller-coordinate contract without changing
+  numerical behavior.
+- The complete local standard gate passed on the final repair tree: format,
+  warning-denying workspace Clippy, all-feature workspace tests, workspace
+  Rustdoc including compile-fail dimension boundaries, all 58 requirement
+  checks, and `git diff --check`.
 
 ## Next task
 
-Open a fresh Repair task for only PR #61 findings P2-1 and P3-1. Retain and
-expose complete CPD rank, verified null-space, and projected-energy assembly
-evidence in immutable fitted-model diagnostics, with the required deterministic
-regression. Clarify that global anisotropy consumes points in its caller's
-current coordinate system and distinguish those derivatives from external
-original-coordinate fitted-model outputs. Run focused checks during repair,
-then the complete standard gate on the stable final head, update evidence,
-push, and stop for a fresh independent re-review. Do not begin REQ-EXEC-001.
+Open a fresh read-only independent Review task for the exact pushed PR #61
+repair head. Supply only the REQ-MODEL-001 summary and dependency closure,
+Issue #60 criteria, M3 plan, scoped normative documents, PR diff, the original
+review findings, and the repair validation evidence. Verify only P2-1 and P3-1
+plus regression risk, update the independent review record, and stop. Keep the
+PR Draft during this re-review; do not mark it ready, merge it, or begin
+REQ-EXEC-001 in the same task.
 
 ## Durable evidence
 

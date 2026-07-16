@@ -14,7 +14,7 @@ use std::fmt;
 use crate::anisotropy::{AnisotropyError, GlobalAnisotropy};
 use crate::coordinates::CoordinateMetadata;
 use crate::dimension::{Dim, SupportedDimension};
-use crate::field::{FieldAssemblyDiagnostics, FieldAssemblyError, FieldProblem};
+use crate::field::{CpdFieldAssembly, FieldAssemblyDiagnostics, FieldAssemblyError, FieldProblem};
 use crate::functional::{CenterRepresenter, FunctionalAtom, FunctionalProvenance};
 use crate::geometry::{Point, Vector};
 use crate::kernel::{
@@ -419,15 +419,30 @@ impl FittedFieldCapabilities {
 /// Immutable assembly and solve evidence retained by a fitted field.
 #[derive(Clone, Debug, PartialEq)]
 #[must_use]
-pub struct FittedFieldDiagnostics {
+pub struct FittedFieldDiagnostics<const D: usize>
+where
+    Dim<D>: SupportedDimension,
+{
     assembly: FieldAssemblyDiagnostics,
+    cpd: Option<CpdFieldAssembly<D>>,
     solve: DenseSolveDiagnostics,
 }
 
-impl FittedFieldDiagnostics {
+impl<const D: usize> FittedFieldDiagnostics<D>
+where
+    Dim<D>: SupportedDimension,
+{
     /// Returns field-assembly symmetry and work-count evidence.
     pub const fn assembly(&self) -> FieldAssemblyDiagnostics {
         self.assembly
+    }
+
+    /// Borrows complete CPD rank, null-space, and projected-energy evidence.
+    ///
+    /// Returns `None` for a strictly positive-definite kernel.
+    #[must_use]
+    pub const fn cpd(&self) -> Option<&CpdFieldAssembly<D>> {
+        self.cpd.as_ref()
     }
 
     /// Borrows complete dense-solve numerical evidence.
@@ -517,9 +532,8 @@ where
     centers: Vec<CenterRepresenter<D>>,
     coefficients: Vec<f64>,
     center_count: usize,
-    polynomial_space: Option<PolynomialSpace<D>>,
     capabilities: FittedFieldCapabilities,
-    diagnostics: FittedFieldDiagnostics,
+    diagnostics: FittedFieldDiagnostics<D>,
 }
 
 impl<const D: usize> FittedField<D>
@@ -565,17 +579,17 @@ where
                 actual: coefficients.len(),
             });
         }
-        let (assembly, polynomial_space) = system.into_model_parts();
-        if polynomial_space
+        let (assembly, cpd) = system.into_model_parts();
+        if cpd
             .as_ref()
-            .map_or(0, PolynomialSpace::term_count)
+            .map_or(0, |evidence| evidence.polynomial_space().term_count())
             != polynomial_count
         {
             return Err(FittedFieldFitError::PolynomialCountMismatch {
                 expected: polynomial_count,
-                actual: polynomial_space
+                actual: cpd
                     .as_ref()
-                    .map_or(0, PolynomialSpace::term_count),
+                    .map_or(0, |evidence| evidence.polynomial_space().term_count()),
             });
         }
         let centers = problem.into_centers();
@@ -608,9 +622,12 @@ where
             centers,
             coefficients,
             center_count,
-            polynomial_space,
             capabilities,
-            diagnostics: FittedFieldDiagnostics { assembly, solve },
+            diagnostics: FittedFieldDiagnostics {
+                assembly,
+                cpd,
+                solve,
+            },
         })
     }
 
@@ -649,7 +666,10 @@ where
     /// Borrows the complete polynomial space when the kernel is CPD.
     #[must_use]
     pub const fn polynomial_space(&self) -> Option<&PolynomialSpace<D>> {
-        self.polynomial_space.as_ref()
+        match self.diagnostics.cpd() {
+            Some(evidence) => Some(evidence.polynomial_space()),
+            None => None,
+        }
     }
 
     /// Borrows polynomial coefficients in deterministic basis order.
@@ -664,7 +684,7 @@ where
     }
 
     /// Borrows retained assembly and solve evidence.
-    pub const fn diagnostics(&self) -> &FittedFieldDiagnostics {
+    pub const fn diagnostics(&self) -> &FittedFieldDiagnostics<D> {
         &self.diagnostics
     }
 
@@ -899,7 +919,7 @@ where
         output: FittedFieldOutput,
         evaluation: &mut NormalizedEvaluation<D>,
     ) -> Result<(), FittedFieldEvaluationError<D>> {
-        let Some(space) = &self.polynomial_space else {
+        let Some(space) = self.polynomial_space() else {
             return Ok(());
         };
         let count = space.term_count();
@@ -1022,6 +1042,12 @@ where
         self.field.polynomial_space()
     }
 
+    /// Borrows complete CPD assembly evidence when the kernel is CPD.
+    #[must_use]
+    pub const fn cpd_assembly(self) -> Option<&'a CpdFieldAssembly<D>> {
+        self.field.diagnostics().cpd()
+    }
+
     /// Borrows polynomial coefficients in deterministic basis order.
     #[must_use]
     pub fn polynomial_coefficients(self) -> &'a [f64] {
@@ -1034,7 +1060,7 @@ where
     }
 
     /// Borrows assembly and solve diagnostics.
-    pub const fn diagnostics(self) -> &'a FittedFieldDiagnostics {
+    pub const fn diagnostics(self) -> &'a FittedFieldDiagnostics<D> {
         self.field.diagnostics()
     }
 }

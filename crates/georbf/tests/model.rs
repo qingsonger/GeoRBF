@@ -6,13 +6,14 @@ use std::sync::Arc;
 
 use georbf::{
     AffineNormalization, AngleUnit, AnisotropyConditionPolicy, AxisOrder, CenterRepresenter,
-    ConditionPolicy, CoordinateMetadata, CrsMetadata, DenseFactorization, DenseSolveOptions,
-    Enforcement, ExecutionOptions, FieldProblem, FittedField, FittedFieldEvaluationError,
-    FittedFieldOutput, FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm,
-    Gaussian, GlobalAnisotropy, Handedness, KernelDefinition, KernelDerivativeCapability,
-    LengthUnit, Matern, MaternSmoothness, ObservationFunctional, ObservationId, Point,
-    PolyharmonicSpline, Regularization, SemanticConstraint, SemanticExpression, SemanticProblemIr,
-    SemanticProvenance, SemanticRelation, SourceLocation, UnitDirection, VerticalDirection,
+    ConditionPolicy, CoordinateMetadata, CpdRankDecision, CrsMetadata, DenseFactorization,
+    DenseSolveOptions, Enforcement, ExecutionOptions, FieldProblem, FittedField,
+    FittedFieldEvaluationError, FittedFieldOutput, FunctionalAtom, FunctionalExpr,
+    FunctionalProvenance, FunctionalTerm, Gaussian, GlobalAnisotropy, Handedness, KernelDefinition,
+    KernelDerivativeCapability, LengthUnit, Matern, MaternSmoothness, ObservationFunctional,
+    ObservationId, Point, PolyharmonicSpline, Regularization, SemanticConstraint,
+    SemanticExpression, SemanticProblemIr, SemanticProvenance, SemanticRelation, SourceLocation,
+    UnitDirection, VerticalDirection,
 };
 
 const TEST_MEMORY_LIMIT_BYTES: usize = 64 * 1024 * 1024;
@@ -278,38 +279,79 @@ fn anisotropy_and_normalization_apply_both_original_coordinate_chain_rules()
 #[test]
 fn cpd_quadratic_truth_and_record_order_are_deterministic() -> Result<(), Box<dyn Error>> {
     let quadratic = |x: f64| 1.0 + 2.0 * x + 3.0 * x * x;
-    let model = {
+    let fit = || -> Result<FittedField<1>, Box<dyn Error>> {
         let fitted_problem = problem([
             (value_expression([-1.0], 1)?, quadratic(-1.0)),
             (value_expression([0.0], 2)?, quadratic(0.0)),
             (value_expression([2.0], 3)?, quadratic(2.0)),
+            (value_expression([3.0], 4)?, quadratic(3.0)),
         ])?;
-        FittedField::try_fit(
+        Ok(FittedField::try_fit(
             fitted_problem,
             metadata()?,
             AffineNormalization::try_new(Point::try_new([5.0])?, [[2.0]])?,
             KernelDefinition::from(PolyharmonicSpline::try_new(4)?),
             None,
             options(DenseFactorization::PivotedLblt)?,
-        )?
+        )?)
     };
+    let model = fit()?;
+    let repeated = fit()?;
 
     for weight in model.center_weights() {
         assert_close(*weight, 0.0, 4096.0 * f64::EPSILON);
     }
     let record = model.record();
     assert_eq!(record.build_version(), env!("CARGO_PKG_VERSION"));
-    assert_eq!(record.centers().len(), 3);
+    assert_eq!(record.centers().len(), 4);
+    let cpd = record.cpd_assembly().ok_or("CPD assembly evidence")?;
     assert_eq!(
-        record
-            .polynomial_space()
-            .ok_or("polynomial space")?
+        cpd,
+        repeated
+            .record()
+            .cpd_assembly()
+            .ok_or("repeated CPD assembly evidence")?
+    );
+    assert_eq!(record.polynomial_space(), Some(cpd.polynomial_space()));
+    assert_eq!(
+        cpd.polynomial_space()
             .terms()
             .iter()
             .map(|term| *term.exponents())
             .collect::<Vec<_>>(),
         [[0], [1], [2]]
     );
+    let null_space = cpd.null_space();
+    assert_eq!(
+        null_space.actions().values(),
+        [1.0, -1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 2.0, 4.0, 1.0, 3.0, 9.0]
+    );
+    let rank = null_space.diagnostics();
+    assert_eq!(rank.decision, CpdRankDecision::FullRank);
+    assert_eq!((rank.rows, rank.columns), (4, 3));
+    assert_eq!((rank.rrqr_rank, rank.svd_rank), (3, 3));
+    assert_eq!(rank.rrqr_diagonal.len(), 3);
+    assert_eq!(rank.singular_values.len(), 3);
+    assert!(!rank.threshold_adjacent);
+    assert!(!rank.rank_disagreement);
+    assert_eq!(
+        (null_space.basis().rows(), null_space.basis().columns()),
+        (4, 1)
+    );
+    let quality = null_space.quality();
+    assert!(quality.side_condition_residual <= quality.tolerance);
+    assert!(quality.original_side_condition_residual.is_finite());
+    assert!(quality.orthonormality_residual <= quality.tolerance);
+    assert_eq!(
+        (
+            cpd.projected_energy().rows(),
+            cpd.projected_energy().columns()
+        ),
+        (1, 1)
+    );
+    assert_eq!(cpd.projected_energy().values().len(), 1);
+    assert!(cpd.projected_energy().values()[0].is_finite());
+    assert!(cpd.projected_energy().values()[0] > 0.0);
     for (actual, expected) in record
         .polynomial_coefficients()
         .iter()
