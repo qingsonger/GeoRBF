@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-MODEL-001, Issue #60 (closed)
 - Implementation pull request: #61, squash-merged as `6a12aeb`
 - Integration-state branch: `codex/req-model-001-integration-state`
-- Integration-state pull request: to be opened
+- Integration-state pull request: #62 (Draft until final evidence is green)
 - Review record: `docs/reviews/PR-61-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-DIAG-001 (`planned`)
@@ -52,7 +52,7 @@ task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #60
 - Merged implementation: GitHub PR #61
-- Integration-state pull request: to be opened
+- Integration-state pull request: GitHub PR #62
 - Independent review: `docs/reviews/PR-61-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-MODEL-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
