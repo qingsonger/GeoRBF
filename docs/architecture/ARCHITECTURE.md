@@ -89,6 +89,18 @@ the support edge. It delegates Cartesian tensors and argument signs to kernel
 calculus. It does not select neighborhoods, sparse storage, or solver policy;
 those remain blocked on the dedicated compact-sparse spike and ADR.
 
+The field-assembly layer depends on semantic/canonical problem IR, distinct
+observation and center functional wrappers, kernel metadata/calculus, complete
+polynomial spaces, and CPD rank/null-space enforcement. `FieldProblem<D>` owns
+only validated hard-equality problem inputs. Its evaluator callback keeps
+concrete kernel family and optional global-anisotropy construction outside the
+assembly module while receiving the exact point pair and derivative demand.
+The layer preassembles only the upper kernel triangle, canonicalizes observation
+rows over center-weight and polynomial variable blocks, appends CPD side rows,
+and returns an immutable GeoRBF-owned row-major dense system with symmetry and
+CPD diagnostics. It does not factor, solve, regularize, select centers, construct
+geological semantics, or expose nalgebra types.
+
 ## Runtime behavior
 
 Long operations accept cancellation, progress, explicit thread count, and

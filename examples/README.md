@@ -94,3 +94,11 @@ an explicit affine linearizer into solver-neutral canonical rows. Run it with:
 ```text
 cargo run -p georbf --example problem_ir
 ```
+
+`REQ-FIELD-001` adds `crates/georbf/examples/field_assembly.rs`, which keeps
+mixed observation and center roles distinct while assembling a symmetric dense
+Gaussian hard-equality system. Run it with:
+
+```text
+cargo run -p georbf --example field_assembly
+```

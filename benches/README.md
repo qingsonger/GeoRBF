@@ -49,3 +49,14 @@ cargo bench -p georbf --bench problem_ir
 
 The fixed workload and local baseline are recorded in
 `docs/benchmarks/REQ-IR-001.md`.
+
+`REQ-FIELD-001` adds a deterministic 32-center mixed value/directional-
+derivative Gaussian assembly workload for D=1, D=2, and D=3:
+
+```text
+cargo bench -p georbf --bench field_assembly -- --smoke
+cargo bench -p georbf --bench field_assembly
+```
+
+The fixed workload and local baseline are recorded in
+`docs/benchmarks/REQ-FIELD-001.md`.
