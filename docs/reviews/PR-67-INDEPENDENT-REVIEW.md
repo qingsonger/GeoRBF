@@ -301,3 +301,32 @@ REQ-EXEC-001 remains `implemented` until PR #67 is marked ready, the complete
 Windows, Ubuntu, macOS, and benchmark-smoke CI passes on that exact ready head,
 and the PR is merged. This clean re-review authorizes that mandatory integration
 sequence; it does not itself claim ready CI, merge, or integration.
+
+## Integration evidence
+
+The integration task confirmed that exact Ready head
+`a4866787f5fee12ae4dda57a8e6f59d869b7eeec` differs from the independently
+reviewed evidence head `2b6e7f9fc0acffe40e3f7796c9b5428bb50349c9` only through
+this review record and the bounded handoff. Those evidence-only changes alter
+no production code, tests, manifests, schemas, CI, build input, registry, API,
+numerical behavior, dependency, tag, or release.
+
+Exact Ready head `a486678` passed the complete Windows, Ubuntu, and macOS
+correctness matrix with every backend and benchmark-smoke workload in CI run
+29557856147. PR #67 then squash-merged exactly once as
+`6ee93e1bbff24e218e4da387ed85129a81c39f1b`, and Issue #66 closed as
+completed. Post-merge `main` run 29558360990 passed the same complete
+three-platform correctness, benchmark-smoke, and requirement-registry gate on
+that exact merge commit.
+
+The isolated integration-state change updates only the registry, this review
+evidence, the history index, and the bounded handoff. It changes no production
+code, tests, manifests, schemas, CI, build inputs, APIs, numerical behavior,
+dependencies, tags, or releases. REQ-EXEC-001 may therefore be recorded as
+`integrated`; the next requirement must begin only in a fresh task after the
+isolated integration-state pull request is green and merged.
+
+The isolated integration-state registry tree passed the complete local
+standard gate and `git diff --check`. The subsequent validation note is
+documentation-only and changes no production, test, manifest, schema, CI, or
+build input. The integration-state pull request is pending publication.
