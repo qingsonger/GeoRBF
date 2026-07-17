@@ -177,12 +177,29 @@ No P0, P1, P2, or P3 finding remains.
 
 ## Integration disposition
 
-REQ-DIAG-001 remains `implemented` until the mandatory integration sequence is
-complete. The evidence-only re-review update changes no production code, test,
-manifest, schema, CI, build input, registry, API, numerical behavior,
-dependency, tag, or release. PR #64 may be marked ready after that evidence is
-pushed, then must pass the complete Windows, Ubuntu, and macOS correctness
-matrix with every benchmark-smoke workload on the exact ready head before it
-is merged exactly once. Truthful `integrated` state must then be recorded
-through an isolated integration-state change. Do not begin another
-requirement in this task.
+The integration task confirmed exact Ready head
+`8d265f1fdc523199b09a8c1b28d2e32f14288940` differs from independently
+reviewed evidence head `c838de45e32b1a6673cdb2b62b1eb6b28f9a1d7c` only through
+this review record and the bounded handoff. Those evidence-only changes alter
+no production code, tests, manifests, schemas, CI, build input, registry, API,
+numerical behavior, dependency, tag, or release.
+
+Exact Ready head `8d265f1` passed the complete Windows, Ubuntu, and macOS
+correctness matrix with every benchmark-smoke workload in CI run 29547848410.
+PR #64 then squash-merged exactly once as
+`654cb60c786a095768e2b9b0430d8208ab88808a`, and Issue #63 closed as
+completed. Post-merge `main` run 29548328531 passed the same complete
+three-platform correctness, benchmark-smoke, and requirement-registry gate on
+that exact merge commit.
+
+The isolated integration-state change updates only the registry, this review
+evidence, the history index, and the bounded handoff. It changes no production
+code, tests, manifests, schemas, CI, build inputs, APIs, numerical behavior,
+dependencies, tags, or releases. REQ-DIAG-001 may therefore be recorded as
+`integrated`; the next requirement must begin only in a fresh task after the
+isolated integration-state pull request is green and merged.
+
+The isolated integration-state registry tree passed the complete local
+standard gate and `git diff --check`. The subsequent validation note is
+documentation-only and changes no production, test, manifest, schema, CI, or
+build input. The isolated integration-state evidence is published in PR #65.

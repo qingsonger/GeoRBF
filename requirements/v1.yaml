@@ -382,7 +382,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper maps the frozen C ABI and does not define an independent error taxonomy"
     python_api: "N/A: Python exception mapping belongs to the M9 binding requirement"
     benchmark: "N/A: diagnostic construction is not a hot path"
-    status: implemented
+    status: integrated
 
   - id: REQ-LEVEL-001
     title: Explicit level variables and order DAG
