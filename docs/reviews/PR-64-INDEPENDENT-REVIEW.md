@@ -106,8 +106,26 @@ rather than prefixes, and assert identifier uniqueness.
 
 ## Disposition
 
-PR #64 must remain Draft and REQ-DIAG-001 remains `implemented`. A fresh Repair
-task must address only P1-1 and P2-1, add the required independent regressions,
-rerun focused checks and the complete stable-head standard gate, push, and stop
-for a fresh independent re-review. Do not begin REQ-EXEC-001 or another
-requirement.
+Repair implementation head `193ee44` addresses both findings:
+
+- P1-1: `DiagnosticPath::try_source` fallibly copies a validated
+  `SourceLocation` and field path while accepting observation, level, and
+  constraint-group identifiers independently. Table-driven regressions cover
+  source-plus-field with neither identifier and source-plus-field-plus-level
+  without an observation, assert every getter and exact display, and reject
+  empty field and group text.
+- P2-1: the ten-category contract table now asserts every exact numeric code,
+  symbolic identifier, complete display string, and symbolic-identifier
+  uniqueness.
+
+The six focused diagnostics tests, focused warning-denying Clippy, focused
+Rustdoc, and `git diff --check` passed. The exact implementation, test,
+architecture, and change-fragment head `193ee44` passed the complete standard
+workspace gate: formatting, warning-denying workspace Clippy for all targets
+and features, all-feature workspace tests, workspace Rustdoc, all 58
+requirement checks, and `git diff --check`.
+
+This Repair task has not independently re-reviewed or closed the findings.
+PR #64 must remain Draft and REQ-DIAG-001 remains `implemented`. A fresh
+independent re-review must confirm P1-1 and P2-1 are closed and check the repair
+diff for new P0-P3 findings. Do not begin REQ-EXEC-001 or another requirement.
