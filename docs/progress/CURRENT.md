@@ -6,55 +6,59 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / REQ-EXEC-001 findings addressed
+- Mode: Review / repair re-review completed with one P2 finding
 - Requirement: REQ-EXEC-001, Issue #66
 - Branch: `codex/req-exec-001-deterministic-execution-controls`
 - Draft pull request: #67
-- Reviewed pre-repair head: `1b2325b`
-- Review-evidence head: `f2a6171`
 - Stable repair commit: `947888a`
+- Re-reviewed head: `d9cba54`
 - Review and repair record: `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
 - Registry state: `implemented`
-- Required next mode: fresh independent Review of repair head `947888a`
+- Required next mode: Repair of R67-004 only
 
-## Repair result
+## Re-review result
 
-- R67-001 repaired: `Completed` is one successful terminal event; cancellation
-  requested by that callback is post-completion.
-- R67-002 repaired: every fallible staged numerical result reaches an immediate
-  post-call cancellation checkpoint before its error is applied, observable
-  cancellation takes priority, and failed work publishes no successful stage.
-- R67-003 repaired: totals are maximum work budgets and completed counts include
-  only performed work, including early refinement termination.
-- Independent regressions cover terminal callback cancellation, failing rank and
-  factorization calls under concurrent cancellation, and exact progress pairs
-  for zero residual, early stop, explicit regularization, and full budget use.
-- No matrix formula, sign, dimension, unit, CPD null-space, rank threshold,
-  factorization choice, regularization policy, residual mathematics, hard
-  constraint, adapter disposition, dependency, manifest, or schema changed.
+- R67-001 is closed in implementation and through the public controlled-solve
+  terminal-callback regression.
+- R67-003 is closed in implementation and through exact public progress
+  sequences for zero residual, early stop, explicit regularization, and full
+  refinement-budget use.
+- R67-002 is structurally repaired, but its required regression is not adequate.
+  The two named tests call `ProgressTracker::finish_work` directly with a
+  synthetic error; they do not exercise the public controlled solve, actual rank
+  or factorization call sites, a second cancellation thread, or a barrier.
+- P2 R67-004 records that those tests would pass even if the production rank or
+  factorization call sites regressed to the original early-error behavior. No
+  current production semantic defect was identified.
+- No formula, sign, dimension, unit, CPD, rank threshold, factorization,
+  residual, hard-constraint, hidden recovery, dependency, manifest, CI, or
+  schema change was found.
 
 ## Validation state
 
-- Focused execution-control tests: 8 passed.
-- Focused concurrent rank/factorization cancellation regressions: 2 passed.
-- All-feature `georbf` tests and `georbf` Rustdoc passed after the last repair.
+- Re-review execution-control tests: 8 passed.
+- The two direct-tracker cancellation tests passed but do not close R67-004.
+- All-feature `georbf`: 198 unit/integration tests and 29 doctests passed.
+- Separate `georbf` Rustdoc: 29 passed.
+- `git diff --check` passed for the complete, repair, and evidence-only ranges;
+  no added core output macro was found.
 - Stable repair commit `947888a` passed the complete local standard gate:
   format, warning-denying workspace Clippy, all-feature workspace tests,
   workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The later handoff commit changes only this bounded handoff and the repair
-  evidence in the review record; it does not change production, tests,
-  manifests, schemas, CI, or build inputs.
-- Draft Ubuntu CI for the pushed repair head has not yet been relied upon.
-  Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run.
+- Draft Ubuntu CI passed on re-reviewed PR head `d9cba54`. Ready-only Windows,
+  Ubuntu, macOS, and benchmark-smoke CI has not run.
 
 ## Next task
 
-Open a fresh independent Review task for PR #67. Re-review only repairs
-R67-001, R67-002, and R67-003 against stable repair commit `947888a`, the
-original findings, the scoped architecture contract, the PR diff, and the
-recorded validation evidence. Do not repair production code in that Review and
-do not begin another requirement. If clean, record the review and stop for the
-fresh ready/integration Review task required by `AGENTS.md`.
+Open a fresh Repair task for PR #67 and address only R67-004. Add test-only
+failing rank and factorization hooks at the actual controlled-solve call sites,
+coordinate cancellation from a separate thread with a barrier while each hook
+is active, invoke the public controlled solve, and prove cancellation priority
+and absence of a successful event for the failed stage. Do not alter production
+execution semantics or numerical policy and do not begin another requirement.
+Run focused checks during repair, the complete standard gate on the final code
+head, update the review evidence and bounded handoff, push, and stop for a fresh
+independent re-review.
 
 ## Durable evidence
 

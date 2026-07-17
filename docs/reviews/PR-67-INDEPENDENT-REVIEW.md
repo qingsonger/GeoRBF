@@ -7,9 +7,10 @@
 - Reviewed head: `1b2325b3a1904e99c52ab6fbf665f22bcd5d5275`
 - Stable implementation head: `ef16599`
 - Repair head: `947888a`
+- Re-reviewed head: `d9cba54`
 - Base head: `eaa7430fabafd1c8890306f9240afd4feb596e96`
 - Review date: 2026-07-17
-- Result: three P2 findings; repair recorded, fresh re-review required
+- Result: repair re-review found one P2 regression-evidence gap; fresh Repair required
 
 ## Scope and independence
 
@@ -167,3 +168,69 @@ This evidence records the Repair only. It does not independently re-review the
 repair, mark the PR ready, run ready-only CI, merge, integrate REQ-EXEC-001, or
 begin another requirement. PR #67 remains Draft and the registry remains
 `implemented` pending a fresh independent re-review.
+
+## Independent repair re-review
+
+A fresh read-only `math_reviewer` independently reviewed base `eaa7430`, prior
+review evidence `f2a6171`, stable repair `947888a`, and exact PR head
+`d9cba54`. It received only the bounded requirement and dependency summaries,
+Issue #66, the M3 plan, scoped architecture, solver policy and ADR-0010, the
+complete and repair diffs, and recorded validation evidence. It made no
+repository or remote changes.
+
+R67-001 is closed. `ProgressTracker::complete` checks cancellation before the
+single successful terminal event and returns success after the callback, so a
+callback-time request is post-completion. The public controlled-solve
+regression proves one final `Completed` event and a successful solution.
+
+R67-003 is closed. The total remains the checked maximum budget, `complete`
+does not credit skipped work, and the public controlled-solve regressions lock
+every stage and `(completed, total)` pair for zero residual, first-candidate
+termination, explicit regularization, and full allowance use.
+
+### P2 R67-004: R67-002 lacks its required production-path regression
+
+The R67-002 implementation is structurally repaired: rank results are retained
+before `finish_work`, while factorization, solve, scaling, validation,
+refinement, and residual results are retained before `observe_result` or
+`finish_work`. Cancellation observable at those checkpoints therefore takes
+priority and a failed stage publishes no successful event.
+
+However, the regressions at `crates/georbf/src/solver.rs:2082-2104` cancel the
+token synchronously, construct an arbitrary error, and call
+`ProgressTracker::finish_work` directly. The named tests at
+`crates/georbf/src/solver.rs:2146-2161` never call the public controlled solve,
+`diagnose_rank`, or `Factorization::try_new`; they use no second thread or
+barrier. They would still pass if the guarded production call sites at
+`crates/georbf/src/solver.rs:1124-1126` or
+`crates/georbf/src/solver.rs:1184-1195` regressed to the original early-`?`
+shape. This leaves the specifically required rank/factorization production-path
+regression, and therefore R67-002 closure, unproven. No current production
+semantic defect was identified.
+
+The smallest Repair is to add test-only injected failing rank and factorization
+hooks at the actual controlled-solve call sites, coordinate a separate
+cancellation thread with a barrier while each injected operation is active,
+invoke the public controlled solve, and assert the correct staged
+`ExecutionError::Cancelled` plus absence of a successful event for that stage.
+The Repair must not broaden execution semantics or alter numerical policy.
+
+## Re-review validation
+
+- `cargo test -p georbf --test execution`: 8 passed.
+- `cargo test -p georbf concurrent_cancellation_precedes`: 2 passed, but these
+  are the insufficient direct-tracker regressions described by R67-004.
+- `cargo test -p georbf --all-features`: 198 unit/integration tests and 29
+  doctests passed.
+- `cargo test --doc -p georbf`: 29 passed.
+- `git diff --check` passed for the complete, focused-repair, and evidence-only
+  review ranges; no added core output macro was found.
+- The immutable stable repair tree retains its recorded complete local standard
+  gate. Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI did not run
+  because PR #67 remains Draft.
+
+PR #67 must remain Draft and REQ-EXEC-001 remains `implemented`. A fresh Repair
+task must address only R67-004 with production-path regressions, rerun focused
+and final standard checks, update evidence, push, and stop for another fresh
+re-review. This Review does not repair code, mark the PR ready, merge, integrate
+the requirement, or begin another requirement.
