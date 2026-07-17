@@ -126,13 +126,16 @@ The diagnostics layer owns source-aware orchestration and adapter-boundary
 failures. A `DiagnosticPath` can retain an input path and one-based line,
 semantic field path, stable observation identifier, stable level identifier,
 and optional constraint group without exposing a schema or language-specific
-object. `GeoRbfError` distinguishes input, capability, rank, gauge, contrast,
-infeasibility, conditioning, memory, cancellation, and version failures.
-Every category has an explicit numeric and symbolic `ErrorCode`; these values
-are stable public data, while Rust enum layout, `Debug` text, and memory layout
-are not ABI or persistence formats. Backend-specific rank, residual, and
-factorization records remain in their numerical layers and can be retained as
-more detailed evidence beside this common boundary taxonomy.
+object. Its fallible source-bound constructor accepts a validated source
+location and field path while keeping observation, level, and constraint-group
+identifiers independently optional. `GeoRbfError` distinguishes input,
+capability, rank, gauge, contrast, infeasibility, conditioning, memory,
+cancellation, and version failures. Every category has an explicit numeric and
+symbolic `ErrorCode`; these values are stable public data, while Rust enum
+layout, `Debug` text, and memory layout are not ABI or persistence formats.
+Backend-specific rank, residual, and factorization records remain in their
+numerical layers and can be retained as more detailed evidence beside this
+common boundary taxonomy.
 
 ## Runtime behavior
 

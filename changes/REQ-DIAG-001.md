@@ -9,11 +9,12 @@ Rust enum layout, `Debug` output, and memory layout are not declared as a wire
 format.
 
 `DiagnosticPath` fallibly copies complete semantic observation provenance and
-can attach a stable `LevelId`, or identify a level independently through its
-semantic field path. Source paths retain the original input path and one-based
-line, field path, stable observation and level identifiers, and optional
-constraint group. Infeasibility evidence can retain multiple conflicting
-sources without deleting or relaxing a hard constraint.
+also accepts a validated source location plus semantic field path with
+independently optional observation, level, and constraint-group identifiers.
+Source paths retain the original input path and one-based line without
+requiring an observation identifier, including for source-located level
+declarations. Infeasibility evidence can retain multiple conflicting sources
+without deleting or relaxing a hard constraint.
 
 Category-specific evidence validates nonempty text, rank dimensions, nonzero
 gauge components, distinct contrast levels, nonempty infeasibility sources,
@@ -23,11 +24,12 @@ of numerical backends; existing detailed CPD, dense-rank, residual,
 factorization, assembly, and model diagnostics remain authoritative detailed
 evidence in their owning layers.
 
-Independent tests cover all ten error categories, stable codes and formatting,
-complete observation-plus-level paths, invalid diagnostic construction,
-`Send + Sync`, and a recursive source check that forbids stdout/stderr/debug
-output macros in the safe Rust core. Rustdoc and the architecture contract are
-synchronized.
+Independent tests cover all ten error categories, exact numeric and symbolic
+codes, identifier uniqueness, complete deterministic display strings,
+table-driven source paths with identifiers present independently or together,
+invalid diagnostic construction, `Send + Sync`, and a recursive source check
+that forbids stdout/stderr/debug output macros in the safe Rust core. Rustdoc
+and the architecture contract are synchronized.
 
 Rust is implemented. CLI is N/A because the current stage-0 adapter has no
 core operation whose diagnostics cross the command boundary. C, C++, and

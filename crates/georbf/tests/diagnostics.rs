@@ -2,6 +2,7 @@
 
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
+use std::collections::HashSet;
 use std::error::Error;
 use std::fs;
 use std::num::NonZeroUsize;
@@ -9,13 +10,87 @@ use std::path::Path;
 
 use georbf::{
     CancellationDiagnostic, CapabilityDiagnostic, ConditioningDiagnostic, ContrastDiagnostic,
-    DiagnosticPath, DiagnosticTextField, DiagnosticValueError, ErrorCategory, ErrorCode,
-    GaugeDiagnostic, GeoRbfError, InfeasibilityDiagnostic, InputDiagnostic, LevelId,
+    DiagnosticPath, DiagnosticPathError, DiagnosticTextField, DiagnosticValueError, ErrorCategory,
+    ErrorCode, GaugeDiagnostic, GeoRbfError, InfeasibilityDiagnostic, InputDiagnostic, LevelId,
     MemoryDiagnostic, ObservationId, RankDiagnostic, SemanticProvenance, SourceLocation,
     VersionDiagnostic,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
+type ErrorContract = (ErrorCode, ErrorCategory, u32, &'static str, &'static str);
+
+const EXPECTED_ERROR_CONTRACTS: [ErrorContract; 10] = [
+    (
+        ErrorCode::InvalidInput,
+        ErrorCategory::Input,
+        1001,
+        "GEORBF-E1001",
+        "GEORBF-E1001 invalid input at inputs/project.yaml:27 | field=fields.stratigraphy.observations[4] | observation=42 | group=section-a: kernel.length: must be finite and positive",
+    ),
+    (
+        ErrorCode::CapabilityUnavailable,
+        ErrorCategory::Capability,
+        2001,
+        "GEORBF-E2001",
+        "GEORBF-E2001 capability unavailable at inputs/project.yaml:27 | field=fields.stratigraphy.observations[4] | observation=42 | group=section-a: center Hessian",
+    ),
+    (
+        ErrorCode::RankRejected,
+        ErrorCategory::Rank,
+        3001,
+        "GEORBF-E3001",
+        "GEORBF-E3001 rank rejected at inputs/project.yaml:27 | field=fields.stratigraphy.observations[4] | observation=42 | group=section-a: estimated rank 4 is below required rank 5 for 8x5 system",
+    ),
+    (
+        ErrorCode::MissingGauge,
+        ErrorCategory::Gauge,
+        4001,
+        "GEORBF-E4001",
+        "GEORBF-E4001 missing gauge at inputs/project.yaml:27 | field=fields.stratigraphy.observations[4] | observation=42 | group=section-a: 2 connected component(s) remain ungauged",
+    ),
+    (
+        ErrorCode::MissingContrast,
+        ErrorCategory::Contrast,
+        5001,
+        "GEORBF-E5001",
+        "GEORBF-E5001 missing contrast at inputs/project.yaml:27 | field=fields.stratigraphy.observations[4] | observation=42 | group=section-a: levels 3 and 4 have no usable contrast",
+    ),
+    (
+        ErrorCode::Infeasible,
+        ErrorCategory::Infeasibility,
+        6001,
+        "GEORBF-E6001",
+        "GEORBF-E6001 infeasible hard constraints: two hard equalities prescribe different values [sources: inputs/project.yaml:27 | field=fields.stratigraphy.observations[4] | observation=42 | group=section-a, field=fields.stratigraphy | level=9]",
+    ),
+    (
+        ErrorCode::IllConditioned,
+        ErrorCategory::Conditioning,
+        7001,
+        "GEORBF-E7001",
+        "GEORBF-E7001 condition limit exceeded: estimate 1000000000000 exceeds limit 10000000000",
+    ),
+    (
+        ErrorCode::MemoryUnavailable,
+        ErrorCategory::Memory,
+        8001,
+        "GEORBF-E8001",
+        "GEORBF-E8001 memory unavailable: requested 4096 bytes exceeds limit 2048",
+    ),
+    (
+        ErrorCode::Cancelled,
+        ErrorCategory::Cancellation,
+        9001,
+        "GEORBF-E9001",
+        "GEORBF-E9001 operation cancelled: dense factorization",
+    ),
+    (
+        ErrorCode::VersionMismatch,
+        ErrorCategory::Version,
+        10_001,
+        "GEORBF-E10001",
+        "GEORBF-E10001 version mismatch: project schema expected 1.0, found 2.0",
+    ),
+];
 
 fn provenance(identifier: u64) -> Result<SemanticProvenance, georbf::ProblemIrError> {
     SemanticProvenance::try_new(
@@ -86,29 +161,19 @@ fn error_variants_have_stable_codes_and_structured_evidence() -> TestResult {
             )?,
         },
     ];
-    let expected = [
-        (ErrorCode::InvalidInput, ErrorCategory::Input, 1001),
-        (
-            ErrorCode::CapabilityUnavailable,
-            ErrorCategory::Capability,
-            2001,
-        ),
-        (ErrorCode::RankRejected, ErrorCategory::Rank, 3001),
-        (ErrorCode::MissingGauge, ErrorCategory::Gauge, 4001),
-        (ErrorCode::MissingContrast, ErrorCategory::Contrast, 5001),
-        (ErrorCode::Infeasible, ErrorCategory::Infeasibility, 6001),
-        (ErrorCode::IllConditioned, ErrorCategory::Conditioning, 7001),
-        (ErrorCode::MemoryUnavailable, ErrorCategory::Memory, 8001),
-        (ErrorCode::Cancelled, ErrorCategory::Cancellation, 9001),
-        (ErrorCode::VersionMismatch, ErrorCategory::Version, 10_001),
-    ];
-
-    for (error, (code, category, number)) in errors.iter().zip(expected) {
+    let mut identifiers = HashSet::new();
+    for (error, (code, category, number, identifier, display)) in
+        errors.iter().zip(EXPECTED_ERROR_CONTRACTS)
+    {
         assert_eq!(error.code(), code);
         assert_eq!(error.code().category(), category);
         assert_eq!(error.code().number(), number);
-        assert!(error.code().identifier().starts_with("GEORBF-E"));
-        assert!(error.to_string().starts_with(error.code().identifier()));
+        assert_eq!(error.code().identifier(), identifier);
+        assert_eq!(error.to_string(), display);
+        assert!(
+            identifiers.insert(identifier),
+            "duplicate identifier {identifier}"
+        );
     }
     assert_eq!(
         errors[5]
@@ -118,6 +183,73 @@ fn error_variants_have_stable_codes_and_structured_evidence() -> TestResult {
     );
     assert_eq!(errors[5].related_sources().len(), 1);
     assert!(errors[0].to_string().contains("inputs/project.yaml:27"));
+    Ok(())
+}
+
+#[test]
+fn source_paths_preserve_optional_identifiers_independently() -> TestResult {
+    struct Case {
+        line: usize,
+        field_path: &'static str,
+        observation_id: Option<ObservationId>,
+        level_id: Option<LevelId>,
+        constraint_group: Option<&'static str>,
+        display: &'static str,
+    }
+
+    let cases = [
+        Case {
+            line: 12,
+            field_path: "kernel.length",
+            observation_id: None,
+            level_id: None,
+            constraint_group: None,
+            display: "inputs/project.yaml:12 | field=kernel.length",
+        },
+        Case {
+            line: 18,
+            field_path: "fields.stratigraphy.levels[17]",
+            observation_id: None,
+            level_id: Some(LevelId::new(17)),
+            constraint_group: Some("section-a"),
+            display: "inputs/project.yaml:18 | field=fields.stratigraphy.levels[17] | level=17 | group=section-a",
+        },
+    ];
+
+    for case in cases {
+        let source = SourceLocation::try_new(
+            "inputs/project.yaml".to_owned(),
+            NonZeroUsize::new(case.line).expect("positive source line"),
+        )?;
+        let path = DiagnosticPath::try_source(
+            &source,
+            case.field_path,
+            case.observation_id,
+            case.level_id,
+            case.constraint_group,
+        )?;
+
+        assert_eq!(path.source_path(), Some("inputs/project.yaml"));
+        assert_eq!(path.source_line().map(NonZeroUsize::get), Some(case.line));
+        assert_eq!(path.field_path(), Some(case.field_path));
+        assert_eq!(path.observation_id(), case.observation_id);
+        assert_eq!(path.level_id(), case.level_id);
+        assert_eq!(path.constraint_group(), case.constraint_group);
+        assert_eq!(path.to_string(), case.display);
+    }
+
+    let source = SourceLocation::try_new(
+        "inputs/project.yaml".to_owned(),
+        NonZeroUsize::new(1).expect("positive source line"),
+    )?;
+    assert!(matches!(
+        DiagnosticPath::try_source(&source, " ", None, None, None),
+        Err(DiagnosticPathError::EmptyFieldPath)
+    ));
+    assert!(matches!(
+        DiagnosticPath::try_source(&source, "kernel.length", None, None, Some(" ")),
+        Err(DiagnosticPathError::EmptyConstraintGroup)
+    ));
     Ok(())
 }
 

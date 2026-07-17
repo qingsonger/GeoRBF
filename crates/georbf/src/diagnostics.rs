@@ -10,7 +10,7 @@ use std::error::Error;
 use std::fmt;
 use std::num::NonZeroUsize;
 
-use crate::problem_ir::{ObservationId, SemanticProvenance};
+use crate::problem_ir::{ObservationId, SemanticProvenance, SourceLocation};
 
 /// Stable caller-controlled identifier for one semantic level.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -78,6 +78,47 @@ impl DiagnosticPath {
         Self::try_observation_level(provenance, Some(level_id))
     }
 
+    /// Fallibly copies a validated source location and semantic field path,
+    /// with independently optional observation, level, and constraint-group
+    /// identifiers.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DiagnosticPathError::EmptyFieldPath`] for an empty field path,
+    /// [`DiagnosticPathError::EmptyConstraintGroup`] for an empty supplied
+    /// constraint group, or [`DiagnosticPathError::AllocationFailed`] when
+    /// owned source text cannot be reserved.
+    pub fn try_source(
+        source: &SourceLocation,
+        field_path: &str,
+        observation_id: Option<ObservationId>,
+        level_id: Option<LevelId>,
+        constraint_group: Option<&str>,
+    ) -> Result<Self, DiagnosticPathError> {
+        if field_path.trim().is_empty() {
+            return Err(DiagnosticPathError::EmptyFieldPath);
+        }
+        if constraint_group.is_some_and(|group| group.trim().is_empty()) {
+            return Err(DiagnosticPathError::EmptyConstraintGroup);
+        }
+        Ok(Self {
+            source_path: Some(try_copy_path_text(
+                source.path(),
+                DiagnosticPathField::SourcePath,
+            )?),
+            source_line: Some(source.line()),
+            field_path: Some(try_copy_path_text(
+                field_path,
+                DiagnosticPathField::FieldPath,
+            )?),
+            observation_id,
+            level_id,
+            constraint_group: constraint_group
+                .map(|group| try_copy_path_text(group, DiagnosticPathField::ConstraintGroup))
+                .transpose()?,
+        })
+    }
+
     /// Constructs a level-only path within one validated semantic field path.
     ///
     /// # Errors
@@ -137,23 +178,13 @@ impl DiagnosticPath {
         provenance: &SemanticProvenance,
         level_id: Option<LevelId>,
     ) -> Result<Self, DiagnosticPathError> {
-        Ok(Self {
-            source_path: Some(try_copy_path_text(
-                provenance.source().path(),
-                DiagnosticPathField::SourcePath,
-            )?),
-            source_line: Some(provenance.source().line()),
-            field_path: Some(try_copy_path_text(
-                provenance.field_path(),
-                DiagnosticPathField::FieldPath,
-            )?),
-            observation_id: Some(provenance.observation_id()),
+        Self::try_source(
+            provenance.source(),
+            provenance.field_path(),
+            Some(provenance.observation_id()),
             level_id,
-            constraint_group: provenance
-                .constraint_group()
-                .map(|group| try_copy_path_text(group, DiagnosticPathField::ConstraintGroup))
-                .transpose()?,
-        })
+            provenance.constraint_group(),
+        )
     }
 }
 
@@ -214,8 +245,10 @@ pub enum DiagnosticPathField {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum DiagnosticPathError {
-    /// A level-only path used an empty semantic field path.
+    /// A path used an empty semantic field path.
     EmptyFieldPath,
+    /// A path used an empty supplied constraint group.
+    EmptyConstraintGroup,
     /// Owned source text could not be reserved.
     AllocationFailed {
         /// Source field being copied.
@@ -229,6 +262,9 @@ impl fmt::Display for DiagnosticPathError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::EmptyFieldPath => formatter.write_str("diagnostic field path is empty"),
+            Self::EmptyConstraintGroup => {
+                formatter.write_str("diagnostic constraint group is empty")
+            }
             Self::AllocationFailed { field, requested } => write!(
                 formatter,
                 "could not reserve {requested} bytes for diagnostic path field {field:?}"
