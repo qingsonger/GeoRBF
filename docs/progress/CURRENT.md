@@ -9,9 +9,9 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement / REQ-EXEC-001 complete
 - Requirement: REQ-EXEC-001, Issue #66
 - Branch: `codex/req-exec-001-deterministic-execution-controls`
-- Pull request: pending initial push; must be recorded before this task stops
-- Registry state before Draft PR linkage: `in_progress` (becomes `implemented`
-  after the PR number is recorded)
+- Draft pull request: #67
+- Stable implementation commit: `ef16599`
+- Registry state in this change: `implemented`
 - Required next mode: fresh independent Review of this requirement only
 
 ## Implemented scope
@@ -36,8 +36,10 @@ records, benchmark reports, Git, and GitHub.
 - The all-feature workspace run includes all six focused execution-control
   behavior tests and the existing field, solver, model, diagnostics, and
   adapter-bootstrap regressions.
-- This validation-note update changes documentation only; no production, test,
-  manifest, registry, schema, CI, or build input changed after the full gate.
+- The isolated PR-linkage update after the full gate changes only registry and
+  handoff evidence. `cargo xtask requirements check` and `git diff --check`
+  were repeated; no production, test, manifest, schema, CI, or build input
+  changed after the full gate.
 
 ## Next task
 
@@ -49,6 +51,7 @@ another requirement in that Review task.
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #66
+- Draft implementation: GitHub PR #67
 - Requirement summary: `changes/REQ-EXEC-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - Relevant numerical policy: `docs/architecture/SOLVER_POLICY.md` and ADR-0010

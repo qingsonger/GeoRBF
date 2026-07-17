@@ -355,7 +355,7 @@ requirements:
     milestone: M3-v0.3.0
     priority: P1
     issue: 66
-    pull_request: null
+    pull_request: 67
     tests: [cancellation, progress-events, deterministic-repeat, thread-count]
     docs: [docs/architecture/ARCHITECTURE.md, rustdoc]
     rust_api: implemented
@@ -364,7 +364,7 @@ requirements:
     cpp_api: "N/A: the future C++ RAII wrapper will consume the M9 C execution-control ABI"
     python_api: "N/A: the Stage 0 Python crate exports no module; execution-control binding parity belongs to M9"
     benchmark: "N/A: execution controls are verified through behavior and later performance baselines"
-    status: in_progress
+    status: implemented
 
   - id: REQ-DIAG-001
     title: Structured errors and numerical diagnostics
