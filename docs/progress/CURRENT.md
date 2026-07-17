@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-DIAG-001, Issue #63 (closed)
 - Implementation pull request: #64, squash-merged as `654cb60`
 - Integration-state branch: `codex/req-diag-001-integration-state`
-- Integration-state pull request: pending publication
+- Integration-state pull request: #65 (Draft until final evidence is green)
 - Review record: `docs/reviews/PR-64-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-EXEC-001 (`planned`)
@@ -52,7 +52,7 @@ task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #63
 - Merged implementation: GitHub PR #64
-- Integration-state pull request: pending publication
+- Integration-state pull request: GitHub PR #65
 - Independent review: `docs/reviews/PR-64-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-DIAG-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
