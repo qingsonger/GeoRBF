@@ -7,8 +7,8 @@
 - Reviewed head: `872837e0f97114b9e0368e5c670ab41eaeea8f6c`
 - Stable implementation head: `9ef9a22`
 - Base head: `c55c4cf5a5bee65f13444d596e8b48bf98ef0118`
-- Review date: 2026-07-16
-- Result: one P1 and one P2 finding; repair required
+- Review date: 2026-07-16; fresh re-review: 2026-07-17
+- Result: P1-1 and P2-1 closed; no P0-P3 finding remains
 
 ## Scope and independence
 
@@ -104,7 +104,7 @@ rather than prefixes, and assert identifier uniqueness.
 - CLI, C, C++, Python, and benchmark dispositions match the later M8/M9
   adapter and schema boundaries and the non-hot-path nature of construction.
 
-## Disposition
+## Repair disposition
 
 Repair implementation head `193ee44` addresses both findings:
 
@@ -129,3 +129,60 @@ This Repair task has not independently re-reviewed or closed the findings.
 PR #64 must remain Draft and REQ-DIAG-001 remains `implemented`. A fresh
 independent re-review must confirm P1-1 and P2-1 are closed and check the repair
 diff for new P0-P3 findings. Do not begin REQ-EXEC-001 or another requirement.
+
+## Fresh independent re-review
+
+A fresh read-only independent reviewer examined exact evidence head
+`c838de45e32b1a6673cdb2b62b1eb6b28f9a1d7c` against base
+`c55c4cf5a5bee65f13444d596e8b48bf98ef0118`, with focused attention on repair
+diff `13bee8c..193ee44`. The reviewer received only the bounded requirement and
+integrated dependency summaries, Issue #63 criteria and exclusions, the M3
+plan, scoped architecture and ADR contracts, complete PR and repair diffs,
+original findings, and exact-head validation evidence. It made no repository
+or remote changes.
+
+P1-1 is closed. `DiagnosticPath::try_source` accepts a validated
+`SourceLocation` and field path while keeping observation, level, and
+constraint-group identifiers independently optional. The table-driven
+regression covers source-plus-field without either identifier and
+source-plus-field-plus-level without an observation, checks every getter and
+the complete display text, and rejects empty field and supplied group text.
+The existing complete semantic-provenance constructors remain covered.
+
+P2-1 is closed. The ten-category independent contract table now locks every
+category, numeric code, exact symbolic identifier, complete deterministic
+display string, and symbolic-identifier uniqueness. The expected table is
+independent of the production mapping and would reject a symbolic remap or
+lost category-specific display evidence.
+
+The regression review found no new provenance, stable-code, validation,
+hard-constraint, hidden-recovery, formatting, allocation, API-ownership,
+`Send + Sync`, interface-disposition, test-truth, or requirement-evidence
+defect. The repair introduces no schema or language binding, numerical
+backend, solver recovery, pseudoinverse, regularization, or hard-constraint
+relaxation. Mathematical formulae, signs, dimensions, units, SPD/CPD
+classification, center limits, polynomial spaces, RRQR/SVD decisions,
+rotation invariance, positive definiteness, and Hessian capabilities are not
+applicable because this requirement changes only the public diagnostic
+taxonomy and provenance boundary.
+
+Independent validation used an isolated target directory: all six diagnostics
+integration tests passed, the complete PR `git diff --check` passed, and the
+working tree remained clean. Draft Ubuntu CI run 29547332906 passed the
+repository correctness gate on exact reviewed head `c838de4`. That head differs
+from complete-local-gate repair implementation head `193ee44` only through the
+review record and bounded handoff.
+
+No P0, P1, P2, or P3 finding remains.
+
+## Integration disposition
+
+REQ-DIAG-001 remains `implemented` until the mandatory integration sequence is
+complete. The evidence-only re-review update changes no production code, test,
+manifest, schema, CI, build input, registry, API, numerical behavior,
+dependency, tag, or release. PR #64 may be marked ready after that evidence is
+pushed, then must pass the complete Windows, Ubuntu, and macOS correctness
+matrix with every benchmark-smoke workload on the exact ready head before it
+is merged exactly once. Truthful `integrated` state must then be recorded
+through an isolated integration-state change. Do not begin another
+requirement in this task.

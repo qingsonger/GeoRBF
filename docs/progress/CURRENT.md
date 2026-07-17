@@ -6,10 +6,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete / bounded independent re-review required
+- Mode: Re-review complete / ready-head integration required
 - Requirement: REQ-DIAG-001, Issue #63
 - Branch: `codex/req-diag-001-structured-diagnostics`
 - Draft pull request: #64
+- Re-reviewed evidence head: `c838de4`
 - Repair implementation head: `193ee44`
 - Original reviewed head: `872837e`
 - Review record: `docs/reviews/PR-64-INDEPENDENT-REVIEW.md`
@@ -60,21 +61,26 @@ schema, level-DAG, convex-solver, or execution-control requirements.
   production code, test, manifest, schema, CI, build input, registry, API,
   numerical behavior, dependency, tag, or release state.
 - Exact pre-repair branch head `13bee8c` passed Draft Ubuntu CI run
-  29508139350. The pushed repair head still requires fresh Draft CI observation
-  in the next independent re-review task.
-- The original review's P1-1 and P2-1 have repair evidence but are not closed
-  until a fresh independent reviewer confirms the fixes and checks for new
-  findings.
+  29508139350; exact re-reviewed evidence head `c838de4` passed fresh Draft
+  Ubuntu CI run 29547332906.
+- A fresh isolated read-only reviewer closed P1-1 and P2-1 and found no new
+  P0-P3 finding in the complete PR and repair diff.
+- The reviewer independently reran all six diagnostics tests in an isolated
+  target directory and `git diff --check`; both passed and the worktree stayed
+  clean.
+- Exact reviewed head `c838de4` passed Draft Ubuntu CI run 29547332906. It
+  differs from complete-local-gate repair head `193ee44` only through this
+  review record and the bounded handoff.
 
 ## Next task
 
-Open a fresh independent re-review task for PR #64. Supply the requirement and
-dependency summaries, normative documents, original findings, repair diff
-`13bee8c..193ee44`, validation evidence, and fresh Draft CI state to the
-read-only reviewer. Confirm P1-1 and P2-1 are closed and check for new P0-P3
-findings. If any finding remains, record it and stop without repair. If clean,
-follow the repository's ready-CI-integration sequence in that fresh Review
-task. Do not begin REQ-EXEC-001 or another requirement.
+Continue only PR #64's mandatory integration sequence. Confirm the pushed
+current head differs from reviewed head `c838de4` only through the review
+record and bounded handoff, mark the PR ready, and wait for the complete
+Windows, Ubuntu, and macOS correctness matrix with every benchmark-smoke
+workload on that exact ready head. Merge exactly once only when the full gate
+is green, then record truthful integration state through the isolated
+integration-state workflow. Do not begin REQ-EXEC-001 or another requirement.
 
 ## Durable evidence
 
