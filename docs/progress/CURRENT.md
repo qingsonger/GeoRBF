@@ -6,56 +6,53 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / R70-010 repaired; fresh independent re-review required
+- Mode: Review / R70-011 found; fresh Repair required
 - Requirement: REQ-LEVEL-001, Issue #69 (open)
 - Branch: `codex/req-level-001-explicit-level-variables`
 - Draft implementation pull request: #70
 - Registry state in this change: `implemented`
 - Dependencies: REQ-IR-001 and REQ-MODEL-001 are `integrated`
-- Repair implementation head: `612aa0d34f2c75740cb0d26cb57392249d31a892`
-- R70-001 through R70-009 are independently closed. R70-010 has repair
-  evidence but remains open until a fresh independent re-review.
-- Next eligible requirement remains blocked until REQ-LEVEL-001 is freshly
-  re-reviewed and integrated in a later fresh task.
+- Independently reviewed head: `3b6cf1366f30b9285c1023e5b2c73810c8c1b282`
+- R70-001 through R70-010 are independently closed. R70-011 is open.
+- Next eligible requirement remains blocked until REQ-LEVEL-001 is repaired,
+  freshly re-reviewed, and integrated in a later fresh task.
 
-## R70-010 repair
+## R70-011 finding
 
-- The independently sourced direct-path regression first failed because
-  `LevelProblem::try_new` accepted fixed `A`, unknown `B`, identical unit Value
-  evaluations at one point, and a positive `A -> B` order edge.
-- Validation now rejects a positive direct or transitive order path between
-  mathematically identical memberships with `MembershipOrderConflict`.
-- Diagnostic evidence retains the lower membership, every selected order edge
-  in path order, and the upper membership. Functional provenance does not alter
-  mathematical equality, and no hard row is changed, dropped, softened, or
-  regularized.
-- The regression asserts the exact three-source direct path required by
-  R70-010 and a two-edge transitive path with both order sources.
+- The distinct-anchor contrast branch compares fixed values and prior means
+  without proving the anchored membership evaluations are mathematically
+  distinct.
+- Fixed A at `0`, prior B with mean `1`, identical Value memberships at one
+  point, and no order edges are accepted even though the hard rows force
+  `h_A = h_B = f(x) = 0`; B's prior is soft and cannot create nonzero field
+  contrast.
+- The required regression uses distinct functional and semantic provenance for
+  the identical Value points and must return `MissingContrast` naming A and B.
+- Repair must not turn the prior into a hard equality or change, drop, soften,
+  or regularize any hard row.
 
-## Validation state
+## Review and validation state
 
-- Repair implementation head `612aa0d` passed the focused level suite (17
-  tests), core all-target/all-feature Clippy, all 29 core Rustdoc tests, and the
-  64-level benchmark smoke.
-- After the final production, test, registry, and normative-document change,
-  the complete stable-tree standard gate passed: formatting, warning-denying
-  workspace Clippy, all-feature workspace tests, workspace Rustdoc, all 58
-  requirement checks, and `git diff --check`.
-- The review evidence and bounded handoff after `612aa0d` are documentation
-  only. No fresh independent re-review, Ready three-platform CI, merge,
-  integration, tag, or release is claimed.
+- A fresh read-only project `math_reviewer` independently closed R70-010,
+  reconfirmed R70-001 through R70-009, and found only P1 R70-011. No P0, P2,
+  or P3 finding remains.
+- Exact reviewed head `3b6cf13` passed Draft Ubuntu correctness CI run
+  29565567615.
+- The parent Review task independently reran all 17 focused level tests, all 29
+  core Rustdoc tests, and the complete PR whitespace check; all passed.
+- This task changes only the review record and bounded handoff after the
+  reviewed head. No Ready three-platform CI, merge, integration, tag, or
+  release is claimed.
 
 ## Next task
 
-Open a fresh Review/re-review task for Draft PR #70. Supply a read-only project
-`math_reviewer` only the bounded requirement/dependency summary, normative
-documents, full PR and R70-010 repair diffs, tests, benchmark, and validation
-evidence. Independently confirm R70-010 closure and check for new findings. If
-any P0-P3 finding remains, record it and stop without repairing production
-code. If the review is clean, follow the mandatory integration sequence on the
-exact head: mark the PR ready, wait for complete Windows/Ubuntu/macOS and all
-benchmark-smoke CI, merge exactly once only when green, record truthful
-integration state, and stop. Do not begin another requirement.
+Open a fresh Repair task for Draft PR #70. Address only R70-011. First add the
+independently specified same-point fixed/prior regression and confirm it fails,
+then implement the smallest contrast-validation repair without changing hard
+row semantics. Run focused checks during development and the complete standard
+workspace gate after the final production or test change. Update the review
+repair evidence and this bounded handoff, commit, push, and stop for a fresh
+independent re-review. Do not begin another requirement.
 
 ## Durable evidence
 

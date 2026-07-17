@@ -303,3 +303,71 @@ tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
 This repair evidence is not an independent re-review and does not itself close
 R70-010. PR #70 remains Draft and REQ-LEVEL-001 remains `implemented`; a fresh
 read-only re-review must confirm closure and check for new findings.
+
+## Fresh independent re-review after R70-010 repair
+
+A fresh read-only project `math_reviewer` independently reviewed exact PR head
+`3b6cf1366f30b9285c1023e5b2c73810c8c1b282` against base
+`2904c64c8d99e0b6a3183dc6c232953a969922ad`. It received only the bounded
+REQ-LEVEL-001 summary and integrated dependency closure, the M4 plan, relevant
+mathematical, ADR, and architecture contracts, the complete PR and R70-010
+repair diffs, tests, benchmark, prior review record, and validation evidence.
+It inherited no implementation reasoning and made no repository or remote
+changes.
+
+The reviewer independently confirmed R70-010 is closed. The repaired DAG pass
+deterministically propagates positive reachability, compares mathematical Value
+evaluations independently of provenance, and reports both memberships plus
+every selected direct or transitive path edge. The required direct and
+transitive regressions assert the complete source sequences. R70-001 through
+R70-009 also remain closed.
+
+### P1 R70-011: identical memberships with distinct fixed/prior anchors falsely satisfy contrast
+
+`has_distinct_anchors` at `crates/georbf/src/levels.rs:1734-1757` compares a
+fixed value with a prior mean without first proving that the anchored
+membership evaluations are mathematically distinct. It therefore accepts
+fixed level A at `0`, prior level B with mean `1`, independently sourced
+memberships for A and B at the same point, and no order edges.
+
+The hard equations are
+
+```text
+f(x) - h_A = 0
+f(x) - h_B = 0
+h_A = 0
+```
+
+and force `h_A = h_B = f(x) = 0`. B's prior is only a soft objective residual;
+it cannot establish nonzero field contrast. Comparing the fixed value with the
+prior mean nonetheless sets `has_distinct_anchors` and construction succeeds.
+This contradicts the normative requirement that contrast be proved between
+membership-coupled functionals.
+
+Repair must add an independent regression near
+`crates/georbf/tests/levels.rs:531` with fixed A and prior B, distinct anchor
+values, distinct functional and semantic provenance, identical Value points,
+and no orders. `LevelProblem::try_new` must return `MissingContrast` naming A
+and B. The production repair must not change, drop, soften, or regularize any
+hard row or turn the prior into a hard equality.
+
+No P0, P2, or P3 finding remains. SPD/CPD classification, center limits,
+polynomial spaces, rank decisions, positive definiteness, rotation invariance,
+and Hessian capabilities are not applicable to this semantic layer. The review
+also covered membership units and signs, overflow-safe path arithmetic,
+conservative roundoff behavior, hard-row preservation, the canonical solver
+boundary, provenance, allocations, interface dispositions, and requirement
+status.
+
+Exact-head Draft Ubuntu CI run 29565567615 passed the complete correctness gate.
+The parent Review task independently reran all 17 focused level tests, all 29
+core Rustdoc tests, and the complete PR `git diff --check`; all passed. Exact
+HEAD and the remote branch matched before this review-only evidence change, and
+`612aa0d..3b6cf13` changed only this review record and the bounded handoff.
+
+PR #70 must remain Draft and REQ-LEVEL-001 must remain `implemented`. A fresh
+Repair task must address only R70-011, add the specified regression, run focused
+checks and the complete stable-head gate, update repair evidence and the bounded
+handoff, push, and stop for another fresh independent re-review. This Review
+task does not repair production code, mark the PR ready, merge it, integrate
+the requirement, or begin another requirement.
