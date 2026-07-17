@@ -6,56 +6,52 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-DIAG-001 complete
-- Requirement: REQ-DIAG-001, Issue #63 (closed)
-- Implementation pull request: #64, squash-merged as `654cb60`
-- Integration-state branch: `codex/req-diag-001-integration-state`
-- Integration-state pull request: #65 (Draft until final evidence is green)
-- Review record: `docs/reviews/PR-64-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-EXEC-001 (`planned`)
+- Mode: Implement / REQ-EXEC-001 complete
+- Requirement: REQ-EXEC-001, Issue #66
+- Branch: `codex/req-exec-001-deterministic-execution-controls`
+- Pull request: pending initial push; must be recorded before this task stops
+- Registry state before Draft PR linkage: `in_progress` (becomes `implemented`
+  after the PR number is recorded)
+- Required next mode: fresh independent Review of this requirement only
 
-## Integration result
+## Implemented scope
 
-- A fresh isolated independent re-review closed P1-1 and P2-1 and found no
-  P0-P3 finding in the complete implementation and repair diff.
-- Exact Ready head `8d265f1` passed the complete Windows, Ubuntu, and macOS CI
-  matrix with every benchmark-smoke workload in run 29547848410.
-- PR #64 squash-merged exactly once as `654cb60`; Issue #63 closed as
-  completed.
-- Post-merge `main` run 29548328531 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate.
-- This isolated integration-state change updates only registry and progress
-  evidence. It changes no production code, test, manifest, schema, CI, build
-  input, API, numerical behavior, dependency, tag, or release.
+- Added cloneable atomic cancellation, borrowed execution controls, typed
+  monotonic progress events, and structured execution failures.
+- Added controlled field-assembly, direct-solve, field-solve, and fitted-model
+  entry points while preserving the existing convenience APIs.
+- Propagated deterministic and explicit thread-count options. The current
+  serial implementation accepts absent/one and structurally rejects larger
+  counts before numerical work rather than silently clamping.
+- Documented deterministic boundaries, synchronous callback behavior,
+  indivisible backend calls, and the no-partial-result cancellation contract.
+- Added `changes/REQ-EXEC-001.md` and independent cancellation, progress,
+  repeat-determinism, and thread-count behavior tests.
 
 ## Validation state
 
-- Repair implementation head `193ee44` passed the complete local standard
-  gate; the clean reviewer independently repeated all six diagnostics tests
-  and `git diff --check`.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state registry tree passed the complete local
-  standard gate: format, warning-denying workspace Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and
-  `git diff --check`. This validation-note update is documentation-only.
+- The stable implementation tree passed the complete local standard gate:
+  format, warning-denying workspace Clippy, all-feature workspace tests,
+  workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+- The all-feature workspace run includes all six focused execution-control
+  behavior tests and the existing field, solver, model, diagnostics, and
+  adapter-bootstrap regressions.
+- This validation-note update changes documentation only; no production, test,
+  manifest, registry, schema, CI, or build input changed after the full gate.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start the next requirement in this
-task.
+Open a fresh Review task for the Draft PR. Supply only `requirements show/deps`,
+the architecture and relevant solver/ADR contracts, the PR diff, and validation
+evidence to the independent reviewer. Do not repair production code or begin
+another requirement in that Review task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #63
-- Merged implementation: GitHub PR #64
-- Integration-state pull request: GitHub PR #65
-- Independent review: `docs/reviews/PR-64-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-DIAG-001.md`
+- Acceptance criteria and exclusions: GitHub Issue #66
+- Requirement summary: `changes/REQ-EXEC-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
+- Relevant numerical policy: `docs/architecture/SOLVER_POLICY.md` and ADR-0010
 
 ## Checks not yet available
 

@@ -14,6 +14,7 @@ use std::fmt;
 use crate::anisotropy::{AnisotropyError, GlobalAnisotropy};
 use crate::coordinates::CoordinateMetadata;
 use crate::dimension::{Dim, SupportedDimension};
+use crate::execution::ExecutionControl;
 use crate::field::{CpdFieldAssembly, FieldAssemblyDiagnostics, FieldAssemblyError, FieldProblem};
 use crate::functional::{CenterRepresenter, FunctionalAtom, FunctionalProvenance};
 use crate::geometry::{Point, Vector};
@@ -27,7 +28,9 @@ use crate::kernel_calculus::{
     SpatialKernelJetPrefix,
 };
 use crate::polynomial::{PolynomialSpace, PolynomialSpaceError};
-use crate::solver::{DenseSolveDiagnostics, DenseSolveError, DenseSolveOptions, try_solve_field};
+use crate::solver::{
+    DenseSolveDiagnostics, DenseSolveError, DenseSolveOptions, try_solve_field_with_control,
+};
 use crate::transform::{AffineNormalization, TransformError};
 
 /// One concrete configured kernel that can be retained by a fitted model.
@@ -560,17 +563,54 @@ where
         anisotropy: Option<GlobalAnisotropy<D>>,
         solve_options: DenseSolveOptions,
     ) -> Result<Self, FittedFieldFitError<D>> {
+        let control = ExecutionControl::default();
+        Self::try_fit_with_control(
+            problem,
+            coordinate_metadata,
+            normalization,
+            kernel,
+            anisotropy,
+            solve_options,
+            control,
+        )
+    }
+
+    /// Assembles, solves, and owns one immutable fitted field with caller controls.
+    ///
+    /// One borrowed control is propagated through both field assembly and dense
+    /// solving. Cancellation returns no fitted model, and progress events retain
+    /// the separate [`crate::ExecutionOperation`] identities of those phases.
+    /// The progress sink and cancellation token are never retained by the model.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same diagnostics as [`Self::try_fit`], including structured
+    /// execution-policy and cancellation failures from assembly or solving.
+    #[allow(clippy::too_many_arguments)]
+    pub fn try_fit_with_control(
+        problem: FieldProblem<D>,
+        coordinate_metadata: CoordinateMetadata<D>,
+        normalization: AffineNormalization<D>,
+        kernel: KernelDefinition<D>,
+        anisotropy: Option<GlobalAnisotropy<D>>,
+        solve_options: DenseSolveOptions,
+        control: ExecutionControl<'_>,
+    ) -> Result<Self, FittedFieldFitError<D>> {
         let system = problem
-            .try_assemble(kernel.metadata(), |query, center, demanded| {
-                kernel.try_assembly_prefix(query, center, demanded, anisotropy.as_ref())
-            })
+            .try_assemble_with_control(
+                kernel.metadata(),
+                |query, center, demanded| {
+                    kernel.try_assembly_prefix(query, center, demanded, anisotropy.as_ref())
+                },
+                control,
+            )
             .map_err(|source| FittedFieldFitError::Assembly(Box::new(source)))?;
         let center_count = system.center_count();
         let polynomial_count = system.polynomial_count();
         let expected = center_count
             .checked_add(polynomial_count)
             .ok_or(FittedFieldFitError::CoefficientCountOverflow)?;
-        let solution = try_solve_field(&system, solve_options)
+        let solution = try_solve_field_with_control(&system, solve_options, control)
             .map_err(|source| FittedFieldFitError::Solve(Box::new(source)))?;
         let (coefficients, solve) = solution.into_parts();
         if coefficients.len() != expected {

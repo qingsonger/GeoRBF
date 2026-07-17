@@ -26,7 +26,11 @@ use nalgebra::{
 };
 
 use crate::dimension::{Dim, SupportedDimension};
+use crate::execution::{
+    ExecutionControl, ExecutionError, ExecutionOperation, ExecutionStage, ProgressTracker,
+};
 use crate::field::DenseFieldSystem;
+use crate::problem_ir::ExecutionOptions;
 
 const EQUILIBRATION_PASSES: usize = 8;
 const SVD_MAX_ITERATIONS: usize = 10_000;
@@ -36,6 +40,7 @@ const MAX_REFINEMENT_STEPS: usize = 8;
 const PEAK_MATRIX_BUFFERS: usize = 6;
 const PEAK_VECTOR_BUFFERS: usize = 32;
 const PEAK_INDEX_PAIR_BUFFERS: usize = 2;
+const SOLVE_BASE_PROGRESS_STEPS: usize = 5;
 
 /// Explicit dense factorization used for a square equality system.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -381,9 +386,42 @@ impl DenseEqualitySystem {
     /// Returns structured rank, conditioning, scaling, factorization, finite-
     /// result, or residual-review errors without changing the requested problem.
     pub fn try_solve(&self, options: DenseSolveOptions) -> Result<DenseSolution, DenseSolveError> {
+        let control = ExecutionControl::default();
+        self.try_solve_with_control(options, ExecutionOptions::default(), control)
+    }
+
+    /// Solves this system with explicit execution metadata and caller controls.
+    ///
+    /// The current dense backend is serial and rejects an explicit thread count
+    /// greater than one before memory review or backend dispatch. Cancellation
+    /// is checked around memory, rank, factorization, refinement, and residual
+    /// boundaries. Backend factorization and SVD calls are indivisible, so a
+    /// request made during one of those calls is observed immediately after it
+    /// returns. No partial solution is returned.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same failures as [`Self::try_solve`], plus structured
+    /// execution-policy and cancellation failures.
+    pub fn try_solve_with_control(
+        &self,
+        options: DenseSolveOptions,
+        execution: ExecutionOptions,
+        control: ExecutionControl<'_>,
+    ) -> Result<DenseSolution, DenseSolveError> {
+        let regularization_steps = usize::from(options.regularization().amount() != 0.0);
+        let total_progress =
+            SOLVE_BASE_PROGRESS_STEPS + regularization_steps + options.maximum_refinement_steps();
+        let mut progress = ProgressTracker::try_new(
+            control,
+            ExecutionOperation::DenseSolve,
+            execution,
+            total_progress,
+        )?;
         let estimated_peak_memory_bytes = self.try_estimated_peak_memory_bytes()?;
         enforce_memory_limit(estimated_peak_memory_bytes, options.memory_limit_bytes)?;
-        solve_validated(self, options, estimated_peak_memory_bytes)
+        progress.advance(ExecutionStage::MemoryReview)?;
+        solve_validated(self, options, estimated_peak_memory_bytes, progress)
     }
 }
 
@@ -717,6 +755,8 @@ impl DenseSolution {
 #[derive(Clone, Debug, PartialEq)]
 #[must_use]
 pub enum DenseSolveError {
+    /// Caller execution policy was unsupported or cancellation was requested.
+    Execution(ExecutionError),
     /// An assembled field system could not cross the solver-owned boundary.
     InvalidSystem(DenseEqualitySystemError),
     /// A solver-owned working allocation failed.
@@ -822,6 +862,7 @@ pub enum DenseSolveError {
 impl fmt::Display for DenseSolveError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Execution(source) => source.fmt(formatter),
             Self::InvalidSystem(error) => {
                 write!(formatter, "invalid dense equality system: {error}")
             }
@@ -918,9 +959,16 @@ impl fmt::Display for DenseSolveError {
 impl Error for DenseSolveError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::Execution(error) => Some(error),
             Self::InvalidSystem(error) => Some(error),
             _ => None,
         }
+    }
+}
+
+impl From<ExecutionError> for DenseSolveError {
+    fn from(value: ExecutionError) -> Self {
+        Self::Execution(value)
     }
 }
 
@@ -996,6 +1044,35 @@ pub fn try_solve_field<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
+    let control = ExecutionControl::default();
+    try_solve_field_with_control(system, options, control)
+}
+
+/// Solves one assembled field system with its retained execution metadata and
+/// caller cancellation/progress controls.
+///
+/// # Errors
+///
+/// Returns structured boundary, execution, rank, condition, factorization, or
+/// residual failures. Cancellation and unsupported thread counts are rejected
+/// before the solver-owned matrix copy whenever they are already observable.
+pub fn try_solve_field_with_control<const D: usize>(
+    system: &DenseFieldSystem<D>,
+    options: DenseSolveOptions,
+    control: ExecutionControl<'_>,
+) -> Result<DenseSolution, DenseSolveError>
+where
+    Dim<D>: SupportedDimension,
+{
+    let regularization_steps = usize::from(options.regularization().amount() != 0.0);
+    let total_progress =
+        SOLVE_BASE_PROGRESS_STEPS + regularization_steps + options.maximum_refinement_steps();
+    let mut progress = ProgressTracker::try_new(
+        control,
+        ExecutionOperation::DenseSolve,
+        system.execution_options(),
+        total_progress,
+    )?;
     let field_memory_limit = system.execution_options().memory_limit_bytes();
     let effective_memory_limit = field_memory_limit.map_or(options.memory_limit_bytes, |field| {
         if field.get() < options.memory_limit_bytes.get() {
@@ -1008,9 +1085,10 @@ where
     let estimated_peak_memory_bytes =
         estimate_peak_memory_bytes(system.matrix().dimension(), SolveMemoryContext::FieldSystem)?;
     enforce_memory_limit(estimated_peak_memory_bytes, effective_memory_limit)?;
+    progress.advance(ExecutionStage::MemoryReview)?;
     let owned =
         DenseEqualitySystem::try_from_field(system).map_err(DenseSolveError::InvalidSystem)?;
-    solve_validated(&owned, options, estimated_peak_memory_bytes)
+    solve_validated(&owned, options, estimated_peak_memory_bytes, progress)
 }
 
 #[derive(Clone, Debug)]
@@ -1030,8 +1108,10 @@ fn solve_validated(
     system: &DenseEqualitySystem,
     options: DenseSolveOptions,
     estimated_peak_memory_bytes: usize,
+    mut progress: ProgressTracker<'_>,
 ) -> Result<DenseSolution, DenseSolveError> {
     let original_rank = diagnose_rank(&system.matrix, system.dimension, SvdReviewMode::Bounded)?;
+    progress.advance(ExecutionStage::RankReview)?;
     let amount = options.regularization.amount();
     let mut effective = try_copy_solve(&system.matrix, DenseSolverStorage::EffectiveMatrix)?;
     if amount != 0.0 {
@@ -1052,7 +1132,9 @@ fn solve_validated(
     let effective_rank = if amount == 0.0 {
         original_rank.clone()
     } else {
-        diagnose_rank(&effective, system.dimension, SvdReviewMode::Bounded)?
+        let review = diagnose_rank(&effective, system.dimension, SvdReviewMode::Bounded)?;
+        progress.advance(ExecutionStage::RankReview)?;
+        review
     };
     match effective_rank.diagnostics.decision {
         DenseRankDecision::FullRank => {}
@@ -1085,6 +1167,7 @@ fn solve_validated(
         DenseSolverStorage::ScaledRightHandSide,
     )?;
     let factor = Factorization::try_new(options.factorization, &scaled_matrix, system.dimension)?;
+    progress.advance(ExecutionStage::Factorization)?;
     let has_two_by_two_pivot = factor.has_two_by_two_pivot();
     let mut scaled_solution = factor.solve(&scaled_rhs)?;
     let mut solution = scale_vector(&scaled_solution, &scales, DenseSolverStorage::Solution)?;
@@ -1098,6 +1181,7 @@ fn solve_validated(
         &scaled_solution,
         system.dimension,
     )?;
+    progress.advance(ExecutionStage::ResidualReview)?;
     let mut final_residual = initial_residual;
     let mut accepted_refinement_steps = 0;
 
@@ -1131,6 +1215,7 @@ fn solve_validated(
             &candidate_scaled,
             system.dimension,
         )?;
+        progress.advance(ExecutionStage::Refinement)?;
         if candidate_residual.original_infinity >= final_residual.original_infinity {
             break;
         }
@@ -1177,15 +1262,18 @@ fn solve_validated(
         maximum_refinement_steps: options.maximum_refinement_steps,
         residual_tolerance,
     };
+    progress.advance(ExecutionStage::ResidualReview)?;
     if diagnostics.final_residual.original_backward_error > residual_tolerance {
         return Err(DenseSolveError::ResidualRejected {
             diagnostics: Box::new(diagnostics),
         });
     }
-    Ok(DenseSolution {
+    let solution = DenseSolution {
         values: solution,
         diagnostics,
-    })
+    };
+    progress.complete()?;
+    Ok(solution)
 }
 
 fn exact_symmetry_review(matrix: &[f64], dimension: usize) -> Result<(), DenseEqualitySystemError> {

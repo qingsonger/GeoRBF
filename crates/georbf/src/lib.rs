@@ -14,7 +14,8 @@
 //! policy and original-unit diagnostics, and immutable fitted fields with
 //! capability-gated original-coordinate value, gradient, and Hessian
 //! evaluation, plus stable source-aware structured error codes for adapter and
-//! orchestration boundaries.
+//! orchestration boundaries, and caller-owned cancellation, deterministic
+//! progress, and explicit serial-execution controls for assembly and solving.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -24,6 +25,7 @@ pub mod coordinates;
 pub mod cpd;
 pub mod diagnostics;
 pub mod dimension;
+pub mod execution;
 pub mod field;
 pub mod functional;
 pub mod geometry;
@@ -57,6 +59,10 @@ pub use diagnostics::{
     VersionDiagnostic,
 };
 pub use dimension::{Dim, SupportedDimension};
+pub use execution::{
+    CancellationToken, ExecutionControl, ExecutionError, ExecutionOperation, ExecutionStage,
+    ProgressEvent, ProgressSink,
+};
 pub use field::{
     CpdFieldAssembly, DenseFieldMatrix, DenseFieldSystem, FieldAssemblyDiagnostics,
     FieldAssemblyError, FieldAssemblyStorage, FieldLinearizationError, FieldProblem,
@@ -108,6 +114,7 @@ pub use solver::{
     DenseIncompleteRankDiagnostics, DenseMatrixNorms, DenseRankDecision, DenseRankDiagnostics,
     DenseResidualDiagnostics, DenseSolution, DenseSolveDiagnostics, DenseSolveError,
     DenseSolveOptions, DenseSolverConfigurationError, Regularization, try_solve_field,
+    try_solve_field_with_control,
 };
 pub use transform::{AffineNormalization, TransformError, TransformOperation};
 pub use units::{AngleUnit, LengthUnit, UnitError};
