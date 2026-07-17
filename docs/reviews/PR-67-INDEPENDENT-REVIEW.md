@@ -262,3 +262,42 @@ must independently re-review R67-004 and either record findings and stop or,
 only if clean, follow the mandatory ready-CI-integration sequence. This Repair
 does not mark the PR ready, merge, integrate the requirement, or begin another
 requirement.
+
+## Final independent R67-004 re-review
+
+A fresh read-only project `math_reviewer` independently reviewed base
+`eaa7430fabafd1c8890306f9240afd4feb596e96`, previous re-review evidence
+`0bb7facca391fc16343dace2fbccdf8acb8ef9d7`, stable R67-004 repair
+`33cf9def4a418970281b3ad130dcf58ec1b29074`, and exact evidence head
+`2b6e7f9fc0acffe40e3f7796c9b5428bb50349c9`. It received only the bounded
+requirement and integrated dependency summaries, Issue #66, the M3 plan,
+scoped architecture, solver-policy and ADR-0010 contracts, complete PR and
+repair diffs, prior findings, and validation evidence. It made no repository or
+remote changes and reported no P0-P3 findings.
+
+R67-004 is closed, and R67-002 now has adequate production-path regression
+coverage. The one-shot hooks are test-only, thread-local, removed when used,
+and guarded by cleanup. They wrap the actual original-rank and factorization
+calls in `solve_validated`. Each regression enters through
+`DenseEqualitySystem::try_solve_with_control`, coordinates cancellation from a
+separate thread through a two-phase barrier while the injected call is active,
+and ensures the cancellation store precedes release of the injected numerical
+error. The retained-result checkpoint therefore observes cancellation first.
+Exact event prefixes omit the failed `RankReview` or `Factorization` stage and
+`Completed`; reverting either call site to an early `?` would expose the
+injected numerical error and fail the regression. Non-test builds contain no
+hook state or injected failure branch, and thread-local one-shot isolation
+prevents leakage between parallel tests.
+
+The reviewer independently passed both failure-priority regressions, all eight
+execution-control integration tests, all-feature `georbf` tests (198
+unit/integration tests and 29 doctests), core Rustdoc (29 doctests), non-test
+all-feature library Clippy with warnings denied, workspace formatting, the full
+PR `git diff --check`, and a core-output-macro scan. The exact evidence head's
+Draft Ubuntu CI also passed. The stable repair head retains its recorded full
+local standard gate, and the later evidence changes are documentation-only.
+
+REQ-EXEC-001 remains `implemented` until PR #67 is marked ready, the complete
+Windows, Ubuntu, macOS, and benchmark-smoke CI passes on that exact ready head,
+and the PR is merged. This clean re-review authorizes that mandatory integration
+sequence; it does not itself claim ready CI, merge, or integration.
