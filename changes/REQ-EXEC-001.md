@@ -19,6 +19,15 @@ Backend SVD and factorization calls remain indivisible. A cancellation returns
 `ExecutionError::Cancelled` through the owning structured error and exposes no
 partial system, solution, or fitted model.
 
+Post-review repair gives terminal completion one linearization point and makes
+post-call error priority explicit. Cancellation observed immediately after
+fallible memory, rank, factorization/solve, residual, or refinement work takes
+priority over that work's concurrent numerical failure without publishing a
+successful stage. A sink cancellation from `Completed` is post-completion.
+Progress totals are maximum work budgets, while completed counts include only
+performed work and therefore remain below the budget when refinement stops
+early.
+
 The implemented dense path is serial. An absent explicit thread count or one is
 accepted; any larger value is rejected before numerical work with
 `ExecutionError::UnsupportedThreadCount`. This avoids claiming or silently
@@ -27,12 +36,15 @@ existing fixed ordering; disabling the request permits future nondeterministic
 implementations but does not alter the current serial result.
 
 Independent behavior tests cover cloned cross-thread cancellation, pre-start
-and progress-triggered cancellation, exact typed event sequences, monotonic
-progress, repeated bit-identical solutions and diagnostics, repeated identical
-progress, explicit one-thread propagation, rejection of two threads before
-events, retained field execution options, and controlled field assembly. The
-existing field, solver, model, diagnostics, and workspace suites cover unchanged
-convenience paths and the absence of core output macros.
+and progress-triggered cancellation, callback-time terminal cancellation,
+post-call cancellation precedence over failing rank and factorization work,
+exact typed event sequences and counts for optional refinement and explicit
+regularization, monotonic progress, repeated bit-identical solutions and
+diagnostics, repeated identical progress, explicit one-thread propagation,
+rejection of two threads before events, retained field execution options, and
+controlled field assembly. The existing field, solver, model, diagnostics, and
+workspace suites cover unchanged convenience paths and the absence of core
+output macros.
 
 Rust is implemented. The CLI is N/A because its Stage 0 surface exposes only
 help and version, not a long-running core operation. C, C++, and Python are N/A

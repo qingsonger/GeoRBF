@@ -159,11 +159,21 @@ entry and polynomial row, and around CPD construction, canonicalization,
 symmetry review, and projected-energy construction. Dense solving checks around
 memory review, rank reviews, factorization, every attempted refinement, and
 residual review. A backend SVD or factorization call is indivisible, so a request
-made during that call is observed immediately afterward. Cancellation returns a
-typed `ExecutionError::Cancelled` through the owning assembly or solver error
-and never returns a partial system, solution, or fitted model. `FittedField`
+made during that call is observed immediately afterward. Fallible work is
+retained until this post-call checkpoint: cancellation observable there takes
+priority over the concurrent numerical failure, and a failed stage publishes no
+successful progress event. Cancellation returns a typed
+`ExecutionError::Cancelled` through the owning assembly or solver error and
+never returns a partial system, solution, or fitted model. `FittedField`
 propagates one borrowed control through both assembly and solving without
 retaining it.
+
+Progress totals are checked maximum work budgets. Completed counts report only
+work actually performed, so early refinement termination can complete with a
+count below the budget. `Completed` is the single successful terminal event:
+cancellation is checked before it is published, while cancellation requested
+synchronously by that callback is post-completion and applies only to a later
+operation that reuses the sticky token.
 
 The current dense assembly and solve algorithms are serial. An absent thread
 count or an explicit count of one is accepted and progress truthfully reports

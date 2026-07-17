@@ -133,7 +133,10 @@ impl ProgressEvent {
         self.completed
     }
 
-    /// Returns the checked total work units for this operation.
+    /// Returns the checked maximum work-unit budget for this operation.
+    ///
+    /// The final completed count can be smaller when optional work, such as
+    /// iterative refinement, stops early.
     #[must_use]
     pub const fn total(self) -> usize {
         self.total
@@ -160,7 +163,9 @@ impl ProgressEvent {
 /// `GeoRBF` invokes this callback without holding a core lock. Implementations
 /// may request cancellation through a [`CancellationToken`], but must return
 /// promptly and must not panic. Events are immutable and may be copied by the
-/// sink for asynchronous presentation by an adapter.
+/// sink for asynchronous presentation by an adapter. Cancellation requested
+/// while handling [`ExecutionStage::Completed`] is post-completion and affects
+/// only later operations that reuse the token.
 pub trait ProgressSink: Send + Sync {
     /// Observes one progress event.
     fn on_progress(&self, event: ProgressEvent);
@@ -305,11 +310,35 @@ impl<'a> ProgressTracker<'a> {
         self.check_cancelled(stage)
     }
 
-    pub(crate) fn complete(mut self) -> Result<(), ExecutionError> {
+    pub(crate) fn finish_work<T, E>(
+        &mut self,
+        stage: ExecutionStage,
+        result: Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: From<ExecutionError>,
+    {
+        let value = self.observe_result(stage, result)?;
+        self.advance(stage).map_err(E::from)?;
+        Ok(value)
+    }
+
+    pub(crate) fn observe_result<T, E>(
+        &self,
+        stage: ExecutionStage,
+        result: Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: From<ExecutionError>,
+    {
+        self.check_cancelled(stage).map_err(E::from)?;
+        result
+    }
+
+    pub(crate) fn complete(self) -> Result<(), ExecutionError> {
         self.check_cancelled(ExecutionStage::Completed)?;
-        self.completed = self.total;
         self.report(ExecutionStage::Completed);
-        self.check_cancelled(ExecutionStage::Completed)
+        Ok(())
     }
 
     fn check_cancelled(&self, stage: ExecutionStage) -> Result<(), ExecutionError> {

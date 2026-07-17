@@ -81,11 +81,18 @@ impl ProgressSink for CancellingSink {
 }
 
 fn solve_options() -> Result<DenseSolveOptions, Box<dyn Error>> {
+    solve_options_with(Regularization::None, 2)
+}
+
+fn solve_options_with(
+    regularization: Regularization,
+    maximum_refinement_steps: usize,
+) -> Result<DenseSolveOptions, Box<dyn Error>> {
     Ok(DenseSolveOptions::try_new(
         DenseFactorization::Cholesky,
-        Regularization::None,
+        regularization,
         ConditionPolicy::default(),
-        2,
+        maximum_refinement_steps,
         NonZeroUsize::new(TEST_MEMORY_LIMIT_BYTES).ok_or("memory limit")?,
     )?)
 }
@@ -166,6 +173,13 @@ fn assert_monotonic(events: &[ProgressEvent], operation: ExecutionOperation) {
     }
 }
 
+fn progress_signature(events: &[ProgressEvent]) -> Vec<(ExecutionStage, usize, usize)> {
+    events
+        .iter()
+        .map(|event| (event.stage(), event.completed(), event.total()))
+        .collect()
+}
+
 #[test]
 fn cancellation_token_is_sticky_cloneable_and_thread_safe() {
     let token = CancellationToken::new();
@@ -223,6 +237,119 @@ fn pre_start_and_in_flight_cancellation_are_structured() -> TestResult {
         !events
             .iter()
             .any(|event| event.stage() == ExecutionStage::Completed)
+    );
+    Ok(())
+}
+
+#[test]
+fn cancellation_from_completed_callback_is_post_completion() -> TestResult {
+    let token = CancellationToken::new();
+    let sink = CancellingSink::new(token.clone(), ExecutionStage::Completed);
+    let solution = dense_system()?.try_solve_with_control(
+        solve_options()?,
+        ExecutionOptions::default(),
+        ExecutionControl::new(Some(&token), Some(&sink)),
+    )?;
+
+    assert_eq!(solution.values(), &[1.0, 2.0]);
+    let events = sink.events();
+    assert_eq!(
+        events
+            .iter()
+            .filter(|event| event.stage() == ExecutionStage::Completed)
+            .count(),
+        1
+    );
+    assert_eq!(
+        events.last().map(|event| event.stage()),
+        Some(ExecutionStage::Completed)
+    );
+    assert!(token.is_cancelled());
+    Ok(())
+}
+
+#[test]
+fn dense_progress_reports_exact_work_and_maximum_budget() -> TestResult {
+    let exact_sink = RecordingSink::default();
+    let _ = dense_system()?.try_solve_with_control(
+        solve_options_with(Regularization::None, 2)?,
+        ExecutionOptions::default(),
+        ExecutionControl::with_progress(&exact_sink),
+    )?;
+    assert_eq!(
+        progress_signature(&exact_sink.events()),
+        vec![
+            (ExecutionStage::Started, 0, 7),
+            (ExecutionStage::MemoryReview, 1, 7),
+            (ExecutionStage::RankReview, 2, 7),
+            (ExecutionStage::Factorization, 3, 7),
+            (ExecutionStage::ResidualReview, 4, 7),
+            (ExecutionStage::ResidualReview, 5, 7),
+            (ExecutionStage::Completed, 5, 7),
+        ]
+    );
+
+    let first_candidate_sink = RecordingSink::default();
+    let _ = DenseEqualitySystem::try_from_row_major(1, vec![10.0], vec![1.0])?
+        .try_solve_with_control(
+            solve_options_with(Regularization::None, 2)?,
+            ExecutionOptions::default(),
+            ExecutionControl::with_progress(&first_candidate_sink),
+        )?;
+    assert_eq!(
+        progress_signature(&first_candidate_sink.events()),
+        vec![
+            (ExecutionStage::Started, 0, 7),
+            (ExecutionStage::MemoryReview, 1, 7),
+            (ExecutionStage::RankReview, 2, 7),
+            (ExecutionStage::Factorization, 3, 7),
+            (ExecutionStage::ResidualReview, 4, 7),
+            (ExecutionStage::Refinement, 5, 7),
+            (ExecutionStage::ResidualReview, 6, 7),
+            (ExecutionStage::Completed, 6, 7),
+        ]
+    );
+
+    let regularized_sink = RecordingSink::default();
+    let _ = DenseEqualitySystem::try_from_row_major(2, vec![1.0, 1.0, 1.0, 1.0], vec![2.0, 2.0])?
+        .try_solve_with_control(
+        solve_options_with(Regularization::Explicit(1.0), 0)?,
+        ExecutionOptions::default(),
+        ExecutionControl::with_progress(&regularized_sink),
+    )?;
+    assert_eq!(
+        progress_signature(&regularized_sink.events()),
+        vec![
+            (ExecutionStage::Started, 0, 6),
+            (ExecutionStage::MemoryReview, 1, 6),
+            (ExecutionStage::RankReview, 2, 6),
+            (ExecutionStage::RankReview, 3, 6),
+            (ExecutionStage::Factorization, 4, 6),
+            (ExecutionStage::ResidualReview, 5, 6),
+            (ExecutionStage::ResidualReview, 6, 6),
+            (ExecutionStage::Completed, 6, 6),
+        ]
+    );
+
+    let full_refinement_sink = RecordingSink::default();
+    let _ = DenseEqualitySystem::try_from_row_major(1, vec![10.0], vec![1.0])?
+        .try_solve_with_control(
+            solve_options_with(Regularization::None, 1)?,
+            ExecutionOptions::default(),
+            ExecutionControl::with_progress(&full_refinement_sink),
+        )?;
+    assert_eq!(
+        progress_signature(&full_refinement_sink.events()),
+        vec![
+            (ExecutionStage::Started, 0, 6),
+            (ExecutionStage::MemoryReview, 1, 6),
+            (ExecutionStage::RankReview, 2, 6),
+            (ExecutionStage::Factorization, 3, 6),
+            (ExecutionStage::ResidualReview, 4, 6),
+            (ExecutionStage::Refinement, 5, 6),
+            (ExecutionStage::ResidualReview, 6, 6),
+            (ExecutionStage::Completed, 6, 6),
+        ]
     );
     Ok(())
 }
