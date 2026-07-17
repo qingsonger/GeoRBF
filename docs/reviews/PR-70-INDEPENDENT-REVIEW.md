@@ -273,3 +273,33 @@ the complete correctness gate. PR #70 must remain Draft and REQ-LEVEL-001 must
 remain `implemented`. A fresh Repair task must address only R70-010, run the
 focused and complete stable-head gates, push, and stop for another fresh
 independent re-review.
+
+## R70-010 repair evidence
+
+Repair implementation commit `612aa0d34f2c75740cb0d26cb57392249d31a892`
+addresses only R70-010. Before the production change, the new direct-path
+regression failed because `LevelProblem::try_new` returned success. The repair
+now performs a deterministic DAG pass from each membership-coupled level,
+rejects a positive direct or transitive path to a mathematically identical
+membership, and returns `MembershipOrderConflict`. Its source vector contains
+the lower membership, every selected path edge in order, and the upper
+membership. Mathematical functional comparison ignores functional provenance;
+the original hard rows are neither emitted nor changed on this semantic error
+path. Graph work buffers are allocated once and reused across membership
+sources.
+
+The source-aware regression uses fixed `A`, unknown `B`, independently
+constructed unit Value evaluations at the same point with distinct functional
+and semantic provenance, and a direct `A -> B` gap of `1.0`. It asserts the
+exact membership/order/membership source sequence. The same test also checks a
+two-edge path and both edge sources. The focused level suite has 17 passing
+tests; core all-target/all-feature Clippy, all 29 core Rustdoc tests, and the
+64-level benchmark smoke passed.
+
+After the final production, test, registry, and normative-document change, the
+complete stable-tree standard gate passed: workspace formatting,
+warning-denying all-target/all-feature workspace Clippy, all-feature workspace
+tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+This repair evidence is not an independent re-review and does not itself close
+R70-010. PR #70 remains Draft and REQ-LEVEL-001 remains `implemented`; a fresh
+read-only re-review must confirm closure and check for new findings.
