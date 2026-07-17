@@ -6,52 +6,56 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / REQ-EXEC-001 complete
+- Mode: Review / REQ-EXEC-001 findings recorded
 - Requirement: REQ-EXEC-001, Issue #66
 - Branch: `codex/req-exec-001-deterministic-execution-controls`
 - Draft pull request: #67
+- Reviewed head: `1b2325b`
 - Stable implementation commit: `ef16599`
-- Registry state in this change: `implemented`
-- Required next mode: fresh independent Review of this requirement only
+- Review record: `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
+- Registry state: `implemented`
+- Required next mode: fresh Repair of R67-001, R67-002, and R67-003 only
 
-## Implemented scope
+## Review result
 
-- Added cloneable atomic cancellation, borrowed execution controls, typed
-  monotonic progress events, and structured execution failures.
-- Added controlled field-assembly, direct-solve, field-solve, and fitted-model
-  entry points while preserving the existing convenience APIs.
-- Propagated deterministic and explicit thread-count options. The current
-  serial implementation accepts absent/one and structurally rejects larger
-  counts before numerical work rather than silently clamping.
-- Documented deterministic boundaries, synchronous callback behavior,
-  indivisible backend calls, and the no-partial-result cancellation contract.
-- Added `changes/REQ-EXEC-001.md` and independent cancellation, progress,
-  repeat-determinism, and thread-count behavior tests.
+- P2 R67-001: a sink can cancel on `Completed`, producing a successful terminal
+  event followed by a cancellation error.
+- P2 R67-002: a failing SVD, factorization, or related fallible numerical call
+  can return before the promised post-call cancellation checkpoint.
+- P2 R67-003: early refinement completion credits skipped refinement slots as
+  completed work, and current tests do not lock exact counts.
+- The independent reviewer found no changed matrix formula, sign, dimension,
+  unit, CPD null-space, rank threshold, factorization, regularization, residual,
+  hard-constraint, hidden recovery, or interface-disposition defect.
 
 ## Validation state
 
 - The stable implementation tree passed the complete local standard gate:
   format, warning-denying workspace Clippy, all-feature workspace tests,
   workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The all-feature workspace run includes all six focused execution-control
-  behavior tests and the existing field, solver, model, diagnostics, and
-  adapter-bootstrap regressions.
-- The isolated PR-linkage update after the full gate changes only registry and
-  handoff evidence. `cargo xtask requirements check` and `git diff --check`
-  were repeated; no production, test, manifest, schema, CI, or build input
-  changed after the full gate.
+- The read-only reviewer independently passed all six execution-control tests,
+  all-feature `georbf` tests, `georbf` Rustdoc, and the complete PR
+  `git diff --check` on reviewed head `1b2325b`.
+- Draft Ubuntu CI run 29550596570 passed on the reviewed head. Ready-only
+  Windows, Ubuntu, macOS, and benchmark-smoke CI has not run.
+- This review task changes only the independent review record and bounded
+  handoff; it does not repair production code or change tests, manifests,
+  schemas, CI, build inputs, registry state, or numerical behavior.
 
 ## Next task
 
-Open a fresh Review task for the Draft PR. Supply only `requirements show/deps`,
-the architecture and relevant solver/ADR contracts, the PR diff, and validation
-evidence to the independent reviewer. Do not repair production code or begin
-another requirement in that Review task.
+Open a fresh Repair task for PR #67 and address only R67-001, R67-002, and
+R67-003. Add the independent terminal-state, failing-backend cancellation, and
+exact progress-count regressions before or alongside the smallest fixes. Run
+focused checks while repairing and the complete standard gate after the last
+code change, then update the review evidence and bounded handoff, commit, push,
+and stop for a fresh independent re-review. Do not begin another requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #66
 - Draft implementation: GitHub PR #67
+- Independent review: `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-EXEC-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - Relevant numerical policy: `docs/architecture/SOLVER_POLICY.md` and ADR-0010
