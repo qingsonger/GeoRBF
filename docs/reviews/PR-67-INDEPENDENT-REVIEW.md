@@ -6,9 +6,10 @@
 - Branch: `codex/req-exec-001-deterministic-execution-controls`
 - Reviewed head: `1b2325b3a1904e99c52ab6fbf665f22bcd5d5275`
 - Stable implementation head: `ef16599`
+- Repair head: `947888a`
 - Base head: `eaa7430fabafd1c8890306f9240afd4feb596e96`
 - Review date: 2026-07-17
-- Result: three P2 findings; repair required
+- Result: three P2 findings; repair recorded, fresh re-review required
 
 ## Scope and independence
 
@@ -139,3 +140,30 @@ task must address only R67-001, R67-002, and R67-003, add the specified
 independent regressions, rerun focused checks during development, and run the
 complete standard gate after the final code change. This Review task does not
 repair production code or begin another requirement.
+
+## Repair evidence
+
+Fresh Repair commit `947888a` addresses only the three recorded findings:
+
+- R67-001 gives `Completed` one success linearization point. Cancellation is
+  checked before the event, while cancellation requested by its synchronous
+  callback is post-completion and affects only later token reuse.
+- R67-002 retains every fallible staged result, checks cancellation immediately
+  after each call without publishing a successful stage, and gives cancellation
+  observable at that checkpoint priority over the concurrent numerical error.
+- R67-003 defines `total` as the checked maximum work budget and preserves the
+  actual completed-work count when optional refinement stops early.
+
+The repair adds independent regressions for terminal callback cancellation,
+concurrent cancellation with failing rank and factorization calls, and every
+stage/count pair for exact-zero residual, first-candidate termination, explicit
+regularization with its second rank review, and full refinement-budget use.
+Focused execution-control, failure-priority, all-feature core, and core Rustdoc
+checks passed. The stable repair tree also passed format, warning-denying
+workspace Clippy, all-feature workspace tests, workspace Rustdoc, all 58
+requirement checks, and `git diff --check`.
+
+This evidence records the Repair only. It does not independently re-review the
+repair, mark the PR ready, run ready-only CI, merge, integrate REQ-EXEC-001, or
+begin another requirement. PR #67 remains Draft and the registry remains
+`implemented` pending a fresh independent re-review.

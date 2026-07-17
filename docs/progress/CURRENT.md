@@ -6,56 +6,62 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / REQ-EXEC-001 findings recorded
+- Mode: Repair / REQ-EXEC-001 findings addressed
 - Requirement: REQ-EXEC-001, Issue #66
 - Branch: `codex/req-exec-001-deterministic-execution-controls`
 - Draft pull request: #67
-- Reviewed head: `1b2325b`
-- Stable implementation commit: `ef16599`
-- Review record: `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
+- Reviewed pre-repair head: `1b2325b`
+- Review-evidence head: `f2a6171`
+- Stable repair commit: `947888a`
+- Review and repair record: `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
 - Registry state: `implemented`
-- Required next mode: fresh Repair of R67-001, R67-002, and R67-003 only
+- Required next mode: fresh independent Review of repair head `947888a`
 
-## Review result
+## Repair result
 
-- P2 R67-001: a sink can cancel on `Completed`, producing a successful terminal
-  event followed by a cancellation error.
-- P2 R67-002: a failing SVD, factorization, or related fallible numerical call
-  can return before the promised post-call cancellation checkpoint.
-- P2 R67-003: early refinement completion credits skipped refinement slots as
-  completed work, and current tests do not lock exact counts.
-- The independent reviewer found no changed matrix formula, sign, dimension,
-  unit, CPD null-space, rank threshold, factorization, regularization, residual,
-  hard-constraint, hidden recovery, or interface-disposition defect.
+- R67-001 repaired: `Completed` is one successful terminal event; cancellation
+  requested by that callback is post-completion.
+- R67-002 repaired: every fallible staged numerical result reaches an immediate
+  post-call cancellation checkpoint before its error is applied, observable
+  cancellation takes priority, and failed work publishes no successful stage.
+- R67-003 repaired: totals are maximum work budgets and completed counts include
+  only performed work, including early refinement termination.
+- Independent regressions cover terminal callback cancellation, failing rank and
+  factorization calls under concurrent cancellation, and exact progress pairs
+  for zero residual, early stop, explicit regularization, and full budget use.
+- No matrix formula, sign, dimension, unit, CPD null-space, rank threshold,
+  factorization choice, regularization policy, residual mathematics, hard
+  constraint, adapter disposition, dependency, manifest, or schema changed.
 
 ## Validation state
 
-- The stable implementation tree passed the complete local standard gate:
+- Focused execution-control tests: 8 passed.
+- Focused concurrent rank/factorization cancellation regressions: 2 passed.
+- All-feature `georbf` tests and `georbf` Rustdoc passed after the last repair.
+- Stable repair commit `947888a` passed the complete local standard gate:
   format, warning-denying workspace Clippy, all-feature workspace tests,
   workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The read-only reviewer independently passed all six execution-control tests,
-  all-feature `georbf` tests, `georbf` Rustdoc, and the complete PR
-  `git diff --check` on reviewed head `1b2325b`.
-- Draft Ubuntu CI run 29550596570 passed on the reviewed head. Ready-only
-  Windows, Ubuntu, macOS, and benchmark-smoke CI has not run.
-- This review task changes only the independent review record and bounded
-  handoff; it does not repair production code or change tests, manifests,
-  schemas, CI, build inputs, registry state, or numerical behavior.
+- The later handoff commit changes only this bounded handoff and the repair
+  evidence in the review record; it does not change production, tests,
+  manifests, schemas, CI, or build inputs.
+- Draft Ubuntu CI for the pushed repair head has not yet been relied upon.
+  Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run.
 
 ## Next task
 
-Open a fresh Repair task for PR #67 and address only R67-001, R67-002, and
-R67-003. Add the independent terminal-state, failing-backend cancellation, and
-exact progress-count regressions before or alongside the smallest fixes. Run
-focused checks while repairing and the complete standard gate after the last
-code change, then update the review evidence and bounded handoff, commit, push,
-and stop for a fresh independent re-review. Do not begin another requirement.
+Open a fresh independent Review task for PR #67. Re-review only repairs
+R67-001, R67-002, and R67-003 against stable repair commit `947888a`, the
+original findings, the scoped architecture contract, the PR diff, and the
+recorded validation evidence. Do not repair production code in that Review and
+do not begin another requirement. If clean, record the review and stop for the
+fresh ready/integration Review task required by `AGENTS.md`.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #66
-- Draft implementation: GitHub PR #67
-- Independent review: `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
+- Draft implementation and repair: GitHub PR #67
+- Independent review and repair evidence:
+  `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-EXEC-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - Relevant numerical policy: `docs/architecture/SOLVER_POLICY.md` and ADR-0010
