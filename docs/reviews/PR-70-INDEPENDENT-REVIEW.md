@@ -181,3 +181,32 @@ independent regressions, rerun focused checks during development, and run the
 complete standard gate after the final production or test change. This Review
 task does not repair production code, mark the PR ready, merge it, integrate
 the requirement, or begin another requirement.
+
+## Repair evidence
+
+Repair commit `a56e7ad24a9eaa4768534d3cd897ee74a6355659` addresses only
+R70-001 through R70-009:
+
+- memberships now accept exactly one coefficient-1 Value atom;
+- fixed-path propagation and endpoint comparison use an overflow-safe scaled
+  magnitude while retaining every original hard row;
+- mathematical Value equality ignores functional provenance, and fixed
+  membership conflicts retain both definitions and both membership sources;
+- cycle evidence contains only edges that have a return path and therefore
+  participate in a directed cycle;
+- contrast requires two membership-coupled levels, and missing-contrast
+  evidence is selected from the failing field component; and
+- the registry and change fragment now match deterministic-tie, exact-source,
+  provenance-independent, overflow, and membership-coupled regression evidence.
+
+The repaired focused level suite has 16 passing tests. Core all-target,
+all-feature Clippy, core Rustdoc, the 64-level benchmark smoke, the 58-entry
+requirement check, and whitespace review passed. After the final production,
+test, registry, and normative-document change, the complete stable-tree gate
+passed: workspace formatting, warning-denying all-target/all-feature workspace
+Clippy, all-feature workspace tests, workspace Rustdoc, requirement validation,
+and `git diff --check`.
+
+This repair evidence is not an independent re-review and does not close the
+findings. PR #70 remains Draft and REQ-LEVEL-001 remains `implemented`; a fresh
+read-only re-review must confirm closure and check for new findings.

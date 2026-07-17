@@ -6,57 +6,52 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / REQ-LEVEL-001 findings recorded; fresh Repair required
+- Mode: Repair / REQ-LEVEL-001 findings addressed; fresh re-review required
 - Requirement: REQ-LEVEL-001, Issue #69 (open)
 - Branch: `codex/req-level-001-explicit-level-variables`
 - Draft implementation pull request: #70
 - Registry state in this change: `implemented`
 - Dependencies: REQ-IR-001 and REQ-MODEL-001 are `integrated`
-- Independently reviewed implementation head: `7d8d283`
-- Review result: five P1, three P2, and one P3 finding; no P0 finding
-- Next eligible requirement remains blocked until REQ-LEVEL-001 is repaired,
-  freshly re-reviewed, integrated, and selected by a later fresh task
+- Repaired implementation head: `a56e7ad24a9eaa4768534d3cd897ee74a6355659`
+- Repair scope: R70-001 through R70-009; not yet independently re-reviewed
+- Next eligible requirement remains blocked until REQ-LEVEL-001 is freshly
+  re-reviewed, integrated, and selected by a later fresh task
 
-## Review result
+## Repair result
 
-- P1 R70-001: unrestricted observation functionals violate membership units and
-  invalidate the unconditional membership gauge edge.
-- P1 R70-002 and R70-003: extreme finite endpoint subtraction can hide a hard
-  conflict, while accumulated-path overflow can reject a feasible hard system.
-- P1 R70-008: provenance-bearing `PartialEq` misses mathematically identical
-  fixed-membership conflicts from independent sources.
-- P1 R70-009: a positive gap or distinct anchor on a membershipless level does
-  not force nonzero scalar-field contrast.
-- P2 R70-004, R70-005, and R70-006: cycle sources overreport downstream edges,
-  fixed-membership conflicts omit definition sources, and missing-contrast
-  diagnostics may cite unrelated levels.
-- P3 R70-007: deterministic-DAG, exact-source, and independent-functional test
-  evidence is overstated in the registry and change fragment.
-- Canonical signs, constants, indices, prior separation, hard-row preservation,
-  dimension bounds, and interface dispositions were independently confirmed.
+- R70-001: memberships accept only one coefficient-1 Value atom and reject
+  derivatives, scaled values, and multi-atom expressions structurally.
+- R70-002 and R70-003: scaled path magnitudes preserve extreme conflicts and
+  accept the feasible `-MAX -> 0 -> MAX` hard system without altering rows.
+- R70-004 through R70-006: cycle evidence excludes downstream edges, fixed
+  membership conflicts include all four sources, and contrast diagnostics cite
+  the failing field component.
+- R70-007 and R70-008: deterministic tie-breaking and exact-source regressions
+  are explicit, and mathematical Value equality ignores provenance.
+- R70-009: positive gaps or anchors on membershipless levels no longer
+  manufacture scalar-field contrast.
 
 ## Validation state
 
-- A fresh read-only project `math_reviewer` received only bounded requirement,
-  dependency, normative-document, complete-diff, and validation evidence.
-- Exact reviewed head `7d8d283` passed Draft Ubuntu correctness CI run
-  29561377945. Ready-only three-platform and benchmark-smoke CI did not run.
-- The Review task independently repeated the focused level suite (10 passed),
-  core Rustdoc, and the complete PR whitespace check.
-- The implementation tree retains its recorded complete local standard gate.
-  This Review task changes only review and bounded-handoff documentation; the
-  requirement registry check and `git diff --check` passed on that evidence
-  tree.
+- Repair head `a56e7ad` passed the focused level suite (16 tests), core
+  all-target/all-feature Clippy, core Rustdoc, and the 64-level benchmark smoke.
+- After the final production, test, registry, and normative-document change,
+  the complete stable-tree standard gate passed: formatting, warning-denying
+  workspace Clippy, all-feature workspace tests, workspace Rustdoc, all 58
+  requirement checks, and `git diff --check`.
+- This evidence update and bounded handoff are documentation-only. No fresh
+  independent mathematical re-review or repair-head Draft CI result is claimed.
 
 ## Next task
 
-Open a fresh Repair task for Draft PR #70. Address only R70-001 through R70-009
-from `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`, add every specified independent
-regression, run focused checks during development, and run the complete standard
-gate after the final production or test change. Update the review evidence and
-bounded handoff, commit, push, and stop for a fresh independent re-review. Do
-not mark the PR ready, merge, integrate REQ-LEVEL-001, or start another
-requirement in the Repair task.
+Open a fresh Review/re-review task for Draft PR #70. Supply a new read-only
+project `math_reviewer` only the bounded REQ-LEVEL-001 context, original review,
+repair diff, and validation evidence. Independently confirm R70-001 through
+R70-009 are closed and check for new P0-P3 findings. If any finding remains,
+record it and stop without repair. If clean, follow the mandatory sequence:
+mark ready, wait for complete Windows/Ubuntu/macOS and benchmark-smoke CI on the
+exact ready head, merge exactly once only if green, record truthful integration
+state, and stop. Do not start another requirement in that task.
 
 ## Durable evidence
 
