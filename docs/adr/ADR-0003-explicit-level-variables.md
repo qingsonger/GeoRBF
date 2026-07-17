@@ -22,3 +22,11 @@ is an optional internal elimination only.
 Level semantics remain inspectable through canonicalization and serialization.
 Systems are somewhat larger, but rank and infeasibility diagnostics are honest
 and priors and inequalities compose directly.
+
+The initial implementation retains soft priors beside the hard canonical
+problem as explicit objective metadata. It does not pretend that the current
+dense equality solver supports those objectives or order bounds. Gauge is
+checked per connected component formed by level-order edges and memberships to
+the shared scalar field; contrast must occur in the field-connected component.
+Fixed-order conflict review includes transitive path gaps, while the emitted
+canonical problem retains the original individual hard constraints.

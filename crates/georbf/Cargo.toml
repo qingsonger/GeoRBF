@@ -62,3 +62,7 @@ harness = false
 [[bench]]
 name = "fitted_field_evaluation"
 harness = false
+
+[[bench]]
+name = "level_compilation"
+harness = false

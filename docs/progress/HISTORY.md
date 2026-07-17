@@ -43,5 +43,7 @@ GitHub. This file is an index, not a second completion registry.
 
 ## Milestone transition
 
-M0, M1, and M2 are complete. The isolated Issue #31 workflow-efficiency repair
-is integrated. M3 continues after REQ-EXEC-001 integration.
+M0, M1, M2, and M3 are complete. The isolated Issue #31 workflow-efficiency
+repair is integrated. M4 begins with the REQ-LEVEL-001 implementation; it is
+not listed as integrated above until independent review, Ready CI, merge, and
+the isolated integration-state update are complete.

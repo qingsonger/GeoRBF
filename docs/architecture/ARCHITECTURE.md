@@ -27,6 +27,17 @@ depends on the canonical representation; solvers know only numerical forms;
 models own immutable coefficients and transforms; adapters depend on public
 core APIs.
 
+The level layer depends on compiled scalar-field functionals, semantic
+provenance, structured diagnostics, and the solver-neutral canonical IR. It
+owns stable fixed, unknown, and prior level definitions; hard memberships;
+minimum-gap order DAGs; connected-component gauge review; field contrast; and
+source-aware fixed conflicts. It appends one explicit level-variable block to
+caller field variables and emits only canonical equality and linear-bound
+rows. Soft priors remain typed objective metadata until the approved convex
+objective backend is integrated. The level layer does not solve inequalities,
+eliminate levels into a separate model type, select kernels or centers, or
+introduce geological semantics into a solver.
+
 The orientation layer depends only on dimension-safe geometry and angle units.
 It keeps planar normals and linear directions as separate fixed-size D=2/D=3
 types, applies explicit positive/negative/unknown polarity, and owns only

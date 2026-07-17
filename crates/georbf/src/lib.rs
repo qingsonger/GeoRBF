@@ -15,7 +15,10 @@
 //! capability-gated original-coordinate value, gradient, and Hessian
 //! evaluation, plus stable source-aware structured error codes for adapter and
 //! orchestration boundaries, and caller-owned cancellation, deterministic
-//! progress, and explicit serial-execution controls for assembly and solving.
+//! progress, and explicit serial-execution controls for assembly and solving,
+//! plus provenance-preserving fixed, unknown, and prior level variables with
+//! hard memberships, order-DAG validation, gauge and contrast checks, and
+//! solver-neutral equality/linear-bound compilation.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -31,6 +34,7 @@ pub mod functional;
 pub mod geometry;
 pub mod kernel;
 pub mod kernel_calculus;
+pub mod levels;
 pub mod model;
 pub mod orientation;
 pub mod polynomial;
@@ -89,6 +93,11 @@ pub use kernel_calculus::{
     KernelArgument, KernelCalculusError, RadialDerivativeOrder, RadialExpansionCoefficient,
     RadialExpansionCoefficients, RadialJet, RadialJetLocation, RadialSeparation, SpatialKernelJet,
     SpatialKernelJetPrefix,
+};
+pub use levels::{
+    CanonicalLevelPrior, CompiledLevelProblem, LevelCanonicalizationError, LevelDefinition,
+    LevelMembership, LevelOrder, LevelPrior, LevelProblem, LevelProblemDiagnostics,
+    LevelProblemError, LevelStorage, LevelValue,
 };
 pub use model::{
     FittedField, FittedFieldCapabilities, FittedFieldComponent, FittedFieldDiagnostics,

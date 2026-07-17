@@ -6,64 +6,65 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-EXEC-001 complete
-- Requirement: REQ-EXEC-001, Issue #66 (closed)
-- Implementation pull request: #67, squash-merged as `6ee93e1`
-- Integration-state branch: `codex/req-exec-001-integration-state`
-- Integration-state pull request: #68 (Draft until final evidence is green)
-- Review record: `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-LEVEL-001 (`planned`)
+- Mode: Implement / REQ-LEVEL-001 complete; fresh independent Review required
+- Requirement: REQ-LEVEL-001, Issue #69 (open)
+- Branch: `codex/req-level-001-explicit-level-variables`
+- Draft implementation pull request: pending initial push
+- Registry state before the Draft PR exists: `in_progress`; update to
+  `implemented` with the PR number after creation
+- Dependencies: REQ-IR-001 and REQ-MODEL-001 are `integrated`
+- Next eligible requirement after eventual integration: determined by a fresh
+  `cargo xtask requirements next`; do not start it in the Review task
 
-## Integration result
+## Implementation result
 
-- A fresh read-only project `math_reviewer` closed R67-004 and confirmed that
-  the earlier R67-002 has adequate production-path regression coverage. No
-  P0-P3 finding remains in the complete implementation and repair diff.
-- Exact Ready head `a4866787f5fee12ae4dda57a8e6f59d869b7eeec` passed the
-  complete Windows, Ubuntu, and macOS matrix with every backend and benchmark
-  smoke workload in CI run 29557856147.
-- PR #67 squash-merged exactly once as
-  `6ee93e1bbff24e218e4da387ed85129a81c39f1b`; Issue #66 closed as
-  completed.
-- Post-merge `main` run 29558360990 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate on `6ee93e1`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, numerical behavior, dependency,
-  tag, or release.
+- Added explicit fixed, unknown, and prior level definitions with stable IDs,
+  complete provenance, validated prior mean/scale/loss, and no implicit
+  objective or solver claim.
+- Added hard field memberships `f(x_i) - h_k = 0`, order DAG edges
+  `h_upper - h_lower >= minimum_gap`, one deterministic canonical `levels`
+  variable block, fixed equality rows, order bounds, and explicit prior
+  metadata outside the hard canonical problem.
+- Added deterministic cycle, undefined-reference, isolated-unknown,
+  per-component gauge, field-connected contrast, same-functional fixed
+  conflict, and transitive fixed-gap conflict checks with source paths.
+- Added 10 independent behavior/error tests and a deterministic 64-level
+  validation-plus-canonicalization benchmark smoke workload.
+- Updated the mathematical contract, ADR-0003 implementation consequences,
+  architecture, Rust crate/API docs, requirement registry, and change fragment.
 
 ## Validation state
 
-- Stable repair commit `33cf9de` passed the complete local standard gate:
-  format, warning-denying workspace Clippy, all-feature workspace tests,
-  workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The clean reviewer independently repeated the focused failure-priority and
-  execution-control suites, all-feature core tests and Rustdoc, warning-denying
-  core Clippy, formatting, and full-PR diff checks.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state registry tree passed the complete local
-  standard gate: format, warning-denying workspace Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and
-  `git diff --check`. This validation-note update is documentation-only.
+- Focused `cargo test -p georbf --test levels`: 10 passed.
+- Focused `cargo clippy -p georbf --all-targets --all-features -- -D warnings`:
+  passed.
+- `cargo bench -p georbf --bench level_compilation -- --smoke`: passed for a
+  64-level D=1 validation and canonicalization workload.
+- Complete stable-head standard gate: pending final documentation/registry
+  update and initial Draft PR number.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start REQ-LEVEL-001 or another
-requirement in this task.
+Open a fresh read-only Review task for the Draft implementation PR. Supply only
+the REQ-LEVEL-001 show/deps summary, `docs/math/CONSTRAINT_SEMANTICS.md`,
+ADR-0003, the architecture level-layer contract, the complete PR diff, and the
+recorded validation evidence to the project `math_reviewer`. Review level-row
+signs and indices, fixed/prior semantics, cycle and connected-component logic,
+transitive gap conflict arithmetic, conservative floating-point boundary
+handling, hard-constraint preservation, source provenance, allocations,
+interface dispositions, benchmark scope, and registry truth. Do not repair
+production code or begin another requirement in that task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #66
-- Merged implementation and repairs: GitHub PR #67
-- Integration-state pull request: GitHub PR #68
-- Independent review: `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-EXEC-001.md`
+- Acceptance criteria and exclusions: GitHub Issue #69
+- Draft implementation pull request: pending initial push
+- Requirement summary: `changes/REQ-LEVEL-001.md`
+- Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
+- Accepted design: `docs/adr/ADR-0003-explicit-level-variables.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
-- Relevant numerical policy: `docs/architecture/SOLVER_POLICY.md` and ADR-0010
+- Focused tests: `crates/georbf/tests/levels.rs`
+- Benchmark: `crates/georbf/benches/level_compilation.rs`
 
 ## Checks not yet available
 

@@ -28,10 +28,35 @@ An order edge from `a` to `b` imposes
 h_b - h_a >= delta_ab.
 ```
 
-The compiler checks cycles, fixed-value contradictions, isolated unknown
-levels, missing additive gauge, and missing nonzero field contrast. Reference
-point differencing is an optional elimination of level variables, never a
-separate model type.
+The Rust semantic layer preserves every level as a stable identifier and every
+definition, membership, and order edge as a separate provenance-bearing
+record. Fixed values compile to hard equality rows. Priors stay as explicit
+mean, positive scale, and SquaredL2, AbsoluteL1, or Huber metadata; they are not
+silently compiled as hard rows or claimed as solved before the approved soft
+objective backend exists.
+
+The compiler requires at least two levels and one field membership. It rejects
+duplicate identifiers, missing references, self edges, negative or non-finite
+gaps, and unknown levels with neither a membership nor an order edge. A stable
+topological pass rejects every directed cycle. Fixed-value review checks both
+identical field functionals assigned to different fixed levels and transitive
+minimum-gap paths whose fixed endpoint values cannot satisfy the accumulated
+gap. Near a floating-point equality boundary, the precheck is conservative;
+the original individual hard rows remain unchanged in canonical form.
+
+Gauge review treats memberships as edges to the shared scalar field and order
+relations as edges between levels. Every resulting connected component needs a
+fixed value or explicit prior. Nonzero contrast must affect the field-connected
+component through a positive minimum gap or distinct fixed/prior anchors;
+unrelated isolated anchors cannot manufacture field contrast. Reference point
+differencing is an optional internal elimination of the same explicit
+variables, never a separate model type.
+
+Canonical variable order is the caller's field blocks followed by one
+deterministic `levels` block in definition insertion order. Memberships compile
+first, fixed rows second, and order bounds third, each retaining its original
+source provenance. Solvers receive only sparse equalities and linear bounds,
+not level identifiers or geological relations.
 
 ## Canonical mappings
 
