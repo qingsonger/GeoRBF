@@ -20,13 +20,23 @@ use std::error::Error;
 use std::fmt;
 use std::num::NonZeroUsize;
 
+#[cfg(test)]
+use std::{
+    cell::RefCell,
+    sync::{Arc, Barrier},
+};
+
 use nalgebra::{
     DMatrix, DVector, Dyn,
     linalg::{Cholesky, LBLT, SVD},
 };
 
 use crate::dimension::{Dim, SupportedDimension};
+use crate::execution::{
+    ExecutionControl, ExecutionError, ExecutionOperation, ExecutionStage, ProgressTracker,
+};
 use crate::field::DenseFieldSystem;
+use crate::problem_ir::ExecutionOptions;
 
 const EQUILIBRATION_PASSES: usize = 8;
 const SVD_MAX_ITERATIONS: usize = 10_000;
@@ -36,6 +46,7 @@ const MAX_REFINEMENT_STEPS: usize = 8;
 const PEAK_MATRIX_BUFFERS: usize = 6;
 const PEAK_VECTOR_BUFFERS: usize = 32;
 const PEAK_INDEX_PAIR_BUFFERS: usize = 2;
+const SOLVE_BASE_PROGRESS_STEPS: usize = 5;
 
 /// Explicit dense factorization used for a square equality system.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -381,9 +392,49 @@ impl DenseEqualitySystem {
     /// Returns structured rank, conditioning, scaling, factorization, finite-
     /// result, or residual-review errors without changing the requested problem.
     pub fn try_solve(&self, options: DenseSolveOptions) -> Result<DenseSolution, DenseSolveError> {
-        let estimated_peak_memory_bytes = self.try_estimated_peak_memory_bytes()?;
-        enforce_memory_limit(estimated_peak_memory_bytes, options.memory_limit_bytes)?;
-        solve_validated(self, options, estimated_peak_memory_bytes)
+        let control = ExecutionControl::default();
+        self.try_solve_with_control(options, ExecutionOptions::default(), control)
+    }
+
+    /// Solves this system with explicit execution metadata and caller controls.
+    ///
+    /// The current dense backend is serial and rejects an explicit thread count
+    /// greater than one before memory review or backend dispatch. Cancellation
+    /// is checked around memory, rank, factorization, refinement, and residual
+    /// boundaries. Backend factorization and SVD calls are indivisible, so a
+    /// request made during one of those calls is observed immediately after it
+    /// returns. Cancellation observable at that post-call checkpoint takes
+    /// priority over a concurrent numerical failure. No partial solution is
+    /// returned.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same failures as [`Self::try_solve`], plus structured
+    /// execution-policy and cancellation failures.
+    pub fn try_solve_with_control(
+        &self,
+        options: DenseSolveOptions,
+        execution: ExecutionOptions,
+        control: ExecutionControl<'_>,
+    ) -> Result<DenseSolution, DenseSolveError> {
+        let regularization_steps = usize::from(options.regularization().amount() != 0.0);
+        let total_progress =
+            SOLVE_BASE_PROGRESS_STEPS + regularization_steps + options.maximum_refinement_steps();
+        let mut progress = ProgressTracker::try_new(
+            control,
+            ExecutionOperation::DenseSolve,
+            execution,
+            total_progress,
+        )?;
+        let memory_review_result = self
+            .try_estimated_peak_memory_bytes()
+            .and_then(|estimated| {
+                enforce_memory_limit(estimated, options.memory_limit_bytes)?;
+                Ok(estimated)
+            });
+        let estimated_peak_memory_bytes =
+            progress.finish_work(ExecutionStage::MemoryReview, memory_review_result)?;
+        solve_validated(self, options, estimated_peak_memory_bytes, progress)
     }
 }
 
@@ -717,6 +768,8 @@ impl DenseSolution {
 #[derive(Clone, Debug, PartialEq)]
 #[must_use]
 pub enum DenseSolveError {
+    /// Caller execution policy was unsupported or cancellation was requested.
+    Execution(ExecutionError),
     /// An assembled field system could not cross the solver-owned boundary.
     InvalidSystem(DenseEqualitySystemError),
     /// A solver-owned working allocation failed.
@@ -822,6 +875,7 @@ pub enum DenseSolveError {
 impl fmt::Display for DenseSolveError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Execution(source) => source.fmt(formatter),
             Self::InvalidSystem(error) => {
                 write!(formatter, "invalid dense equality system: {error}")
             }
@@ -918,9 +972,16 @@ impl fmt::Display for DenseSolveError {
 impl Error for DenseSolveError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::Execution(error) => Some(error),
             Self::InvalidSystem(error) => Some(error),
             _ => None,
         }
+    }
+}
+
+impl From<ExecutionError> for DenseSolveError {
+    fn from(value: ExecutionError) -> Self {
+        Self::Execution(value)
     }
 }
 
@@ -996,6 +1057,35 @@ pub fn try_solve_field<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
+    let control = ExecutionControl::default();
+    try_solve_field_with_control(system, options, control)
+}
+
+/// Solves one assembled field system with its retained execution metadata and
+/// caller cancellation/progress controls.
+///
+/// # Errors
+///
+/// Returns structured boundary, execution, rank, condition, factorization, or
+/// residual failures. Cancellation and unsupported thread counts are rejected
+/// before the solver-owned matrix copy whenever they are already observable.
+pub fn try_solve_field_with_control<const D: usize>(
+    system: &DenseFieldSystem<D>,
+    options: DenseSolveOptions,
+    control: ExecutionControl<'_>,
+) -> Result<DenseSolution, DenseSolveError>
+where
+    Dim<D>: SupportedDimension,
+{
+    let regularization_steps = usize::from(options.regularization().amount() != 0.0);
+    let total_progress =
+        SOLVE_BASE_PROGRESS_STEPS + regularization_steps + options.maximum_refinement_steps();
+    let mut progress = ProgressTracker::try_new(
+        control,
+        ExecutionOperation::DenseSolve,
+        system.execution_options(),
+        total_progress,
+    )?;
     let field_memory_limit = system.execution_options().memory_limit_bytes();
     let effective_memory_limit = field_memory_limit.map_or(options.memory_limit_bytes, |field| {
         if field.get() < options.memory_limit_bytes.get() {
@@ -1005,12 +1095,17 @@ where
         }
     });
     let options = options.with_memory_limit_bytes(effective_memory_limit);
+    let memory_review_result =
+        estimate_peak_memory_bytes(system.matrix().dimension(), SolveMemoryContext::FieldSystem)
+            .and_then(|estimated| {
+                enforce_memory_limit(estimated, effective_memory_limit)?;
+                Ok(estimated)
+            });
     let estimated_peak_memory_bytes =
-        estimate_peak_memory_bytes(system.matrix().dimension(), SolveMemoryContext::FieldSystem)?;
-    enforce_memory_limit(estimated_peak_memory_bytes, effective_memory_limit)?;
+        progress.finish_work(ExecutionStage::MemoryReview, memory_review_result)?;
     let owned =
         DenseEqualitySystem::try_from_field(system).map_err(DenseSolveError::InvalidSystem)?;
-    solve_validated(&owned, options, estimated_peak_memory_bytes)
+    solve_validated(&owned, options, estimated_peak_memory_bytes, progress)
 }
 
 #[derive(Clone, Debug)]
@@ -1025,13 +1120,101 @@ enum SvdReviewMode {
     ForceNonConvergence,
 }
 
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum InjectedBackendFailure {
+    RankReview,
+    Factorization,
+}
+
+#[cfg(test)]
+struct BackendFailureHook {
+    failure: InjectedBackendFailure,
+    barrier: Arc<Barrier>,
+}
+
+#[cfg(test)]
+thread_local! {
+    static BACKEND_FAILURE_HOOK: RefCell<Option<BackendFailureHook>> = const {
+        RefCell::new(None)
+    };
+}
+
+#[cfg(test)]
+struct BackendFailureHookGuard;
+
+#[cfg(test)]
+impl Drop for BackendFailureHookGuard {
+    fn drop(&mut self) {
+        BACKEND_FAILURE_HOOK.with(|slot| {
+            slot.borrow_mut().take();
+        });
+    }
+}
+
+#[cfg(test)]
+fn install_backend_failure_hook(
+    failure: InjectedBackendFailure,
+    barrier: Arc<Barrier>,
+) -> BackendFailureHookGuard {
+    BACKEND_FAILURE_HOOK.with(|slot| {
+        let previous = slot
+            .borrow_mut()
+            .replace(BackendFailureHook { failure, barrier });
+        assert!(previous.is_none(), "backend failure hook already installed");
+    });
+    BackendFailureHookGuard
+}
+
+#[cfg(test)]
+fn trigger_backend_failure(failure: InjectedBackendFailure) -> bool {
+    let hook = BACKEND_FAILURE_HOOK.with(|slot| {
+        let matches = slot
+            .borrow()
+            .as_ref()
+            .is_some_and(|hook| hook.failure == failure);
+        matches.then(|| slot.borrow_mut().take()).flatten()
+    });
+    let Some(hook) = hook else {
+        return false;
+    };
+    hook.barrier.wait();
+    hook.barrier.wait();
+    true
+}
+
+fn rank_review_for_controlled_solve(
+    matrix: &[f64],
+    dimension: usize,
+) -> Result<RankReview, DenseSolveError> {
+    #[cfg(test)]
+    if trigger_backend_failure(InjectedBackendFailure::RankReview) {
+        return Err(DenseSolveError::NonFiniteRankEvidence);
+    }
+    diagnose_rank(matrix, dimension, SvdReviewMode::Bounded)
+}
+
+fn factorization_for_controlled_solve(
+    requested: DenseFactorization,
+    matrix: &[f64],
+    dimension: usize,
+) -> Result<Factorization, DenseSolveError> {
+    #[cfg(test)]
+    if trigger_backend_failure(InjectedBackendFailure::Factorization) {
+        return Err(DenseSolveError::CholeskyRejected);
+    }
+    Factorization::try_new(requested, matrix, dimension)
+}
+
 #[allow(clippy::too_many_lines)]
 fn solve_validated(
     system: &DenseEqualitySystem,
     options: DenseSolveOptions,
     estimated_peak_memory_bytes: usize,
+    mut progress: ProgressTracker<'_>,
 ) -> Result<DenseSolution, DenseSolveError> {
-    let original_rank = diagnose_rank(&system.matrix, system.dimension, SvdReviewMode::Bounded)?;
+    let original_rank_result = rank_review_for_controlled_solve(&system.matrix, system.dimension);
+    let original_rank = progress.finish_work(ExecutionStage::RankReview, original_rank_result)?;
     let amount = options.regularization.amount();
     let mut effective = try_copy_solve(&system.matrix, DenseSolverStorage::EffectiveMatrix)?;
     if amount != 0.0 {
@@ -1052,7 +1235,8 @@ fn solve_validated(
     let effective_rank = if amount == 0.0 {
         original_rank.clone()
     } else {
-        diagnose_rank(&effective, system.dimension, SvdReviewMode::Bounded)?
+        let review_result = diagnose_rank(&effective, system.dimension, SvdReviewMode::Bounded);
+        progress.finish_work(ExecutionStage::RankReview, review_result)?
     };
     match effective_rank.diagnostics.decision {
         DenseRankDecision::FullRank => {}
@@ -1077,19 +1261,30 @@ fn solve_validated(
         });
     }
 
-    let scales = symmetric_scales(&effective_rank.diagnostics)?;
-    let scaled_matrix = symmetrically_scale_matrix(&effective, system.dimension, &scales)?;
-    let scaled_rhs = scale_vector(
+    let scales_result = symmetric_scales(&effective_rank.diagnostics);
+    let scales = progress.observe_result(ExecutionStage::Factorization, scales_result)?;
+    let scaled_matrix_result = symmetrically_scale_matrix(&effective, system.dimension, &scales);
+    let scaled_matrix =
+        progress.observe_result(ExecutionStage::Factorization, scaled_matrix_result)?;
+    let scaled_rhs_result = scale_vector(
         &system.rhs,
         &scales,
         DenseSolverStorage::ScaledRightHandSide,
-    )?;
-    let factor = Factorization::try_new(options.factorization, &scaled_matrix, system.dimension)?;
+    );
+    let scaled_rhs = progress.observe_result(ExecutionStage::Factorization, scaled_rhs_result)?;
+    let factor_result =
+        factorization_for_controlled_solve(options.factorization, &scaled_matrix, system.dimension);
+    let factor = progress.observe_result(ExecutionStage::Factorization, factor_result)?;
     let has_two_by_two_pivot = factor.has_two_by_two_pivot();
-    let mut scaled_solution = factor.solve(&scaled_rhs)?;
-    let mut solution = scale_vector(&scaled_solution, &scales, DenseSolverStorage::Solution)?;
-    validate_solution(&solution)?;
-    let initial_residual = residual_diagnostics(
+    let scaled_solution_result = factor.solve(&scaled_rhs);
+    let mut scaled_solution =
+        progress.observe_result(ExecutionStage::Factorization, scaled_solution_result)?;
+    let solution_result = scale_vector(&scaled_solution, &scales, DenseSolverStorage::Solution);
+    let mut solution = progress.observe_result(ExecutionStage::Factorization, solution_result)?;
+    let solution_validation = validate_solution(&solution);
+    progress.observe_result(ExecutionStage::Factorization, solution_validation)?;
+    progress.advance(ExecutionStage::Factorization)?;
+    let initial_residual_result = residual_diagnostics(
         &effective,
         &system.rhs,
         &solution,
@@ -1097,7 +1292,9 @@ fn solve_validated(
         &scaled_rhs,
         &scaled_solution,
         system.dimension,
-    )?;
+    );
+    let initial_residual =
+        progress.finish_work(ExecutionStage::ResidualReview, initial_residual_result)?;
     let mut final_residual = initial_residual;
     let mut accepted_refinement_steps = 0;
 
@@ -1105,13 +1302,25 @@ fn solve_validated(
         if final_residual.original_infinity == 0.0 {
             break;
         }
-        let residual = floating_residual(&effective, &system.rhs, &solution, system.dimension)?;
+        let residual_result =
+            floating_residual(&effective, &system.rhs, &solution, system.dimension);
+        let residual = progress.observe_result(ExecutionStage::Refinement, residual_result)?;
+        let scaled_residual_result =
+            scale_vector(&residual, &scales, DenseSolverStorage::ScaledRightHandSide);
         let scaled_residual =
-            scale_vector(&residual, &scales, DenseSolverStorage::ScaledRightHandSide)?;
-        let delta_scaled = factor.solve(&scaled_residual)?;
-        let delta = scale_vector(&delta_scaled, &scales, DenseSolverStorage::Solution)?;
-        let mut candidate = try_copy_solve(&solution, DenseSolverStorage::Solution)?;
-        let mut candidate_scaled = try_copy_solve(&scaled_solution, DenseSolverStorage::Solution)?;
+            progress.observe_result(ExecutionStage::Refinement, scaled_residual_result)?;
+        let delta_scaled_result = factor.solve(&scaled_residual);
+        let delta_scaled =
+            progress.observe_result(ExecutionStage::Refinement, delta_scaled_result)?;
+        let delta_result = scale_vector(&delta_scaled, &scales, DenseSolverStorage::Solution);
+        let delta = progress.observe_result(ExecutionStage::Refinement, delta_result)?;
+        let candidate_result = try_copy_solve(&solution, DenseSolverStorage::Solution);
+        let mut candidate =
+            progress.observe_result(ExecutionStage::Refinement, candidate_result)?;
+        let candidate_scaled_result =
+            try_copy_solve(&scaled_solution, DenseSolverStorage::Solution);
+        let mut candidate_scaled =
+            progress.observe_result(ExecutionStage::Refinement, candidate_scaled_result)?;
         for ((value, delta), (scaled, delta_scaled)) in candidate
             .iter_mut()
             .zip(delta)
@@ -1120,9 +1329,11 @@ fn solve_validated(
             *value += delta;
             *scaled += delta_scaled;
         }
-        validate_solution(&candidate)?;
-        validate_solution(&candidate_scaled)?;
-        let candidate_residual = residual_diagnostics(
+        let candidate_validation = validate_solution(&candidate);
+        progress.observe_result(ExecutionStage::Refinement, candidate_validation)?;
+        let candidate_scaled_validation = validate_solution(&candidate_scaled);
+        progress.observe_result(ExecutionStage::Refinement, candidate_scaled_validation)?;
+        let candidate_residual_result = residual_diagnostics(
             &effective,
             &system.rhs,
             &candidate,
@@ -1130,7 +1341,9 @@ fn solve_validated(
             &scaled_rhs,
             &candidate_scaled,
             system.dimension,
-        )?;
+        );
+        let candidate_residual =
+            progress.finish_work(ExecutionStage::Refinement, candidate_residual_result)?;
         if candidate_residual.original_infinity >= final_residual.original_infinity {
             break;
         }
@@ -1140,9 +1353,13 @@ fn solve_validated(
         accepted_refinement_steps += 1;
     }
 
-    let unregularized_scaled_matrix =
-        symmetrically_scale_matrix(&system.matrix, system.dimension, &scales)?;
-    let unregularized_final_residual = residual_diagnostics(
+    let unregularized_scaled_matrix_result =
+        symmetrically_scale_matrix(&system.matrix, system.dimension, &scales);
+    let unregularized_scaled_matrix = progress.observe_result(
+        ExecutionStage::ResidualReview,
+        unregularized_scaled_matrix_result,
+    )?;
+    let unregularized_final_residual_result = residual_diagnostics(
         &system.matrix,
         &system.rhs,
         &solution,
@@ -1150,11 +1367,16 @@ fn solve_validated(
         &scaled_rhs,
         &scaled_solution,
         system.dimension,
+    );
+    let unregularized_final_residual = progress.observe_result(
+        ExecutionStage::ResidualReview,
+        unregularized_final_residual_result,
     )?;
-    let dimension =
+    let dimension_result =
         u32::try_from(system.dimension).map_err(|_| DenseSolveError::DimensionTooLarge {
             dimension: system.dimension,
-        })?;
+        });
+    let dimension = progress.finish_work(ExecutionStage::ResidualReview, dimension_result)?;
     let residual_tolerance = RESIDUAL_FACTOR * f64::from(dimension) * f64::EPSILON;
     let condition_warning =
         effective_rank.diagnostics.condition_estimate > options.condition_policy.warning_threshold;
@@ -1182,10 +1404,12 @@ fn solve_validated(
             diagnostics: Box::new(diagnostics),
         });
     }
-    Ok(DenseSolution {
+    let solution = DenseSolution {
         values: solution,
         diagnostics,
-    })
+    };
+    progress.complete()?;
+    Ok(solution)
 }
 
 fn exact_symmetry_review(matrix: &[f64], dimension: usize) -> Result<(), DenseEqualitySystemError> {
@@ -1920,11 +2144,106 @@ fn any_bits_below(words: &[u64; EXACT_DOT_LIMBS], exclusive: usize) -> bool {
 #[cfg(test)]
 mod tests {
     use std::error::Error;
+    use std::num::NonZeroUsize;
+    use std::sync::{Arc, Barrier, Mutex};
+    use std::thread;
 
     use super::{
-        DenseRankDecision, DenseSolveError, SolveMemoryContext, SvdReviewMode, diagnose_rank,
-        estimate_peak_memory_bytes,
+        ConditionPolicy, DenseEqualitySystem, DenseFactorization, DenseRankDecision,
+        DenseSolveError, DenseSolveOptions, InjectedBackendFailure, Regularization,
+        SolveMemoryContext, SvdReviewMode, diagnose_rank, estimate_peak_memory_bytes,
+        install_backend_failure_hook,
     };
+    use crate::execution::{
+        CancellationToken, ExecutionControl, ExecutionError, ExecutionOperation, ExecutionStage,
+        ProgressEvent, ProgressSink,
+    };
+    use crate::problem_ir::ExecutionOptions;
+
+    const TEST_MEMORY_LIMIT_BYTES: usize = 64 * 1024 * 1024;
+
+    #[derive(Default)]
+    struct StageSink {
+        stages: Mutex<Vec<ExecutionStage>>,
+    }
+
+    impl ProgressSink for StageSink {
+        fn on_progress(&self, event: ProgressEvent) {
+            self.stages
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .push(event.stage());
+        }
+    }
+
+    fn dense_system() -> Result<DenseEqualitySystem, Box<dyn Error>> {
+        Ok(DenseEqualitySystem::try_from_row_major(
+            2,
+            vec![4.0, 1.0, 1.0, 3.0],
+            vec![6.0, 7.0],
+        )?)
+    }
+
+    fn solve_options() -> Result<DenseSolveOptions, Box<dyn Error>> {
+        Ok(DenseSolveOptions::try_new(
+            DenseFactorization::Cholesky,
+            Regularization::None,
+            ConditionPolicy::default(),
+            0,
+            NonZeroUsize::new(TEST_MEMORY_LIMIT_BYTES).ok_or("memory limit")?,
+        )?)
+    }
+
+    fn assert_cancellation_precedes_backend_failure(
+        stage: ExecutionStage,
+        failure: InjectedBackendFailure,
+    ) -> Result<(), Box<dyn Error>> {
+        let barrier = Arc::new(Barrier::new(2));
+        let _hook = install_backend_failure_hook(failure, Arc::clone(&barrier));
+        let token = CancellationToken::new();
+        let cancelling_token = token.clone();
+        let cancelling_barrier = Arc::clone(&barrier);
+        let cancelling_thread = thread::spawn(move || {
+            cancelling_barrier.wait();
+            cancelling_token.cancel();
+            cancelling_barrier.wait();
+        });
+        let sink = StageSink::default();
+        let result = dense_system()?.try_solve_with_control(
+            solve_options()?,
+            ExecutionOptions::default(),
+            ExecutionControl::new(Some(&token), Some(&sink)),
+        );
+        assert!(
+            cancelling_thread.join().is_ok(),
+            "cancellation thread panicked"
+        );
+        assert!(matches!(
+            result,
+            Err(DenseSolveError::Execution(ExecutionError::Cancelled {
+                operation: ExecutionOperation::DenseSolve,
+                stage: cancelled_stage,
+            })) if cancelled_stage == stage
+        ));
+        let stages = sink
+            .stages
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let expected = match failure {
+            InjectedBackendFailure::RankReview => {
+                &[ExecutionStage::Started, ExecutionStage::MemoryReview][..]
+            }
+            InjectedBackendFailure::Factorization => &[
+                ExecutionStage::Started,
+                ExecutionStage::MemoryReview,
+                ExecutionStage::RankReview,
+            ],
+        };
+        assert_eq!(stages.as_slice(), expected);
+        assert!(!stages.contains(&stage));
+        assert!(!stages.contains(&ExecutionStage::Completed));
+        Ok(())
+    }
 
     #[test]
     fn peak_memory_estimate_overflow_is_structured() {
@@ -1948,6 +2267,24 @@ mod tests {
         assert_eq!(diagnostics.rrqr_diagonal.len(), 2);
         assert_eq!(diagnostics.maximum_svd_iterations, 10_000);
         Ok(())
+    }
+
+    #[test]
+    fn concurrent_cancellation_precedes_failing_rank_review_without_success_event()
+    -> Result<(), Box<dyn Error>> {
+        assert_cancellation_precedes_backend_failure(
+            ExecutionStage::RankReview,
+            InjectedBackendFailure::RankReview,
+        )
+    }
+
+    #[test]
+    fn concurrent_cancellation_precedes_failing_factorization_without_success_event()
+    -> Result<(), Box<dyn Error>> {
+        assert_cancellation_precedes_backend_failure(
+            ExecutionStage::Factorization,
+            InjectedBackendFailure::Factorization,
+        )
     }
 
     #[test]

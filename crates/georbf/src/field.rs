@@ -24,6 +24,9 @@ use std::cell::Cell;
 use crate::Point;
 use crate::cpd::{CpdError, CpdMatrix, CpdNullSpace};
 use crate::dimension::{Dim, SupportedDimension};
+use crate::execution::{
+    ExecutionControl, ExecutionError, ExecutionOperation, ExecutionStage, ProgressTracker,
+};
 use crate::functional::{
     CenterRepresenter, FunctionalError, KernelActionError, ObservationFunctional,
 };
@@ -201,6 +204,8 @@ pub struct FieldAssemblyDiagnostics {
 /// Error returned while assembling a hard-equality field system.
 #[derive(Debug)]
 pub enum FieldAssemblyError<E> {
+    /// Caller execution policy was unsupported or cancellation was requested.
+    Execution(ExecutionError),
     /// Kernel metadata does not support the compile-time dimension.
     UnsupportedKernelDimension {
         /// Compile-time dimension.
@@ -276,6 +281,7 @@ where
 {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Execution(source) => source.fmt(formatter),
             Self::UnsupportedKernelDimension { dimension } => write!(
                 formatter,
                 "kernel metadata does not support field dimension D={dimension}"
@@ -336,6 +342,7 @@ where
 {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::Execution(source) => Some(source),
             Self::KernelAction { source, .. } => Some(source),
             Self::PolynomialAction { source, .. } => Some(source),
             Self::PolynomialSpace(source) => Some(source),
@@ -610,18 +617,45 @@ where
     pub fn try_assemble<E>(
         &self,
         metadata: KernelMetadata<'_>,
+        evaluator: impl FnMut(
+            Point<D>,
+            Point<D>,
+            KernelDerivativeOrder,
+        ) -> Result<SpatialKernelJetPrefix<D>, E>,
+    ) -> Result<DenseFieldSystem<D>, FieldAssemblyError<E>> {
+        let control = ExecutionControl::default();
+        self.try_assemble_with_control(metadata, evaluator, control)
+    }
+
+    /// Assembles a symmetric dense equality system with caller execution controls.
+    ///
+    /// Progress is synchronous and deterministic. Cancellation is checked
+    /// before work, after each upper-triangle kernel action and polynomial row,
+    /// and around each CPD, canonicalization, symmetry, and projection boundary.
+    /// A cancellation or unsupported explicit thread count returns no partial
+    /// system. The current dense assembly implementation is serial and accepts
+    /// only an absent thread count or an explicit count of one.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same errors as [`Self::try_assemble`], plus structured
+    /// execution-policy and cancellation failures.
+    #[allow(clippy::too_many_lines)]
+    pub fn try_assemble_with_control<E>(
+        &self,
+        metadata: KernelMetadata<'_>,
         mut evaluator: impl FnMut(
             Point<D>,
             Point<D>,
             KernelDerivativeOrder,
         ) -> Result<SpatialKernelJetPrefix<D>, E>,
+        control: ExecutionControl<'_>,
     ) -> Result<DenseFieldSystem<D>, FieldAssemblyError<E>> {
         if !metadata.dimensions().supports::<D>() {
             return Err(FieldAssemblyError::UnsupportedKernelDimension { dimension: D });
         }
         let centers = self.centers.len();
         let kernel_entries = checked_square(centers)?;
-        let mut kernel_actions = try_zeroed(kernel_entries, FieldAssemblyStorage::KernelActions)?;
         let kernel_entry_evaluations = centers
             .checked_mul(
                 centers
@@ -630,6 +664,24 @@ where
             )
             .and_then(|count| count.checked_div(2))
             .ok_or(FieldAssemblyError::CountOverflow)?;
+        let cpd_progress = match metadata.definiteness() {
+            KernelDefiniteness::StrictlyPositiveDefinite => 0,
+            KernelDefiniteness::ConditionallyPositiveDefinite { .. } => centers
+                .checked_add(2)
+                .ok_or(FieldAssemblyError::CountOverflow)?,
+        };
+        let total_progress = kernel_entry_evaluations
+            .checked_add(cpd_progress)
+            .and_then(|count| count.checked_add(2))
+            .ok_or(FieldAssemblyError::CountOverflow)?;
+        let mut progress = ProgressTracker::try_new(
+            control,
+            ExecutionOperation::FieldAssembly,
+            self.semantic.execution_options(),
+            total_progress,
+        )
+        .map_err(FieldAssemblyError::Execution)?;
+        let mut kernel_actions = try_zeroed(kernel_entries, FieldAssemblyStorage::KernelActions)?;
 
         for row in 0..centers {
             let observation = observation_at(&self.semantic, row).ok_or(
@@ -649,6 +701,9 @@ where
                     })?;
                 kernel_actions[row * centers + column] = value;
                 kernel_actions[column * centers + row] = value;
+                progress
+                    .advance(ExecutionStage::KernelAssembly)
+                    .map_err(FieldAssemblyError::Execution)?;
             }
         }
 
@@ -659,6 +714,9 @@ where
                     .map_err(FieldAssemblyError::PolynomialSpace)?;
                 let null_space = CpdNullSpace::try_from_centers(&self.centers, &polynomial_space)
                     .map_err(FieldAssemblyError::Cpd)?;
+                progress
+                    .advance(ExecutionStage::CpdConstruction)
+                    .map_err(FieldAssemblyError::Execution)?;
                 Some((polynomial_space, null_space))
             }
         };
@@ -695,6 +753,9 @@ where
                         observation_index: row,
                         source,
                     })?;
+                progress
+                    .advance(ExecutionStage::PolynomialAssembly)
+                    .map_err(FieldAssemblyError::Execution)?;
             }
         }
 
@@ -763,6 +824,9 @@ where
                 AffineExpression::try_new(terms, 0.0).map_err(FieldLinearizationError::Ir)
             })
             .map_err(FieldAssemblyError::Canonicalization)?;
+        progress
+            .advance(ExecutionStage::Canonicalization)
+            .map_err(FieldAssemblyError::Execution)?;
 
         let system_dimension = variable_count;
         let dense_entries = checked_square(system_dimension)?;
@@ -790,6 +854,9 @@ where
         if diagnostics.normalized_asymmetry > diagnostics.symmetry_tolerance {
             return Err(FieldAssemblyError::NotSymmetric { diagnostics });
         }
+        progress
+            .advance(ExecutionStage::SymmetryReview)
+            .map_err(FieldAssemblyError::Execution)?;
 
         let projected_energy = if let Some((_, null_space)) = &cpd_state {
             let energy_values = try_copy(&kernel_actions, FieldAssemblyStorage::ProjectionInput)?;
@@ -803,6 +870,11 @@ where
         } else {
             None
         };
+        if projected_energy.is_some() {
+            progress
+                .advance(ExecutionStage::ProjectedEnergy)
+                .map_err(FieldAssemblyError::Execution)?;
+        }
         let cpd = match (cpd_state, projected_energy) {
             (Some((polynomial_space, null_space)), Some(projected_energy)) => {
                 Some(CpdFieldAssembly {
@@ -814,7 +886,7 @@ where
             _ => None,
         };
 
-        Ok(DenseFieldSystem {
+        let system = DenseFieldSystem {
             canonical,
             execution: self.semantic.execution_options(),
             matrix: DenseFieldMatrix {
@@ -825,7 +897,9 @@ where
             center_count: centers,
             diagnostics,
             cpd,
-        })
+        };
+        progress.complete().map_err(FieldAssemblyError::Execution)?;
+        Ok(system)
     }
 }
 

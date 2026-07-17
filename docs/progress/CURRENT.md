@@ -6,56 +6,66 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-DIAG-001 complete
-- Requirement: REQ-DIAG-001, Issue #63 (closed)
-- Implementation pull request: #64, squash-merged as `654cb60`
-- Integration-state branch: `codex/req-diag-001-integration-state`
-- Integration-state pull request: #65 (Draft until final evidence is green)
-- Review record: `docs/reviews/PR-64-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-EXEC-001 (`planned`)
+- Mode: Review/re-review clean; mandatory ready-CI-integration sequence next
+- Requirement: REQ-EXEC-001, Issue #66
+- Branch: `codex/req-exec-001-deterministic-execution-controls`
+- Draft pull request: #67
+- Original repair commit: `947888a`
+- R67-004 repair commit: `33cf9def4a418970281b3ad130dcf58ec1b29074`
+- Review and repair record: `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
+- Registry state: `implemented`
+- Required next action: synchronize review evidence, mark PR #67 ready, wait
+  for complete ready CI on the exact head, merge only when green, and record
+  truthful integration state
 
-## Integration result
+## Final independent re-review result
 
-- A fresh isolated independent re-review closed P1-1 and P2-1 and found no
-  P0-P3 finding in the complete implementation and repair diff.
-- Exact Ready head `8d265f1` passed the complete Windows, Ubuntu, and macOS CI
-  matrix with every benchmark-smoke workload in run 29547848410.
-- PR #64 squash-merged exactly once as `654cb60`; Issue #63 closed as
-  completed.
-- Post-merge `main` run 29548328531 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate.
-- This isolated integration-state change updates only registry and progress
-  evidence. It changes no production code, test, manifest, schema, CI, build
-  input, API, numerical behavior, dependency, tag, or release.
+- A fresh read-only project `math_reviewer` reviewed base `eaa7430`, previous
+  evidence `0bb7fac`, stable R67-004 repair `33cf9de`, and exact PR evidence
+  head `2b6e7f9` without inheriting implementation reasoning.
+- No P0-P3 findings remain. R67-004 is closed, and the earlier R67-002 now has
+  adequate public production-path regression coverage.
+- The reviewer confirmed that test-only one-shot hooks wrap the actual
+  original-rank and factorization calls, separate cancellation threads use a
+  two-phase barrier, retained-result checkpoints prioritize observable
+  cancellation, and exact event prefixes exclude the failed stage and
+  `Completed`.
+- Hook state and injected branches are absent from non-test builds; thread-local
+  one-shot consumption plus guard cleanup prevents cross-test leakage.
 
 ## Validation state
 
-- Repair implementation head `193ee44` passed the complete local standard
-  gate; the clean reviewer independently repeated all six diagnostics tests
-  and `git diff --check`.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state registry tree passed the complete local
-  standard gate: format, warning-denying workspace Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and
-  `git diff --check`. This validation-note update is documentation-only.
+- The independent reviewer passed both public-path failure-priority
+  regressions, all 8 execution-control integration tests, all-feature `georbf`
+  tests (198 unit/integration tests and 29 doctests), core Rustdoc (29
+  doctests), warning-denying non-test library Clippy, formatting, full-PR diff
+  checks, and a core-output-macro scan.
+- Stable repair commit `33cf9de` passed the complete local standard gate:
+  format, warning-denying workspace Clippy, all-feature workspace tests,
+  workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+- Only review and handoff evidence changed after that stable repair commit, so
+  no production, test, manifest, schema, or build input invalidated the gate.
+- Draft Ubuntu CI passed on exact evidence head `2b6e7f9`.
+- Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not yet run.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start the next requirement in this
-task.
+Commit and push the clean independent re-review evidence, synchronize PR #67,
+and mark it ready. Wait for the complete Windows, Ubuntu, macOS, and every
+benchmark-smoke CI job on that exact ready head. Merge exactly once only when
+all required jobs are green. Then create an isolated integration-state change
+that truthfully marks REQ-EXEC-001 integrated and refreshes this bounded
+handoff. Stop without beginning another requirement.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #63
-- Merged implementation: GitHub PR #64
-- Integration-state pull request: GitHub PR #65
-- Independent review: `docs/reviews/PR-64-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-DIAG-001.md`
+- Acceptance criteria and exclusions: GitHub Issue #66
+- Draft implementation and repairs: GitHub PR #67
+- Independent review and repair evidence:
+  `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
+- Requirement summary: `changes/REQ-EXEC-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
+- Relevant numerical policy: `docs/architecture/SOLVER_POLICY.md` and ADR-0010
 
 ## Checks not yet available
 
