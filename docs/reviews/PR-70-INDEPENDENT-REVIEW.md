@@ -8,6 +8,9 @@
 - Base head: `2904c64c8d99e0b6a3183dc6c232953a969922ad`
 - Review date: 2026-07-17
 - Result: five P1, three P2, and one P3 finding; Repair required
+- Fresh re-review head: `93f85dd17e145042f4282208c361c9aac95b8181`
+- Fresh re-review result: R70-001 through R70-009 closed; one new P1
+  finding R70-010; Repair required
 
 ## Scope and independence
 
@@ -210,3 +213,63 @@ and `git diff --check`.
 This repair evidence is not an independent re-review and does not close the
 findings. PR #70 remains Draft and REQ-LEVEL-001 remains `implemented`; a fresh
 read-only re-review must confirm closure and check for new findings.
+
+## Fresh independent re-review
+
+A new read-only project `math_reviewer` independently reviewed exact PR head
+`93f85dd17e145042f4282208c361c9aac95b8181` against base
+`2904c64c8d99e0b6a3183dc6c232953a969922ad` and repair evidence base
+`809e580969673867315980bfec17e70472dc3677`. It received only the bounded
+REQ-LEVEL-001 summary and integrated dependency closure, the M4 plan, relevant
+mathematical, ADR, and architecture contracts, the original review, complete
+PR and repair diffs, tests, benchmark, and validation evidence. It inherited
+no implementation reasoning and made no repository or remote changes.
+
+The reviewer independently confirmed R70-001 through R70-009 are closed:
+membership shape is restricted to one unit Value atom; extreme endpoint and
+path arithmetic is overflow safe without changing hard rows; cycle evidence
+contains only cycle edges; mathematical functional comparison ignores
+provenance and retains complete fixed-conflict sources; deterministic ties and
+exact evidence are tested; and membershipless levels no longer manufacture
+field contrast or unrelated diagnostics.
+
+### P1 R70-010: identical memberships plus a positive order path are accepted
+
+`validate_fixed_memberships` at `crates/georbf/src/levels.rs:1127-1140`
+compares mathematically identical membership functionals only when both levels
+are fixed. Fixed-path validation at lines 1322-1326 likewise skips an unknown
+target. Contrast validation at lines 1583-1617 then treats any positive order
+path between two membership-bearing level identifiers as valid contrast
+without checking whether their Value functionals are mathematically identical.
+
+For fixed `A`, unknown `B`, two independently sourced memberships at the same
+point, and `A -> B` with `delta > 0`, the emitted hard constraints are
+
+```text
+f(x) - h_A = 0
+f(x) - h_B = 0
+h_B - h_A >= delta
+```
+
+The equalities force `h_B - h_A = 0`, contradicting the positive gap, but
+`LevelProblem::try_new` succeeds because the path sets `has_gap = true`. This
+is a hard semantic infeasibility that requires source-aware diagnosis, not a
+rank, roundoff, or solver issue. Existing regressions cover two fixed levels
+with identical functionals and membershipless contrast separately, but do not
+cover their combination with an order gap.
+
+Repair must add a regression with `A = Fixed(0)`, `B = Unknown`, independently
+constructed unit Value evaluations at the same point with distinct functional
+and semantic provenance, and a direct `A -> B` gap of `1.0`. Construction must
+return a structured infeasibility retaining both membership sources and the
+order-edge source. The smallest production repair must reject the same
+mathematical contradiction without changing, dropping, softening, or
+regularizing any hard row.
+
+No additional P0, P2, or P3 finding remains. The exact reviewed head and remote
+branch matched, `a56e7ad..93f85dd` was documentation-only, the full PR diff
+passed `git diff --check`, and exact-head Draft Ubuntu CI run 29563643533 passed
+the complete correctness gate. PR #70 must remain Draft and REQ-LEVEL-001 must
+remain `implemented`. A fresh Repair task must address only R70-010, run the
+focused and complete stable-head gates, push, and stop for another fresh
+independent re-review.

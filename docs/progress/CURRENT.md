@@ -6,30 +6,32 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / REQ-LEVEL-001 findings addressed; fresh re-review required
+- Mode: Review/re-review / new P1 R70-010 recorded; fresh Repair required
 - Requirement: REQ-LEVEL-001, Issue #69 (open)
 - Branch: `codex/req-level-001-explicit-level-variables`
 - Draft implementation pull request: #70
 - Registry state in this change: `implemented`
 - Dependencies: REQ-IR-001 and REQ-MODEL-001 are `integrated`
-- Repaired implementation head: `a56e7ad24a9eaa4768534d3cd897ee74a6355659`
-- Repair scope: R70-001 through R70-009; not yet independently re-reviewed
+- Re-reviewed head: `93f85dd17e145042f4282208c361c9aac95b8181`
+- R70-001 through R70-009 are closed; R70-010 remains open
 - Next eligible requirement remains blocked until REQ-LEVEL-001 is freshly
   re-reviewed, integrated, and selected by a later fresh task
 
-## Repair result
+## Fresh re-review result
 
-- R70-001: memberships accept only one coefficient-1 Value atom and reject
-  derivatives, scaled values, and multi-atom expressions structurally.
-- R70-002 and R70-003: scaled path magnitudes preserve extreme conflicts and
-  accept the feasible `-MAX -> 0 -> MAX` hard system without altering rows.
-- R70-004 through R70-006: cycle evidence excludes downstream edges, fixed
-  membership conflicts include all four sources, and contrast diagnostics cite
-  the failing field component.
-- R70-007 and R70-008: deterministic tie-breaking and exact-source regressions
-  are explicit, and mathematical Value equality ignores provenance.
-- R70-009: positive gaps or anchors on membershipless levels no longer
-  manufacture scalar-field contrast.
+- A fresh read-only project `math_reviewer` independently reviewed the bounded
+  requirement, dependency, normative-document, original-review, full-diff,
+  repair-diff, test, benchmark, and validation evidence.
+- R70-001 through R70-009 are closed. No additional P0, P2, or P3 finding
+  remains.
+- P1 R70-010: two independently sourced memberships can evaluate the same
+  mathematical Value at one point while belonging to different levels. A
+  positive order path between those levels is accepted as contrast even though
+  the two membership equalities force the level values equal and make the hard
+  order bound infeasible.
+- Required regression: fixed `A`, unknown `B`, identical unit Value evaluations
+  with distinct provenance, and direct positive `A -> B`; require structured
+  infeasibility with both membership sources and the order-edge source.
 
 ## Validation state
 
@@ -39,19 +41,21 @@ records, benchmark reports, Git, and GitHub.
   the complete stable-tree standard gate passed: formatting, warning-denying
   workspace Clippy, all-feature workspace tests, workspace Rustdoc, all 58
   requirement checks, and `git diff --check`.
-- This evidence update and bounded handoff are documentation-only. No fresh
-  independent mathematical re-review or repair-head Draft CI result is claimed.
+- Exact re-reviewed head `93f85dd` passed Draft Ubuntu correctness CI run
+  29563643533. The reviewer confirmed the full PR diff passes
+  `git diff --check`; `a56e7ad..93f85dd` is documentation-only.
+- This finding record and bounded handoff are documentation-only. No Ready
+  three-platform CI, merge, integration, tag, or release is claimed.
 
 ## Next task
 
-Open a fresh Review/re-review task for Draft PR #70. Supply a new read-only
-project `math_reviewer` only the bounded REQ-LEVEL-001 context, original review,
-repair diff, and validation evidence. Independently confirm R70-001 through
-R70-009 are closed and check for new P0-P3 findings. If any finding remains,
-record it and stop without repair. If clean, follow the mandatory sequence:
-mark ready, wait for complete Windows/Ubuntu/macOS and benchmark-smoke CI on the
-exact ready head, merge exactly once only if green, record truthful integration
-state, and stop. Do not start another requirement in that task.
+Open a fresh Repair task for Draft PR #70 and address only R70-010. Reproduce
+the identical-membership positive-gap infeasibility with distinct provenance,
+add the required source-aware regression, and implement the smallest complete
+semantic check without altering hard rows. Run focused checks during repair and
+the complete standard gate after the final production or test change. Update
+review evidence and this bounded handoff, commit, push, and stop for fresh
+independent re-review. Do not begin another requirement.
 
 ## Durable evidence
 
