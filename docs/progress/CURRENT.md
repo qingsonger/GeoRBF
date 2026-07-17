@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-EXEC-001, Issue #66 (closed)
 - Implementation pull request: #67, squash-merged as `6ee93e1`
 - Integration-state branch: `codex/req-exec-001-integration-state`
-- Integration-state pull request: pending publication
+- Integration-state pull request: #68 (Draft until final evidence is green)
 - Review record: `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-LEVEL-001 (`planned`)
@@ -59,7 +59,7 @@ requirement in this task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #66
 - Merged implementation and repairs: GitHub PR #67
-- Integration-state pull request: pending publication
+- Integration-state pull request: GitHub PR #68
 - Independent review: `docs/reviews/PR-67-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-EXEC-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
