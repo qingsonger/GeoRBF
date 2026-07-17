@@ -20,6 +20,12 @@ use std::error::Error;
 use std::fmt;
 use std::num::NonZeroUsize;
 
+#[cfg(test)]
+use std::{
+    cell::RefCell,
+    sync::{Arc, Barrier},
+};
+
 use nalgebra::{
     DMatrix, DVector, Dyn,
     linalg::{Cholesky, LBLT, SVD},
@@ -1114,6 +1120,92 @@ enum SvdReviewMode {
     ForceNonConvergence,
 }
 
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum InjectedBackendFailure {
+    RankReview,
+    Factorization,
+}
+
+#[cfg(test)]
+struct BackendFailureHook {
+    failure: InjectedBackendFailure,
+    barrier: Arc<Barrier>,
+}
+
+#[cfg(test)]
+thread_local! {
+    static BACKEND_FAILURE_HOOK: RefCell<Option<BackendFailureHook>> = const {
+        RefCell::new(None)
+    };
+}
+
+#[cfg(test)]
+struct BackendFailureHookGuard;
+
+#[cfg(test)]
+impl Drop for BackendFailureHookGuard {
+    fn drop(&mut self) {
+        BACKEND_FAILURE_HOOK.with(|slot| {
+            slot.borrow_mut().take();
+        });
+    }
+}
+
+#[cfg(test)]
+fn install_backend_failure_hook(
+    failure: InjectedBackendFailure,
+    barrier: Arc<Barrier>,
+) -> BackendFailureHookGuard {
+    BACKEND_FAILURE_HOOK.with(|slot| {
+        let previous = slot
+            .borrow_mut()
+            .replace(BackendFailureHook { failure, barrier });
+        assert!(previous.is_none(), "backend failure hook already installed");
+    });
+    BackendFailureHookGuard
+}
+
+#[cfg(test)]
+fn trigger_backend_failure(failure: InjectedBackendFailure) -> bool {
+    let hook = BACKEND_FAILURE_HOOK.with(|slot| {
+        let matches = slot
+            .borrow()
+            .as_ref()
+            .is_some_and(|hook| hook.failure == failure);
+        matches.then(|| slot.borrow_mut().take()).flatten()
+    });
+    let Some(hook) = hook else {
+        return false;
+    };
+    hook.barrier.wait();
+    hook.barrier.wait();
+    true
+}
+
+fn rank_review_for_controlled_solve(
+    matrix: &[f64],
+    dimension: usize,
+) -> Result<RankReview, DenseSolveError> {
+    #[cfg(test)]
+    if trigger_backend_failure(InjectedBackendFailure::RankReview) {
+        return Err(DenseSolveError::NonFiniteRankEvidence);
+    }
+    diagnose_rank(matrix, dimension, SvdReviewMode::Bounded)
+}
+
+fn factorization_for_controlled_solve(
+    requested: DenseFactorization,
+    matrix: &[f64],
+    dimension: usize,
+) -> Result<Factorization, DenseSolveError> {
+    #[cfg(test)]
+    if trigger_backend_failure(InjectedBackendFailure::Factorization) {
+        return Err(DenseSolveError::CholeskyRejected);
+    }
+    Factorization::try_new(requested, matrix, dimension)
+}
+
 #[allow(clippy::too_many_lines)]
 fn solve_validated(
     system: &DenseEqualitySystem,
@@ -1121,8 +1213,7 @@ fn solve_validated(
     estimated_peak_memory_bytes: usize,
     mut progress: ProgressTracker<'_>,
 ) -> Result<DenseSolution, DenseSolveError> {
-    let original_rank_result =
-        diagnose_rank(&system.matrix, system.dimension, SvdReviewMode::Bounded);
+    let original_rank_result = rank_review_for_controlled_solve(&system.matrix, system.dimension);
     let original_rank = progress.finish_work(ExecutionStage::RankReview, original_rank_result)?;
     let amount = options.regularization.amount();
     let mut effective = try_copy_solve(&system.matrix, DenseSolverStorage::EffectiveMatrix)?;
@@ -1182,7 +1273,7 @@ fn solve_validated(
     );
     let scaled_rhs = progress.observe_result(ExecutionStage::Factorization, scaled_rhs_result)?;
     let factor_result =
-        Factorization::try_new(options.factorization, &scaled_matrix, system.dimension);
+        factorization_for_controlled_solve(options.factorization, &scaled_matrix, system.dimension);
     let factor = progress.observe_result(ExecutionStage::Factorization, factor_result)?;
     let has_two_by_two_pivot = factor.has_two_by_two_pivot();
     let scaled_solution_result = factor.solve(&scaled_rhs);
@@ -2053,17 +2144,23 @@ fn any_bits_below(words: &[u64; EXACT_DOT_LIMBS], exclusive: usize) -> bool {
 #[cfg(test)]
 mod tests {
     use std::error::Error;
-    use std::sync::Mutex;
+    use std::num::NonZeroUsize;
+    use std::sync::{Arc, Barrier, Mutex};
+    use std::thread;
 
     use super::{
-        DenseRankDecision, DenseSolveError, SolveMemoryContext, SvdReviewMode, diagnose_rank,
-        estimate_peak_memory_bytes,
+        ConditionPolicy, DenseEqualitySystem, DenseFactorization, DenseRankDecision,
+        DenseSolveError, DenseSolveOptions, InjectedBackendFailure, Regularization,
+        SolveMemoryContext, SvdReviewMode, diagnose_rank, estimate_peak_memory_bytes,
+        install_backend_failure_hook,
     };
     use crate::execution::{
         CancellationToken, ExecutionControl, ExecutionError, ExecutionOperation, ExecutionStage,
-        ProgressEvent, ProgressSink, ProgressTracker,
+        ProgressEvent, ProgressSink,
     };
     use crate::problem_ir::ExecutionOptions;
+
+    const TEST_MEMORY_LIMIT_BYTES: usize = 64 * 1024 * 1024;
 
     #[derive(Default)]
     struct StageSink {
@@ -2079,29 +2176,48 @@ mod tests {
         }
     }
 
-    fn simulated_failing_backend_call<T>(
-        token: &CancellationToken,
-        error: DenseSolveError,
-    ) -> Result<T, DenseSolveError> {
-        token.cancel();
-        Err(error)
+    fn dense_system() -> Result<DenseEqualitySystem, Box<dyn Error>> {
+        Ok(DenseEqualitySystem::try_from_row_major(
+            2,
+            vec![4.0, 1.0, 1.0, 3.0],
+            vec![6.0, 7.0],
+        )?)
+    }
+
+    fn solve_options() -> Result<DenseSolveOptions, Box<dyn Error>> {
+        Ok(DenseSolveOptions::try_new(
+            DenseFactorization::Cholesky,
+            Regularization::None,
+            ConditionPolicy::default(),
+            0,
+            NonZeroUsize::new(TEST_MEMORY_LIMIT_BYTES).ok_or("memory limit")?,
+        )?)
     }
 
     fn assert_cancellation_precedes_backend_failure(
         stage: ExecutionStage,
-        backend_error: DenseSolveError,
+        failure: InjectedBackendFailure,
     ) -> Result<(), Box<dyn Error>> {
+        let barrier = Arc::new(Barrier::new(2));
+        let _hook = install_backend_failure_hook(failure, Arc::clone(&barrier));
         let token = CancellationToken::new();
+        let cancelling_token = token.clone();
+        let cancelling_barrier = Arc::clone(&barrier);
+        let cancelling_thread = thread::spawn(move || {
+            cancelling_barrier.wait();
+            cancelling_token.cancel();
+            cancelling_barrier.wait();
+        });
         let sink = StageSink::default();
-        let control = ExecutionControl::new(Some(&token), Some(&sink));
-        let mut progress = ProgressTracker::try_new(
-            control,
-            ExecutionOperation::DenseSolve,
+        let result = dense_system()?.try_solve_with_control(
+            solve_options()?,
             ExecutionOptions::default(),
-            5,
-        )?;
-        let retained_result = simulated_failing_backend_call::<()>(&token, backend_error);
-        let result = progress.finish_work(stage, retained_result);
+            ExecutionControl::new(Some(&token), Some(&sink)),
+        );
+        assert!(
+            cancelling_thread.join().is_ok(),
+            "cancellation thread panicked"
+        );
         assert!(matches!(
             result,
             Err(DenseSolveError::Execution(ExecutionError::Cancelled {
@@ -2109,13 +2225,23 @@ mod tests {
                 stage: cancelled_stage,
             })) if cancelled_stage == stage
         ));
-        assert_eq!(
-            *sink
-                .stages
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner),
-            vec![ExecutionStage::Started]
-        );
+        let stages = sink
+            .stages
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let expected = match failure {
+            InjectedBackendFailure::RankReview => {
+                &[ExecutionStage::Started, ExecutionStage::MemoryReview][..]
+            }
+            InjectedBackendFailure::Factorization => &[
+                ExecutionStage::Started,
+                ExecutionStage::MemoryReview,
+                ExecutionStage::RankReview,
+            ],
+        };
+        assert_eq!(stages.as_slice(), expected);
+        assert!(!stages.contains(&stage));
+        assert!(!stages.contains(&ExecutionStage::Completed));
         Ok(())
     }
 
@@ -2148,7 +2274,7 @@ mod tests {
     -> Result<(), Box<dyn Error>> {
         assert_cancellation_precedes_backend_failure(
             ExecutionStage::RankReview,
-            DenseSolveError::NonFiniteRankEvidence,
+            InjectedBackendFailure::RankReview,
         )
     }
 
@@ -2157,7 +2283,7 @@ mod tests {
     -> Result<(), Box<dyn Error>> {
         assert_cancellation_precedes_backend_failure(
             ExecutionStage::Factorization,
-            DenseSolveError::CholeskyRejected,
+            InjectedBackendFailure::Factorization,
         )
     }
 
