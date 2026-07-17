@@ -6,91 +6,56 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Re-review complete / ready-head integration required
-- Requirement: REQ-DIAG-001, Issue #63
-- Branch: `codex/req-diag-001-structured-diagnostics`
-- Draft pull request: #64
-- Re-reviewed evidence head: `c838de4`
-- Repair implementation head: `193ee44`
-- Original reviewed head: `872837e`
+- Mode: Integration state / REQ-DIAG-001 complete
+- Requirement: REQ-DIAG-001, Issue #63 (closed)
+- Implementation pull request: #64, squash-merged as `654cb60`
+- Integration-state branch: `codex/req-diag-001-integration-state`
+- Integration-state pull request: pending publication
 - Review record: `docs/reviews/PR-64-INDEPENDENT-REVIEW.md`
-- Registry state: `implemented`
-- Dependencies: REQ-IR-001 and its complete closure are `integrated`
+- Registry state in this change: `integrated`
+- Next eligible requirement: REQ-EXEC-001 (`planned`)
 
-## Scope
+## Integration result
 
-Implement one GeoRBF-owned diagnostic boundary for input, capability, rank,
-gauge, contrast, infeasibility, conditioning, memory, cancellation, and version
-failures. Retain stable machine-readable codes and observation/level source
-paths without freezing Rust memory layout or implementing later adapter,
-schema, level-DAG, convex-solver, or execution-control requirements.
-
-## Implementation state
-
-- Added `diagnostics` core types for stable error categories and codes,
-  validated category-specific evidence, deterministic display, and
-  `GeoRbfError`.
-- Added fallible `DiagnosticPath` construction from complete semantic
-  observation provenance and from a validated source location plus field path
-  with independently optional observation, level, and constraint-group
-  identifiers.
-- The repair retains source-plus-field paths before either identifier exists
-  and source-located level declarations without an observation ID; empty field
-  and supplied group text remain rejected.
-- Preserved backend-owned detailed CPD, dense solver, assembly, and model
-  diagnostics; the new layer is a common orchestration/adapter taxonomy.
-- Added independent tests for every error category, exact numeric and symbolic
-  codes, identifier uniqueness, complete deterministic display strings,
-  table-driven independent source-path components, invalid evidence,
-  `Send + Sync`, and absence of core output macros.
-- Updated Rustdoc, architecture, registry interface dispositions, and
-  `changes/REQ-DIAG-001.md`.
+- A fresh isolated independent re-review closed P1-1 and P2-1 and found no
+  P0-P3 finding in the complete implementation and repair diff.
+- Exact Ready head `8d265f1` passed the complete Windows, Ubuntu, and macOS CI
+  matrix with every benchmark-smoke workload in run 29547848410.
+- PR #64 squash-merged exactly once as `654cb60`; Issue #63 closed as
+  completed.
+- Post-merge `main` run 29548328531 passed the same complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate.
+- This isolated integration-state change updates only registry and progress
+  evidence. It changes no production code, test, manifest, schema, CI, build
+  input, API, numerical behavior, dependency, tag, or release.
 
 ## Validation state
 
-- All six focused diagnostics integration tests pass.
-- Focused warning-denying Clippy passes.
-- Focused Rustdoc passes.
-- `git diff --check` passes.
-- Exact repair implementation head `193ee44` passed the complete local standard
-  gate: format, warning-denying workspace Clippy for all targets and features,
-  all-feature workspace tests, workspace Rustdoc, all 58 requirement checks,
+- Repair implementation head `193ee44` passed the complete local standard
+  gate; the clean reviewer independently repeated all six diagnostics tests
   and `git diff --check`.
-- The later review-record and bounded-handoff updates change only
-  `docs/reviews/PR-64-INDEPENDENT-REVIEW.md` and this file. They change no
-  production code, test, manifest, schema, CI, build input, registry, API,
-  numerical behavior, dependency, tag, or release state.
-- Exact pre-repair branch head `13bee8c` passed Draft Ubuntu CI run
-  29508139350; exact re-reviewed evidence head `c838de4` passed fresh Draft
-  Ubuntu CI run 29547332906.
-- A fresh isolated read-only reviewer closed P1-1 and P2-1 and found no new
-  P0-P3 finding in the complete PR and repair diff.
-- The reviewer independently reran all six diagnostics tests in an isolated
-  target directory and `git diff --check`; both passed and the worktree stayed
-  clean.
-- Exact reviewed head `c838de4` passed Draft Ubuntu CI run 29547332906. It
-  differs from complete-local-gate repair head `193ee44` only through this
-  review record and the bounded handoff.
+- Exact implementation Ready-head and post-merge `main` three-platform gates
+  are green as recorded above.
+- The isolated integration-state registry tree passed the complete local
+  standard gate: format, warning-denying workspace Clippy, all-feature
+  workspace tests, workspace Rustdoc, all 58 requirement checks, and
+  `git diff --check`. This validation-note update is documentation-only.
 
 ## Next task
 
-Continue only PR #64's mandatory integration sequence. Confirm the pushed
-current head differs from reviewed head `c838de4` only through the review
-record and bounded handoff, mark the PR ready, and wait for the complete
-Windows, Ubuntu, and macOS correctness matrix with every benchmark-smoke
-workload on that exact ready head. Merge exactly once only when the full gate
-is green, then record truthful integration state through the isolated
-integration-state workflow. Do not begin REQ-EXEC-001 or another requirement.
+After the isolated integration-state pull request is green and merged, open a
+fresh task and perform the mandatory preflight. Use
+`cargo xtask requirements next`; do not start the next requirement in this
+task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #63
-- Draft implementation: GitHub PR #64
+- Acceptance criteria and exclusions: closed GitHub Issue #63
+- Merged implementation: GitHub PR #64
+- Integration-state pull request: pending publication
 - Independent review: `docs/reviews/PR-64-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-DIAG-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
-- Implementation and tests: `crates/georbf/src/diagnostics.rs` and
-  `crates/georbf/tests/diagnostics.rs`
 
 ## Checks not yet available
 
