@@ -429,6 +429,88 @@ fn identical_functional_with_distinct_fixed_values_is_rejected() -> TestResult {
 }
 
 #[test]
+fn identical_memberships_with_positive_order_paths_are_infeasible() -> TestResult {
+    let result = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 10)?,
+            definition(2, LevelValue::unknown(), 11)?,
+        ],
+        [
+            LevelMembership::new(
+                LevelId::new(1),
+                functional::<1>(90, 4.0)?,
+                provenance(20, "memberships[0]")?,
+            ),
+            LevelMembership::new(
+                LevelId::new(2),
+                functional::<1>(91, 4.0)?,
+                provenance(21, "memberships[1]")?,
+            ),
+        ],
+        [order(1, 2, 1.0, 30)?],
+    );
+
+    let Err(LevelProblemError::MembershipOrderConflict {
+        lower,
+        upper,
+        sources,
+    }) = result
+    else {
+        return Err(io::Error::other("expected membership order conflict").into());
+    };
+    assert_eq!(lower, LevelId::new(1));
+    assert_eq!(upper, LevelId::new(2));
+    assert_eq!(
+        sources
+            .iter()
+            .map(georbf::DiagnosticPath::observation_id)
+            .collect::<Vec<_>>(),
+        [
+            Some(ObservationId::new(20)),
+            Some(ObservationId::new(30)),
+            Some(ObservationId::new(21)),
+        ]
+    );
+
+    let transitive = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 100)?,
+            definition(2, LevelValue::unknown(), 101)?,
+            definition(3, LevelValue::unknown(), 102)?,
+        ],
+        [
+            LevelMembership::new(
+                LevelId::new(1),
+                functional::<1>(190, 4.0)?,
+                provenance(110, "memberships[0]")?,
+            ),
+            LevelMembership::new(
+                LevelId::new(3),
+                functional::<1>(191, 4.0)?,
+                provenance(111, "memberships[1]")?,
+            ),
+        ],
+        [order(1, 2, 0.0, 120)?, order(2, 3, 1.0, 121)?],
+    );
+    let Err(LevelProblemError::MembershipOrderConflict { sources, .. }) = transitive else {
+        return Err(io::Error::other("expected transitive membership order conflict").into());
+    };
+    assert_eq!(
+        sources
+            .iter()
+            .map(georbf::DiagnosticPath::observation_id)
+            .collect::<Vec<_>>(),
+        [
+            Some(ObservationId::new(110)),
+            Some(ObservationId::new(120)),
+            Some(ObservationId::new(121)),
+            Some(ObservationId::new(111)),
+        ]
+    );
+    Ok(())
+}
+
+#[test]
 fn missing_gauge_is_checked_per_connected_component() -> TestResult {
     let result = LevelProblem::try_new(
         [

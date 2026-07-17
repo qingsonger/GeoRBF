@@ -39,16 +39,24 @@ gap, retaining endpoint and path sources. A scale-aware roundoff allowance
 makes the semantic precheck conservative at a floating-point boundary; emitted
 individual hard rows are never changed, dropped, softened, or regularized.
 
-Sixteen independent tests cover fixed/unknown/prior compilation, explicit
+Positive direct or transitive order paths between two mathematically identical
+membership evaluations are also rejected because the membership equalities
+force the corresponding level values equal. The structured
+`MembershipOrderConflict` retains both independently sourced memberships and
+every order edge on the selected positive path without emitting or altering any
+hard row.
+
+Seventeen independent tests cover fixed/unknown/prior compilation, explicit
 variable indices and signs, prior retention, membership units, deterministic
 topological ties, exact cycle sources, ordinary and extreme transitive fixed
 conflicts, provenance-independent same-functional conflicts with complete
+sources, identical-membership positive-order infeasibility with complete path
 sources, per-component gauge, membership-coupled contrast and diagnostic
-evidence, isolation, undefined references, constructor bypass attempts,
-numeric validation, linearizer failures, out-of-range affine terms, and
-`Send + Sync` across D=1, D=2, and D=3 public problem types. The focused
-benchmark builds, validates, and canonicalizes a deterministic 64-level chain;
-the smoke run completed successfully.
+evidence, isolation, undefined references, constructor bypass attempts, numeric
+validation, linearizer failures, out-of-range affine terms, and `Send + Sync`
+across D=1, D=2, and D=3 public problem types. The focused benchmark builds,
+validates, and canonicalizes a deterministic 64-level chain; the smoke run
+completed successfully.
 
 The final implementation tree passed the complete local standard gate:
 formatting, warning-denying all-target/all-feature workspace Clippy,

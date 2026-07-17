@@ -42,13 +42,15 @@ objective backend exists.
 The compiler requires at least two levels and one field membership. It rejects
 duplicate identifiers, missing references, self edges, negative or non-finite
 gaps, and unknown levels with neither a membership nor an order edge. A stable
-topological pass rejects every directed cycle. Fixed-value review checks both
+topological pass rejects every directed cycle. Hard-conflict review checks
 mathematically identical Value evaluations, independent of functional
-provenance, assigned to different fixed levels and transitive minimum-gap paths
-whose fixed endpoint values cannot satisfy the accumulated gap. Path sums and
-fixed-endpoint differences use an overflow-safe scaled comparison. Near a
-floating-point equality boundary, the precheck is conservative; the original
-individual hard rows remain unchanged in canonical form.
+provenance, assigned to different fixed levels or joined by a positive
+minimum-gap path. It also checks transitive minimum-gap paths whose fixed
+endpoint values cannot satisfy the accumulated gap. Path sums and fixed-endpoint
+differences use an overflow-safe scaled comparison. Near a floating-point
+equality boundary, the precheck is conservative; the original individual hard
+rows remain unchanged in canonical form. Identical-membership order conflicts
+retain both membership sources and every edge of the selected positive path.
 
 Gauge review treats memberships as edges to the shared scalar field and order
 relations as edges between levels. Every resulting connected component needs a

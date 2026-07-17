@@ -31,4 +31,7 @@ dense equality solver supports those objectives or order bounds. Gauge is
 checked per connected component formed by level-order edges and memberships to
 the shared scalar field; contrast must occur in the field-connected component.
 Fixed-order conflict review includes transitive path gaps, while the emitted
-canonical problem retains the original individual hard constraints.
+canonical problem retains the original individual hard constraints. A positive
+order path between two mathematically identical membership evaluations is
+rejected with both membership sources and the selected path sources because the
+membership equalities force the corresponding level gap to zero.

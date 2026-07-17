@@ -4,6 +4,8 @@
 //! observations, and minimum-gap order edges. Compilation produces only
 //! solver-neutral equalities and linear bounds; soft priors remain explicit
 //! objective metadata until the approved soft-loss backend is available.
+//! Validation rejects a positive order path between mathematically identical
+//! memberships and retains both memberships and the selected path as evidence.
 
 use std::error::Error;
 use std::fmt;
@@ -339,6 +341,13 @@ where
         validate_isolation(&levels, &membership_indices, &order_indices)?;
         validate_fixed_memberships(&levels, &memberships, &membership_indices)?;
         let topological_indices = validate_dag(&levels, &orders, &order_indices)?;
+        validate_membership_order_paths(
+            &memberships,
+            &orders,
+            &membership_indices,
+            &order_indices,
+            &topological_indices,
+        )?;
         validate_fixed_order_paths(&levels, &orders, &order_indices, &topological_indices)?;
         validate_gauge(&levels, &membership_indices, &order_indices)?;
         validate_contrast(
@@ -826,6 +835,15 @@ pub enum LevelProblemError {
         /// Complete conflicting sources.
         sources: Vec<DiagnosticPath>,
     },
+    /// Identical field memberships contradicted a positive order path.
+    MembershipOrderConflict {
+        /// Lower level on the conflicting order path.
+        lower: LevelId,
+        /// Upper level on the conflicting order path.
+        upper: LevelId,
+        /// Both membership sources and every selected path edge.
+        sources: Vec<DiagnosticPath>,
+    },
     /// A transitive minimum-gap path contradicted fixed endpoints.
     FixedOrderConflict {
         /// Fixed lower level.
@@ -1206,6 +1224,103 @@ where
         ) => first_point == second_point,
         _ => false,
     }
+}
+
+fn validate_membership_order_paths<const D: usize>(
+    memberships: &[LevelMembership<D>],
+    orders: &[LevelOrder],
+    membership_indices: &[usize],
+    order_indices: &[(usize, usize)],
+    topological_indices: &[usize],
+) -> Result<(), LevelProblemError>
+where
+    Dim<D>: SupportedDimension,
+{
+    let level_count = topological_indices.len();
+    let mut reachable = try_false(level_count, LevelStorage::GraphWork)?;
+    let mut positive = try_false(level_count, LevelStorage::GraphWork)?;
+    let mut parent_edge = try_none_usize(level_count, LevelStorage::GraphWork)?;
+    for (source_membership_index, source_level_index) in
+        membership_indices.iter().copied().enumerate()
+    {
+        reachable.fill(false);
+        positive.fill(false);
+        parent_edge.fill(None);
+        reachable[source_level_index] = true;
+
+        for node in topological_indices {
+            if !reachable[*node] {
+                continue;
+            }
+            for (edge_index, ((lower, upper), order)) in
+                order_indices.iter().zip(orders).enumerate()
+            {
+                if *lower != *node {
+                    continue;
+                }
+                let candidate_positive = positive[*node] || order.minimum_gap > 0.0;
+                if !reachable[*upper] || (candidate_positive && !positive[*upper]) {
+                    reachable[*upper] = true;
+                    positive[*upper] = candidate_positive;
+                    parent_edge[*upper] = Some(edge_index);
+                }
+            }
+        }
+
+        for (target_membership_index, target_level_index) in
+            membership_indices.iter().copied().enumerate()
+        {
+            if !positive[target_level_index]
+                || !same_membership_functional(
+                    &memberships[source_membership_index].functional,
+                    &memberships[target_membership_index].functional,
+                )
+            {
+                continue;
+            }
+
+            let mut path = Vec::new();
+            path.try_reserve_exact(orders.len()).map_err(|_| {
+                allocation_error(
+                    LevelStorage::ConflictSources,
+                    orders.len().saturating_add(2),
+                )
+            })?;
+            let mut cursor = target_level_index;
+            while cursor != source_level_index {
+                let edge_index = parent_edge[cursor].ok_or(LevelProblemError::InvalidGraphState)?;
+                path.push(edge_index);
+                cursor = order_indices[edge_index].0;
+            }
+            path.reverse();
+
+            let requested = path.len().saturating_add(2);
+            let mut sources = Vec::new();
+            sources
+                .try_reserve_exact(requested)
+                .map_err(|_| allocation_error(LevelStorage::ConflictSources, requested))?;
+            sources.push(
+                DiagnosticPath::try_observation(&memberships[source_membership_index].provenance)
+                    .map_err(LevelProblemError::DiagnosticPath)?,
+            );
+            for edge_index in path {
+                sources.push(
+                    DiagnosticPath::try_observation(&orders[edge_index].provenance)
+                        .map_err(LevelProblemError::DiagnosticPath)?,
+                );
+            }
+            sources.push(
+                DiagnosticPath::try_observation(&memberships[target_membership_index].provenance)
+                    .map_err(LevelProblemError::DiagnosticPath)?,
+            );
+            return Err(LevelProblemError::MembershipOrderConflict {
+                lower: memberships[source_membership_index].level_id,
+                upper: memberships[target_membership_index].level_id,
+                sources,
+            });
+        }
+    }
+    Ok(())
 }
 
 fn validate_dag(
