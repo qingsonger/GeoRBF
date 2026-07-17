@@ -46,6 +46,13 @@ controlled field assembly. The existing field, solver, model, diagnostics, and
 workspace suites cover unchanged convenience paths and the absence of core
 output macros.
 
+The post-call failure-priority regressions traverse the public controlled dense
+solve. Test-only one-shot hooks fail the real rank-review and factorization call
+sites while a separate cancellation thread is coordinated through a two-phase
+barrier. The tests therefore prove cancellation priority at the production
+checkpoint and prove that the failed stage emits no successful event; non-test
+builds contain neither hook state nor an injected failure branch.
+
 Rust is implemented. The CLI is N/A because its Stage 0 surface exposes only
 help and version, not a long-running core operation. C, C++, and Python are N/A
 because the Stage 0 FFI/Python crates export no ABI or module and the C++ wrapper

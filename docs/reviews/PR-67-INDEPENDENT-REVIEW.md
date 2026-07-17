@@ -8,9 +8,10 @@
 - Stable implementation head: `ef16599`
 - Repair head: `947888a`
 - Re-reviewed head: `d9cba54`
+- R67-004 repair head: `33cf9def4a418970281b3ad130dcf58ec1b29074`
 - Base head: `eaa7430fabafd1c8890306f9240afd4feb596e96`
 - Review date: 2026-07-17
-- Result: repair re-review found one P2 regression-evidence gap; fresh Repair required
+- Result: R67-004 repaired with production-path regressions; fresh re-review required
 
 ## Scope and independence
 
@@ -229,8 +230,35 @@ The Repair must not broaden execution semantics or alter numerical policy.
   gate. Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI did not run
   because PR #67 remains Draft.
 
-PR #67 must remain Draft and REQ-EXEC-001 remains `implemented`. A fresh Repair
-task must address only R67-004 with production-path regressions, rerun focused
-and final standard checks, update evidence, push, and stop for another fresh
-re-review. This Review does not repair code, mark the PR ready, merge, integrate
-the requirement, or begin another requirement.
+## R67-004 repair evidence
+
+Fresh Repair commit `33cf9de` replaces the two insufficient direct-tracker
+regressions with public-path tests. One-shot test-only hooks now fail the actual
+original-rank-review and factorization calls used by
+`DenseEqualitySystem::try_solve_with_control`. Each hook enters a two-phase
+barrier while the injected backend operation is active; a separate thread
+crosses the first phase, cancels the shared token, and crosses the second phase
+before the injected numerical error returns.
+
+Both regressions invoke the public controlled solve and receive the expected
+`ExecutionError::Cancelled` at `RankReview` or `Factorization`. Their exact
+recorded stage sequences stop before the failed stage, proving no successful
+event was published. The hook state, synchronization, and injected-error
+branches are all compiled only under `cfg(test)`. The common retained-result
+and post-call progress checkpoints remain unchanged, and this Repair makes no
+production execution-semantic, numerical-policy, formula, factorization,
+dependency, manifest, registry, or schema change.
+
+Focused validation passed for both failure-priority regressions, all eight
+execution-control integration tests, all-feature `georbf`, warning-denying
+all-target core Clippy, and `git diff --check`. The stable R67-004 repair commit
+then passed the complete local standard gate: format, warning-denying workspace
+Clippy, all-feature workspace tests, workspace Rustdoc, all 58 requirement
+checks, and `git diff --check`.
+
+This section records Repair evidence only; it is not an independent re-review.
+PR #67 remains Draft and REQ-EXEC-001 remains `implemented`. A fresh Review task
+must independently re-review R67-004 and either record findings and stop or,
+only if clean, follow the mandatory ready-CI-integration sequence. This Repair
+does not mark the PR ready, merge, integrate the requirement, or begin another
+requirement.
