@@ -9,7 +9,7 @@ use georbf::{
     FunctionalProvenance, FunctionalTerm, LevelCanonicalizationError, LevelDefinition, LevelId,
     LevelMembership, LevelOrder, LevelPrior, LevelProblem, LevelProblemError, LevelValue,
     ObservationFunctional, ObservationId, Point, SemanticProvenance, SoftLoss, SourceLocation,
-    SupportedDimension, VariableBlock,
+    SupportedDimension, UnitDirection, VariableBlock,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -170,6 +170,66 @@ fn fixed_unknown_and_prior_compile_to_explicit_variables() -> TestResult {
 }
 
 #[test]
+fn memberships_require_one_unit_weight_value_atom() -> TestResult {
+    let point = Point::try_new([0.0])?;
+    let direction =
+        ObservationFunctional::new(FunctionalExpr::try_new([FunctionalTerm::try_new(
+            1.0,
+            FunctionalAtom::directional_derivative(
+                point,
+                UnitDirection::try_new([1.0])?,
+                FunctionalProvenance::new(90),
+            ),
+        )?])?);
+    let scaled = ObservationFunctional::new(FunctionalExpr::try_new([FunctionalTerm::try_new(
+        2.0,
+        FunctionalAtom::value(point, FunctionalProvenance::new(91)),
+    )?])?);
+    let multiple = ObservationFunctional::new(FunctionalExpr::try_new([
+        FunctionalTerm::try_new(
+            1.0,
+            FunctionalAtom::value(point, FunctionalProvenance::new(92)),
+        )?,
+        FunctionalTerm::try_new(
+            -1.0,
+            FunctionalAtom::value(Point::try_new([1.0])?, FunctionalProvenance::new(93)),
+        )?,
+    ])?);
+
+    for (observation_id, invalid) in [(20, direction), (21, scaled), (22, multiple)] {
+        let result = LevelProblem::try_new(
+            [
+                definition(1, LevelValue::try_fixed(0.0)?, 10)?,
+                definition(2, LevelValue::try_fixed(1.0)?, 11)?,
+            ],
+            [LevelMembership::new(
+                LevelId::new(1),
+                invalid,
+                provenance(observation_id, "memberships[invalid]")?,
+            )],
+            [],
+        );
+        assert!(matches!(
+            result,
+            Err(LevelProblemError::InvalidMembershipFunctional {
+                observation_id: actual,
+            }) if actual == ObservationId::new(observation_id)
+        ));
+    }
+
+    let valid = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 30)?,
+            definition(2, LevelValue::try_fixed(1.0)?, 31)?,
+        ],
+        [membership(1, 0.0, 40)?, membership(2, 1.0, 41)?],
+        [],
+    )?;
+    assert_eq!(valid.memberships().len(), 2);
+    Ok(())
+}
+
+#[test]
 fn cycle_is_rejected_with_order_sources() -> TestResult {
     let result = LevelProblem::try_new(
         [
@@ -180,14 +240,38 @@ fn cycle_is_rejected_with_order_sources() -> TestResult {
         [membership(1, 0.0, 20)?, membership(2, 1.0, 21)?],
         [
             order(1, 2, 1.0, 30)?,
-            order(2, 3, 1.0, 31)?,
-            order(3, 1, 1.0, 32)?,
+            order(2, 1, 1.0, 31)?,
+            order(2, 3, 1.0, 32)?,
         ],
     );
     let Err(LevelProblemError::OrderCycle { sources }) = result else {
         return Err(io::Error::other("expected order cycle").into());
     };
-    assert_eq!(sources.len(), 3);
+    assert_eq!(
+        sources
+            .iter()
+            .map(georbf::DiagnosticPath::observation_id)
+            .collect::<Vec<_>>(),
+        [Some(ObservationId::new(30)), Some(ObservationId::new(31))]
+    );
+    Ok(())
+}
+
+#[test]
+fn topological_ties_follow_definition_insertion_order() -> TestResult {
+    let problem = LevelProblem::try_new(
+        [
+            definition(30, LevelValue::try_fixed(0.0)?, 10)?,
+            definition(10, LevelValue::try_fixed(5.0)?, 11)?,
+            definition(20, LevelValue::unknown(), 12)?,
+        ],
+        [membership(30, 0.0, 20)?, membership(20, 1.0, 21)?],
+        [order(30, 20, 1.0, 30)?],
+    )?;
+    assert_eq!(
+        problem.diagnostics().topological_order(),
+        [LevelId::new(30), LevelId::new(10), LevelId::new(20)]
+    );
     Ok(())
 }
 
@@ -221,8 +305,85 @@ fn transitive_fixed_order_conflict_is_source_aware() -> TestResult {
 }
 
 #[test]
+fn extreme_fixed_endpoints_preserve_direct_conflict_sources() -> TestResult {
+    let result = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(f64::MAX)?, 10)?,
+            definition(2, LevelValue::try_fixed(-f64::MAX)?, 11)?,
+        ],
+        [membership(1, 0.0, 20)?, membership(2, 1.0, 21)?],
+        [order(1, 2, 0.0, 30)?],
+    );
+    let Err(LevelProblemError::FixedOrderConflict { sources, .. }) = result else {
+        return Err(io::Error::other("expected extreme fixed order conflict").into());
+    };
+    assert_eq!(
+        sources
+            .iter()
+            .map(georbf::DiagnosticPath::observation_id)
+            .collect::<Vec<_>>(),
+        [
+            Some(ObservationId::new(10)),
+            Some(ObservationId::new(30)),
+            Some(ObservationId::new(11)),
+        ]
+    );
+    Ok(())
+}
+
+#[test]
+fn overflow_scaled_paths_distinguish_feasible_and_conflicting_endpoints() -> TestResult {
+    let feasible = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(-f64::MAX)?, 10)?,
+            definition(2, LevelValue::unknown(), 11)?,
+            definition(3, LevelValue::try_fixed(f64::MAX)?, 12)?,
+        ],
+        [membership(1, 0.0, 20)?, membership(3, 2.0, 21)?],
+        [order(1, 2, f64::MAX, 30)?, order(2, 3, f64::MAX, 31)?],
+    )?;
+    assert_eq!(feasible.orders().len(), 2);
+
+    let result = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(-f64::MAX)?, 40)?,
+            definition(2, LevelValue::unknown(), 41)?,
+            definition(3, LevelValue::try_fixed(0.0)?, 42)?,
+        ],
+        [membership(1, 0.0, 50)?, membership(3, 2.0, 51)?],
+        [
+            order(1, 2, f64::MAX * 0.75, 60)?,
+            order(2, 3, f64::MAX * 0.75, 61)?,
+        ],
+    );
+    let Err(LevelProblemError::FixedOrderConflict {
+        required_gap,
+        fixed_gap,
+        sources,
+        ..
+    }) = result
+    else {
+        return Err(io::Error::other("expected overflow-scaled conflict").into());
+    };
+    assert!(required_gap.is_infinite());
+    assert_eq!(fixed_gap.to_bits(), f64::MAX.to_bits());
+    assert_eq!(
+        sources
+            .iter()
+            .map(georbf::DiagnosticPath::observation_id)
+            .collect::<Vec<_>>(),
+        [
+            Some(ObservationId::new(40)),
+            Some(ObservationId::new(60)),
+            Some(ObservationId::new(61)),
+            Some(ObservationId::new(42)),
+        ]
+    );
+    Ok(())
+}
+
+#[test]
 fn identical_functional_with_distinct_fixed_values_is_rejected() -> TestResult {
-    let shared = functional::<1>(90, 4.0)?;
     let result = LevelProblem::try_new(
         [
             definition(1, LevelValue::try_fixed(0.0)?, 10)?,
@@ -231,23 +392,39 @@ fn identical_functional_with_distinct_fixed_values_is_rejected() -> TestResult {
         [
             LevelMembership::new(
                 LevelId::new(1),
-                shared.clone(),
+                functional::<1>(90, 4.0)?,
                 provenance(20, "memberships[0]")?,
             ),
-            LevelMembership::new(LevelId::new(2), shared, provenance(21, "memberships[1]")?),
+            LevelMembership::new(
+                LevelId::new(2),
+                functional::<1>(91, 4.0)?,
+                provenance(21, "memberships[1]")?,
+            ),
         ],
         [],
     );
     let Err(LevelProblemError::FixedMembershipConflict {
         first_level,
         second_level,
-        ..
+        sources,
     }) = result
     else {
         return Err(io::Error::other("expected fixed membership conflict").into());
     };
     assert_eq!(first_level, LevelId::new(1));
     assert_eq!(second_level, LevelId::new(2));
+    assert_eq!(
+        sources
+            .iter()
+            .map(georbf::DiagnosticPath::observation_id)
+            .collect::<Vec<_>>(),
+        [
+            Some(ObservationId::new(10)),
+            Some(ObservationId::new(20)),
+            Some(ObservationId::new(11)),
+            Some(ObservationId::new(21)),
+        ]
+    );
     Ok(())
 }
 
@@ -286,6 +463,64 @@ fn prior_anchors_gauge_but_equal_anchors_still_lack_contrast() -> TestResult {
     assert_eq!(
         diagnostic,
         ContrastDiagnostic::try_new(LevelId::new(1), LevelId::new(2))?
+    );
+    Ok(())
+}
+
+#[test]
+fn membershipless_levels_cannot_manufacture_field_contrast() -> TestResult {
+    let positive_gap = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 10)?,
+            definition(2, LevelValue::unknown(), 11)?,
+        ],
+        [membership(1, 0.0, 20)?],
+        [order(1, 2, 1.0, 30)?],
+    );
+    let Err(LevelProblemError::MissingContrast { diagnostic }) = positive_gap else {
+        return Err(io::Error::other("expected missing contrast for membershipless gap").into());
+    };
+    assert_eq!(
+        diagnostic,
+        ContrastDiagnostic::try_new(LevelId::new(1), LevelId::new(2))?
+    );
+
+    let distinct_anchor = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 40)?,
+            definition(2, LevelValue::try_fixed(1.0)?, 41)?,
+        ],
+        [membership(1, 0.0, 50)?],
+        [order(1, 2, 0.0, 60)?],
+    );
+    let Err(LevelProblemError::MissingContrast { diagnostic }) = distinct_anchor else {
+        return Err(io::Error::other("expected missing contrast for membershipless anchor").into());
+    };
+    assert_eq!(
+        diagnostic,
+        ContrastDiagnostic::try_new(LevelId::new(1), LevelId::new(2))?
+    );
+    Ok(())
+}
+
+#[test]
+fn missing_contrast_evidence_names_the_field_coupled_levels() -> TestResult {
+    let result = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 10)?,
+            definition(2, LevelValue::try_fixed(5.0)?, 11)?,
+            definition(3, LevelValue::try_fixed(2.0)?, 12)?,
+            definition(4, LevelValue::unknown(), 13)?,
+        ],
+        [membership(3, 0.0, 20)?, membership(4, 1.0, 21)?],
+        [order(3, 4, 0.0, 30)?],
+    );
+    let Err(LevelProblemError::MissingContrast { diagnostic }) = result else {
+        return Err(io::Error::other("expected component-specific missing contrast").into());
+    };
+    assert_eq!(
+        diagnostic,
+        ContrastDiagnostic::try_new(LevelId::new(3), LevelId::new(4))?
     );
     Ok(())
 }

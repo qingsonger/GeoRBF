@@ -11,11 +11,13 @@ provenance, gauge freedom, and conflict diagnostics.
 
 ## Decision
 
-Represent every level with an explicit `h_k`. Membership is
-`f(x_i) - h_k = 0`; a level is fixed, unknown, or carries a soft prior. Order
-edges form a DAG with `h_b - h_a >= delta_ab`. Compilation checks cycles,
-fixed conflicts, isolation, additive gauge, and nonzero contrast. Differencing
-is an optional internal elimination only.
+Represent every level with an explicit `h_k`. Membership is exactly one
+unit-weight Value evaluation `f(x_i) - h_k = 0`; derivative, scaled, and
+multi-atom functionals are not memberships. A level is fixed, unknown, or
+carries a soft prior. Order edges form a DAG with
+`h_b - h_a >= delta_ab`. Compilation checks cycles, fixed conflicts, isolation,
+additive gauge, and nonzero contrast between membership-coupled levels.
+Differencing is an optional internal elimination only.
 
 ## Consequences
 

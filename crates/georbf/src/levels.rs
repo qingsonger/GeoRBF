@@ -14,7 +14,7 @@ use crate::diagnostics::{
     LevelId,
 };
 use crate::dimension::{Dim, SupportedDimension};
-use crate::functional::ObservationFunctional;
+use crate::functional::{FunctionalAtom, ObservationFunctional};
 use crate::problem_ir::{
     AffineExpression, AffineTerm, CanonicalEquality, CanonicalLinearBound, CanonicalProblem,
     ObservationId, ProblemIrError, SemanticProvenance, SoftLoss, VariableBlock,
@@ -178,6 +178,10 @@ where
     Dim<D>: SupportedDimension,
 {
     /// Constructs a membership from a compiled observation functional.
+    ///
+    /// [`LevelProblem::try_new`] accepts only one coefficient-1
+    /// [`FunctionalAtom::Value`] term so the functional has the value units and
+    /// joint-shift gauge required by `f(x_i) - h_k = 0`.
     pub const fn new(
         level_id: LevelId,
         functional: ObservationFunctional<D>,
@@ -328,6 +332,7 @@ where
         validate_unique_levels(&levels)?;
         validate_level_values(&levels)?;
         validate_unique_provenance(&levels, &memberships, &orders)?;
+        validate_membership_functionals(&memberships)?;
 
         let membership_indices = membership_level_indices(&levels, &memberships)?;
         let order_indices = order_level_indices(&levels, &orders)?;
@@ -336,7 +341,13 @@ where
         let topological_indices = validate_dag(&levels, &orders, &order_indices)?;
         validate_fixed_order_paths(&levels, &orders, &order_indices, &topological_indices)?;
         validate_gauge(&levels, &membership_indices, &order_indices)?;
-        validate_contrast(&levels, &orders, &membership_indices, &order_indices)?;
+        validate_contrast(
+            &levels,
+            &orders,
+            &membership_indices,
+            &order_indices,
+            &topological_indices,
+        )?;
 
         let mut topological_order = Vec::new();
         topological_order
@@ -791,6 +802,11 @@ pub enum LevelProblemError {
         /// Rejected gap.
         minimum_gap: f64,
     },
+    /// A membership was not exactly one unit-weight scalar-field value.
+    InvalidMembershipFunctional {
+        /// Source membership identifier.
+        observation_id: ObservationId,
+    },
     /// An unknown level had neither membership nor order edge.
     IsolatedUnknownLevel {
         /// Isolated identifier.
@@ -822,11 +838,6 @@ pub enum LevelProblemError {
         fixed_gap: f64,
         /// Complete endpoint and path sources.
         sources: Vec<DiagnosticPath>,
-    },
-    /// Summing a transitive order path produced a non-finite value.
-    OrderGapOverflow {
-        /// Edge whose propagation overflowed.
-        observation_id: ObservationId,
     },
     /// One or more connected components lacked a fixed value or prior.
     MissingGauge {
@@ -1018,6 +1029,29 @@ where
     Ok(())
 }
 
+fn validate_membership_functionals<const D: usize>(
+    memberships: &[LevelMembership<D>],
+) -> Result<(), LevelProblemError>
+where
+    Dim<D>: SupportedDimension,
+{
+    for membership in memberships {
+        let terms = membership.functional.expression().terms();
+        let is_unit_value = matches!(
+            terms,
+            [term]
+                if term.coefficient().to_bits() == 1.0_f64.to_bits()
+                    && matches!(term.atom(), FunctionalAtom::Value { .. })
+        );
+        if !is_unit_value {
+            return Err(LevelProblemError::InvalidMembershipFunctional {
+                observation_id: membership.provenance.observation_id(),
+            });
+        }
+    }
+    Ok(())
+}
+
 fn membership_level_indices<const D: usize>(
     levels: &[LevelDefinition],
     memberships: &[LevelMembership<D>],
@@ -1099,16 +1133,33 @@ where
                 continue;
             };
             if (first_value - second_value).abs() > 0.0
-                && memberships[first].functional == memberships[second].functional
+                && same_membership_functional(
+                    &memberships[first].functional,
+                    &memberships[second].functional,
+                )
             {
                 let mut sources = Vec::new();
                 sources
-                    .try_reserve_exact(2)
-                    .map_err(|_| allocation_error(LevelStorage::ConflictSources, 2))?;
+                    .try_reserve_exact(4)
+                    .map_err(|_| allocation_error(LevelStorage::ConflictSources, 4))?;
+                sources.push(
+                    DiagnosticPath::try_observation_at_level(
+                        &levels[membership_indices[first]].provenance,
+                        memberships[first].level_id,
+                    )
+                    .map_err(LevelProblemError::DiagnosticPath)?,
+                );
                 sources.push(
                     DiagnosticPath::try_observation_at_level(
                         &memberships[first].provenance,
                         memberships[first].level_id,
+                    )
+                    .map_err(LevelProblemError::DiagnosticPath)?,
+                );
+                sources.push(
+                    DiagnosticPath::try_observation_at_level(
+                        &levels[membership_indices[second]].provenance,
+                        memberships[second].level_id,
                     )
                     .map_err(LevelProblemError::DiagnosticPath)?,
                 );
@@ -1128,6 +1179,33 @@ where
         }
     }
     Ok(())
+}
+
+fn same_membership_functional<const D: usize>(
+    first: &ObservationFunctional<D>,
+    second: &ObservationFunctional<D>,
+) -> bool
+where
+    Dim<D>: SupportedDimension,
+{
+    let [first_term] = first.expression().terms() else {
+        return false;
+    };
+    let [second_term] = second.expression().terms() else {
+        return false;
+    };
+    match (first_term.atom(), second_term.atom()) {
+        (
+            FunctionalAtom::Value {
+                point: first_point, ..
+            },
+            FunctionalAtom::Value {
+                point: second_point,
+                ..
+            },
+        ) => first_point == second_point,
+        _ => false,
+    }
 }
 
 fn validate_dag(
@@ -1157,8 +1235,16 @@ fn validate_dag(
             sources
                 .try_reserve_exact(orders.len())
                 .map_err(|_| allocation_error(LevelStorage::ConflictSources, orders.len()))?;
+            let mut visited = try_false(levels.len(), LevelStorage::GraphWork)?;
+            let mut stack = Vec::new();
+            stack
+                .try_reserve_exact(levels.len())
+                .map_err(|_| allocation_error(LevelStorage::GraphWork, levels.len()))?;
             for (edge, (lower, upper)) in orders.iter().zip(order_indices) {
-                if !emitted[*lower] && !emitted[*upper] {
+                if !emitted[*lower]
+                    && !emitted[*upper]
+                    && path_exists(*upper, *lower, order_indices, &mut visited, &mut stack)
+                {
                     sources.push(
                         DiagnosticPath::try_observation(&edge.provenance)
                             .map_err(LevelProblemError::DiagnosticPath)?,
@@ -1178,6 +1264,31 @@ fn validate_dag(
     Ok(output)
 }
 
+fn path_exists(
+    start: usize,
+    target: usize,
+    order_indices: &[(usize, usize)],
+    visited: &mut [bool],
+    stack: &mut Vec<usize>,
+) -> bool {
+    visited.fill(false);
+    stack.clear();
+    visited[start] = true;
+    stack.push(start);
+    while let Some(node) = stack.pop() {
+        if node == target {
+            return true;
+        }
+        for (_, upper) in order_indices.iter().filter(|(lower, _)| *lower == node) {
+            if !visited[*upper] {
+                visited[*upper] = true;
+                stack.push(*upper);
+            }
+        }
+    }
+    false
+}
+
 fn validate_fixed_order_paths(
     levels: &[LevelDefinition],
     orders: &[LevelOrder],
@@ -1188,9 +1299,9 @@ fn validate_fixed_order_paths(
         let Some(source_value) = source_level.value.fixed() else {
             continue;
         };
-        let mut distance = try_none_f64(levels.len(), LevelStorage::GraphWork)?;
+        let mut distance = try_none_scaled(levels.len(), LevelStorage::GraphWork)?;
         let mut parent_edge = try_none_usize(levels.len(), LevelStorage::GraphWork)?;
-        distance[source_index] = Some(0.0);
+        distance[source_index] = Some(ScaledMagnitude::ZERO);
         for node in topological_indices {
             let Some(base) = distance[*node] else {
                 continue;
@@ -1201,13 +1312,8 @@ fn validate_fixed_order_paths(
                 if *lower != *node {
                     continue;
                 }
-                let candidate = base + order.minimum_gap;
-                if !candidate.is_finite() {
-                    return Err(LevelProblemError::OrderGapOverflow {
-                        observation_id: order.provenance.observation_id(),
-                    });
-                }
-                if distance[*upper].is_none_or(|current| candidate > current) {
+                let candidate = base.add(ScaledMagnitude::from_f64(order.minimum_gap));
+                if distance[*upper].is_none_or(|current| candidate.is_greater_than(current)) {
                     distance[*upper] = Some(candidate);
                     parent_edge[*upper] = Some(edge_index);
                 }
@@ -1222,11 +1328,12 @@ fn validate_fixed_order_paths(
             if target_index == source_index {
                 continue;
             }
-            let fixed_gap = target_value - source_value;
-            let scale = required_gap.abs().max(fixed_gap.abs()).max(1.0);
             let path_factor = u32::try_from(levels.len()).map_or(f64::from(u32::MAX), f64::from);
-            let tolerance = f64::EPSILON * scale * 64.0 * path_factor;
-            if required_gap - fixed_gap <= tolerance {
+            let relative_tolerance = f64::EPSILON * 64.0 * path_factor;
+            let available_gap = nonnegative_difference(target_value, source_value);
+            if available_gap.is_some_and(|available| {
+                !required_gap.exceeds_with_tolerance(available, relative_tolerance)
+            }) {
                 continue;
             }
             let mut path = Vec::new();
@@ -1273,13 +1380,132 @@ fn validate_fixed_order_paths(
             return Err(LevelProblemError::FixedOrderConflict {
                 lower: source_level.level_id,
                 upper: target_level.level_id,
-                required_gap,
-                fixed_gap,
+                required_gap: required_gap.to_f64(),
+                fixed_gap: target_value - source_value,
                 sources,
             });
         }
     }
     Ok(())
+}
+
+#[derive(Clone, Copy, Debug)]
+struct ScaledMagnitude {
+    mantissa: f64,
+    exponent: i32,
+}
+
+impl ScaledMagnitude {
+    const ZERO: Self = Self {
+        mantissa: 0.0,
+        exponent: 0,
+    };
+
+    fn from_f64(value: f64) -> Self {
+        debug_assert!(value.is_finite() && value >= 0.0);
+        if value == 0.0 {
+            return Self::ZERO;
+        }
+        let bits = value.to_bits();
+        let stored_exponent = i32::try_from((bits >> 52) & 0x7ff).unwrap_or_default();
+        let fraction_mask = (1_u64 << 52) - 1;
+        let fraction = bits & fraction_mask;
+        if stored_exponent == 0 {
+            let leading = 63_i32 - i32::try_from(fraction.leading_zeros()).unwrap_or(i32::MAX);
+            let shift = u32::try_from(52_i32 - leading).unwrap_or_default();
+            let normalized = fraction << shift;
+            Self {
+                mantissa: f64::from_bits((1023_u64 << 52) | (normalized & fraction_mask)),
+                exponent: leading - 1074,
+            }
+        } else {
+            Self {
+                mantissa: f64::from_bits((1023_u64 << 52) | fraction),
+                exponent: stored_exponent - 1023,
+            }
+        }
+    }
+
+    fn add(self, other: Self) -> Self {
+        if self.mantissa == 0.0 {
+            return other;
+        }
+        if other.mantissa == 0.0 {
+            return self;
+        }
+        let (larger, smaller) = if self.exponent >= other.exponent {
+            (self, other)
+        } else {
+            (other, self)
+        };
+        let exponent_difference = larger.exponent - smaller.exponent;
+        let scaled_smaller = if exponent_difference > 1074 {
+            0.0
+        } else {
+            smaller.mantissa * 2.0_f64.powi(-exponent_difference)
+        };
+        let mantissa = larger.mantissa + scaled_smaller;
+        if mantissa >= 2.0 {
+            Self {
+                mantissa: mantissa * 0.5,
+                exponent: larger.exponent + 1,
+            }
+        } else {
+            Self {
+                mantissa,
+                exponent: larger.exponent,
+            }
+        }
+    }
+
+    fn is_greater_than(self, other: Self) -> bool {
+        self.exponent > other.exponent
+            || (self.exponent == other.exponent && self.mantissa > other.mantissa)
+    }
+
+    fn exceeds_with_tolerance(self, available: Self, relative_tolerance: f64) -> bool {
+        if !self.is_greater_than(available) {
+            return false;
+        }
+        let one = Self::from_f64(1.0);
+        let scale = if self.is_greater_than(one) { self } else { one };
+        let required_at_scale = self.mantissa_at_exponent(scale.exponent);
+        let available_at_scale = available.mantissa_at_exponent(scale.exponent);
+        required_at_scale - available_at_scale > relative_tolerance * scale.mantissa
+    }
+
+    fn mantissa_at_exponent(self, exponent: i32) -> f64 {
+        if self.mantissa == 0.0 {
+            return 0.0;
+        }
+        let exponent_difference = exponent - self.exponent;
+        if exponent_difference > 1074 {
+            0.0
+        } else {
+            self.mantissa * 2.0_f64.powi(-exponent_difference)
+        }
+    }
+
+    fn to_f64(self) -> f64 {
+        if self.mantissa == 0.0 {
+            0.0
+        } else if self.exponent > 1023 {
+            f64::INFINITY
+        } else {
+            self.mantissa * 2.0_f64.powi(self.exponent)
+        }
+    }
+}
+
+fn nonnegative_difference(upper: f64, lower: f64) -> Option<ScaledMagnitude> {
+    if upper < lower {
+        return None;
+    }
+    if lower < 0.0 && upper >= 0.0 {
+        Some(ScaledMagnitude::from_f64(-lower).add(ScaledMagnitude::from_f64(upper)))
+    } else {
+        Some(ScaledMagnitude::from_f64(upper - lower))
+    }
 }
 
 fn validate_gauge(
@@ -1335,6 +1561,7 @@ fn validate_contrast(
     orders: &[LevelOrder],
     membership_indices: &[usize],
     order_indices: &[(usize, usize)],
+    topological_indices: &[usize],
 ) -> Result<(), LevelProblemError> {
     let field_node = levels.len();
     let node_count = levels
@@ -1353,19 +1580,52 @@ fn validate_contrast(
         union(&mut parent, *lower, *upper);
     }
     let field_root = find_root(&parent, field_node);
-    let has_gap = orders.iter().zip(order_indices).any(|(order, (lower, _))| {
-        find_root(&parent, *lower) == field_root && order.minimum_gap > 0.0
-    });
+    let mut has_membership = try_false(levels.len(), LevelStorage::GraphWork)?;
+    for level_index in membership_indices {
+        has_membership[*level_index] = true;
+    }
+
+    let mut has_gap = false;
+    let mut reachable = try_false(levels.len(), LevelStorage::GraphWork)?;
+    let mut positive = try_false(levels.len(), LevelStorage::GraphWork)?;
+    for source in 0..levels.len() {
+        if !has_membership[source] {
+            continue;
+        }
+        reachable.fill(false);
+        positive.fill(false);
+        reachable[source] = true;
+        for node in topological_indices {
+            if !reachable[*node] {
+                continue;
+            }
+            for ((lower, upper), order) in order_indices.iter().zip(orders) {
+                if *lower != *node {
+                    continue;
+                }
+                let candidate_positive = positive[*node] || order.minimum_gap > 0.0;
+                reachable[*upper] = true;
+                positive[*upper] |= candidate_positive;
+            }
+        }
+        if (0..levels.len()).any(|target| {
+            target != source && has_membership[target] && reachable[target] && positive[target]
+        }) {
+            has_gap = true;
+            break;
+        }
+    }
+
     let mut has_distinct_anchors = false;
     for first_index in 0..levels.len() {
-        if find_root(&parent, first_index) != field_root {
+        if !has_membership[first_index] {
             continue;
         }
         let Some(first_value) = anchor_value(levels[first_index].value) else {
             continue;
         };
         for (second_index, second) in levels.iter().enumerate().skip(first_index + 1) {
-            if find_root(&parent, second_index) != field_root {
+            if !has_membership[second_index] {
                 continue;
             }
             if anchor_value(second.value)
@@ -1380,9 +1640,23 @@ fn validate_contrast(
         }
     }
     if !has_gap && !has_distinct_anchors {
+        let first_index = membership_indices[0];
+        let second_index = membership_indices
+            .iter()
+            .copied()
+            .find(|index| *index != first_index)
+            .or_else(|| {
+                (0..levels.len())
+                    .find(|index| *index != first_index && find_root(&parent, *index) == field_root)
+            })
+            .or_else(|| (0..levels.len()).find(|index| *index != first_index))
+            .ok_or(LevelProblemError::InvalidGraphState)?;
         return Err(LevelProblemError::MissingContrast {
-            diagnostic: ContrastDiagnostic::try_new(levels[0].level_id, levels[1].level_id)
-                .map_err(LevelProblemError::DiagnosticValue)?,
+            diagnostic: ContrastDiagnostic::try_new(
+                levels[first_index].level_id,
+                levels[second_index].level_id,
+            )
+            .map_err(LevelProblemError::DiagnosticValue)?,
         });
     }
     Ok(())
@@ -1481,10 +1755,10 @@ fn try_false(count: usize, storage: LevelStorage) -> Result<Vec<bool>, LevelProb
     Ok(output)
 }
 
-fn try_none_f64(
+fn try_none_scaled(
     count: usize,
     storage: LevelStorage,
-) -> Result<Vec<Option<f64>>, LevelProblemError> {
+) -> Result<Vec<Option<ScaledMagnitude>>, LevelProblemError> {
     let mut output = Vec::new();
     output
         .try_reserve_exact(count)

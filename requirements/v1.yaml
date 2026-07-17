@@ -392,7 +392,7 @@ requirements:
     priority: P0
     issue: 69
     pull_request: 70
-    tests: [fixed-unknown-prior, membership-order-canonicalization, deterministic-dag, cycle-sources, transitive-fixed-conflict, functional-fixed-conflict, component-gauge, field-contrast, isolation, invalid-input, linearizer-errors, send-sync]
+    tests: [fixed-unknown-prior, membership-order-canonicalization, membership-unit-value, deterministic-dag-ties, exact-cycle-sources, overflow-safe-fixed-conflict, provenance-independent-functional-conflict, complete-conflict-sources, component-gauge, membership-coupled-field-contrast, component-specific-contrast-diagnostic, isolation, invalid-input, linearizer-errors, send-sync]
     docs: [docs/math/CONSTRAINT_SEMANTICS.md, docs/adr/ADR-0003-explicit-level-variables.md, docs/architecture/ARCHITECTURE.md, changes/REQ-LEVEL-001.md, rustdoc]
     rust_api: implemented
     cli: "N/A: the stage-0 CLI exposes only help and version; complete data/schema commands belong to M8"

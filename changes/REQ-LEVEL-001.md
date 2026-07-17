@@ -8,7 +8,9 @@ explicit SquaredL2, AbsoluteL1, or positive-delta Huber loss. They remain typed
 objective metadata in `CompiledLevelProblem`; no equality-only solver support
 is implied.
 
-`LevelMembership<D>` represents `f(x_i) - h_k = 0`, and `LevelOrder`
+`LevelMembership<D>` represents `f(x_i) - h_k = 0` and accepts exactly one
+coefficient-1 Value atom; directional derivatives, scaled values, and
+multi-atom expressions return a structured semantic error. `LevelOrder`
 represents `h_upper - h_lower >= minimum_gap`. Compilation preserves caller
 field blocks, appends one deterministic `levels` block, and emits sparse hard
 membership equalities, fixed-value equalities, and order lower bounds with
@@ -19,23 +21,30 @@ Canonical output contains no geological identifiers or relations.
 Construction rejects fewer than two levels, empty memberships, duplicate
 level or observation identifiers, undefined references, invalid fixed/prior/
 gap scalars, self edges, and isolated unknown levels. A deterministic Kahn pass
-produces a stable topological order or returns the cyclic edge sources. Gauge
+uses definition insertion order for simultaneous ties and returns exactly the
+cycle-participating edge sources rather than downstream DAG edges. Gauge
 review forms connected components from level-order edges and memberships to a
 shared field node, then requires a fixed or prior anchor in every component.
-Nonzero contrast must occur in the field-connected component through a
-positive gap or distinct fixed/prior anchors.
+Nonzero contrast must be forced between two membership-coupled levels through a
+positive path gap or distinct fixed/prior anchors on those levels. A
+membershipless level cannot supply field contrast, and missing-contrast
+diagnostics identify the failing field component.
 
-Hard-conflict review rejects the same field functional assigned to distinct
-fixed values. It also propagates longest minimum-gap paths through the DAG and
-rejects fixed endpoints that cannot satisfy a direct or transitive required
+Hard-conflict review rejects the same mathematical Value evaluation assigned to
+distinct fixed values regardless of functional provenance, retaining both fixed
+definitions and both membership sources. It also propagates longest
+minimum-gap paths through the DAG with an overflow-safe scaled representation
+and rejects fixed endpoints that cannot satisfy a direct or transitive required
 gap, retaining endpoint and path sources. A scale-aware roundoff allowance
 makes the semantic precheck conservative at a floating-point boundary; emitted
 individual hard rows are never changed, dropped, softened, or regularized.
 
-Ten independent tests cover fixed/unknown/prior compilation, explicit variable
-indices and signs, prior retention, deterministic topology, cycle sources,
-transitive and same-functional fixed conflicts, per-component gauge, missing
-field contrast, isolation, undefined references, constructor bypass attempts,
+Sixteen independent tests cover fixed/unknown/prior compilation, explicit
+variable indices and signs, prior retention, membership units, deterministic
+topological ties, exact cycle sources, ordinary and extreme transitive fixed
+conflicts, provenance-independent same-functional conflicts with complete
+sources, per-component gauge, membership-coupled contrast and diagnostic
+evidence, isolation, undefined references, constructor bypass attempts,
 numeric validation, linearizer failures, out-of-range affine terms, and
 `Send + Sync` across D=1, D=2, and D=3 public problem types. The focused
 benchmark builds, validates, and canonicalizes a deterministic 64-level chain;

@@ -21,6 +21,10 @@ level imposes
 f(x_i) - h_k = 0.
 ```
 
+A membership is exactly one coefficient-1 Value atom. Directional derivatives,
+scaled values, and multi-atom expressions are rejected because they do not
+share the value units or joint-shift gauge of `f(x_i) - h_k = 0`.
+
 Level values are fixed, unknown, or soft priors carrying mean, scale, and loss.
 An order edge from `a` to `b` imposes
 
@@ -39,18 +43,23 @@ The compiler requires at least two levels and one field membership. It rejects
 duplicate identifiers, missing references, self edges, negative or non-finite
 gaps, and unknown levels with neither a membership nor an order edge. A stable
 topological pass rejects every directed cycle. Fixed-value review checks both
-identical field functionals assigned to different fixed levels and transitive
-minimum-gap paths whose fixed endpoint values cannot satisfy the accumulated
-gap. Near a floating-point equality boundary, the precheck is conservative;
-the original individual hard rows remain unchanged in canonical form.
+mathematically identical Value evaluations, independent of functional
+provenance, assigned to different fixed levels and transitive minimum-gap paths
+whose fixed endpoint values cannot satisfy the accumulated gap. Path sums and
+fixed-endpoint differences use an overflow-safe scaled comparison. Near a
+floating-point equality boundary, the precheck is conservative; the original
+individual hard rows remain unchanged in canonical form.
 
 Gauge review treats memberships as edges to the shared scalar field and order
 relations as edges between levels. Every resulting connected component needs a
-fixed value or explicit prior. Nonzero contrast must affect the field-connected
-component through a positive minimum gap or distinct fixed/prior anchors;
-unrelated isolated anchors cannot manufacture field contrast. Reference point
-differencing is an optional internal elimination of the same explicit
-variables, never a separate model type.
+fixed value or explicit prior. Nonzero contrast must be proved between two
+membership-coupled level functionals through a positive minimum-gap path or
+distinct fixed/prior anchors on those coupled levels; a positive gap or distinct
+anchor on a membershipless level cannot manufacture field contrast.
+Missing-contrast evidence names the failing field component rather than
+unrelated isolated anchors. Reference point differencing is an optional
+internal elimination of the same explicit variables, never a separate model
+type.
 
 Canonical variable order is the caller's field blocks followed by one
 deterministic `levels` block in definition insertion order. Memberships compile
