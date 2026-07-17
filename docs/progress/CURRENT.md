@@ -9,9 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement / REQ-LEVEL-001 complete; fresh independent Review required
 - Requirement: REQ-LEVEL-001, Issue #69 (open)
 - Branch: `codex/req-level-001-explicit-level-variables`
-- Draft implementation pull request: pending initial push
-- Registry state before the Draft PR exists: `in_progress`; update to
-  `implemented` with the PR number after creation
+- Draft implementation pull request: #70
+- Registry state in this change: `implemented`
 - Dependencies: REQ-IR-001 and REQ-MODEL-001 are `integrated`
 - Next eligible requirement after eventual integration: determined by a fresh
   `cargo xtask requirements next`; do not start it in the Review task
@@ -40,8 +39,10 @@ records, benchmark reports, Git, and GitHub.
   passed.
 - `cargo bench -p georbf --bench level_compilation -- --smoke`: passed for a
   64-level D=1 validation and canonicalization workload.
-- Complete stable-head standard gate: pending final documentation/registry
-  update and initial Draft PR number.
+- Complete standard gate passed on the final implementation tree linking Draft
+  PR #70: format, warning-denying workspace Clippy, all-feature workspace
+  tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+  The subsequent validation-note edit changes documentation only.
 
 ## Next task
 
@@ -58,7 +59,7 @@ production code or begin another requirement in that task.
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #69
-- Draft implementation pull request: pending initial push
+- Draft implementation pull request: GitHub PR #70
 - Requirement summary: `changes/REQ-LEVEL-001.md`
 - Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
 - Accepted design: `docs/adr/ADR-0003-explicit-level-variables.md`

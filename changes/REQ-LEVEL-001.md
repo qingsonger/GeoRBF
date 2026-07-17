@@ -41,6 +41,11 @@ numeric validation, linearizer failures, out-of-range affine terms, and
 benchmark builds, validates, and canonicalizes a deterministic 64-level chain;
 the smoke run completed successfully.
 
+The final implementation tree passed the complete local standard gate:
+formatting, warning-denying all-target/all-feature workspace Clippy,
+all-feature workspace tests, workspace Rustdoc, all 58 requirement checks, and
+`git diff --check`.
+
 Rust is implemented. CLI is N/A because the stage-0 command exposes only help
 and version and the complete data/schema CLI belongs to M8. C, C++, and Python
 are N/A because their M9 ABI/binding requirements follow Rust API and schema
