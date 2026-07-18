@@ -6,63 +6,58 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Independent Review complete; fresh integration Review required
-- Requirement: REQ-LEVEL-001, Issue #69 (open)
-- Branch: `codex/req-level-001-explicit-level-variables`
-- Draft implementation pull request: #70
-- Registry state in this change: `implemented`
-- Dependencies: REQ-IR-001 and REQ-MODEL-001 are `integrated`
-- Exact independently reviewed local and remote head: `6a03fe6`
-- R70-001 through R70-014 are independently closed; no P0-P3 finding remains.
-- PR #70 remains Draft; Ready CI, merge, and integration have not occurred.
-- The next eligible requirement remains blocked until REQ-LEVEL-001 is
-  integrated in a later fresh task.
+- Mode: Integration state / REQ-LEVEL-001 complete
+- Requirement: REQ-LEVEL-001, Issue #69 (closed)
+- Implementation pull request: #70, squash-merged as `11e0659`
+- Integration-state branch: `codex/req-level-001-integration-state`
+- Integration-state pull request: pending
+- Review record: `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`
+- Registry state in this change: `integrated`
+- Next eligible requirement: REQ-SOFT-001 (`planned`)
 
-## Review result
+## Integration result
 
-- The project `math_reviewer` independently confirmed that exact-zero fixed
-  availability rejects every positive required gap before exponent comparison.
-- Nonzero fixed-gap review uses a dimensionless relative comparison scaled only
-  from the actual compared gaps, without a dimensioned `1.0` floor; positive
-  scalar-unit rescaling preserves the verdict.
-- The `1e-20` and `1e20`-rescaled regression retains the exact lower-definition,
-  order-edge, and upper-definition evidence sequence.
-- The reviewer reconfirmed all earlier membership, equality-closure, order,
-  cycle, gauge, contrast, provenance, canonical-row, and interface contracts.
-- No hard row is changed, dropped, softened, regularized, or repaired.
+- A fresh read-only project `math_reviewer` independently reconfirmed that
+  R70-001 through R70-014 are closed and no P0-P3 finding remains.
+- Exact Ready head `5bfa52f81f31785a660d7446c55099e570e29521`
+  passed the complete Windows, Ubuntu, and macOS matrix with every backend and
+  benchmark-smoke workload in CI run 29646041086.
+- PR #70 squash-merged exactly once as
+  `11e0659319ae08731f083749974d9ad6fb316616`; Issue #69 closed as
+  completed.
+- Post-merge `main` run 29646382654 passed the same complete three-platform
+  correctness, benchmark-smoke, and requirement-registry gate on `11e0659`.
+- This isolated integration-state change updates only the registry, review
+  evidence, history index, and bounded handoff. It changes no production code,
+  test, manifest, schema, CI, build input, API, normative contract, numerical
+  behavior, dependency, tag, or release.
 
 ## Validation state
 
-- The independent reviewer passed 21 level tests, 6 diagnostics tests, all 29
-  core Rustdoc tests, the 64-level benchmark smoke, complete PR and repair
-  whitespace checks, and an exact-rational scaled-arithmetic probe covering
-  representations, ordering pairs, feasible accumulated paths, and unit
-  rescaling boundaries.
-- The parent Review task independently passed the same focused Rust tests and
-  Rustdoc, the benchmark smoke at approximately 192 microseconds per validation
-  and compile iteration, all 58 requirement checks, and the complete PR
-  whitespace check.
 - Exact implementation tree `61fa6d3` passed the complete standard workspace
-  gate. The reviewed head adds only review evidence and this bounded handoff;
-  exact-head Draft Ubuntu CI passed.
-- Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run. No
-  merge, integration, tag, or release is claimed.
+  gate: format, warning-denying workspace Clippy, all-feature workspace tests,
+  workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+- The clean reviewers independently repeated focused level and diagnostic
+  tests, core Rustdoc, benchmark smoke, requirement and whitespace checks, and
+  exact-rational scaled-arithmetic probes.
+- Exact implementation Ready-head and post-merge `main` three-platform gates
+  are green as recorded above.
+- The isolated integration-state tree passed the complete local standard gate:
+  format, warning-denying workspace Clippy, all-feature workspace tests,
+  workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
 
 ## Next task
 
-Open a fresh integration Review task for PR #70. Perform mandatory preflight
-and verify that every commit after clean reviewed head `6a03fe6` changes only
-the independent review record and bounded handoff. If so, synchronize the clean
-review evidence, mark that evidence-only descendant head ready, and wait for
-the complete Windows, Ubuntu, macOS, and benchmark-smoke CI triggered on that
-exact ready head. Merge exactly once only when every required check is green,
-then record the truthful integration state in an isolated change. Stop after
-integration; do not begin the next requirement in that task.
+After the isolated integration-state pull request is green and merged, open a
+fresh task and perform the mandatory preflight. Use
+`cargo xtask requirements next`; do not start REQ-SOFT-001 or another
+requirement in this task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #69
-- Draft implementation pull request: GitHub PR #70
+- Acceptance criteria and exclusions: closed GitHub Issue #69
+- Merged implementation and repairs: GitHub PR #70
+- Integration-state pull request: pending
 - Independent review and repair evidence:
   `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-LEVEL-001.md`
