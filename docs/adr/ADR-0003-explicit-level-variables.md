@@ -31,8 +31,11 @@ dense equality solver supports those objectives or order bounds. Gauge is
 checked per connected component formed by level-order edges and memberships to
 the shared scalar field; contrast must occur in the field-connected component.
 Fixed-order conflict review includes transitive path gaps, while the emitted
-canonical problem retains the original individual hard constraints. A positive
-order path between levels in the transitive equality closure induced by shared
+canonical problem retains the original individual hard constraints. Its
+overflow-safe endpoint comparison treats exact zero directly and scales
+roundoff allowance only from the compared gaps, preserving feasibility under a
+positive change of scalar unit. A positive order path between levels in the
+transitive equality closure induced by shared
 mathematical Value evaluations is rejected with the deterministic membership
 chain and selected path sources because the membership equalities force the
 corresponding level gap to zero. Distinct fixed values in one closure are

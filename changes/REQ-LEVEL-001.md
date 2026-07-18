@@ -41,8 +41,10 @@ deterministic membership chain proving the conflict. It also propagates longest
 minimum-gap paths through the DAG with an overflow-safe scaled representation
 and rejects fixed endpoints that cannot satisfy a direct or transitive required
 gap, retaining endpoint and path sources. A scale-aware roundoff allowance
-makes the semantic precheck conservative at a floating-point boundary; emitted
-individual hard rows are never changed, dropped, softened, or regularized.
+makes the semantic precheck conservative at a floating-point boundary while
+using only actual gap magnitudes and an exact-zero case, so positive scalar-unit
+rescaling preserves the verdict. Emitted individual hard rows are never
+changed, dropped, softened, or regularized.
 
 Positive direct or transitive order paths between two levels in one transitive
 membership-equality component are also rejected because the membership rows
@@ -51,12 +53,13 @@ force the corresponding level values equal. The structured
 and every order edge on the selected positive path without emitting or altering
 any hard row.
 
-Twenty independent tests cover fixed/unknown/prior compilation, explicit
+Twenty-one independent tests cover fixed/unknown/prior compilation, explicit
 variable indices and signs, prior retention, membership units, deterministic
 topological ties, exact cycle sources, ordinary and extreme transitive fixed
-conflicts, provenance-independent same-functional conflicts with complete
-sources, identical-membership positive-order infeasibility with complete path
-sources, per-component gauge, membership-coupled contrast, identical-membership
+conflicts, scalar-unit-invariant fixed-order conflicts at exact zero,
+provenance-independent same-functional conflicts with complete sources,
+identical-membership positive-order infeasibility with complete path sources,
+per-component gauge, membership-coupled contrast, identical-membership
 fixed/prior anchor rejection and diagnostic evidence, transitive membership
 equality conflicts with complete chain sources, one-level component evidence,
 isolation, undefined references, constructor bypass attempts, numeric

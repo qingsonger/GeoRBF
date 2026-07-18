@@ -1773,6 +1773,12 @@ impl ScaledMagnitude {
     }
 
     fn is_greater_than(self, other: Self) -> bool {
+        if other.mantissa == 0.0 {
+            return self.mantissa > 0.0;
+        }
+        if self.mantissa == 0.0 {
+            return false;
+        }
         self.exponent > other.exponent
             || (self.exponent == other.exponent && self.mantissa > other.mantissa)
     }
@@ -1781,8 +1787,10 @@ impl ScaledMagnitude {
         if !self.is_greater_than(available) {
             return false;
         }
-        let one = Self::from_f64(1.0);
-        let scale = if self.is_greater_than(one) { self } else { one };
+        if available.mantissa == 0.0 {
+            return true;
+        }
+        let scale = self;
         let required_at_scale = self.mantissa_at_exponent(scale.exponent);
         let available_at_scale = available.mantissa_at_exponent(scale.exponent);
         required_at_scale - available_at_scale > relative_tolerance * scale.mantissa

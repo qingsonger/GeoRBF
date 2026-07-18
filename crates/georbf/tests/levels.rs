@@ -332,6 +332,49 @@ fn extreme_fixed_endpoints_preserve_direct_conflict_sources() -> TestResult {
 }
 
 #[test]
+fn fixed_order_conflict_is_invariant_under_scalar_unit_rescaling() -> TestResult {
+    for minimum_gap in [1.0e-20, 1.0e-20 * 1.0e20] {
+        let result = LevelProblem::try_new(
+            [
+                definition(1, LevelValue::try_fixed(0.0)?, 10)?,
+                definition(2, LevelValue::try_fixed(0.0)?, 11)?,
+            ],
+            [membership(1, 0.0, 20)?, membership(2, 1.0, 21)?],
+            [order(1, 2, minimum_gap, 30)?],
+        );
+        let Err(LevelProblemError::FixedOrderConflict {
+            lower,
+            upper,
+            required_gap,
+            fixed_gap,
+            sources,
+        }) = result
+        else {
+            return Err(io::Error::other(format!(
+                "expected fixed order conflict for gap {minimum_gap:e}"
+            ))
+            .into());
+        };
+        assert_eq!(lower, LevelId::new(1));
+        assert_eq!(upper, LevelId::new(2));
+        assert_eq!(required_gap.to_bits(), minimum_gap.to_bits());
+        assert_eq!(fixed_gap.to_bits(), 0.0_f64.to_bits());
+        assert_eq!(
+            sources
+                .iter()
+                .map(georbf::DiagnosticPath::observation_id)
+                .collect::<Vec<_>>(),
+            [
+                Some(ObservationId::new(10)),
+                Some(ObservationId::new(30)),
+                Some(ObservationId::new(11)),
+            ]
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn overflow_scaled_paths_distinguish_feasible_and_conflicting_endpoints() -> TestResult {
     let feasible = LevelProblem::try_new(
         [

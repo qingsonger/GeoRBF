@@ -37,8 +37,9 @@ transitive level-equality closure induced by shared mathematical Value
 evaluations and retains a proving membership chain without quadratic edge
 storage. A positive order path or distinct fixed values cannot connect levels
 in one equality component, cycle evidence contains only cycle-participating
-edges, fixed-path comparison is overflow safe, and contrast must reach two
-membership-coupled levels. It accepts distinct fixed/prior anchors as contrast
+edges, fixed-path comparison is overflow safe and invariant under positive
+scalar-unit rescaling, and contrast must reach two membership-coupled levels.
+It accepts distinct fixed/prior anchors as contrast
 only when their levels belong to different equality components, and its
 missing-contrast evidence can represent a one-level field component without an
 unrelated anchor. It appends one explicit level-variable block to caller field

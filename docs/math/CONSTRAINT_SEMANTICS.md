@@ -52,8 +52,10 @@ applicable, a deterministic membership chain proving equality, and every edge
 of the selected order path. The review also checks transitive minimum-gap paths
 whose fixed endpoint values cannot satisfy the accumulated gap. Path sums and
 fixed-endpoint differences use an overflow-safe scaled comparison. Near a
-floating-point equality boundary, the precheck is conservative; the original
-individual hard rows remain unchanged in canonical form.
+floating-point equality boundary, the precheck is conservative and derives its
+relative scale only from the required and available gaps. Exact zero is handled
+directly, so a positive scalar-unit rescaling cannot change feasibility. The
+original individual hard rows remain unchanged in canonical form.
 
 Gauge review treats memberships as edges to the shared scalar field and order
 relations as edges between levels. Every resulting connected component needs a
