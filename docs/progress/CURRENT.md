@@ -6,61 +6,54 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / REQ-SOFT-001 complete; fresh independent Review required
+- Mode: Review complete; Repair required for R73-001
 - Requirement: REQ-SOFT-001, Issue #72 (open)
 - Branch: `codex/req-soft-001-per-constraint-soft-losses`
 - Draft implementation pull request: #73
-- Registry state in this change: `implemented`
+- Reviewed head: `978e400b2f9b25b9f84ac3102ff40388c44b42d8`
+- Registry state remains `implemented`
 - Dependencies: REQ-IR-001 and REQ-SOLVE-001 are `integrated`
-- No later requirement may start until REQ-SOFT-001 is reviewed, merged, and
-  truthfully integrated in later fresh tasks
+- No later requirement may start until REQ-SOFT-001 is repaired, independently
+  re-reviewed, merged, and truthfully integrated in later fresh tasks
 
-## Implementation result
+## Independent review result
 
-- Added provenance-bearing canonical soft objectives for equality, linear
-  bound/interval, and cone relations with independent positive scales and
-  SquaredL2, AbsoluteL1, or Huber loss.
-- Preserved every hard equality, bound, and cone in its existing feasibility
-  collection while mixed soft objectives coexist in the same canonical
-  problem and follow deterministic semantic insertion order.
-- Defined the exact `rho(violation / scale)` contract, including equality,
-  interval, and cone violation semantics and Huber's scaled-residual delta.
-- Added objective capability/scaling metadata and checked memory estimates;
-  level priors now compile to the shared soft-equality objective form while
-  retaining stable level identity.
-- Added five independent soft-loss tests, focused problem-IR/level regressions,
-  and a 96-constraint D=1/D=2/D=3 mixed-objective compilation benchmark.
-- Updated mathematical semantics, ADR-0003 consequences, architecture,
-  Rustdoc, registry evidence, and the requirement change fragment.
+- The fresh read-only project `math_reviewer` found no P0, P1, or P3 issues
+  and one P2 issue, recorded as R73-001 in
+  `docs/reviews/PR-73-INDEPENDENT-REVIEW.md`.
+- R73-001: `CanonicalCapabilities` derives equality, linear-bound, and cone
+  geometry flags only from hard-family collections. A soft-only cone therefore
+  reports that second-order-cone support is unnecessary even though exact
+  lowering requires that geometry.
+- Loss formulae, scale units, relation violations, hard-family preservation,
+  level-prior composition, provenance, ordering, memory/allocation paths,
+  hidden-regularization exclusions, interfaces, benchmark scope, and registry
+  truth were otherwise consistent with the requirement.
 
 ## Validation state
 
-- Focused soft-loss, problem-IR, and level tests passed.
-- Focused mixed-objective benchmark smoke passed across D=1, D=2, and D=3.
-- The complete standard workspace gate passed on the stable final
-  implementation tree: format, warning-denying workspace Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and
-  `git diff --check`.
-- No Ready CI, independent review, merge, integration, tag, or release is
-  claimed.
+- The reviewed implementation head retained its complete green local standard
+  gate and focused test/benchmark evidence.
+- Draft Ubuntu correctness CI passed on the exact reviewed head.
+- Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run.
+- No repair, re-review, Ready transition, merge, integration, tag, or release
+  is claimed.
 
 ## Next task
 
-Open a fresh read-only Review task for the Draft implementation PR. Supply only
-the REQ-SOFT-001 show/deps summary, Issue #72 acceptance criteria,
-`docs/math/CONSTRAINT_SEMANTICS.md`, ADR-0003, the relevant architecture
-contract, the complete PR diff, and recorded test/benchmark evidence to the
-project `math_reviewer`. Review loss formulae, signs, dimensions and scale
-units, equality/bound/cone violation definitions, hard-family preservation,
-level-prior composition, provenance, deterministic ordering, memory estimates,
-allocation paths, hidden optimization/regularization, interfaces, benchmark
-scope, and registry truth. Record findings without repairing production code
-or beginning another requirement in that task.
+Open a fresh Repair task limited to R73-001. Reproduce the defect with a
+soft-only second-order-cone capability regression and add soft-only equality
+and linear-bound cases that define the intended public flag semantics. Apply
+the smallest complete capability-metadata repair, run focused checks, then run
+the complete standard workspace gate once on the stable repaired head. Update
+the review evidence and bounded handoff, commit, push, and stop for a fresh
+independent re-review. Do not begin another requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #72
 - Draft implementation pull request: GitHub PR #73
+- Independent review: `docs/reviews/PR-73-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-SOFT-001.md`
 - Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
 - Accepted level-prior design: `docs/adr/ADR-0003-explicit-level-variables.md`
