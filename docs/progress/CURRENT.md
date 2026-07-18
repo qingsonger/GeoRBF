@@ -51,11 +51,12 @@ records, benchmark reports, Git, and GitHub.
 ## Next task
 
 Open a fresh integration Review task for PR #70. Perform mandatory preflight
-and verify that the PR head still matches the clean reviewed head. If unchanged,
-synchronize the clean review evidence, mark the PR ready, and wait for the
-complete Windows, Ubuntu, macOS, and benchmark-smoke CI triggered on that exact
-ready head. Merge exactly once only when every required check is green, then
-record the truthful integration state in an isolated change. Stop after
+and verify that every commit after clean reviewed head `6a03fe6` changes only
+the independent review record and bounded handoff. If so, synchronize the clean
+review evidence, mark that evidence-only descendant head ready, and wait for
+the complete Windows, Ubuntu, macOS, and benchmark-smoke CI triggered on that
+exact ready head. Merge exactly once only when every required check is green,
+then record the truthful integration state in an isolated change. Stop after
 integration; do not begin the next requirement in that task.
 
 ## Durable evidence

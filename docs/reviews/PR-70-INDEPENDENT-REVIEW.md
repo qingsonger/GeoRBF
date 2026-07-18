@@ -706,8 +706,9 @@ fuzz, and mutation instrumentation.
 
 PR #70 remains Draft and REQ-LEVEL-001 remains `implemented`. This clean
 re-review task does not mark the PR ready, merge it, integrate the requirement,
-or begin another requirement. A fresh integration Review task may synchronize
-the clean evidence, mark the unchanged PR head ready, wait for the complete
-Windows, Ubuntu, macOS, and benchmark-smoke CI on that exact ready head, merge
-exactly once only if all required checks are green, and then record truthful
-integration state.
+or begin another requirement. A fresh integration Review task may verify that
+every commit after reviewed head `6a03fe6` is limited to this review record and
+the bounded handoff, synchronize the clean evidence, mark that evidence-only
+descendant head ready, wait for the complete Windows, Ubuntu, macOS, and
+benchmark-smoke CI on that exact ready head, merge exactly once only if all
+required checks are green, and then record truthful integration state.
