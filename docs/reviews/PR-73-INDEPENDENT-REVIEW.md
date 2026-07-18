@@ -5,9 +5,10 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/73
 - Branch: `codex/req-soft-001-per-constraint-soft-losses`
 - Reviewed head: `978e400b2f9b25b9f84ac3102ff40388c44b42d8`
+- Repair head: `530f6fd817dabcae70a304e3db2430211692615f`
 - Base head: `d7cec28fcd70d6f9f3d6a596d339695d73af6706`
 - Review date: 2026-07-18
-- Result: one P2 finding; Repair required
+- Result: R73-001 repaired; fresh independent re-review required
 
 ## Scope and independence
 
@@ -75,6 +76,30 @@ family flags.
 Apart from R73-001, the reviewed implementation and independent tests were
 consistent with the bounded requirement and normative contracts.
 
+## Repair response
+
+Exact repair head `530f6fd817dabcae70a304e3db2430211692615f`
+addresses only R73-001. A new regression first reproduced the defect: an
+isolated soft equality left `has_equalities` false before the repair. The same
+test independently compiles soft-only equality, linear-bound, and
+second-order-cone problems, verifies their hard-family collections remain
+empty, and requires exactly the corresponding public relation-geometry flag.
+
+Capability construction now starts from the hard-family collections and makes
+one pass over soft objectives to add the geometry retained by each soft
+relation. The public Rustdoc and REQ-SOFT-001 change fragment explicitly define
+the equality, linear-bound, and cone flags as required geometry across both
+hard constraints and soft objectives. Loss-family flags remain unchanged. The
+repair introduces no backend, optimizer, dependency, hidden regularization,
+hard-to-soft conversion, interface expansion, or unrelated requirement work.
+
+Focused repair validation passed all 6 soft-loss tests, 11 problem-IR tests,
+21 level tests, all 29 georbf Rustdoc tests, and the D=1/D=2/D=3 96-constraint
+soft-objective compilation benchmark smoke. The complete standard workspace
+gate then passed on the stable repair head: formatting, warning-denying
+all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
+all 58 requirement checks, and `git diff --check`.
+
 ## Validation evidence reviewed
 
 - Focused soft-loss, problem-IR, and level tests passed.
@@ -89,8 +114,11 @@ consistent with the bounded requirement and normative contracts.
 
 ## Required next action
 
-Open a fresh Repair task limited to R73-001. Add the independent soft-only
-relation-capability regressions, apply the smallest complete capability-metadata
-repair, rerun focused checks and the final standard gate on the stable repaired
-head, update this review record and the bounded handoff, commit, push, and stop
-for a fresh independent re-review. Do not begin another requirement.
+Open a fresh Review task and give a new read-only project `math_reviewer` only
+the bounded requirement summary and dependency closure, scoped normative
+documents, Issue #72 criteria, the complete PR and repair diffs, R73-001, exact
+repair head `530f6fd817dabcae70a304e3db2430211692615f`, and recorded validation evidence.
+Record whether R73-001 is independently closed and whether any P0-P3 finding
+remains, update the bounded handoff, commit, push, and stop. Do not mark the PR
+Ready, merge it, integrate REQ-SOFT-001, or begin another requirement in that
+re-review task.
