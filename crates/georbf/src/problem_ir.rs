@@ -139,7 +139,7 @@ impl SemanticProvenance {
         self.constraint_group.as_deref()
     }
 
-    fn try_clone_for_canonical(&self) -> Result<Self, ProblemIrError> {
+    pub(crate) fn try_clone_for_canonical(&self) -> Result<Self, ProblemIrError> {
         Ok(Self {
             observation_id: self.observation_id,
             source: SourceLocation {
@@ -772,7 +772,7 @@ impl AffineExpression {
         self.constant
     }
 
-    fn validate_variable_count(&self, count: usize) -> Result<(), ProblemIrError> {
+    pub(crate) fn validate_variable_count(&self, count: usize) -> Result<(), ProblemIrError> {
         if let Some(term) = self.terms.iter().find(|term| term.variable >= count) {
             return Err(ProblemIrError::AffineVariableOutOfRange {
                 variable: term.variable,
@@ -800,6 +800,18 @@ pub struct CanonicalEquality {
 }
 
 impl CanonicalEquality {
+    pub(crate) fn from_parts(
+        row: AffineExpression,
+        rhs: f64,
+        provenance: SemanticProvenance,
+    ) -> Self {
+        Self {
+            row,
+            rhs,
+            provenance,
+        }
+    }
+
     /// Borrows the zero-constant sparse row.
     pub const fn row(&self) -> &AffineExpression {
         &self.row
@@ -828,6 +840,20 @@ pub struct CanonicalLinearBound {
 }
 
 impl CanonicalLinearBound {
+    pub(crate) fn from_parts(
+        row: AffineExpression,
+        lower: Option<f64>,
+        upper: Option<f64>,
+        provenance: SemanticProvenance,
+    ) -> Self {
+        Self {
+            row,
+            lower,
+            upper,
+            provenance,
+        }
+    }
+
     /// Borrows the zero-constant sparse row.
     pub const fn row(&self) -> &AffineExpression {
         &self.row
@@ -995,6 +1021,25 @@ pub struct CanonicalProblem {
 }
 
 impl CanonicalProblem {
+    pub(crate) fn try_from_linear_parts(
+        variable_blocks: impl IntoIterator<Item = VariableBlock>,
+        equalities: Vec<CanonicalEquality>,
+        linear_bounds: Vec<CanonicalLinearBound>,
+    ) -> Result<Self, ProblemIrError> {
+        let variable_space = VariableSpace::try_new(variable_blocks)?;
+        for equality in &equalities {
+            equality
+                .row
+                .validate_variable_count(variable_space.variable_count)?;
+        }
+        for bound in &linear_bounds {
+            bound
+                .row
+                .validate_variable_count(variable_space.variable_count)?;
+        }
+        Self::try_new(variable_space, equalities, linear_bounds, Vec::new())
+    }
+
     fn try_new(
         variable_space: VariableSpace,
         equalities: Vec<CanonicalEquality>,
