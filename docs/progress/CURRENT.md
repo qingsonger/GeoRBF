@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-LEVEL-001, Issue #69 (closed)
 - Implementation pull request: #70, squash-merged as `11e0659`
 - Integration-state branch: `codex/req-level-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #71 (Draft until exact Ready CI is green)
 - Review record: `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-SOFT-001 (`planned`)
@@ -57,7 +57,7 @@ requirement in this task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #69
 - Merged implementation and repairs: GitHub PR #70
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #71
 - Independent review and repair evidence:
   `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-LEVEL-001.md`

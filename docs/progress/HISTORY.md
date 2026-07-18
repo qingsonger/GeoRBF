@@ -29,7 +29,7 @@ available in Git history through commit `a2be099`.
 | REQ-MODEL-001 | #60 | #61 | #62 | `docs/reviews/PR-61-INDEPENDENT-REVIEW.md` |
 | REQ-DIAG-001 | #63 | #64 | #65 | `docs/reviews/PR-64-INDEPENDENT-REVIEW.md` |
 | REQ-EXEC-001 | #66 | #67 | #68 | `docs/reviews/PR-67-INDEPENDENT-REVIEW.md` |
-| REQ-LEVEL-001 | #69 | #70 | pending | `docs/reviews/PR-70-INDEPENDENT-REVIEW.md` |
+| REQ-LEVEL-001 | #69 | #70 | #71 | `docs/reviews/PR-70-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,

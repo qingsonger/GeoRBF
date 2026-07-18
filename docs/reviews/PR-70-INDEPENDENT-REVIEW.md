@@ -741,4 +741,5 @@ merged.
 The isolated integration-state registry tree passed the complete local
 standard gate and `git diff --check`. Any subsequent pull-request-link update
 is documentation-only and changes no production, test, manifest, registry,
-schema, CI, or build input.
+schema, CI, or build input. The isolated integration-state evidence is
+published in PR #71.
