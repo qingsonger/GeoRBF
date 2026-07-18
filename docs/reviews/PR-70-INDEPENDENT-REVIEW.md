@@ -371,3 +371,33 @@ checks and the complete stable-head gate, update repair evidence and the bounded
 handoff, push, and stop for another fresh independent re-review. This Review
 task does not repair production code, mark the PR ready, merge it, integrate
 the requirement, or begin another requirement.
+
+## R70-011 repair evidence
+
+Repair implementation commit `914c1eaf6b85991c2bb2f3d51c99bcf4e29de6c3`
+addresses only R70-011. Before the production change, the independently
+specified regression failed because `LevelProblem::try_new` returned success.
+The regression uses fixed A at `0`, prior B with mean `1`, independently
+constructed unit Value evaluations at the same point with distinct functional
+and semantic provenance, and no order edges. It now requires
+`MissingContrast` naming A and B. The same test confirms that distinct
+fixed/prior anchors on mathematically distinct memberships remain accepted.
+
+The contrast validator now compares anchored membership evaluations before
+accepting different fixed values or prior means as evidence. Any mathematically
+identical cross-level Value membership hard-couples the two level variables, so
+that anchor pair cannot manufacture field contrast. This check allocates no
+new work storage, does not emit or change a canonical row, and leaves priors as
+soft objective metadata rather than hard equalities.
+
+The focused level suite has 18 passing tests. Core all-target/all-feature
+Clippy, all 29 core Rustdoc tests, and the 64-level benchmark smoke passed.
+After the final production, test, registry, and normative-document change, the
+complete stable-tree standard gate passed: workspace formatting,
+warning-denying all-target/all-feature workspace Clippy, all-feature workspace
+tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+
+This repair evidence is not an independent re-review and does not itself close
+R70-011. PR #70 remains Draft and REQ-LEVEL-001 remains `implemented`; a fresh
+read-only re-review must confirm R70-011 closure, reconfirm R70-001 through
+R70-010, and check for new findings.

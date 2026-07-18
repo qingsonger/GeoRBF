@@ -6,59 +6,63 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / R70-011 found; fresh Repair required
+- Mode: Repair complete; fresh Review / re-review required
 - Requirement: REQ-LEVEL-001, Issue #69 (open)
 - Branch: `codex/req-level-001-explicit-level-variables`
 - Draft implementation pull request: #70
 - Registry state in this change: `implemented`
 - Dependencies: REQ-IR-001 and REQ-MODEL-001 are `integrated`
-- Independently reviewed head: `3b6cf1366f30b9285c1023e5b2c73810c8c1b282`
-- R70-001 through R70-010 are independently closed. R70-011 is open.
-- Next eligible requirement remains blocked until REQ-LEVEL-001 is repaired,
-  freshly re-reviewed, and integrated in a later fresh task.
+- R70-001 through R70-010 are independently closed.
+- R70-011 repair implementation:
+  `914c1eaf6b85991c2bb2f3d51c99bcf4e29de6c3`
+- R70-011 is repaired but not independently re-reviewed or closed.
+- The next eligible requirement remains blocked until REQ-LEVEL-001 is freshly
+  re-reviewed and integrated in a later fresh task.
 
-## R70-011 finding
+## R70-011 repair
 
-- The distinct-anchor contrast branch compares fixed values and prior means
-  without proving the anchored membership evaluations are mathematically
-  distinct.
-- Fixed A at `0`, prior B with mean `1`, identical Value memberships at one
-  point, and no order edges are accepted even though the hard rows force
-  `h_A = h_B = f(x) = 0`; B's prior is soft and cannot create nonzero field
-  contrast.
-- The required regression uses distinct functional and semantic provenance for
-  the identical Value points and must return `MissingContrast` naming A and B.
-- Repair must not turn the prior into a hard equality or change, drop, soften,
-  or regularize any hard row.
+- The new fixed/prior same-point regression failed before the production
+  change because construction returned success.
+- Distinct fixed/prior anchors now prove contrast only when no mathematically
+  identical cross-level Value membership hard-couples those levels.
+- The regression uses distinct functional and semantic provenance and requires
+  `MissingContrast` naming A and B; a paired positive case preserves distinct
+  membership behavior.
+- Priors remain soft objective metadata. No hard row is changed, dropped,
+  softened, regularized, or converted from a prior.
 
-## Review and validation state
+## Validation state
 
-- A fresh read-only project `math_reviewer` independently closed R70-010,
-  reconfirmed R70-001 through R70-009, and found only P1 R70-011. No P0, P2,
-  or P3 finding remains.
-- Exact reviewed head `3b6cf13` passed Draft Ubuntu correctness CI run
-  29565567615.
-- The parent Review task independently reran all 17 focused level tests, all 29
-  core Rustdoc tests, and the complete PR whitespace check; all passed.
-- This task changes only the review record and bounded handoff after the
-  reviewed head. No Ready three-platform CI, merge, integration, tag, or
-  release is claimed.
+- All 18 focused level tests passed.
+- Core all-target/all-feature Clippy, all 29 core Rustdoc tests, and the
+  64-level benchmark smoke passed.
+- After the final production, test, registry, and normative-document change,
+  exact implementation head `914c1ea` passed the complete standard workspace
+  gate: formatting, warning-denying all-target/all-feature workspace Clippy,
+  all-feature workspace tests, workspace Rustdoc, all 58 requirement checks,
+  and `git diff --check`.
+- The subsequent repair-evidence and bounded-handoff change is documentation
+  only. No Ready three-platform CI, merge, integration, tag, or release is
+  claimed.
 
 ## Next task
 
-Open a fresh Repair task for Draft PR #70. Address only R70-011. First add the
-independently specified same-point fixed/prior regression and confirm it fails,
-then implement the smallest contrast-validation repair without changing hard
-row semantics. Run focused checks during development and the complete standard
-workspace gate after the final production or test change. Update the review
-repair evidence and this bounded handoff, commit, push, and stop for a fresh
-independent re-review. Do not begin another requirement.
+Open a fresh Review / re-review task for Draft PR #70. Supply a read-only
+project `math_reviewer` only the bounded REQ-LEVEL-001 summary and dependency
+closure, M4 plan, relevant normative documents and ADR, complete PR and
+R70-011 repair diffs, tests, benchmark, prior review record, and validation
+evidence. Independently confirm R70-011 is closed, reconfirm R70-001 through
+R70-010, and check for new P0-P3 findings. Do not repair production code in the
+same task. If the review is clean and the final head has complete local checks,
+follow the mandatory ready-CI-integration sequence from `AGENTS.md`. Do not
+begin another requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #69
 - Draft implementation pull request: GitHub PR #70
-- Independent review: `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`
+- Independent review and repair evidence:
+  `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-LEVEL-001.md`
 - Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
 - Accepted design: `docs/adr/ADR-0003-explicit-level-variables.md`
