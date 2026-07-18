@@ -618,3 +618,35 @@ change, update repair evidence and the bounded handoff, push, and stop for a
 fresh independent re-review. This Review task does not repair production code,
 mark the PR ready, merge it, integrate the requirement, or begin another
 requirement.
+
+## R70-014 repair evidence
+
+Repair implementation commit `61fa6d328c79d5236ed937c3c565b344226371d8`
+addresses only R70-014. Before the production change, the independently
+specified regression failed because the fixed-zero system with a direct
+`1e-20` positive order gap returned success. The same fixture now requires
+`FixedOrderConflict` both in the original unit and after multiplying the gap by
+`1e20`, with the exact lower-definition, order, and upper-definition source
+sequence in both cases.
+
+The scaled-magnitude comparison now treats its exact-zero representation
+explicitly, so every positive magnitude orders above zero regardless of its
+binary exponent. Once the available gap is nonzero, the conservative relative
+allowance is scaled only by the actual compared gap rather than a dimensioned
+`1.0` floor. The repair changes no canonical hard row, source, or solver input
+and adds no jitter, regularization, pseudoinverse, softening, or automatic
+constraint repair.
+
+The focused level suite has 21 passing tests and the focused diagnostics suite
+has 6. Core all-target/all-feature Clippy, all 29 core Rustdoc tests, and the
+64-level benchmark smoke passed; the benchmark completed at approximately 247
+microseconds per validation and compile iteration. After the final production,
+test, registry, and normative-document change, exact implementation tree
+`61fa6d3` passed the complete standard workspace gate: formatting,
+warning-denying all-target/all-feature workspace Clippy, all-feature workspace
+tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+
+This repair evidence is not an independent re-review and does not itself close
+R70-014. PR #70 remains Draft and REQ-LEVEL-001 remains `implemented`; a fresh
+read-only re-review must confirm R70-014 closure, reconfirm R70-001 through
+R70-013, and check for new findings before any Ready transition.

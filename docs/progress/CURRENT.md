@@ -6,69 +6,56 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; fresh Repair required
+- Mode: Repair complete; fresh independent Review required
 - Requirement: REQ-LEVEL-001, Issue #69 (open)
 - Branch: `codex/req-level-001-explicit-level-variables`
 - Draft implementation pull request: #70
 - Registry state in this change: `implemented`
 - Dependencies: REQ-IR-001 and REQ-MODEL-001 are `integrated`
 - R70-001 through R70-013 are independently closed at reviewed head `49998ef`.
-- Fresh independent review found one new P1 finding, R70-014: the fixed-order
-  conflict tolerance depends on the caller's scalar unit.
+- Repair implementation commit `61fa6d3` addresses only R70-014; the finding is
+  not independently closed yet.
 - PR #70 must remain Draft; Ready CI and integration are not authorized.
 - The next eligible requirement remains blocked until REQ-LEVEL-001 is freshly
   re-reviewed and integrated in a later fresh task.
 
-## Review result
+## Repair result
 
-- A fresh read-only `math_reviewer` reviewed exact local and remote head
-  `49998ef` against base and merge base `2904c64` and confirmed R70-012 and
-  R70-013 are closed. R70-001 through R70-011 also remain closed.
-- R70-014 is exhibited by two distinct membership points, fixed values both
-  exactly zero, and a positive `1e-20` order gap. The hard system is infeasible,
-  but the `1.0` comparison-scale floor makes construction accept it; rescaling
-  the scalar unit by `1e20` changes the verdict.
-- Repair must base roundoff allowance on actual problem magnitudes with an
-  exact-zero case and retain the lower-definition, order, and upper-definition
-  sources. It must not change, drop, soften, regularize, or repair a hard row.
+- `ScaledMagnitude` now orders every positive magnitude above its exact zero
+  representation before comparing exponents.
+- Fixed-order roundoff review handles an exact-zero available gap directly and
+  otherwise scales tolerance from the compared gaps without a dimensioned
+  `1.0` floor.
+- The required regression first failed on the prior production tree for the
+  `1e-20` gap, then passed before and after a positive `1e20` unit rescaling with
+  the exact lower-definition, order, and upper-definition source sequence.
+- No hard row is changed, dropped, softened, regularized, or repaired.
 
 ## Validation state
 
-- Focused: 20 level tests, 6 diagnostics tests, core all-target/all-feature
+- Focused: 21 level tests, 6 diagnostics tests, core all-target/all-feature
   Clippy, all 29 core Rustdoc tests, and the 64-level benchmark smoke passed.
-  The benchmark completed at approximately 369 microseconds per validation and
+  The benchmark completed at approximately 247 microseconds per validation and
   compile iteration.
-- Exact implementation tree `0df0550` passed the complete standard workspace
+- Exact implementation tree `61fa6d3` passed the complete standard workspace
   gate: formatting, warning-denying all-target/all-feature workspace Clippy,
   all-feature workspace tests, workspace Rustdoc, all 58 requirement checks,
   and `git diff --check`.
-- The subsequent handoff and repair-evidence commit changes only
-  `docs/progress/CURRENT.md` and
-  `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`; it relies on the immutable
-  implementation-tree gate and receives scoped whitespace verification.
-- The fresh reviewer passed all 20 focused level tests, all 6 diagnostics
-  tests, all 29 core Rustdoc tests, the level benchmark smoke at approximately
-  253 microseconds per validation and compile iteration, both scoped whitespace
-  reviews, and the requirement show/dependency review.
-- Exact-head Draft Ubuntu CI passed at `49998ef`; the Ready-only Windows,
-  Ubuntu, macOS, and benchmark-smoke matrix remained skipped as expected.
-- After recording the review, all 58 requirement checks, the complete PR
-  whitespace check, and the scoped review-evidence whitespace check passed;
-  only this review record and the bounded handoff changed.
+- The subsequent handoff and repair-evidence commit changes only this file and
+  `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`; it relies on that immutable
+  implementation-tree gate and receives scoped whitespace and requirement
+  verification.
 - No Ready three-platform CI, merge, integration, tag, or release is claimed.
 
 ## Next task
 
-Open a fresh Repair task for Draft PR #70 and address only R70-014. First add a
-regression with two distinct membership points, fixed levels both exactly zero,
-and a direct `1e-20` order gap; require `FixedOrderConflict` and the exact
-lower-definition/order/upper-definition source sequence, then repeat after a
-positive unit rescaling and require the same result. Implement the smallest
-unit-invariant fixed-order comparison, run focused checks during development
-and the complete standard gate on the stable final implementation head, update
-repair evidence and this bounded handoff, commit, push, and stop for a fresh
-independent re-review. Do not broaden the requirement, mark the PR ready, merge,
-integrate the requirement, or begin another requirement in that task.
+Open a fresh read-only independent Review task for Draft PR #70. Review the
+exact remote head against base `main`, confirm R70-014 closure, reconfirm
+R70-001 through R70-013, and check for new findings using only the bounded
+requirement/dependency summary, Issue #69 criteria, M4 plan, normative level
+documents, PR diff, tests, benchmark, prior review record, and validation
+evidence. Do not repair production code, mark the PR ready, merge, integrate the
+requirement, or begin another requirement in that task.
 
 ## Durable evidence
 
