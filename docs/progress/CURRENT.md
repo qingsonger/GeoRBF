@@ -6,21 +6,25 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required
+- Mode: Clean independent re-review complete; fresh integration Review required
 - Requirement: REQ-SOFT-001, Issue #72 (open)
 - Branch: `codex/req-soft-001-per-constraint-soft-losses`
 - Draft implementation pull request: #73
 - Original reviewed head: `978e400b2f9b25b9f84ac3102ff40388c44b42d8`
 - Exact repair head: `530f6fd817dabcae70a304e3db2430211692615f`
+- Cleanly re-reviewed repair head: `530f6fd817dabcae70a304e3db2430211692615f`
+- Pre-re-review evidence head: `6687402e7ab42508637460ddbe3d7a156a45cac6`
 - Registry state remains `implemented`
 - Dependencies: REQ-IR-001 and REQ-SOLVE-001 are `integrated`
 - No later requirement may start until REQ-SOFT-001 is independently
-  re-reviewed, merged, and truthfully integrated in later fresh tasks
+  integrated after Ready-only CI and merge in a later fresh task
 
-## Repair result
+## Re-review result
 
-- R73-001 is implemented on the exact repair head but is not yet independently
-  closed.
+- A new read-only project `math_reviewer` independently reviewed exact repair
+  head `530f6fd` without inheriting implementation or Repair reasoning and made
+  no repository or remote change.
+- R73-001 is closed. No P0, P1, P2, or P3 finding remains.
 - `CanonicalCapabilities` now includes relation geometry retained by soft
   objectives as well as geometry in the hard equality, linear-bound, and cone
   collections.
@@ -37,29 +41,33 @@ records, benchmark reports, Git, and GitHub.
 
 - The new soft-only capability regression failed before the repair at the
   equality assertion and passed after the repair.
-- Focused validation passed all 6 soft-loss tests, 11 problem-IR tests, 21 level
-  tests, all 29 georbf Rustdoc tests, and the D=1/D=2/D=3 96-constraint
-  soft-objective compilation benchmark smoke.
+- The parent Review task independently passed all 6 soft-loss tests, 11
+  problem-IR tests, 21 level tests, all 29 georbf Rustdoc tests, and the
+  D=1/D=2/D=3 96-constraint soft-objective compilation benchmark smoke.
+- The reviewer independently passed the focused repaired regression, compact
+  requirement and dependency checks, and whitespace checks across the complete
+  implementation, exact repair, and evidence-only diffs.
 - The complete stable-head standard workspace gate passed: format,
   warning-denying all-target/all-feature Clippy, all-feature workspace tests,
   workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- Draft Ubuntu correctness CI passed on the original reviewed head. CI has not
-  yet run on the repair head; Ready-only Windows, Ubuntu, macOS, and
-  benchmark-smoke CI remains intentionally unexecuted.
-- No re-review, Ready transition, merge, integration, tag, or release is
-  claimed.
+- That complete gate remains valid for immutable repair head `530f6fd`; the
+  commits after it and this re-review change only review and bounded-handoff
+  documentation, not production, test, manifest, schema, or build input.
+- Draft Ubuntu correctness CI passed on pre-re-review evidence head `6687402`.
+  CI has not yet run on the re-review evidence commit; Ready-only Windows,
+  Ubuntu, macOS, and benchmark-smoke CI remains intentionally unexecuted.
+- No Ready transition, merge, integration, tag, or release is claimed.
 
 ## Next task
 
-Open a fresh Review task limited to an independent re-review of R73-001 on
-exact repair head `530f6fd817dabcae70a304e3db2430211692615f`. Give a new read-only project
-`math_reviewer` only the bounded REQ-SOFT-001 summary and integrated dependency
-closure, Issue #72 criteria and exclusions, the M4 plan, scoped normative
-documents, the complete PR and repair diffs, the original finding, and recorded
-validation evidence. Record whether R73-001 is closed and whether any P0-P3
-finding remains, update this review record and bounded handoff, commit, push,
-and stop. Do not mark the PR Ready, merge, integrate, or begin another
-requirement in that re-review task.
+Open a fresh integration Review task limited to PR #73. Confirm that the new PR
+head differs from cleanly re-reviewed repair head `530f6fd` only by review and
+handoff evidence, synchronize the PR evidence, and mark it Ready. Wait for the
+complete Windows, Ubuntu, and macOS correctness matrix plus every benchmark
+smoke workload on that exact Ready head. Merge exactly once only if all required
+CI is green, then record truthful REQ-SOFT-001 integration state in a separate
+integration-state change and bounded handoff. Stop without beginning another
+requirement.
 
 ## Durable evidence
 

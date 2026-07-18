@@ -6,9 +6,11 @@
 - Branch: `codex/req-soft-001-per-constraint-soft-losses`
 - Reviewed head: `978e400b2f9b25b9f84ac3102ff40388c44b42d8`
 - Repair head: `530f6fd817dabcae70a304e3db2430211692615f`
+- Re-reviewed repair head: `530f6fd817dabcae70a304e3db2430211692615f`
+- Pre-re-review evidence head: `6687402e7ab42508637460ddbe3d7a156a45cac6`
 - Base head: `d7cec28fcd70d6f9f3d6a596d339695d73af6706`
-- Review date: 2026-07-18
-- Result: R73-001 repaired; fresh independent re-review required
+- Review date: 2026-07-18; fresh re-review: 2026-07-19
+- Result: clean fresh re-review; R73-001 is closed and no P0-P3 finding remains
 
 ## Scope and independence
 
@@ -100,6 +102,46 @@ gate then passed on the stable repair head: formatting, warning-denying
 all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
 all 58 requirement checks, and `git diff --check`.
 
+## Fresh independent re-review
+
+A new read-only project `math_reviewer` independently re-reviewed the complete
+implementation through exact repair head
+`530f6fd817dabcae70a304e3db2430211692615f`. It received only the bounded
+requirement summary and integrated dependency closure, Issue #72 criteria and
+exclusions, the M4 plan, scoped normative documents, complete implementation
+and repair diffs, R73-001, and recorded validation evidence. It did not inherit
+the implementation or Repair task reasoning and made no repository or remote
+change. It also verified that the tail from the repair head to pre-re-review
+evidence head `6687402e7ab42508637460ddbe3d7a156a45cac6` changes only this review
+record and the bounded handoff.
+
+R73-001 is closed, and no P0, P1, P2, or P3 finding remains. Capability
+construction now reports the set union of relation geometry used by hard
+constraints and soft objectives, while the soft-loss capability set remains
+independently derived from objective losses. The public Rustdoc and change
+fragment state the same contract. The isolated regression compiles soft-only
+equality, linear-bound, and second-order-cone inputs, proves the corresponding
+hard collections remain empty, and requires exactly the matching geometry
+flag. Existing mixed-family tests continue to prevent soft relations from
+entering hard collections.
+
+The reviewer independently reconfirmed the dimensionless `rho(v / s)` contract,
+Huber continuity, equality-sign invariance, closed-interval and cone violation
+formulae, positive joint scalar-unit invariance, hard-family preservation,
+level-prior lowering, provenance and ordering, scaling and checked-memory
+metadata, allocation errors, and the absence of an optimizer, hidden
+regularization, jitter, pseudoinverse, or hard-to-soft conversion. SPD/CPD,
+polynomial-rank, center-limit, positive-definiteness, and Hessian checks remain
+inapplicable to this solver-neutral repair.
+
+The reviewer ran the focused repaired regression, compact requirement show and
+dependency checks, and `git diff --check` over the implementation, repair, and
+evidence-only diffs; all passed. The parent Review task independently passed
+all 6 soft-loss tests, 11 problem-IR tests, 21 level tests, all 29 georbf
+Rustdoc tests, and the D=1/D=2/D=3 96-constraint benchmark smoke. The complete
+standard gate was not rerun because it already passed on immutable repair head
+`530f6fd`, and this re-review changes only review and handoff documentation.
+
 ## Validation evidence reviewed
 
 - Focused soft-loss, problem-IR, and level tests passed.
@@ -114,11 +156,11 @@ all 58 requirement checks, and `git diff --check`.
 
 ## Required next action
 
-Open a fresh Review task and give a new read-only project `math_reviewer` only
-the bounded requirement summary and dependency closure, scoped normative
-documents, Issue #72 criteria, the complete PR and repair diffs, R73-001, exact
-repair head `530f6fd817dabcae70a304e3db2430211692615f`, and recorded validation evidence.
-Record whether R73-001 is independently closed and whether any P0-P3 finding
-remains, update the bounded handoff, commit, push, and stop. Do not mark the PR
-Ready, merge it, integrate REQ-SOFT-001, or begin another requirement in that
-re-review task.
+Open a fresh integration Review task limited to PR #73. Confirm that the new PR
+head differs from cleanly re-reviewed repair head `530f6fd` only by review and
+handoff evidence, synchronize the PR evidence, and mark it Ready. Wait for the
+complete Windows, Ubuntu, and macOS correctness matrix plus every benchmark
+smoke workload on that exact Ready head. Merge exactly once only if all required
+CI is green, then record truthful REQ-SOFT-001 integration state in a separate
+integration-state change and bounded handoff. Do not begin another requirement
+in that integration task.
