@@ -164,3 +164,34 @@ smoke workload on that exact Ready head. Merge exactly once only if all required
 CI is green, then record truthful REQ-SOFT-001 integration state in a separate
 integration-state change and bounded handoff. Do not begin another requirement
 in that integration task.
+
+## Integration evidence
+
+The integration task confirmed that exact Ready head
+`4b6b24d151ec9af3db192b7ff496527d21d2748b` differs from cleanly
+re-reviewed repair head `530f6fd817dabcae70a304e3db2430211692615f`
+only through this review record and the bounded handoff. Those evidence-only
+changes alter no production code, tests, manifests, registry, schemas, CI,
+build input, API, normative contract, numerical behavior, dependency, tag, or
+release.
+
+Exact Ready head `4b6b24d` passed the complete Windows, Ubuntu, and macOS
+correctness matrix with every configured backend and benchmark-smoke workload
+in CI run 29664739560. PR #73 then squash-merged exactly once as
+`988217cdebf4c49f2db893e001acec1c7d6e0923`, and Issue #72 closed as
+completed. Post-merge `main` run 29665084708 passed the same complete
+three-platform correctness, benchmark-smoke, and requirement-registry gate on
+that exact merge commit.
+
+The isolated integration-state change updates only the registry, this review
+evidence, the history index, and the bounded handoff. It changes no production
+code, tests, manifests, schemas, CI, build inputs, APIs, normative contracts,
+numerical behavior, dependencies, tags, or releases. REQ-SOFT-001 may
+therefore be recorded as `integrated`; the next requirement must begin only in
+a fresh task after the isolated integration-state pull request is green and
+merged.
+
+The isolated integration-state registry tree passed the complete local
+standard gate and `git diff --check`. Any subsequent pull-request-link update
+is documentation-only and changes no production, test, manifest, registry,
+schema, CI, or build input.
