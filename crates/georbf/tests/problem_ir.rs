@@ -7,11 +7,11 @@ use std::fmt;
 use std::num::NonZeroUsize;
 
 use georbf::{
-    AffineExpression, AffineTerm, CanonicalizationError, Enforcement, ExecutionOptions,
-    FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm, ObservationFunctional,
-    ObservationId, Point, ProblemIrError, ProblemIrStorage, SemanticConstraint, SemanticExpression,
-    SemanticMetadataField, SemanticProblemIr, SemanticProvenance, SemanticRelation, SoftLoss,
-    SourceLocation, VariableBlock,
+    AffineExpression, AffineTerm, CanonicalSoftRelation, CanonicalizationError, Enforcement,
+    ExecutionOptions, FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm,
+    ObservationFunctional, ObservationId, Point, ProblemIrError, ProblemIrStorage,
+    SemanticConstraint, SemanticExpression, SemanticMetadataField, SemanticProblemIr,
+    SemanticProvenance, SemanticRelation, SoftLoss, SourceLocation, VariableBlock,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -196,9 +196,11 @@ fn equality_bounds_and_cones_map_with_exact_constant_shifts() -> TestResult {
     assert_eq!(canonical.scaling().equality(), &[1.0]);
     assert_eq!(canonical.scaling().linear_bound(), &[1.0]);
     assert_eq!(canonical.scaling().cone(), &[1.0]);
+    assert!(canonical.scaling().soft_objective().is_empty());
     assert!(canonical.capabilities().has_equalities);
     assert!(canonical.capabilities().has_linear_bounds);
     assert!(canonical.capabilities().has_second_order_cones);
+    assert!(!canonical.capabilities().soft_objectives.has_any());
     assert_eq!(canonical.memory_estimate().coefficient_count, 7);
     assert!(canonical.memory_estimate().numeric_bytes > 0);
     Ok(())
@@ -491,7 +493,7 @@ impl fmt::Display for ForcedLinearizerError {
 impl Error for ForcedLinearizerError {}
 
 #[test]
-fn linearizer_errors_and_soft_paths_retain_source_indices() -> TestResult {
+fn linearizer_errors_and_soft_objectives_retain_source_indices() -> TestResult {
     let hard = SemanticProblemIr::try_new(
         [constraint(
             91,
@@ -525,13 +527,22 @@ fn linearizer_errors_and_soft_paths_retain_source_indices() -> TestResult {
         },
     )?;
     let soft = SemanticProblemIr::try_new([soft_constraint], ExecutionOptions::default())?;
-    assert!(matches!(
-        soft.try_compile([block()?], |_, _| affine(&[(0, 1.0)], 0.0)),
-        Err(CanonicalizationError::UnsupportedSoftEnforcement {
-            constraint_index: 0,
-            observation_id,
-        }) if observation_id == ObservationId::new(92)
-    ));
+    let canonical = soft.try_compile([block()?], |_, _| affine(&[(0, 1.0)], 0.0))?;
+    assert!(canonical.equalities().is_empty());
+    let [objective] = canonical.soft_objectives() else {
+        return Err(std::io::Error::other("expected one soft objective").into());
+    };
+    assert_eq!(objective.scale(), 2.0);
+    assert_eq!(objective.loss(), SoftLoss::Huber { delta: 0.5 });
+    assert_eq!(
+        objective.provenance().observation_id(),
+        ObservationId::new(92)
+    );
+    let CanonicalSoftRelation::Equality(relation) = objective.relation() else {
+        return Err(std::io::Error::other("expected soft equality").into());
+    };
+    assert_eq!(relation.rhs(), 0.0);
+    assert_affine_terms(relation.row(), &[(0, 1.0)]);
     Ok(())
 }
 

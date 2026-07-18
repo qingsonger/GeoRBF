@@ -2,8 +2,8 @@
 //!
 //! A level problem owns semantic level definitions, field-membership
 //! observations, and minimum-gap order edges. Compilation produces only
-//! solver-neutral equalities and linear bounds; soft priors remain explicit
-//! objective metadata until the approved soft-loss backend is available.
+//! solver-neutral hard constraints and independently scaled soft objectives;
+//! optimization remains the responsibility of an approved convex backend.
 //! Validation closes equality transitively across shared mathematical Value
 //! evaluations. It rejects a positive order path or distinct fixed values
 //! between levels in one equality component and retains the selected membership
@@ -22,7 +22,8 @@ use crate::dimension::{Dim, SupportedDimension};
 use crate::functional::{FunctionalAtom, ObservationFunctional};
 use crate::problem_ir::{
     AffineExpression, AffineTerm, CanonicalEquality, CanonicalLinearBound, CanonicalProblem,
-    ObservationId, ProblemIrError, SemanticProvenance, SoftLoss, VariableBlock,
+    CanonicalSoftObjective, CanonicalSoftRelation, ObservationId, ProblemIrError,
+    SemanticProvenance, SoftLoss, VariableBlock,
 };
 
 const LEVEL_VARIABLE_BLOCK: &str = "levels";
@@ -618,17 +619,45 @@ where
                 prior_count,
             ))
         })?;
+        let mut soft_objectives = Vec::new();
+        soft_objectives
+            .try_reserve_exact(prior_count)
+            .map_err(|_| {
+                LevelCanonicalizationError::Ir(allocation_error_ir(
+                    LevelStorage::CanonicalPriors,
+                    prior_count,
+                ))
+            })?;
         for (level_index, level) in self.levels.iter().enumerate() {
             let LevelValue::Prior(prior) = level.value else {
                 continue;
             };
+            let variable = field_variable_count
+                .checked_add(level_index)
+                .ok_or_else(|| {
+                    LevelCanonicalizationError::Ir(ProblemIrError::VariableCountOverflow)
+                })?;
+            let objective_row = AffineExpression::try_new(
+                [AffineTerm::try_new(variable, 1.0).map_err(LevelCanonicalizationError::Ir)?],
+                0.0,
+            )
+            .map_err(LevelCanonicalizationError::Ir)?;
+            let objective_relation = CanonicalEquality::from_parts(
+                objective_row,
+                prior.mean,
+                level
+                    .provenance
+                    .try_clone_for_canonical()
+                    .map_err(LevelCanonicalizationError::Ir)?,
+            );
+            soft_objectives.push(CanonicalSoftObjective::from_parts(
+                CanonicalSoftRelation::Equality(objective_relation),
+                prior.scale,
+                prior.loss,
+            ));
             priors.push(CanonicalLevelPrior {
                 level_id: level.level_id,
-                variable: field_variable_count
-                    .checked_add(level_index)
-                    .ok_or_else(|| {
-                        LevelCanonicalizationError::Ir(ProblemIrError::VariableCountOverflow)
-                    })?,
+                variable,
                 prior,
                 provenance: level
                     .provenance
@@ -637,8 +666,13 @@ where
             });
         }
 
-        let canonical = CanonicalProblem::try_from_linear_parts(blocks, equalities, linear_bounds)
-            .map_err(LevelCanonicalizationError::Ir)?;
+        let canonical = CanonicalProblem::try_from_linear_parts_and_objectives(
+            blocks,
+            equalities,
+            linear_bounds,
+            soft_objectives,
+        )
+        .map_err(LevelCanonicalizationError::Ir)?;
         let mut level_ids = Vec::new();
         level_ids
             .try_reserve_exact(self.levels.len())
@@ -691,7 +725,7 @@ impl CanonicalLevelPrior {
     }
 }
 
-/// Canonical constraints plus explicit level-prior objective metadata.
+/// Canonical constraints and objectives plus a stable level-prior identity view.
 #[derive(Clone, Debug, PartialEq)]
 #[must_use]
 pub struct CompiledLevelProblem {
@@ -702,7 +736,7 @@ pub struct CompiledLevelProblem {
 }
 
 impl CompiledLevelProblem {
-    /// Borrows the solver-neutral hard constraints.
+    /// Borrows the solver-neutral hard constraints and soft objectives.
     pub const fn canonical_problem(&self) -> &CanonicalProblem {
         &self.canonical
     }
@@ -721,7 +755,7 @@ impl CompiledLevelProblem {
             .and_then(|index| self.level_variable_offset.checked_add(index))
     }
 
-    /// Consumes the wrapper and returns the hard canonical problem.
+    /// Consumes the wrapper and returns the canonical problem.
     pub fn into_canonical_problem(self) -> CanonicalProblem {
         self.canonical
     }

@@ -44,10 +44,15 @@ only when their levels belong to different equality components, and its
 missing-contrast evidence can represent a one-level field component without an
 unrelated anchor. It appends one explicit level-variable block to caller field
 variables and emits only canonical equality and linear-bound rows.
-Soft priors remain typed objective metadata until the approved convex objective
-backend is integrated. The level layer does not solve inequalities, eliminate
-levels into a separate model type, select kernels or centers, or introduce
-geological semantics into a solver.
+Soft priors compile to the same provenance-bearing canonical soft-equality
+objectives as other independently scaled L2/L1/Huber observations, while the
+level wrapper retains a stable level-identity view. The canonical IR also
+retains soft bound and cone relation shapes without geological vocabulary.
+No current dense equality path claims to optimize those objectives; lowering
+them to quadratic or epigraph forms waits for an approved convex backend. The
+level layer does not solve inequalities, eliminate levels into a separate model
+type, select kernels or centers, or introduce geological semantics into a
+solver.
 
 The orientation layer depends only on dimension-safe geometry and angle units.
 It keeps planar normals and linear directions as separate fixed-size D=2/D=3

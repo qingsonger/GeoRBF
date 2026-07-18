@@ -6,66 +6,67 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-LEVEL-001 complete
-- Requirement: REQ-LEVEL-001, Issue #69 (closed)
-- Implementation pull request: #70, squash-merged as `11e0659`
-- Integration-state branch: `codex/req-level-001-integration-state`
-- Integration-state pull request: #71 (Draft until exact Ready CI is green)
-- Review record: `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-SOFT-001 (`planned`)
+- Mode: Implement / REQ-SOFT-001 complete; fresh independent Review required
+- Requirement: REQ-SOFT-001, Issue #72 (open)
+- Branch: `codex/req-soft-001-per-constraint-soft-losses`
+- Draft implementation pull request: pending initial push
+- Registry state before the Draft PR exists: `in_progress`; update to
+  `implemented` with the PR number after creation
+- Dependencies: REQ-IR-001 and REQ-SOLVE-001 are `integrated`
+- No later requirement may start until REQ-SOFT-001 is reviewed, merged, and
+  truthfully integrated in later fresh tasks
 
-## Integration result
+## Implementation result
 
-- A fresh read-only project `math_reviewer` independently reconfirmed that
-  R70-001 through R70-014 are closed and no P0-P3 finding remains.
-- Exact Ready head `5bfa52f81f31785a660d7446c55099e570e29521`
-  passed the complete Windows, Ubuntu, and macOS matrix with every backend and
-  benchmark-smoke workload in CI run 29646041086.
-- PR #70 squash-merged exactly once as
-  `11e0659319ae08731f083749974d9ad6fb316616`; Issue #69 closed as
-  completed.
-- Post-merge `main` run 29646382654 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate on `11e0659`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, normative contract, numerical
-  behavior, dependency, tag, or release.
+- Added provenance-bearing canonical soft objectives for equality, linear
+  bound/interval, and cone relations with independent positive scales and
+  SquaredL2, AbsoluteL1, or Huber loss.
+- Preserved every hard equality, bound, and cone in its existing feasibility
+  collection while mixed soft objectives coexist in the same canonical
+  problem and follow deterministic semantic insertion order.
+- Defined the exact `rho(violation / scale)` contract, including equality,
+  interval, and cone violation semantics and Huber's scaled-residual delta.
+- Added objective capability/scaling metadata and checked memory estimates;
+  level priors now compile to the shared soft-equality objective form while
+  retaining stable level identity.
+- Added five independent soft-loss tests, focused problem-IR/level regressions,
+  and a 96-constraint D=1/D=2/D=3 mixed-objective compilation benchmark.
+- Updated mathematical semantics, ADR-0003 consequences, architecture,
+  Rustdoc, registry evidence, and the requirement change fragment.
 
 ## Validation state
 
-- Exact implementation tree `61fa6d3` passed the complete standard workspace
-  gate: format, warning-denying workspace Clippy, all-feature workspace tests,
-  workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The clean reviewers independently repeated focused level and diagnostic
-  tests, core Rustdoc, benchmark smoke, requirement and whitespace checks, and
-  exact-rational scaled-arithmetic probes.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state tree passed the complete local standard gate:
-  format, warning-denying workspace Clippy, all-feature workspace tests,
-  workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+- Focused soft-loss, problem-IR, and level tests passed.
+- Focused mixed-objective benchmark smoke passed across D=1, D=2, and D=3.
+- Warning-denying focused Clippy and the complete stable-head standard gate are
+  pending the final documentation/registry update and initial Draft PR number.
+- No Ready CI, independent review, merge, integration, tag, or release is
+  claimed.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start REQ-SOFT-001 or another
-requirement in this task.
+Open a fresh read-only Review task for the Draft implementation PR. Supply only
+the REQ-SOFT-001 show/deps summary, Issue #72 acceptance criteria,
+`docs/math/CONSTRAINT_SEMANTICS.md`, ADR-0003, the relevant architecture
+contract, the complete PR diff, and recorded test/benchmark evidence to the
+project `math_reviewer`. Review loss formulae, signs, dimensions and scale
+units, equality/bound/cone violation definitions, hard-family preservation,
+level-prior composition, provenance, deterministic ordering, memory estimates,
+allocation paths, hidden optimization/regularization, interfaces, benchmark
+scope, and registry truth. Record findings without repairing production code
+or beginning another requirement in that task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #69
-- Merged implementation and repairs: GitHub PR #70
-- Integration-state pull request: GitHub PR #71
-- Independent review and repair evidence:
-  `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-LEVEL-001.md`
+- Acceptance criteria and exclusions: GitHub Issue #72
+- Draft implementation pull request: pending initial push
+- Requirement summary: `changes/REQ-SOFT-001.md`
 - Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
-- Accepted design: `docs/adr/ADR-0003-explicit-level-variables.md`
+- Accepted level-prior design: `docs/adr/ADR-0003-explicit-level-variables.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
-- Focused tests: `crates/georbf/tests/levels.rs`
-- Benchmark: `crates/georbf/benches/level_compilation.rs`
+- Focused tests: `crates/georbf/tests/soft_losses.rs`,
+  `crates/georbf/tests/problem_ir.rs`, and `crates/georbf/tests/levels.rs`
+- Benchmark: `crates/georbf/benches/soft_objective_compilation.rs`
 
 ## Checks not yet available
 

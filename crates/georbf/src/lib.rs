@@ -113,6 +113,7 @@ pub use polynomial::{MultiIndex, PolynomialOutput, PolynomialSpace, PolynomialSp
 pub use problem_ir::{
     AffineExpression, AffineTerm, CanonicalCapabilities, CanonicalEquality, CanonicalLinearBound,
     CanonicalMemoryEstimate, CanonicalProblem, CanonicalScaling, CanonicalSecondOrderCone,
+    CanonicalSoftCapabilities, CanonicalSoftObjective, CanonicalSoftRelation,
     CanonicalizationError, Enforcement, ExecutionOptions, ObservationId, ProblemIrError,
     ProblemIrStorage, SemanticConstraint, SemanticExpression, SemanticMetadataField,
     SemanticProblemIr, SemanticProvenance, SemanticRelation, SoftLoss, SourceLocation,
