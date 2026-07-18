@@ -6,56 +6,52 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh Review / re-review required
+- Mode: Review complete; Repair required
 - Requirement: REQ-LEVEL-001, Issue #69 (open)
 - Branch: `codex/req-level-001-explicit-level-variables`
 - Draft implementation pull request: #70
 - Registry state in this change: `implemented`
 - Dependencies: REQ-IR-001 and REQ-MODEL-001 are `integrated`
-- R70-001 through R70-010 are independently closed.
-- R70-011 repair implementation:
-  `914c1eaf6b85991c2bb2f3d51c99bcf4e29de6c3`
-- R70-011 is repaired but not independently re-reviewed or closed.
+- R70-001 through R70-011 are independently closed.
+- Fresh re-review of exact head `b11d321` found P1 R70-012 and P2 R70-013.
+- PR #70 must remain Draft; Ready CI and integration are not authorized.
 - The next eligible requirement remains blocked until REQ-LEVEL-001 is freshly
   re-reviewed and integrated in a later fresh task.
 
-## R70-011 repair
+## Open review findings
 
-- The new fixed/prior same-point regression failed before the production
-  change because construction returned success.
-- Distinct fixed/prior anchors now prove contrast only when no mathematically
-  identical cross-level Value membership hard-couples those levels.
-- The regression uses distinct functional and semantic provenance and requires
-  `MissingContrast` naming A and B; a paired positive case preserves distinct
-  membership behavior.
-- Priors remain soft objective metadata. No hard row is changed, dropped,
-  softened, regularized, or converted from a prior.
+- R70-012: pairwise membership comparison misses transitive level-equality
+  chains. A@x=B@x and B@y=C@y imply h_A=h_B=h_C, but distinct fixed A/C,
+  fixed/prior A/C contrast, and a positive A-to-C order are currently accepted.
+- R70-013: when the field component has only one membership-bearing level, the
+  `MissingContrast` fallback can name an unrelated isolated anchor. Evidence
+  must remain inside the failing field component, including a one-level case.
+- Required regressions and exact source-evidence obligations are recorded in
+  `docs/reviews/PR-70-INDEPENDENT-REVIEW.md`.
 
 ## Validation state
 
-- All 18 focused level tests passed.
-- Core all-target/all-feature Clippy, all 29 core Rustdoc tests, and the
-  64-level benchmark smoke passed.
-- After the final production, test, registry, and normative-document change,
-  exact implementation head `914c1ea` passed the complete standard workspace
-  gate: formatting, warning-denying all-target/all-feature workspace Clippy,
-  all-feature workspace tests, workspace Rustdoc, all 58 requirement checks,
-  and `git diff --check`.
-- The subsequent repair-evidence and bounded-handoff change is documentation
-  only. No Ready three-platform CI, merge, integration, tag, or release is
-  claimed.
+- The independent reviewer passed all 18 focused level tests, all 29 core
+  Rustdoc tests, the 64-level benchmark smoke, both scoped whitespace checks,
+  and the compact requirement/dependency review. The parent Review task
+  independently passed the focused level suite, core Rustdoc, and complete PR
+  whitespace check.
+- Exact-head Draft Ubuntu CI run 29630380600 passed at `b11d321`.
+- Exact implementation head `914c1ea` retains its recorded complete standard
+  workspace gate. `914c1ea..b11d321` changed only review evidence and the
+  bounded handoff; this Review task also changes only those two documents.
+- No Ready three-platform CI, merge, integration, tag, or release is claimed.
 
 ## Next task
 
-Open a fresh Review / re-review task for Draft PR #70. Supply a read-only
-project `math_reviewer` only the bounded REQ-LEVEL-001 summary and dependency
-closure, M4 plan, relevant normative documents and ADR, complete PR and
-R70-011 repair diffs, tests, benchmark, prior review record, and validation
-evidence. Independently confirm R70-011 is closed, reconfirm R70-001 through
-R70-010, and check for new P0-P3 findings. Do not repair production code in the
-same task. If the review is clean and the final head has complete local checks,
-follow the mandatory ready-CI-integration sequence from `AGENTS.md`. Do not
-begin another requirement.
+Open a fresh Repair task for Draft PR #70 and address only R70-012 and R70-013.
+First add the independently specified transitive equality-chain and one-level
+field-component regressions and prove they fail on the current production tree.
+Then implement the smallest complete repair without changing or relaxing any
+hard row or turning a prior into a hard equality. Run focused checks during the
+repair and the complete standard workspace gate after the final production or
+test change. Update repair evidence and this bounded handoff, commit, push, and
+stop for a fresh independent re-review. Do not begin another requirement.
 
 ## Durable evidence
 

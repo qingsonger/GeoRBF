@@ -11,6 +11,12 @@
 - Fresh re-review head: `93f85dd17e145042f4282208c361c9aac95b8181`
 - Fresh re-review result: R70-001 through R70-009 closed; one new P1
   finding R70-010; Repair required
+- R70-010 re-review head: `3b6cf1366f30b9285c1023e5b2c73810c8c1b282`
+- R70-010 re-review result: R70-001 through R70-010 closed; one new P1
+  finding R70-011; Repair required
+- R70-011 re-review head: `b11d321961c3ac0448def84696046852a772ef26`
+- R70-011 re-review result: R70-001 through R70-011 closed; new P1 R70-012
+  and P2 R70-013; Repair required
 
 ## Scope and independence
 
@@ -401,3 +407,91 @@ This repair evidence is not an independent re-review and does not itself close
 R70-011. PR #70 remains Draft and REQ-LEVEL-001 remains `implemented`; a fresh
 read-only re-review must confirm R70-011 closure, reconfirm R70-001 through
 R70-010, and check for new findings.
+
+## Fresh independent re-review after R70-011 repair
+
+A fresh read-only project `math_reviewer` independently reviewed exact PR head
+`b11d321961c3ac0448def84696046852a772ef26` against base
+`2904c64c8d99e0b6a3183dc6c232953a969922ad`. It received only the bounded
+REQ-LEVEL-001 summary and integrated dependency closure, Issue #69 acceptance
+criteria, the M4 plan, relevant mathematical, ADR, and architecture contracts,
+the complete PR and R70-011 diffs, tests, benchmark, prior review record, and
+validation evidence. It inherited no implementation reasoning and made no
+repository or remote changes.
+
+The reviewer independently confirmed R70-011 is closed. Direct identical
+cross-level Value memberships now prevent distinct fixed/prior anchors from
+proving contrast, while distinct-point memberships remain accepted. Priors
+remain soft objective metadata and only fixed levels emit hard rows. The exact
+R70-001 through R70-010 regression cases also remain closed.
+
+### P1 R70-012: transitive membership equalities are treated only pairwise
+
+The fixed-membership checks at `crates/georbf/src/levels.rs:1148-1160`, the
+membership-order checks at `crates/georbf/src/levels.rs:1246-1283`, and the
+anchor-membership checks at `crates/georbf/src/levels.rs:1782-1792` and
+`crates/georbf/src/levels.rs:1809-1821` compare only memberships directly
+attached to two endpoint levels. They do not form the transitive equivalence
+classes induced by shared Value evaluations.
+
+For three levels with memberships
+
+```text
+f(x) - h_A = 0
+f(x) - h_B = 0
+f(y) - h_B = 0
+f(y) - h_C = 0
+```
+
+the hard rows imply `h_A = h_B = h_C`, although A and C have no directly
+identical membership. The current implementation therefore accepts three
+invalid systems: distinct fixed values on A and C; a fixed A and distinct prior
+mean on C that falsely proves field contrast; and a positive A-to-C order gap.
+The first and third are hard infeasibilities, while the second has no nonzero
+field contrast because the prior remains soft. This violates the hard-conflict
+and contrast contracts in `docs/math/CONSTRAINT_SEMANTICS.md:45-63`.
+
+Repair must add one independently constructed three-level equality-chain
+fixture with distinct functional and semantic provenance. Distinct fixed A/C
+must return a structured fixed conflict retaining both definitions and all four
+membership sources; fixed/prior A/C must return `MissingContrast`; and a
+positive A-to-C order must return structured infeasibility retaining all
+equality-chain memberships and the order source. The production repair must
+reason over the complete equality closure without changing, dropping,
+softening, regularizing, or otherwise repairing any hard row.
+
+### P2 R70-013: a single-level field component cites an unrelated anchor
+
+When the field component contains only one membership-bearing level, the
+missing-contrast diagnostic search at `crates/georbf/src/levels.rs:1744-1754`
+finds no second level in that component and falls back to any unrelated level.
+For fixed A with the only membership plus an isolated fixed or prior B, the
+error is `MissingContrast(A, B)` even though B is not part of the failing field
+component. This contradicts `docs/math/CONSTRAINT_SEMANTICS.md:64-65` and
+`changes/REQ-LEVEL-001.md:33-34`.
+
+Repair must add a regression with one anchored membership level, one isolated
+anchored level, and no orders. Every item of missing-contrast evidence must
+belong to the field component; the diagnostic representation may need to
+support a one-level failing component.
+
+No P0 or P3 finding remains. SPD/CPD classification, center limits, polynomial
+spaces, rank decisions, rotation invariance, positive definiteness, and Hessian
+capabilities are not applicable to this semantic layer. The review also
+covered membership units and signs, overflow-safe path arithmetic, hard-row
+preservation, deterministic paths and sources, the canonical solver boundary,
+provenance, allocations, interface dispositions, and requirement status.
+
+The reviewer passed all 18 focused level tests, all 29 core Rustdoc tests, the
+64-level benchmark smoke at approximately 350 microseconds per validation and
+compile iteration, the complete PR and R70-011 `git diff --check`, and the
+requirement show/dependency review. The parent Review task independently passed
+the same focused level and core Rustdoc suites and the complete PR whitespace
+check. Exact-head Draft Ubuntu CI run 29630380600 passed at `b11d321`.
+
+PR #70 must remain Draft and REQ-LEVEL-001 must remain `implemented`. A fresh
+Repair task must address only R70-012 and R70-013, add the specified
+regressions, run focused checks and the complete stable-head gate, update repair
+evidence and the bounded handoff, push, and stop for another fresh independent
+re-review. This Review task does not repair production code, mark the PR ready,
+merge it, integrate the requirement, or begin another requirement.
