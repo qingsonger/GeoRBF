@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-SOFT-001, Issue #72 (closed)
 - Implementation pull request: #73, squash-merged as `988217c`
 - Integration-state branch: `codex/req-soft-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #74 (Draft until exact Ready CI is green)
 - Review record: `docs/reviews/PR-73-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-LINEQ-001 (`planned`)
@@ -59,7 +59,7 @@ requirement in this task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #72
 - Merged implementation and repair: GitHub PR #73
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #74
 - Independent review and repair evidence:
   `docs/reviews/PR-73-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-SOFT-001.md`
