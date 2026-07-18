@@ -400,7 +400,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper maps the frozen C ABI and does not reimplement level compilation"
     python_api: "N/A: Python parity follows Rust API and schema freeze in M9"
     benchmark: implemented
-    status: implemented
+    status: integrated
 
   - id: REQ-SOFT-001
     title: Per-constraint soft losses

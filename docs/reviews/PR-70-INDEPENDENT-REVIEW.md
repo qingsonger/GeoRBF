@@ -712,3 +712,34 @@ the bounded handoff, synchronize the clean evidence, mark that evidence-only
 descendant head ready, wait for the complete Windows, Ubuntu, macOS, and
 benchmark-smoke CI on that exact ready head, merge exactly once only if all
 required checks are green, and then record truthful integration state.
+
+## Integration evidence
+
+The integration task confirmed that exact Ready head
+`5bfa52f81f31785a660d7446c55099e570e29521` differs from independently
+reviewed head `6a03fe6ae75df56613e1ae3ee7beda50aa5afb07` only through
+this review record and the bounded handoff. Those evidence-only changes alter
+no production code, tests, manifests, registry, schemas, CI, build input, API,
+normative contract, numerical behavior, dependency, tag, or release.
+
+Exact Ready head `5bfa52f` passed the complete Windows, Ubuntu, and macOS
+correctness matrix with every backend and benchmark-smoke workload in CI run
+29646041086. PR #70 then squash-merged exactly once as
+`11e0659319ae08731f083749974d9ad6fb316616`, and Issue #69 closed as
+completed. Post-merge `main` run 29646382654 passed the same complete
+three-platform correctness, benchmark-smoke, and requirement-registry gate on
+that exact merge commit.
+
+The isolated integration-state change updates only the registry, this review
+evidence, the history index, and the bounded handoff. It changes no production
+code, tests, manifests, schemas, CI, build inputs, APIs, normative contracts,
+numerical behavior, dependencies, tags, or releases. REQ-LEVEL-001 may
+therefore be recorded as `integrated`; the next requirement must begin only in
+a fresh task after the isolated integration-state pull request is green and
+merged.
+
+The isolated integration-state registry tree passed the complete local
+standard gate and `git diff --check`. Any subsequent pull-request-link update
+is documentation-only and changes no production, test, manifest, registry,
+schema, CI, or build input. The isolated integration-state evidence is
+published in PR #71.
