@@ -35,7 +35,9 @@ source-aware membership and fixed conflicts. Memberships admit only one
 unit-weight Value atom, a positive order path cannot connect mathematically
 identical memberships, cycle evidence contains only cycle-participating edges,
 fixed-path comparison is overflow safe, and contrast must reach two
-membership-coupled levels. It appends one explicit level-variable block to
+membership-coupled levels. It accepts distinct fixed/prior anchors as contrast
+only when identical Value memberships do not hard-couple those levels. It
+appends one explicit level-variable block to
 caller field variables and emits only canonical equality and linear-bound rows.
 Soft priors remain typed objective metadata until the approved convex objective
 backend is integrated. The level layer does not solve inequalities, eliminate

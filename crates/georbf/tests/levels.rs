@@ -550,6 +550,36 @@ fn prior_anchors_gauge_but_equal_anchors_still_lack_contrast() -> TestResult {
 }
 
 #[test]
+fn distinct_fixed_prior_anchors_require_distinct_memberships() -> TestResult {
+    let prior = LevelPrior::try_new(1.0, 1.0, SoftLoss::SquaredL2)?;
+    let result = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 10)?,
+            definition(2, LevelValue::Prior(prior), 11)?,
+        ],
+        [membership(1, 0.0, 20)?, membership(2, 0.0, 21)?],
+        [],
+    );
+    let Err(LevelProblemError::MissingContrast { diagnostic }) = result else {
+        return Err(io::Error::other("expected missing contrast").into());
+    };
+    assert_eq!(
+        diagnostic,
+        ContrastDiagnostic::try_new(LevelId::new(1), LevelId::new(2))?
+    );
+
+    let _problem = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 30)?,
+            definition(2, LevelValue::Prior(prior), 31)?,
+        ],
+        [membership(1, 0.0, 40)?, membership(2, 1.0, 41)?],
+        [],
+    )?;
+    Ok(())
+}
+
+#[test]
 fn membershipless_levels_cannot_manufacture_field_contrast() -> TestResult {
     let positive_gap = LevelProblem::try_new(
         [

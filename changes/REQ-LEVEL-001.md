@@ -27,8 +27,11 @@ review forms connected components from level-order edges and memberships to a
 shared field node, then requires a fixed or prior anchor in every component.
 Nonzero contrast must be forced between two membership-coupled levels through a
 positive path gap or distinct fixed/prior anchors on those levels. A
-membershipless level cannot supply field contrast, and missing-contrast
-diagnostics identify the failing field component.
+membershipless level cannot supply field contrast. Distinct anchor values count
+only when no mathematically identical Value membership hard-couples the
+anchored levels, so a soft prior mean cannot manufacture contrast against a
+shared hard field equality. Missing-contrast diagnostics identify the failing
+field component.
 
 Hard-conflict review rejects the same mathematical Value evaluation assigned to
 distinct fixed values regardless of functional provenance, retaining both fixed
@@ -46,15 +49,16 @@ force the corresponding level values equal. The structured
 every order edge on the selected positive path without emitting or altering any
 hard row.
 
-Seventeen independent tests cover fixed/unknown/prior compilation, explicit
+Eighteen independent tests cover fixed/unknown/prior compilation, explicit
 variable indices and signs, prior retention, membership units, deterministic
 topological ties, exact cycle sources, ordinary and extreme transitive fixed
 conflicts, provenance-independent same-functional conflicts with complete
 sources, identical-membership positive-order infeasibility with complete path
-sources, per-component gauge, membership-coupled contrast and diagnostic
-evidence, isolation, undefined references, constructor bypass attempts, numeric
-validation, linearizer failures, out-of-range affine terms, and `Send + Sync`
-across D=1, D=2, and D=3 public problem types. The focused benchmark builds,
+sources, per-component gauge, membership-coupled contrast, identical-membership
+fixed/prior anchor rejection and diagnostic evidence, isolation, undefined
+references, constructor bypass attempts, numeric validation, linearizer
+failures, out-of-range affine terms, and `Send + Sync` across D=1, D=2, and D=3
+public problem types. The focused benchmark builds,
 validates, and canonicalizes a deterministic 64-level chain; the smoke run
 completed successfully.
 

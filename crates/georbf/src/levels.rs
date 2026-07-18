@@ -6,6 +6,8 @@
 //! objective metadata until the approved soft-loss backend is available.
 //! Validation rejects a positive order path between mathematically identical
 //! memberships and retains both memberships and the selected path as evidence.
+//! Distinct fixed or prior anchors prove contrast only when no identical Value
+//! membership hard-couples the two anchored levels.
 
 use std::error::Error;
 use std::fmt;
@@ -352,6 +354,7 @@ where
         validate_gauge(&levels, &membership_indices, &order_indices)?;
         validate_contrast(
             &levels,
+            &memberships,
             &orders,
             &membership_indices,
             &order_indices,
@@ -1671,13 +1674,17 @@ fn validate_gauge(
     Ok(())
 }
 
-fn validate_contrast(
+fn validate_contrast<const D: usize>(
     levels: &[LevelDefinition],
+    memberships: &[LevelMembership<D>],
     orders: &[LevelOrder],
     membership_indices: &[usize],
     order_indices: &[(usize, usize)],
     topological_indices: &[usize],
-) -> Result<(), LevelProblemError> {
+) -> Result<(), LevelProblemError>
+where
+    Dim<D>: SupportedDimension,
+{
     let field_node = levels.len();
     let node_count = levels
         .len()
@@ -1731,29 +1738,8 @@ fn validate_contrast(
         }
     }
 
-    let mut has_distinct_anchors = false;
-    for first_index in 0..levels.len() {
-        if !has_membership[first_index] {
-            continue;
-        }
-        let Some(first_value) = anchor_value(levels[first_index].value) else {
-            continue;
-        };
-        for (second_index, second) in levels.iter().enumerate().skip(first_index + 1) {
-            if !has_membership[second_index] {
-                continue;
-            }
-            if anchor_value(second.value)
-                .is_some_and(|second_value| (second_value - first_value).abs() > 0.0)
-            {
-                has_distinct_anchors = true;
-                break;
-            }
-        }
-        if has_distinct_anchors {
-            break;
-        }
-    }
+    let has_distinct_anchors =
+        has_distinct_anchor_memberships(levels, memberships, membership_indices, &has_membership);
     if !has_gap && !has_distinct_anchors {
         let first_index = membership_indices[0];
         let second_index = membership_indices
@@ -1775,6 +1761,64 @@ fn validate_contrast(
         });
     }
     Ok(())
+}
+
+fn has_distinct_anchor_memberships<const D: usize>(
+    levels: &[LevelDefinition],
+    memberships: &[LevelMembership<D>],
+    membership_indices: &[usize],
+    has_membership: &[bool],
+) -> bool
+where
+    Dim<D>: SupportedDimension,
+{
+    for first_index in 0..levels.len() {
+        if !has_membership[first_index] {
+            continue;
+        }
+        let Some(first_value) = anchor_value(levels[first_index].value) else {
+            continue;
+        };
+        for (second_index, second) in levels.iter().enumerate().skip(first_index + 1) {
+            if has_membership[second_index]
+                && anchor_value(second.value)
+                    .is_some_and(|second_value| (second_value - first_value).abs() > 0.0)
+                && have_no_identical_membership_functionals(
+                    first_index,
+                    second_index,
+                    memberships,
+                    membership_indices,
+                )
+            {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn have_no_identical_membership_functionals<const D: usize>(
+    first_level_index: usize,
+    second_level_index: usize,
+    memberships: &[LevelMembership<D>],
+    membership_indices: &[usize],
+) -> bool
+where
+    Dim<D>: SupportedDimension,
+{
+    !memberships
+        .iter()
+        .zip(membership_indices)
+        .filter(|(_, level_index)| **level_index == first_level_index)
+        .any(|(first, _)| {
+            memberships
+                .iter()
+                .zip(membership_indices)
+                .filter(|(_, level_index)| **level_index == second_level_index)
+                .any(|(second, _)| {
+                    same_membership_functional(&first.functional, &second.functional)
+                })
+        })
 }
 
 const fn anchor_value(value: LevelValue) -> Option<f64> {

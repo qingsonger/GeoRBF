@@ -56,8 +56,11 @@ Gauge review treats memberships as edges to the shared scalar field and order
 relations as edges between levels. Every resulting connected component needs a
 fixed value or explicit prior. Nonzero contrast must be proved between two
 membership-coupled level functionals through a positive minimum-gap path or
-distinct fixed/prior anchors on those coupled levels; a positive gap or distinct
-anchor on a membershipless level cannot manufacture field contrast.
+distinct fixed/prior anchors on those coupled levels. Distinct anchor values
+count only when no mathematically identical Value membership hard-couples the
+two anchored levels; in particular, a soft prior mean cannot override their
+shared hard field equality. A positive gap or distinct anchor on a
+membershipless level cannot manufacture field contrast.
 Missing-contrast evidence names the failing field component rather than
 unrelated isolated anchors. Reference point differencing is an optional
 internal elimination of the same explicit variables, never a separate model

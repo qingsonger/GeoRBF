@@ -35,3 +35,6 @@ canonical problem retains the original individual hard constraints. A positive
 order path between two mathematically identical membership evaluations is
 rejected with both membership sources and the selected path sources because the
 membership equalities force the corresponding level gap to zero.
+Likewise, distinct fixed or prior anchor values establish contrast only when no
+mathematically identical membership hard-couples the anchored levels; a soft
+prior is never promoted to a hard equality to manufacture contrast.
