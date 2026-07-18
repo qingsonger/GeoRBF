@@ -9,9 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement / REQ-SOFT-001 complete; fresh independent Review required
 - Requirement: REQ-SOFT-001, Issue #72 (open)
 - Branch: `codex/req-soft-001-per-constraint-soft-losses`
-- Draft implementation pull request: pending initial push
-- Registry state before the Draft PR exists: `in_progress`; update to
-  `implemented` with the PR number after creation
+- Draft implementation pull request: #73
+- Registry state in this change: `implemented`
 - Dependencies: REQ-IR-001 and REQ-SOLVE-001 are `integrated`
 - No later requirement may start until REQ-SOFT-001 is reviewed, merged, and
   truthfully integrated in later fresh tasks
@@ -38,8 +37,10 @@ records, benchmark reports, Git, and GitHub.
 
 - Focused soft-loss, problem-IR, and level tests passed.
 - Focused mixed-objective benchmark smoke passed across D=1, D=2, and D=3.
-- Warning-denying focused Clippy and the complete stable-head standard gate are
-  pending the final documentation/registry update and initial Draft PR number.
+- The complete standard workspace gate passed on the stable final
+  implementation tree: format, warning-denying workspace Clippy, all-feature
+  workspace tests, workspace Rustdoc, all 58 requirement checks, and
+  `git diff --check`.
 - No Ready CI, independent review, merge, integration, tag, or release is
   claimed.
 
@@ -59,7 +60,7 @@ or beginning another requirement in that task.
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #72
-- Draft implementation pull request: pending initial push
+- Draft implementation pull request: GitHub PR #73
 - Requirement summary: `changes/REQ-SOFT-001.md`
 - Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
 - Accepted level-prior design: `docs/adr/ADR-0003-explicit-level-variables.md`

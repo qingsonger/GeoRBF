@@ -409,7 +409,7 @@ requirements:
     milestone: M4-v0.4.0
     priority: P0
     issue: 72
-    pull_request: null
+    pull_request: 73
     tests: [l2-l1-huber, mixed-hard-soft, scale-policy, equality-bound-cone-violation, deterministic-objective-order, level-prior-objective, invalid-input, allocation-error, send-sync]
     docs: [docs/math/CONSTRAINT_SEMANTICS.md, docs/adr/ADR-0003-explicit-level-variables.md, docs/architecture/ARCHITECTURE.md, changes/REQ-SOFT-001.md, rustdoc]
     rust_api: implemented
@@ -418,7 +418,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper maps the frozen C ABI and does not reimplement objective compilation"
     python_api: "N/A: Python parity follows Rust API and schema freeze in M9"
     benchmark: implemented
-    status: in_progress
+    status: implemented
 
   - id: REQ-LINEQ-001
     title: Linear bounds, intervals, and monotonicity

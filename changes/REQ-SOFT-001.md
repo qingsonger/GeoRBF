@@ -45,3 +45,8 @@ freeze; no adapter may reimplement objective compilation. This change adds no
 dependency, numerical backend, schema, unsafe code, optimizer, hidden jitter,
 regularization, pseudoinverse, hard-to-soft conversion, constraint deletion,
 or automatic conflict repair.
+
+The final implementation tree passed the complete local standard gate:
+formatting, warning-denying all-target/all-feature workspace Clippy,
+all-feature workspace tests, workspace Rustdoc, all 58 requirement checks, and
+`git diff --check`.
