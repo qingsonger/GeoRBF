@@ -12,6 +12,27 @@ delete them, perturb their targets, add unrequested jitter, or turn them into
 soft penalties. Soft losses are explicit objective contributions. Scaling
 changes numerical representation, not user semantics, and is reported.
 
+For a relation violation `v` and its positive user scale `s`, every soft
+objective is
+
+```text
+rho(v / s).
+```
+
+The compiler uses `rho(t) = t^2` for SquaredL2 and `rho(t) = |t|` for
+AbsoluteL1. Huber with transition `delta > 0` uses
+`rho(t) = t^2 / 2` when `|t| <= delta` and
+`rho(t) = delta * (|t| - delta / 2)` otherwise. The Huber transition is in
+scaled-residual units. A positive change of the relation's scalar unit must
+scale the relation and `s` together, leaving the objective value unchanged.
+
+Equality violation is the signed affine residual `row - rhs`; all three loss
+families are even, so its sign does not change the penalty. Lower, upper, and
+closed-interval violations are zero inside their feasible set and otherwise
+the positive distance to the violated bound. Second-order-cone violation is
+`max(0, ||lhs||_2 - rhs)`. These relation shapes, scales, losses, and sources
+remain explicit in canonical IR. No geological term reaches an optimizer.
+
 ## Level variables
 
 Each geological level has one explicit scalar `h_k`. A point assigned to that
@@ -35,9 +56,9 @@ h_b - h_a >= delta_ab.
 The Rust semantic layer preserves every level as a stable identifier and every
 definition, membership, and order edge as a separate provenance-bearing
 record. Fixed values compile to hard equality rows. Priors stay as explicit
-mean, positive scale, and SquaredL2, AbsoluteL1, or Huber metadata; they are not
-silently compiled as hard rows or claimed as solved before the approved soft
-objective backend exists.
+mean, positive scale, and SquaredL2, AbsoluteL1, or Huber equality-residual
+objectives in the same canonical problem; they are not silently compiled as
+hard rows or claimed as solved before the approved convex backend exists.
 
 The compiler requires at least two levels and one field membership. It rejects
 duplicate identifiers, missing references, self edges, negative or non-finite
@@ -79,10 +100,14 @@ not level identifiers or geological relations.
 
 ## Canonical mappings
 
-Linear equalities become `A_eq z = b_eq`. Bounds and intervals become lower and
-upper limits on rows of `A_lin z`. L2 penalties become quadratic objective
-terms. L1 and Huber losses use explicit epigraph forms in an approved convex
-backend. No solver receives geological semantics.
+Hard linear equalities become `A_eq z = b_eq`. Hard bounds and intervals become
+lower and upper limits on rows of `A_lin z`. Hard cones remain
+`||lhs||_2 <= rhs`. Soft relations retain the corresponding canonical relation
+inside a per-constraint objective. L2 penalties are explicit quadratic
+objective specifications. L1 and Huber remain exact loss specifications for
+later lowering to epigraph forms in an approved convex backend. The current
+dense equality solver accepts only hard equality systems and does not pretend
+to solve these objectives. No solver receives geological semantics.
 
 Duplicate and near-duplicate functionals are diagnosed with scale-aware
 criteria. Conflicting hard constraints return source-aware infeasibility; they

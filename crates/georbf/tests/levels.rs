@@ -5,11 +5,11 @@ use std::io;
 use std::num::NonZeroUsize;
 
 use georbf::{
-    AffineExpression, AffineTerm, ContrastDiagnostic, Dim, FunctionalAtom, FunctionalExpr,
-    FunctionalProvenance, FunctionalTerm, LevelCanonicalizationError, LevelDefinition, LevelId,
-    LevelMembership, LevelOrder, LevelPrior, LevelProblem, LevelProblemError, LevelValue,
-    ObservationFunctional, ObservationId, Point, SemanticProvenance, SoftLoss, SourceLocation,
-    SupportedDimension, UnitDirection, VariableBlock,
+    AffineExpression, AffineTerm, CanonicalSoftRelation, ContrastDiagnostic, Dim, FunctionalAtom,
+    FunctionalExpr, FunctionalProvenance, FunctionalTerm, LevelCanonicalizationError,
+    LevelDefinition, LevelId, LevelMembership, LevelOrder, LevelPrior, LevelProblem,
+    LevelProblemError, LevelValue, ObservationFunctional, ObservationId, Point, SemanticProvenance,
+    SoftLoss, SourceLocation, SupportedDimension, UnitDirection, VariableBlock,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -164,6 +164,28 @@ fn fixed_unknown_and_prior_compile_to_explicit_variables() -> TestResult {
     assert_eq!(compiled.priors()[0].level_id(), LevelId::new(30));
     assert_eq!(compiled.priors()[0].variable(), 5);
     assert_eq!(compiled.priors()[0].prior(), prior);
+    let [objective] = canonical.soft_objectives() else {
+        return Err(io::Error::other("expected one canonical level-prior objective").into());
+    };
+    assert!((objective.scale() - 0.25).abs() <= f64::EPSILON);
+    assert_eq!(objective.loss(), SoftLoss::Huber { delta: 1.5 });
+    assert_eq!(
+        objective.provenance().observation_id(),
+        ObservationId::new(102)
+    );
+    let CanonicalSoftRelation::Equality(relation) = objective.relation() else {
+        return Err(io::Error::other("expected prior equality residual").into());
+    };
+    assert!((relation.rhs() - 2.0).abs() <= f64::EPSILON);
+    assert_eq!(
+        relation
+            .row()
+            .terms()
+            .iter()
+            .map(|term| (term.variable(), term.coefficient()))
+            .collect::<Vec<_>>(),
+        [(5, 1.0)]
+    );
     assert_eq!(compiled.level_variable(LevelId::new(20)), Some(4));
     assert_eq!(compiled.level_variable(LevelId::new(99)), None);
     Ok(())

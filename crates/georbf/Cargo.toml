@@ -66,3 +66,7 @@ harness = false
 [[bench]]
 name = "level_compilation"
 harness = false
+
+[[bench]]
+name = "soft_objective_compilation"
+harness = false

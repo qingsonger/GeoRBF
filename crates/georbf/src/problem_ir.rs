@@ -3,6 +3,10 @@
 //! The semantic layer owns user-facing meaning and compiled observation
 //! functionals. Canonicalization accepts an explicit caller linearizer so the
 //! later basis and assembly layers remain separate from relation mapping.
+//! Hard relations retain their original canonical families. Soft relations
+//! become deterministic objective contributions with independent user scales,
+//! explicit L2/L1/Huber losses, and unchanged source provenance; selecting an
+//! optimizer remains a separate backend decision.
 //!
 //! IR dimension bounds are compile-time enforced:
 //!
@@ -191,7 +195,7 @@ pub enum SoftLoss {
 pub enum Enforcement {
     /// Preserve the relation as a hard feasibility condition.
     Hard,
-    /// Retain an explicit soft scale and loss for a later objective compiler.
+    /// Compile an explicit soft scale and loss into a canonical objective.
     Soft {
         /// Positive residual scale.
         scale: f64,
@@ -495,9 +499,9 @@ where
     ///
     /// # Errors
     ///
-    /// Returns structured source-indexed errors for unsupported soft paths,
-    /// linearizer failures, invalid affine output, non-finite shifted bounds,
-    /// allocation failure, or memory-estimate overflow.
+    /// Returns structured source-indexed errors for linearizer failures,
+    /// invalid affine output, non-finite shifted bounds, allocation failure,
+    /// or memory-estimate overflow.
     #[allow(clippy::too_many_lines)]
     pub fn try_compile<E>(
         &self,
@@ -511,6 +515,7 @@ where
         let mut equalities = Vec::new();
         let mut linear_bounds = Vec::new();
         let mut cones = Vec::new();
+        let mut soft_objectives = Vec::new();
 
         equalities
             .try_reserve_exact(self.constraints.len())
@@ -533,14 +538,16 @@ where
             .map_err(|_| {
                 allocation_error(ProblemIrStorage::CanonicalCones, self.constraints.len())
             })?;
+        soft_objectives
+            .try_reserve_exact(self.constraints.len())
+            .map_err(|_| {
+                allocation_error(
+                    ProblemIrStorage::CanonicalSoftObjectives,
+                    self.constraints.len(),
+                )
+            })?;
 
         for (constraint_index, constraint) in self.constraints.iter().enumerate() {
-            if matches!(constraint.enforcement, Enforcement::Soft { .. }) {
-                return Err(CanonicalizationError::UnsupportedSoftEnforcement {
-                    constraint_index,
-                    observation_id: constraint.provenance.observation_id,
-                });
-            }
             match &constraint.relation {
                 SemanticRelation::Equality { expression, target } => {
                     let affine = linearize_expression(
@@ -558,14 +565,24 @@ where
                             value,
                         }
                     })?;
-                    equalities.push(CanonicalEquality {
+                    let equality = CanonicalEquality {
                         row: affine.without_constant(),
                         rhs,
                         provenance: constraint
                             .provenance
                             .try_clone_for_canonical()
                             .map_err(CanonicalizationError::Ir)?,
-                    });
+                    };
+                    match constraint.enforcement {
+                        Enforcement::Hard => equalities.push(equality),
+                        Enforcement::Soft { scale, loss } => {
+                            soft_objectives.push(CanonicalSoftObjective::from_parts(
+                                CanonicalSoftRelation::Equality(equality),
+                                scale,
+                                loss,
+                            ));
+                        }
+                    }
                 }
                 SemanticRelation::LinearBound {
                     expression,
@@ -596,7 +613,7 @@ where
                                 value,
                             }
                         })?;
-                    linear_bounds.push(CanonicalLinearBound {
+                    let bound = CanonicalLinearBound {
                         row: affine.without_constant(),
                         lower: shifted_lower,
                         upper: shifted_upper,
@@ -604,7 +621,17 @@ where
                             .provenance
                             .try_clone_for_canonical()
                             .map_err(CanonicalizationError::Ir)?,
-                    });
+                    };
+                    match constraint.enforcement {
+                        Enforcement::Hard => linear_bounds.push(bound),
+                        Enforcement::Soft { scale, loss } => {
+                            soft_objectives.push(CanonicalSoftObjective::from_parts(
+                                CanonicalSoftRelation::LinearBound(bound),
+                                scale,
+                                loss,
+                            ));
+                        }
+                    }
                 }
                 SemanticRelation::SecondOrderCone { lhs, rhs } => {
                     let mut canonical_lhs = Vec::new();
@@ -629,19 +656,29 @@ where
                         blocks.variable_count,
                         &mut linearize,
                     )?;
-                    cones.push(CanonicalSecondOrderCone {
+                    let cone = CanonicalSecondOrderCone {
                         lhs: canonical_lhs,
                         rhs: canonical_rhs,
                         provenance: constraint
                             .provenance
                             .try_clone_for_canonical()
                             .map_err(CanonicalizationError::Ir)?,
-                    });
+                    };
+                    match constraint.enforcement {
+                        Enforcement::Hard => cones.push(cone),
+                        Enforcement::Soft { scale, loss } => {
+                            soft_objectives.push(CanonicalSoftObjective::from_parts(
+                                CanonicalSoftRelation::SecondOrderCone(cone),
+                                scale,
+                                loss,
+                            ));
+                        }
+                    }
                 }
             }
         }
 
-        CanonicalProblem::try_new(blocks, equalities, linear_bounds, cones)
+        CanonicalProblem::try_new(blocks, equalities, linear_bounds, cones, soft_objectives)
             .map_err(CanonicalizationError::Ir)
     }
 }
@@ -903,16 +940,145 @@ impl CanonicalSecondOrderCone {
     }
 }
 
-/// Canonical constraint families present in a problem.
+/// Canonical relation whose violation contributes to a soft objective.
+///
+/// Equality violation is the signed residual `row - rhs`. Linear-bound
+/// violation is zero inside the closed interval and the positive distance to
+/// the nearest violated bound outside it. Cone violation is
+/// `max(0, ||lhs||_2 - rhs)`. The enclosing [`CanonicalSoftObjective`] divides
+/// that violation by its user scale before applying its loss.
+#[derive(Clone, Debug, PartialEq)]
+#[must_use]
+pub enum CanonicalSoftRelation {
+    /// Affine equality residual.
+    Equality(CanonicalEquality),
+    /// Closed, lower-only, or upper-only affine-bound violation.
+    LinearBound(CanonicalLinearBound),
+    /// Second-order-cone violation.
+    SecondOrderCone(CanonicalSecondOrderCone),
+}
+
+impl CanonicalSoftRelation {
+    /// Borrows the complete originating provenance.
+    pub const fn provenance(&self) -> &SemanticProvenance {
+        match self {
+            Self::Equality(relation) => relation.provenance(),
+            Self::LinearBound(relation) => relation.provenance(),
+            Self::SecondOrderCone(relation) => relation.provenance(),
+        }
+    }
+}
+
+/// One independently scaled canonical soft-objective contribution.
+///
+/// For relation violation `v` and positive user scale `s`, this represents
+/// `rho(v / s)`. `SquaredL2` uses `rho(t) = t^2`, `AbsoluteL1` uses
+/// `rho(t) = |t|`, and Huber uses `t^2 / 2` for `|t| <= delta` and
+/// `delta * (|t| - delta / 2)` otherwise. No optimizer, automatic scaling,
+/// or hard-constraint relaxation is selected by this metadata.
+#[derive(Clone, Debug, PartialEq)]
+#[must_use]
+pub struct CanonicalSoftObjective {
+    relation: CanonicalSoftRelation,
+    scale: f64,
+    loss: SoftLoss,
+}
+
+impl CanonicalSoftObjective {
+    pub(crate) const fn from_parts(
+        relation: CanonicalSoftRelation,
+        scale: f64,
+        loss: SoftLoss,
+    ) -> Self {
+        Self {
+            relation,
+            scale,
+            loss,
+        }
+    }
+
+    /// Borrows the canonical relation whose violation is penalized.
+    pub const fn relation(&self) -> &CanonicalSoftRelation {
+        &self.relation
+    }
+
+    /// Returns the positive user residual scale.
+    #[must_use]
+    pub const fn scale(&self) -> f64 {
+        self.scale
+    }
+
+    /// Returns the explicit loss family.
+    #[must_use]
+    pub const fn loss(&self) -> SoftLoss {
+        self.loss
+    }
+
+    /// Borrows the complete originating provenance.
+    pub const fn provenance(&self) -> &SemanticProvenance {
+        self.relation.provenance()
+    }
+}
+
+/// Canonical relation geometries and soft-loss families required by a problem.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[must_use]
 pub struct CanonicalCapabilities {
-    /// Whether at least one equality row exists.
+    /// Whether a hard constraint or soft objective uses equality geometry.
     pub has_equalities: bool,
-    /// Whether at least one linear-bound row exists.
+    /// Whether a hard constraint or soft objective uses linear-bound geometry.
     pub has_linear_bounds: bool,
-    /// Whether at least one second-order cone exists.
+    /// Whether a hard constraint or soft objective uses second-order-cone geometry.
     pub has_second_order_cones: bool,
+    /// Required soft-objective loss families.
+    pub soft_objectives: CanonicalSoftCapabilities,
+}
+
+/// Compact capability set for canonical soft-objective loss families.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+#[must_use]
+pub struct CanonicalSoftCapabilities(u8);
+
+impl CanonicalSoftCapabilities {
+    const SQUARED_L2: u8 = 1;
+    const ABSOLUTE_L1: u8 = 1 << 1;
+    const HUBER: u8 = 1 << 2;
+
+    fn from_objectives(objectives: &[CanonicalSoftObjective]) -> Self {
+        let mut bits = 0_u8;
+        for objective in objectives {
+            bits |= match objective.loss {
+                SoftLoss::SquaredL2 => Self::SQUARED_L2,
+                SoftLoss::AbsoluteL1 => Self::ABSOLUTE_L1,
+                SoftLoss::Huber { .. } => Self::HUBER,
+            };
+        }
+        Self(bits)
+    }
+
+    /// Returns whether at least one soft objective exists.
+    #[must_use]
+    pub const fn has_any(self) -> bool {
+        self.0 != 0
+    }
+
+    /// Returns whether a soft objective uses squared L2 loss.
+    #[must_use]
+    pub const fn has_squared_l2(self) -> bool {
+        self.0 & Self::SQUARED_L2 != 0
+    }
+
+    /// Returns whether a soft objective uses absolute L1 loss.
+    #[must_use]
+    pub const fn has_absolute_l1(self) -> bool {
+        self.0 & Self::ABSOLUTE_L1 != 0
+    }
+
+    /// Returns whether a soft objective uses Huber loss.
+    #[must_use]
+    pub const fn has_huber(self) -> bool {
+        self.0 & Self::HUBER != 0
+    }
 }
 
 /// Checked numeric-storage estimate for a canonical problem.
@@ -933,6 +1099,7 @@ pub struct CanonicalScaling {
     equality: Vec<f64>,
     linear_bound: Vec<f64>,
     cone: Vec<f64>,
+    soft_objective: Vec<f64>,
 }
 
 impl CanonicalScaling {
@@ -958,6 +1125,15 @@ impl CanonicalScaling {
     #[must_use]
     pub fn cone(&self) -> &[f64] {
         &self.cone
+    }
+
+    /// Borrows unit compiler scaling for soft objectives.
+    ///
+    /// User residual scales remain separately inspectable on each
+    /// [`CanonicalSoftObjective`].
+    #[must_use]
+    pub fn soft_objective(&self) -> &[f64] {
+        &self.soft_objective
     }
 }
 
@@ -1015,16 +1191,18 @@ pub struct CanonicalProblem {
     equalities: Vec<CanonicalEquality>,
     linear_bounds: Vec<CanonicalLinearBound>,
     cones: Vec<CanonicalSecondOrderCone>,
+    soft_objectives: Vec<CanonicalSoftObjective>,
     scaling: CanonicalScaling,
     capabilities: CanonicalCapabilities,
     memory_estimate: CanonicalMemoryEstimate,
 }
 
 impl CanonicalProblem {
-    pub(crate) fn try_from_linear_parts(
+    pub(crate) fn try_from_linear_parts_and_objectives(
         variable_blocks: impl IntoIterator<Item = VariableBlock>,
         equalities: Vec<CanonicalEquality>,
         linear_bounds: Vec<CanonicalLinearBound>,
+        soft_objectives: Vec<CanonicalSoftObjective>,
     ) -> Result<Self, ProblemIrError> {
         let variable_space = VariableSpace::try_new(variable_blocks)?;
         for equality in &equalities {
@@ -1037,7 +1215,16 @@ impl CanonicalProblem {
                 .row
                 .validate_variable_count(variable_space.variable_count)?;
         }
-        Self::try_new(variable_space, equalities, linear_bounds, Vec::new())
+        for objective in &soft_objectives {
+            validate_soft_relation(&objective.relation, variable_space.variable_count)?;
+        }
+        Self::try_new(
+            variable_space,
+            equalities,
+            linear_bounds,
+            Vec::new(),
+            soft_objectives,
+        )
     }
 
     fn try_new(
@@ -1045,31 +1232,54 @@ impl CanonicalProblem {
         equalities: Vec<CanonicalEquality>,
         linear_bounds: Vec<CanonicalLinearBound>,
         cones: Vec<CanonicalSecondOrderCone>,
+        soft_objectives: Vec<CanonicalSoftObjective>,
     ) -> Result<Self, ProblemIrError> {
         let scaling = CanonicalScaling {
             variable: try_unit_vec(variable_space.variable_count, ProblemIrStorage::Scaling)?,
             equality: try_unit_vec(equalities.len(), ProblemIrStorage::Scaling)?,
             linear_bound: try_unit_vec(linear_bounds.len(), ProblemIrStorage::Scaling)?,
             cone: try_unit_vec(cones.len(), ProblemIrStorage::Scaling)?,
+            soft_objective: try_unit_vec(soft_objectives.len(), ProblemIrStorage::Scaling)?,
         };
+        let mut has_equalities = !equalities.is_empty();
+        let mut has_linear_bounds = !linear_bounds.is_empty();
+        let mut has_second_order_cones = !cones.is_empty();
+        for objective in &soft_objectives {
+            match objective.relation() {
+                CanonicalSoftRelation::Equality(_) => has_equalities = true,
+                CanonicalSoftRelation::LinearBound(_) => has_linear_bounds = true,
+                CanonicalSoftRelation::SecondOrderCone(_) => has_second_order_cones = true,
+            }
+        }
         let capabilities = CanonicalCapabilities {
-            has_equalities: !equalities.is_empty(),
-            has_linear_bounds: !linear_bounds.is_empty(),
-            has_second_order_cones: !cones.is_empty(),
+            has_equalities,
+            has_linear_bounds,
+            has_second_order_cones,
+            soft_objectives: CanonicalSoftCapabilities::from_objectives(&soft_objectives),
         };
-        let coefficient_count = count_coefficients(&equalities, &linear_bounds, &cones)?;
+        let coefficient_count =
+            count_coefficients(&equalities, &linear_bounds, &cones, &soft_objectives)?;
         let cone_expression_count = cones.iter().try_fold(0_usize, |count, cone| {
             count
                 .checked_add(cone.lhs.len())
                 .and_then(|count| count.checked_add(1))
                 .ok_or(ProblemIrError::MemoryEstimateOverflow)
         })?;
+        let soft_expression_count =
+            soft_objectives
+                .iter()
+                .try_fold(0_usize, |count, objective| {
+                    count
+                        .checked_add(soft_relation_expression_count(&objective.relation)?)
+                        .ok_or(ProblemIrError::MemoryEstimateOverflow)
+                })?;
         let expression_constant_count = equalities
             .len()
             .checked_add(linear_bounds.len())
             .and_then(|count| count.checked_add(cone_expression_count))
+            .and_then(|count| count.checked_add(soft_expression_count))
             .ok_or(ProblemIrError::MemoryEstimateOverflow)?;
-        let relation_scalar_count = equalities
+        let hard_relation_scalar_count = equalities
             .len()
             .checked_add(
                 linear_bounds
@@ -1078,11 +1288,27 @@ impl CanonicalProblem {
                     .ok_or(ProblemIrError::MemoryEstimateOverflow)?,
             )
             .ok_or(ProblemIrError::MemoryEstimateOverflow)?;
+        let relation_scalar_count =
+            soft_objectives
+                .iter()
+                .try_fold(hard_relation_scalar_count, |count, objective| {
+                    count
+                        .checked_add(soft_relation_scalar_count(&objective.relation))
+                        .and_then(|count| count.checked_add(1))
+                        .and_then(|count| {
+                            count.checked_add(usize::from(matches!(
+                                objective.loss,
+                                SoftLoss::Huber { .. }
+                            )))
+                        })
+                        .ok_or(ProblemIrError::MemoryEstimateOverflow)
+                })?;
         let scaling_scalar_count = variable_space
             .variable_count
             .checked_add(equalities.len())
             .and_then(|count| count.checked_add(linear_bounds.len()))
             .and_then(|count| count.checked_add(cones.len()))
+            .and_then(|count| count.checked_add(soft_objectives.len()))
             .ok_or(ProblemIrError::MemoryEstimateOverflow)?;
         let scalar_count = expression_constant_count
             .checked_add(relation_scalar_count)
@@ -1100,6 +1326,7 @@ impl CanonicalProblem {
             equalities,
             linear_bounds,
             cones,
+            soft_objectives,
             scaling,
             capabilities,
             memory_estimate: CanonicalMemoryEstimate {
@@ -1142,6 +1369,11 @@ impl CanonicalProblem {
         &self.cones
     }
 
+    /// Borrows canonical soft objectives in semantic insertion order.
+    pub fn soft_objectives(&self) -> &[CanonicalSoftObjective] {
+        &self.soft_objectives
+    }
+
     /// Borrows explicit identity scaling metadata.
     pub const fn scaling(&self) -> &CanonicalScaling {
         &self.scaling
@@ -1173,6 +1405,8 @@ pub enum ProblemIrStorage {
     CanonicalLinearBounds,
     /// Canonical cones.
     CanonicalCones,
+    /// Canonical soft-objective contributions.
+    CanonicalSoftObjectives,
     /// Rows within one canonical cone.
     CanonicalConeRows,
     /// Owned semantic provenance copied into canonical rows and cones.
@@ -1287,13 +1521,6 @@ impl Error for ProblemIrError {}
 pub enum CanonicalizationError<E> {
     /// Semantic or canonical IR validation failed.
     Ir(ProblemIrError),
-    /// Soft objective/epigraph compilation belongs to a later requirement.
-    UnsupportedSoftEnforcement {
-        /// Semantic constraint index.
-        constraint_index: usize,
-        /// Stable observation identifier.
-        observation_id: ObservationId,
-    },
     /// The caller-supplied functional linearizer failed.
     Linearization {
         /// Semantic constraint index.
@@ -1334,14 +1561,6 @@ where
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Ir(source) => source.fmt(formatter),
-            Self::UnsupportedSoftEnforcement {
-                constraint_index,
-                observation_id,
-            } => write!(
-                formatter,
-                "constraint {constraint_index} (observation {}) uses soft enforcement, whose objective compilation is not yet available",
-                observation_id.identifier()
-            ),
             Self::Linearization {
                 constraint_index,
                 expression_index,
@@ -1383,7 +1602,7 @@ where
         match self {
             Self::Ir(source) | Self::InvalidLinearization { source, .. } => Some(source),
             Self::Linearization { source, .. } => Some(source),
-            Self::UnsupportedSoftEnforcement { .. } | Self::NonFiniteShiftedScalar { .. } => None,
+            Self::NonFiniteShiftedScalar { .. } => None,
         }
     }
 }
@@ -1532,6 +1751,7 @@ fn count_coefficients(
     equalities: &[CanonicalEquality],
     linear_bounds: &[CanonicalLinearBound],
     cones: &[CanonicalSecondOrderCone],
+    soft_objectives: &[CanonicalSoftObjective],
 ) -> Result<usize, ProblemIrError> {
     let mut count = 0_usize;
     for row in equalities
@@ -1550,7 +1770,72 @@ fn count_coefficients(
                 .ok_or(ProblemIrError::MemoryEstimateOverflow)?;
         }
     }
+    for objective in soft_objectives {
+        match &objective.relation {
+            CanonicalSoftRelation::Equality(relation) => {
+                count = checked_coefficient_count(count, &relation.row)?;
+            }
+            CanonicalSoftRelation::LinearBound(relation) => {
+                count = checked_coefficient_count(count, &relation.row)?;
+            }
+            CanonicalSoftRelation::SecondOrderCone(relation) => {
+                for expression in relation.lhs.iter().chain(std::iter::once(&relation.rhs)) {
+                    count = checked_coefficient_count(count, expression)?;
+                }
+            }
+        }
+    }
     Ok(count)
+}
+
+fn checked_coefficient_count(
+    count: usize,
+    expression: &AffineExpression,
+) -> Result<usize, ProblemIrError> {
+    count
+        .checked_add(expression.terms.len())
+        .ok_or(ProblemIrError::MemoryEstimateOverflow)
+}
+
+fn validate_soft_relation(
+    relation: &CanonicalSoftRelation,
+    variable_count: usize,
+) -> Result<(), ProblemIrError> {
+    match relation {
+        CanonicalSoftRelation::Equality(relation) => {
+            relation.row.validate_variable_count(variable_count)
+        }
+        CanonicalSoftRelation::LinearBound(relation) => {
+            relation.row.validate_variable_count(variable_count)
+        }
+        CanonicalSoftRelation::SecondOrderCone(relation) => {
+            for expression in relation.lhs.iter().chain(std::iter::once(&relation.rhs)) {
+                expression.validate_variable_count(variable_count)?;
+            }
+            Ok(())
+        }
+    }
+}
+
+fn soft_relation_expression_count(
+    relation: &CanonicalSoftRelation,
+) -> Result<usize, ProblemIrError> {
+    match relation {
+        CanonicalSoftRelation::Equality(_) | CanonicalSoftRelation::LinearBound(_) => Ok(1),
+        CanonicalSoftRelation::SecondOrderCone(relation) => relation
+            .lhs
+            .len()
+            .checked_add(1)
+            .ok_or(ProblemIrError::MemoryEstimateOverflow),
+    }
+}
+
+const fn soft_relation_scalar_count(relation: &CanonicalSoftRelation) -> usize {
+    match relation {
+        CanonicalSoftRelation::Equality(_) => 1,
+        CanonicalSoftRelation::LinearBound(_) => 2,
+        CanonicalSoftRelation::SecondOrderCone(_) => 0,
+    }
 }
 
 #[cfg(test)]
@@ -1586,7 +1871,10 @@ mod tests {
         Ok(SemanticExpression::try_new(functional, 0.0)?)
     }
 
-    fn assert_provenance_copy_allocation_failure(relation: SemanticRelation<1>) -> TestResult {
+    fn assert_provenance_copy_allocation_failure(
+        relation: SemanticRelation<1>,
+        enforcement: Enforcement,
+    ) -> TestResult {
         let source_path = "input.yaml";
         let provenance = SemanticProvenance::try_new(
             ObservationId::new(1),
@@ -1595,7 +1883,7 @@ mod tests {
             "fields.scalar".to_owned(),
             Some("group".to_owned()),
         )?;
-        let constraint = SemanticConstraint::try_new(provenance, relation, Enforcement::Hard)?;
+        let constraint = SemanticConstraint::try_new(provenance, relation, enforcement)?;
         let problem = SemanticProblemIr::try_new([constraint], ExecutionOptions::default())?;
         let block = VariableBlock::try_new("z".to_owned(), NonZeroUsize::MIN)?;
 
@@ -1618,26 +1906,49 @@ mod tests {
 
     #[test]
     fn equality_provenance_copy_allocation_failure_is_structured() -> TestResult {
-        assert_provenance_copy_allocation_failure(SemanticRelation::Equality {
-            expression: test_expression()?,
-            target: 0.0,
-        })
+        assert_provenance_copy_allocation_failure(
+            SemanticRelation::Equality {
+                expression: test_expression()?,
+                target: 0.0,
+            },
+            Enforcement::Hard,
+        )
+    }
+
+    #[test]
+    fn soft_provenance_copy_allocation_failure_is_structured() -> TestResult {
+        assert_provenance_copy_allocation_failure(
+            SemanticRelation::Equality {
+                expression: test_expression()?,
+                target: 0.0,
+            },
+            Enforcement::Soft {
+                scale: 1.0,
+                loss: SoftLoss::SquaredL2,
+            },
+        )
     }
 
     #[test]
     fn linear_bound_provenance_copy_allocation_failure_is_structured() -> TestResult {
-        assert_provenance_copy_allocation_failure(SemanticRelation::LinearBound {
-            expression: test_expression()?,
-            lower: Some(0.0),
-            upper: None,
-        })
+        assert_provenance_copy_allocation_failure(
+            SemanticRelation::LinearBound {
+                expression: test_expression()?,
+                lower: Some(0.0),
+                upper: None,
+            },
+            Enforcement::Hard,
+        )
     }
 
     #[test]
     fn cone_provenance_copy_allocation_failure_is_structured() -> TestResult {
-        assert_provenance_copy_allocation_failure(SemanticRelation::SecondOrderCone {
-            lhs: vec![test_expression()?],
-            rhs: test_expression()?,
-        })
+        assert_provenance_copy_allocation_failure(
+            SemanticRelation::SecondOrderCone {
+                lhs: vec![test_expression()?],
+                rhs: test_expression()?,
+            },
+            Enforcement::Hard,
+        )
     }
 }
