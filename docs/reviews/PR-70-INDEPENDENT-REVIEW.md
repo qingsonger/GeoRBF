@@ -17,6 +17,10 @@
 - R70-011 re-review head: `b11d321961c3ac0448def84696046852a772ef26`
 - R70-011 re-review result: R70-001 through R70-011 closed; new P1 R70-012
   and P2 R70-013; Repair required
+- R70-012 and R70-013 re-review head:
+  `49998ef4b18a803c84817415096dabe4eeabad63`
+- R70-012 and R70-013 re-review result: R70-001 through R70-013 closed; one
+  new P1 finding R70-014; Repair required
 
 ## Scope and independence
 
@@ -533,3 +537,84 @@ This repair evidence is not an independent re-review and does not itself close
 R70-012 or R70-013. PR #70 remains Draft and REQ-LEVEL-001 remains
 `implemented`; a fresh read-only re-review must confirm both repairs, reconfirm
 R70-001 through R70-011, and check for new findings.
+
+## Fresh independent re-review after R70-012 and R70-013 repair
+
+A fresh read-only project `math_reviewer` independently reviewed exact PR head
+`49998ef4b18a803c84817415096dabe4eeabad63` against base and merge base
+`2904c64c8d99e0b6a3183dc6c232953a969922ad`. The local and remote heads
+matched and the worktree was clean. The reviewer received only the bounded
+REQ-LEVEL-001 summary and integrated dependency closure, Issue #69 acceptance
+criteria, the M4 plan, relevant mathematical, ADR, and architecture contracts,
+the complete PR and latest repair diffs, tests, benchmark, prior review record,
+and exact-head validation evidence. It inherited no implementation reasoning
+and made no repository or remote changes.
+
+The reviewer independently confirmed R70-012 and R70-013 are closed. The
+deterministic membership-equality spanning forest supplies the complete
+transitive closure and selected proving membership chain to fixed and order
+conflicts, while anchor contrast is accepted only across different equality
+components. `ContrastDiagnostic` represents a one-level failing field
+component without borrowing an unrelated isolated anchor. The required
+three-level equality-chain and one-level diagnostic regressions pass. R70-001
+through R70-011 also remain closed.
+
+### P1 R70-014: fixed-order infeasibility depends on the scalar unit
+
+The fixed-order endpoint check at `crates/georbf/src/levels.rs:1645-1650` and
+`crates/georbf/src/levels.rs:1780-1788` computes a relative tolerance from
+machine epsilon and level count, but floors its comparison scale at the
+dimensioned constant `1.0`. This creates an absolute tolerance in whichever
+scalar-field unit the caller selected.
+
+For two fixed levels at exactly zero, memberships at distinct Value points,
+and the hard order
+
+```text
+h_B - h_A >= 1e-20,
+```
+
+the available gap is exactly zero and the system is infeasible. With two
+levels, the current tolerance is approximately `2.842e-14`, so construction
+accepts the contradiction. Multiplying every level value and gap by `1e20`
+makes the otherwise equivalent positive-unit rescaling reject the system.
+Feasibility must be invariant under a positive change of scalar unit. This is
+not a derived-subtraction boundary: both fixed values and their difference are
+exactly zero, and the positive required gap is representable.
+
+Repair must add a regression with two distinct membership points, two fixed
+zero levels, and a direct `1e-20` order gap. It must require
+`FixedOrderConflict` with the exact lower-definition, order, and
+upper-definition source sequence, then repeat after a positive unit rescaling
+such as `1e20` and require the same verdict and evidence. The roundoff allowance
+must use actual problem magnitudes with an exact-zero case instead of an
+unscaled `1.0` floor. No hard row may be changed, dropped, softened,
+regularized, or otherwise repaired.
+
+No new P0, P2, or P3 finding remains. Membership, fixed, and order canonical
+row signs and insertion order are otherwise correct; priors remain soft
+metadata; provenance and hard rows are preserved; and no hidden jitter,
+pseudoinverse, regularization, or constraint repair occurs. SPD/CPD
+classification, polynomial spaces, center limits, rank decisions, rotation
+invariance, positive definiteness, and Hessian capability are not applicable
+to this semantic compilation layer.
+
+The reviewer passed all 20 focused level tests, all 6 diagnostics tests, all 29
+core Rustdoc tests, the level benchmark smoke at approximately 253 microseconds
+per validation and compile iteration, the complete PR and latest-repair
+`git diff --check`, and the requirement show/dependency review. Exact-head
+Draft Ubuntu CI passed at `49998ef`; the Ready-only platform and benchmark
+matrix remained skipped as expected. The complete standard workspace gate was
+not rerun because exact implementation tree `0df0550` had already passed it and
+`0df0550..49998ef` changes only this review record and the bounded handoff.
+After recording this review, the parent task passed all 58 requirement checks,
+the complete PR whitespace check, and the scoped review-evidence whitespace
+check; only this review record and the bounded handoff changed.
+
+PR #70 must remain Draft and REQ-LEVEL-001 must remain `implemented`. A fresh
+Repair task must address only R70-014, add the unit-rescaling regression, run
+focused checks and the complete stable-head gate after the last code or test
+change, update repair evidence and the bounded handoff, push, and stop for a
+fresh independent re-review. This Review task does not repair production code,
+mark the PR ready, merge it, integrate the requirement, or begin another
+requirement.
