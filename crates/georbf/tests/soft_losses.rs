@@ -207,6 +207,46 @@ fn l2_l1_and_huber_use_independent_residual_scales() -> TestResult {
 }
 
 #[test]
+fn soft_only_relations_report_required_geometry_capabilities() -> TestResult {
+    fn compile(relation: SemanticRelation<1>) -> Result<georbf::CanonicalProblem, Box<dyn Error>> {
+        let problem = SemanticProblemIr::try_new(
+            [soft_constraint(1, relation, 1.0, SoftLoss::SquaredL2)?],
+            ExecutionOptions::default(),
+        )?;
+        Ok(problem.try_compile([one_block()?], |_, _| affine(&[(0, 1.0)], 0.0))?)
+    }
+
+    let equality = compile(SemanticRelation::Equality {
+        expression: expression(1, 0.0)?,
+        target: 0.0,
+    })?;
+    assert!(equality.equalities().is_empty());
+    assert!(equality.capabilities().has_equalities);
+    assert!(!equality.capabilities().has_linear_bounds);
+    assert!(!equality.capabilities().has_second_order_cones);
+
+    let bound = compile(SemanticRelation::LinearBound {
+        expression: expression(2, 0.0)?,
+        lower: Some(-1.0),
+        upper: Some(1.0),
+    })?;
+    assert!(bound.linear_bounds().is_empty());
+    assert!(!bound.capabilities().has_equalities);
+    assert!(bound.capabilities().has_linear_bounds);
+    assert!(!bound.capabilities().has_second_order_cones);
+
+    let cone = compile(SemanticRelation::SecondOrderCone {
+        lhs: vec![expression(3, 0.0)?],
+        rhs: expression(4, 0.0)?,
+    })?;
+    assert!(cone.second_order_cones().is_empty());
+    assert!(!cone.capabilities().has_equalities);
+    assert!(!cone.capabilities().has_linear_bounds);
+    assert!(cone.capabilities().has_second_order_cones);
+    Ok(())
+}
+
+#[test]
 #[allow(clippy::too_many_lines)]
 fn mixed_hard_and_soft_relations_preserve_hard_families() -> TestResult {
     let problem = SemanticProblemIr::try_new(

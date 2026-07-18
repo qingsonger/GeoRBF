@@ -1020,15 +1020,15 @@ impl CanonicalSoftObjective {
     }
 }
 
-/// Canonical constraint families present in a problem.
+/// Canonical relation geometries and soft-loss families required by a problem.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[must_use]
 pub struct CanonicalCapabilities {
-    /// Whether at least one equality row exists.
+    /// Whether a hard constraint or soft objective uses equality geometry.
     pub has_equalities: bool,
-    /// Whether at least one linear-bound row exists.
+    /// Whether a hard constraint or soft objective uses linear-bound geometry.
     pub has_linear_bounds: bool,
-    /// Whether at least one second-order cone exists.
+    /// Whether a hard constraint or soft objective uses second-order-cone geometry.
     pub has_second_order_cones: bool,
     /// Required soft-objective loss families.
     pub soft_objectives: CanonicalSoftCapabilities,
@@ -1241,10 +1241,20 @@ impl CanonicalProblem {
             cone: try_unit_vec(cones.len(), ProblemIrStorage::Scaling)?,
             soft_objective: try_unit_vec(soft_objectives.len(), ProblemIrStorage::Scaling)?,
         };
+        let mut has_equalities = !equalities.is_empty();
+        let mut has_linear_bounds = !linear_bounds.is_empty();
+        let mut has_second_order_cones = !cones.is_empty();
+        for objective in &soft_objectives {
+            match objective.relation() {
+                CanonicalSoftRelation::Equality(_) => has_equalities = true,
+                CanonicalSoftRelation::LinearBound(_) => has_linear_bounds = true,
+                CanonicalSoftRelation::SecondOrderCone(_) => has_second_order_cones = true,
+            }
+        }
         let capabilities = CanonicalCapabilities {
-            has_equalities: !equalities.is_empty(),
-            has_linear_bounds: !linear_bounds.is_empty(),
-            has_second_order_cones: !cones.is_empty(),
+            has_equalities,
+            has_linear_bounds,
+            has_second_order_cones,
             soft_objectives: CanonicalSoftCapabilities::from_objectives(&soft_objectives),
         };
         let coefficient_count =

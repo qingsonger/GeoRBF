@@ -17,11 +17,14 @@ bounds use distance to their closed feasible interval; cones use
 scale preserves the objective value.
 
 `CanonicalProblem` now exposes soft objectives, unit compiler-scaling entries,
-loss-specific capability flags, and checked coefficient/numeric-memory
-estimates that include every soft relation and its numeric metadata. Objective
-order follows semantic insertion order independently of the existing hard
-families. Allocation and provenance copying remain fallible and return
-structured errors without partial canonical output.
+relation-geometry and loss-specific capability flags, and checked
+coefficient/numeric-memory estimates that include every soft relation and its
+numeric metadata. Equality, linear-bound, and second-order-cone capability
+flags include both hard constraints and soft objectives because exact soft-loss
+lowering still requires the retained relation geometry. Objective order follows
+semantic insertion order independently of the existing hard families.
+Allocation and provenance copying remain fallible and return structured errors
+without partial canonical output.
 
 Level priors now compile as canonical soft equality objectives on their
 explicit level variables. `CompiledLevelProblem::priors()` remains as the
