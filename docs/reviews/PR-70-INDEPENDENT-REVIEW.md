@@ -495,3 +495,41 @@ regressions, run focused checks and the complete stable-head gate, update repair
 evidence and the bounded handoff, push, and stop for another fresh independent
 re-review. This Review task does not repair production code, mark the PR ready,
 merge it, integrate the requirement, or begin another requirement.
+
+## R70-012 and R70-013 repair evidence
+
+Repair implementation commit `0df0550777e8ca95b0d17a9ac08d1ec5a4d5d561`
+addresses only R70-012 and R70-013. Before the production change, the new
+three-level equality-chain regression failed because distinct fixed A/C values
+were accepted, and the one-level field-component regression failed because its
+`MissingContrast` diagnostic named unrelated isolated level B.
+
+The repair now builds a deterministic spanning forest over levels joined by
+mathematically identical Value evaluations. Its union state supplies the full
+transitive equality closure without quadratic edge storage, while a selected
+forest path retains every membership source needed to prove one conflict.
+Distinct fixed values within a component return both definitions and the full
+membership chain. A positive order path within a component returns the full
+membership chain and every selected order source. Fixed/prior anchor contrast
+is accepted only across different equality components. No canonical row is
+changed, dropped, softened, regularized, or emitted on these semantic error
+paths, and priors remain soft objective metadata.
+
+`ContrastDiagnostic` now represents either two levels or one membership-bearing
+level. When no second level belongs to the failing field component, the
+diagnostic retains only that level instead of falling back to an isolated
+anchor.
+
+The focused level suite has 20 passing tests and the focused diagnostics suite
+has 6. Core all-target/all-feature Clippy, all 29 core Rustdoc tests, and the
+64-level benchmark smoke passed; the benchmark completed at approximately 369
+microseconds per validation and compile iteration. After the final production,
+test, registry, and normative-document change, the exact implementation tree
+passed the complete standard workspace gate: formatting, warning-denying
+all-target/all-feature workspace Clippy, all-feature workspace tests, workspace
+Rustdoc, all 58 requirement checks, and `git diff --check`.
+
+This repair evidence is not an independent re-review and does not itself close
+R70-012 or R70-013. PR #70 remains Draft and REQ-LEVEL-001 remains
+`implemented`; a fresh read-only re-review must confirm both repairs, reconfirm
+R70-001 through R70-011, and check for new findings.
