@@ -418,7 +418,7 @@ requirements:
     cpp_api: "N/A: the future C++ wrapper maps the frozen C ABI and does not reimplement objective compilation"
     python_api: "N/A: Python parity follows Rust API and schema freeze in M9"
     benchmark: implemented
-    status: implemented
+    status: integrated
 
   - id: REQ-LINEQ-001
     title: Linear bounds, intervals, and monotonicity
