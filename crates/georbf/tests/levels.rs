@@ -511,6 +511,108 @@ fn identical_memberships_with_positive_order_paths_are_infeasible() -> TestResul
 }
 
 #[test]
+fn transitive_membership_equality_chain_rejects_conflicts() -> TestResult {
+    let fixed_conflict = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 10)?,
+            definition(2, LevelValue::unknown(), 11)?,
+            definition(3, LevelValue::try_fixed(1.0)?, 12)?,
+        ],
+        [
+            membership(1, 4.0, 20)?,
+            membership(2, 4.0, 21)?,
+            membership(2, 8.0, 22)?,
+            membership(3, 8.0, 23)?,
+        ],
+        [],
+    );
+    let Err(LevelProblemError::FixedMembershipConflict {
+        first_level,
+        second_level,
+        sources,
+    }) = fixed_conflict
+    else {
+        return Err(io::Error::other("expected transitive fixed membership conflict").into());
+    };
+    assert_eq!(first_level, LevelId::new(1));
+    assert_eq!(second_level, LevelId::new(3));
+    assert_eq!(
+        sources
+            .iter()
+            .map(georbf::DiagnosticPath::observation_id)
+            .collect::<Vec<_>>(),
+        [
+            Some(ObservationId::new(10)),
+            Some(ObservationId::new(20)),
+            Some(ObservationId::new(21)),
+            Some(ObservationId::new(22)),
+            Some(ObservationId::new(12)),
+            Some(ObservationId::new(23)),
+        ]
+    );
+
+    let prior = LevelPrior::try_new(1.0, 1.0, SoftLoss::SquaredL2)?;
+    let missing_contrast = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 30)?,
+            definition(2, LevelValue::unknown(), 31)?,
+            definition(3, LevelValue::Prior(prior), 32)?,
+        ],
+        [
+            membership(1, 4.0, 40)?,
+            membership(2, 4.0, 41)?,
+            membership(2, 8.0, 42)?,
+            membership(3, 8.0, 43)?,
+        ],
+        [],
+    );
+    let Err(LevelProblemError::MissingContrast { diagnostic }) = missing_contrast else {
+        return Err(io::Error::other("expected transitive missing contrast").into());
+    };
+    assert_eq!(diagnostic.lower(), LevelId::new(1));
+    assert_eq!(diagnostic.upper(), Some(LevelId::new(2)));
+
+    let order_conflict = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 50)?,
+            definition(2, LevelValue::unknown(), 51)?,
+            definition(3, LevelValue::unknown(), 52)?,
+        ],
+        [
+            membership(1, 4.0, 60)?,
+            membership(2, 4.0, 61)?,
+            membership(2, 8.0, 62)?,
+            membership(3, 8.0, 63)?,
+        ],
+        [order(1, 3, 1.0, 70)?],
+    );
+    let Err(LevelProblemError::MembershipOrderConflict {
+        lower,
+        upper,
+        sources,
+    }) = order_conflict
+    else {
+        return Err(io::Error::other("expected transitive membership order conflict").into());
+    };
+    assert_eq!(lower, LevelId::new(1));
+    assert_eq!(upper, LevelId::new(3));
+    assert_eq!(
+        sources
+            .iter()
+            .map(georbf::DiagnosticPath::observation_id)
+            .collect::<Vec<_>>(),
+        [
+            Some(ObservationId::new(60)),
+            Some(ObservationId::new(61)),
+            Some(ObservationId::new(62)),
+            Some(ObservationId::new(70)),
+            Some(ObservationId::new(63)),
+        ]
+    );
+    Ok(())
+}
+
+#[test]
 fn missing_gauge_is_checked_per_connected_component() -> TestResult {
     let result = LevelProblem::try_new(
         [
@@ -634,6 +736,24 @@ fn missing_contrast_evidence_names_the_field_coupled_levels() -> TestResult {
         diagnostic,
         ContrastDiagnostic::try_new(LevelId::new(3), LevelId::new(4))?
     );
+    Ok(())
+}
+
+#[test]
+fn one_level_field_component_does_not_cite_an_isolated_anchor() -> TestResult {
+    let result = LevelProblem::try_new(
+        [
+            definition(1, LevelValue::try_fixed(0.0)?, 10)?,
+            definition(2, LevelValue::try_fixed(1.0)?, 11)?,
+        ],
+        [membership(1, 0.0, 20)?],
+        [],
+    );
+    let Err(LevelProblemError::MissingContrast { diagnostic }) = result else {
+        return Err(io::Error::other("expected one-level missing contrast").into());
+    };
+    assert_eq!(diagnostic.lower(), LevelId::new(1));
+    assert_eq!(diagnostic.upper(), None);
     Ok(())
 }
 

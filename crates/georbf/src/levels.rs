@@ -4,10 +4,11 @@
 //! observations, and minimum-gap order edges. Compilation produces only
 //! solver-neutral equalities and linear bounds; soft priors remain explicit
 //! objective metadata until the approved soft-loss backend is available.
-//! Validation rejects a positive order path between mathematically identical
-//! memberships and retains both memberships and the selected path as evidence.
-//! Distinct fixed or prior anchors prove contrast only when no identical Value
-//! membership hard-couples the two anchored levels.
+//! Validation closes equality transitively across shared mathematical Value
+//! evaluations. It rejects a positive order path or distinct fixed values
+//! between levels in one equality component and retains the selected membership
+//! chain as evidence. Distinct fixed or prior anchors prove contrast only when
+//! their levels belong to different membership-equality components.
 
 use std::error::Error;
 use std::fmt;
@@ -341,7 +342,9 @@ where
         let membership_indices = membership_level_indices(&levels, &memberships)?;
         let order_indices = order_level_indices(&levels, &orders)?;
         validate_isolation(&levels, &membership_indices, &order_indices)?;
-        validate_fixed_memberships(&levels, &memberships, &membership_indices)?;
+        let membership_equality =
+            MembershipEquality::try_new(levels.len(), &memberships, &membership_indices)?;
+        validate_fixed_memberships(&levels, &memberships, &membership_equality)?;
         let topological_indices = validate_dag(&levels, &orders, &order_indices)?;
         validate_membership_order_paths(
             &memberships,
@@ -349,16 +352,17 @@ where
             &membership_indices,
             &order_indices,
             &topological_indices,
+            &membership_equality,
         )?;
         validate_fixed_order_paths(&levels, &orders, &order_indices, &topological_indices)?;
         validate_gauge(&levels, &membership_indices, &order_indices)?;
         validate_contrast(
             &levels,
-            &memberships,
             &orders,
             &membership_indices,
             &order_indices,
             &topological_indices,
+            &membership_equality,
         )?;
 
         let mut topological_order = Vec::new();
@@ -829,7 +833,7 @@ pub enum LevelProblemError {
         /// Sources participating in the unresolved cyclic subgraph.
         sources: Vec<DiagnosticPath>,
     },
-    /// Two identical field functionals required different fixed values.
+    /// Two membership-equality-coupled levels required different fixed values.
     FixedMembershipConflict {
         /// First fixed level.
         first_level: LevelId,
@@ -838,13 +842,13 @@ pub enum LevelProblemError {
         /// Complete conflicting sources.
         sources: Vec<DiagnosticPath>,
     },
-    /// Identical field memberships contradicted a positive order path.
+    /// Membership-equality-coupled levels contradicted a positive order path.
     MembershipOrderConflict {
         /// Lower level on the conflicting order path.
         lower: LevelId,
         /// Upper level on the conflicting order path.
         upper: LevelId,
-        /// Both membership sources and every selected path edge.
+        /// The selected equality-chain memberships and every selected path edge.
         sources: Vec<DiagnosticPath>,
     },
     /// A transitive minimum-gap path contradicted fixed endpoints.
@@ -1140,60 +1144,72 @@ fn validate_isolation(
 fn validate_fixed_memberships<const D: usize>(
     levels: &[LevelDefinition],
     memberships: &[LevelMembership<D>],
-    membership_indices: &[usize],
+    membership_equality: &MembershipEquality,
 ) -> Result<(), LevelProblemError>
 where
     Dim<D>: SupportedDimension,
 {
-    for first in 0..memberships.len() {
-        let Some(first_value) = levels[membership_indices[first]].value.fixed() else {
+    for first in 0..levels.len() {
+        let Some(first_value) = levels[first].value.fixed() else {
             continue;
         };
-        for second in (first + 1)..memberships.len() {
-            let Some(second_value) = levels[membership_indices[second]].value.fixed() else {
+        for second in (first + 1)..levels.len() {
+            let Some(second_value) = levels[second].value.fixed() else {
                 continue;
             };
             if (first_value - second_value).abs() > 0.0
-                && same_membership_functional(
-                    &memberships[first].functional,
-                    &memberships[second].functional,
-                )
+                && membership_equality.same_component(first, second)
             {
+                let path = membership_equality
+                    .path_memberships(first, second)?
+                    .ok_or(LevelProblemError::InvalidGraphState)?;
+                let last = path
+                    .len()
+                    .checked_sub(1)
+                    .ok_or(LevelProblemError::InvalidGraphState)?;
+                let requested = path
+                    .len()
+                    .checked_add(2)
+                    .ok_or(LevelProblemError::CountOverflow)?;
                 let mut sources = Vec::new();
                 sources
-                    .try_reserve_exact(4)
-                    .map_err(|_| allocation_error(LevelStorage::ConflictSources, 4))?;
+                    .try_reserve_exact(requested)
+                    .map_err(|_| allocation_error(LevelStorage::ConflictSources, requested))?;
                 sources.push(
                     DiagnosticPath::try_observation_at_level(
-                        &levels[membership_indices[first]].provenance,
-                        memberships[first].level_id,
+                        &levels[first].provenance,
+                        levels[first].level_id,
                     )
                     .map_err(LevelProblemError::DiagnosticPath)?,
                 );
+                for membership_index in &path[..last] {
+                    let membership = &memberships[*membership_index];
+                    sources.push(
+                        DiagnosticPath::try_observation_at_level(
+                            &membership.provenance,
+                            membership.level_id,
+                        )
+                        .map_err(LevelProblemError::DiagnosticPath)?,
+                    );
+                }
                 sources.push(
                     DiagnosticPath::try_observation_at_level(
-                        &memberships[first].provenance,
-                        memberships[first].level_id,
+                        &levels[second].provenance,
+                        levels[second].level_id,
                     )
                     .map_err(LevelProblemError::DiagnosticPath)?,
                 );
+                let last_membership = &memberships[path[last]];
                 sources.push(
                     DiagnosticPath::try_observation_at_level(
-                        &levels[membership_indices[second]].provenance,
-                        memberships[second].level_id,
-                    )
-                    .map_err(LevelProblemError::DiagnosticPath)?,
-                );
-                sources.push(
-                    DiagnosticPath::try_observation_at_level(
-                        &memberships[second].provenance,
-                        memberships[second].level_id,
+                        &last_membership.provenance,
+                        last_membership.level_id,
                     )
                     .map_err(LevelProblemError::DiagnosticPath)?,
                 );
                 return Err(LevelProblemError::FixedMembershipConflict {
-                    first_level: memberships[first].level_id,
-                    second_level: memberships[second].level_id,
+                    first_level: levels[first].level_id,
+                    second_level: levels[second].level_id,
                     sources,
                 });
             }
@@ -1229,12 +1245,175 @@ where
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+struct MembershipEqualityEdge {
+    first_level: usize,
+    second_level: usize,
+    first_membership: usize,
+    second_membership: usize,
+}
+
+#[derive(Clone, Debug)]
+struct MembershipEquality {
+    parent: Vec<usize>,
+    edges: Vec<MembershipEqualityEdge>,
+}
+
+impl MembershipEquality {
+    fn try_new<const D: usize>(
+        level_count: usize,
+        memberships: &[LevelMembership<D>],
+        membership_indices: &[usize],
+    ) -> Result<Self, LevelProblemError>
+    where
+        Dim<D>: SupportedDimension,
+    {
+        let mut parent = Vec::new();
+        parent
+            .try_reserve_exact(level_count)
+            .map_err(|_| allocation_error(LevelStorage::GraphWork, level_count))?;
+        parent.extend(0..level_count);
+        let edge_capacity = level_count.saturating_sub(1);
+        let mut edges = Vec::new();
+        edges
+            .try_reserve_exact(edge_capacity)
+            .map_err(|_| allocation_error(LevelStorage::GraphWork, edge_capacity))?;
+
+        for first in 0..memberships.len() {
+            for second in (first + 1)..memberships.len() {
+                let first_level = membership_indices[first];
+                let second_level = membership_indices[second];
+                if first_level == second_level
+                    || !same_membership_functional(
+                        &memberships[first].functional,
+                        &memberships[second].functional,
+                    )
+                    || find_root(&parent, first_level) == find_root(&parent, second_level)
+                {
+                    continue;
+                }
+                union(&mut parent, first_level, second_level);
+                edges.push(MembershipEqualityEdge {
+                    first_level,
+                    second_level,
+                    first_membership: first,
+                    second_membership: second,
+                });
+            }
+        }
+        Ok(Self { parent, edges })
+    }
+
+    fn same_component(&self, first: usize, second: usize) -> bool {
+        find_root(&self.parent, first) == find_root(&self.parent, second)
+    }
+
+    fn path_memberships(
+        &self,
+        source: usize,
+        target: usize,
+    ) -> Result<Option<Vec<usize>>, LevelProblemError> {
+        if source == target {
+            return Ok(Some(Vec::new()));
+        }
+        if !self.same_component(source, target) {
+            return Ok(None);
+        }
+
+        let mut visited = try_false(self.parent.len(), LevelStorage::GraphWork)?;
+        let mut parent_edge = try_none_usize(self.parent.len(), LevelStorage::GraphWork)?;
+        let mut queue = Vec::new();
+        queue
+            .try_reserve_exact(self.parent.len())
+            .map_err(|_| allocation_error(LevelStorage::GraphWork, self.parent.len()))?;
+        visited[source] = true;
+        queue.push(source);
+        let mut next = 0;
+        while next < queue.len() && !visited[target] {
+            let node = queue[next];
+            next += 1;
+            for (edge_index, edge) in self.edges.iter().enumerate() {
+                let neighbor = if edge.first_level == node {
+                    edge.second_level
+                } else if edge.second_level == node {
+                    edge.first_level
+                } else {
+                    continue;
+                };
+                if !visited[neighbor] {
+                    visited[neighbor] = true;
+                    parent_edge[neighbor] = Some(edge_index);
+                    queue.push(neighbor);
+                }
+            }
+        }
+        if !visited[target] {
+            return Err(LevelProblemError::InvalidGraphState);
+        }
+
+        let mut path_edges = Vec::new();
+        path_edges
+            .try_reserve_exact(self.edges.len())
+            .map_err(|_| allocation_error(LevelStorage::GraphWork, self.edges.len()))?;
+        let mut cursor = target;
+        while cursor != source {
+            let edge_index = parent_edge[cursor].ok_or(LevelProblemError::InvalidGraphState)?;
+            path_edges.push(edge_index);
+            let edge = self.edges[edge_index];
+            cursor = if edge.first_level == cursor {
+                edge.second_level
+            } else if edge.second_level == cursor {
+                edge.first_level
+            } else {
+                return Err(LevelProblemError::InvalidGraphState);
+            };
+        }
+        path_edges.reverse();
+
+        let requested = path_edges
+            .len()
+            .checked_mul(2)
+            .ok_or(LevelProblemError::CountOverflow)?;
+        let mut path = Vec::new();
+        path.try_reserve_exact(requested)
+            .map_err(|_| allocation_error(LevelStorage::ConflictSources, requested))?;
+        cursor = source;
+        for edge_index in path_edges {
+            let edge = self.edges[edge_index];
+            let (first_membership, second_membership, next_level) = if edge.first_level == cursor {
+                (
+                    edge.first_membership,
+                    edge.second_membership,
+                    edge.second_level,
+                )
+            } else if edge.second_level == cursor {
+                (
+                    edge.second_membership,
+                    edge.first_membership,
+                    edge.first_level,
+                )
+            } else {
+                return Err(LevelProblemError::InvalidGraphState);
+            };
+            if path.last().copied() != Some(first_membership) {
+                path.push(first_membership);
+            }
+            if path.last().copied() != Some(second_membership) {
+                path.push(second_membership);
+            }
+            cursor = next_level;
+        }
+        Ok(Some(path))
+    }
+}
+
 fn validate_membership_order_paths<const D: usize>(
     memberships: &[LevelMembership<D>],
     orders: &[LevelOrder],
     membership_indices: &[usize],
     order_indices: &[(usize, usize)],
     topological_indices: &[usize],
+    membership_equality: &MembershipEquality,
 ) -> Result<(), LevelProblemError>
 where
     Dim<D>: SupportedDimension,
@@ -1243,9 +1422,14 @@ where
     let mut reachable = try_false(level_count, LevelStorage::GraphWork)?;
     let mut positive = try_false(level_count, LevelStorage::GraphWork)?;
     let mut parent_edge = try_none_usize(level_count, LevelStorage::GraphWork)?;
-    for (source_membership_index, source_level_index) in
-        membership_indices.iter().copied().enumerate()
-    {
+    let mut has_membership = try_false(level_count, LevelStorage::GraphWork)?;
+    for level_index in membership_indices {
+        has_membership[*level_index] = true;
+    }
+    for source_level_index in 0..level_count {
+        if !has_membership[source_level_index] {
+            continue;
+        }
         reachable.fill(false);
         positive.fill(false);
         parent_edge.fill(None);
@@ -1270,17 +1454,22 @@ where
             }
         }
 
-        for (target_membership_index, target_level_index) in
-            membership_indices.iter().copied().enumerate()
-        {
-            if !positive[target_level_index]
-                || !same_membership_functional(
-                    &memberships[source_membership_index].functional,
-                    &memberships[target_membership_index].functional,
-                )
+        for target_level_index in 0..level_count {
+            if target_level_index == source_level_index
+                || !has_membership[target_level_index]
+                || !positive[target_level_index]
+                || !membership_equality.same_component(source_level_index, target_level_index)
             {
                 continue;
             }
+
+            let membership_path = membership_equality
+                .path_memberships(source_level_index, target_level_index)?
+                .ok_or(LevelProblemError::InvalidGraphState)?;
+            let last_membership = membership_path
+                .len()
+                .checked_sub(1)
+                .ok_or(LevelProblemError::InvalidGraphState)?;
 
             let mut path = Vec::new();
             path.try_reserve_exact(orders.len()).map_err(|_| {
@@ -1297,15 +1486,20 @@ where
             }
             path.reverse();
 
-            let requested = path.len().saturating_add(2);
+            let requested = path
+                .len()
+                .checked_add(membership_path.len())
+                .ok_or(LevelProblemError::CountOverflow)?;
             let mut sources = Vec::new();
             sources
                 .try_reserve_exact(requested)
                 .map_err(|_| allocation_error(LevelStorage::ConflictSources, requested))?;
-            sources.push(
-                DiagnosticPath::try_observation(&memberships[source_membership_index].provenance)
-                    .map_err(LevelProblemError::DiagnosticPath)?,
-            );
+            for membership_index in &membership_path[..last_membership] {
+                sources.push(
+                    DiagnosticPath::try_observation(&memberships[*membership_index].provenance)
+                        .map_err(LevelProblemError::DiagnosticPath)?,
+                );
+            }
             for edge_index in path {
                 sources.push(
                     DiagnosticPath::try_observation(&orders[edge_index].provenance)
@@ -1313,12 +1507,14 @@ where
                 );
             }
             sources.push(
-                DiagnosticPath::try_observation(&memberships[target_membership_index].provenance)
-                    .map_err(LevelProblemError::DiagnosticPath)?,
+                DiagnosticPath::try_observation(
+                    &memberships[membership_path[last_membership]].provenance,
+                )
+                .map_err(LevelProblemError::DiagnosticPath)?,
             );
             return Err(LevelProblemError::MembershipOrderConflict {
-                lower: memberships[source_membership_index].level_id,
-                upper: memberships[target_membership_index].level_id,
+                lower: memberships[membership_path[0]].level_id,
+                upper: memberships[membership_path[last_membership]].level_id,
                 sources,
             });
         }
@@ -1674,17 +1870,14 @@ fn validate_gauge(
     Ok(())
 }
 
-fn validate_contrast<const D: usize>(
+fn validate_contrast(
     levels: &[LevelDefinition],
-    memberships: &[LevelMembership<D>],
     orders: &[LevelOrder],
     membership_indices: &[usize],
     order_indices: &[(usize, usize)],
     topological_indices: &[usize],
-) -> Result<(), LevelProblemError>
-where
-    Dim<D>: SupportedDimension,
-{
+    membership_equality: &MembershipEquality,
+) -> Result<(), LevelProblemError> {
     let field_node = levels.len();
     let node_count = levels
         .len()
@@ -1739,7 +1932,7 @@ where
     }
 
     let has_distinct_anchors =
-        has_distinct_anchor_memberships(levels, memberships, membership_indices, &has_membership);
+        has_distinct_anchor_memberships(levels, &has_membership, membership_equality);
     if !has_gap && !has_distinct_anchors {
         let first_index = membership_indices[0];
         let second_index = membership_indices
@@ -1749,29 +1942,23 @@ where
             .or_else(|| {
                 (0..levels.len())
                     .find(|index| *index != first_index && find_root(&parent, *index) == field_root)
-            })
-            .or_else(|| (0..levels.len()).find(|index| *index != first_index))
-            .ok_or(LevelProblemError::InvalidGraphState)?;
-        return Err(LevelProblemError::MissingContrast {
-            diagnostic: ContrastDiagnostic::try_new(
-                levels[first_index].level_id,
-                levels[second_index].level_id,
-            )
-            .map_err(LevelProblemError::DiagnosticValue)?,
-        });
+            });
+        let diagnostic = if let Some(second_index) = second_index {
+            ContrastDiagnostic::try_new(levels[first_index].level_id, levels[second_index].level_id)
+                .map_err(LevelProblemError::DiagnosticValue)?
+        } else {
+            ContrastDiagnostic::single(levels[first_index].level_id)
+        };
+        return Err(LevelProblemError::MissingContrast { diagnostic });
     }
     Ok(())
 }
 
-fn has_distinct_anchor_memberships<const D: usize>(
+fn has_distinct_anchor_memberships(
     levels: &[LevelDefinition],
-    memberships: &[LevelMembership<D>],
-    membership_indices: &[usize],
     has_membership: &[bool],
-) -> bool
-where
-    Dim<D>: SupportedDimension,
-{
+    membership_equality: &MembershipEquality,
+) -> bool {
     for first_index in 0..levels.len() {
         if !has_membership[first_index] {
             continue;
@@ -1783,42 +1970,13 @@ where
             if has_membership[second_index]
                 && anchor_value(second.value)
                     .is_some_and(|second_value| (second_value - first_value).abs() > 0.0)
-                && have_no_identical_membership_functionals(
-                    first_index,
-                    second_index,
-                    memberships,
-                    membership_indices,
-                )
+                && !membership_equality.same_component(first_index, second_index)
             {
                 return true;
             }
         }
     }
     false
-}
-
-fn have_no_identical_membership_functionals<const D: usize>(
-    first_level_index: usize,
-    second_level_index: usize,
-    memberships: &[LevelMembership<D>],
-    membership_indices: &[usize],
-) -> bool
-where
-    Dim<D>: SupportedDimension,
-{
-    !memberships
-        .iter()
-        .zip(membership_indices)
-        .filter(|(_, level_index)| **level_index == first_level_index)
-        .any(|(first, _)| {
-            memberships
-                .iter()
-                .zip(membership_indices)
-                .filter(|(_, level_index)| **level_index == second_level_index)
-                .any(|(second, _)| {
-                    same_membership_functional(&first.functional, &second.functional)
-                })
-        })
 }
 
 const fn anchor_value(value: LevelValue) -> Option<f64> {

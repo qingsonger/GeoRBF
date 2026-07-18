@@ -32,9 +32,12 @@ checked per connected component formed by level-order edges and memberships to
 the shared scalar field; contrast must occur in the field-connected component.
 Fixed-order conflict review includes transitive path gaps, while the emitted
 canonical problem retains the original individual hard constraints. A positive
-order path between two mathematically identical membership evaluations is
-rejected with both membership sources and the selected path sources because the
-membership equalities force the corresponding level gap to zero.
-Likewise, distinct fixed or prior anchor values establish contrast only when no
-mathematically identical membership hard-couples the anchored levels; a soft
-prior is never promoted to a hard equality to manufacture contrast.
+order path between levels in the transitive equality closure induced by shared
+mathematical Value evaluations is rejected with the deterministic membership
+chain and selected path sources because the membership equalities force the
+corresponding level gap to zero. Distinct fixed values in one closure are
+rejected with the same chain evidence. Likewise, distinct fixed or prior anchor
+values establish contrast only when their levels belong to different
+membership-equality components; a soft prior is never promoted to a hard
+equality to manufacture contrast. A one-level failing field component is
+reported without borrowing an unrelated isolated anchor as evidence.

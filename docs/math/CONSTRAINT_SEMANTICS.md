@@ -42,29 +42,32 @@ objective backend exists.
 The compiler requires at least two levels and one field membership. It rejects
 duplicate identifiers, missing references, self edges, negative or non-finite
 gaps, and unknown levels with neither a membership nor an order edge. A stable
-topological pass rejects every directed cycle. Hard-conflict review checks
-mathematically identical Value evaluations, independent of functional
-provenance, assigned to different fixed levels or joined by a positive
-minimum-gap path. It also checks transitive minimum-gap paths whose fixed
-endpoint values cannot satisfy the accumulated gap. Path sums and fixed-endpoint
-differences use an overflow-safe scaled comparison. Near a floating-point
-equality boundary, the precheck is conservative; the original individual hard
-rows remain unchanged in canonical form. Identical-membership order conflicts
-retain both membership sources and every edge of the selected positive path.
+topological pass rejects every directed cycle. Hard-conflict review forms the
+transitive level-equality closure induced by mathematically identical Value
+evaluations, independent of functional provenance. A shared evaluation equates
+its levels, and chains through a level's other memberships propagate that
+equality. Different fixed values or a positive minimum-gap path within one such
+component are infeasible; diagnostics retain both fixed definitions when
+applicable, a deterministic membership chain proving equality, and every edge
+of the selected order path. The review also checks transitive minimum-gap paths
+whose fixed endpoint values cannot satisfy the accumulated gap. Path sums and
+fixed-endpoint differences use an overflow-safe scaled comparison. Near a
+floating-point equality boundary, the precheck is conservative; the original
+individual hard rows remain unchanged in canonical form.
 
 Gauge review treats memberships as edges to the shared scalar field and order
 relations as edges between levels. Every resulting connected component needs a
 fixed value or explicit prior. Nonzero contrast must be proved between two
 membership-coupled level functionals through a positive minimum-gap path or
 distinct fixed/prior anchors on those coupled levels. Distinct anchor values
-count only when no mathematically identical Value membership hard-couples the
-two anchored levels; in particular, a soft prior mean cannot override their
-shared hard field equality. A positive gap or distinct anchor on a
-membershipless level cannot manufacture field contrast.
-Missing-contrast evidence names the failing field component rather than
-unrelated isolated anchors. Reference point differencing is an optional
-internal elimination of the same explicit variables, never a separate model
-type.
+count only when the two anchored levels belong to different
+membership-equality components; in particular, a soft prior mean cannot
+override a direct or transitive hard field equality. A positive gap or distinct
+anchor on a membershipless level cannot manufacture field contrast.
+Missing-contrast evidence names only the failing field component and represents
+a component with one membership-bearing level without citing an unrelated
+isolated anchor. Reference point differencing is an optional internal
+elimination of the same explicit variables, never a separate model type.
 
 Canonical variable order is the caller's field blocks followed by one
 deterministic `levels` block in definition insertion order. Memberships compile

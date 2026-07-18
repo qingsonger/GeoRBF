@@ -32,13 +32,17 @@ provenance, structured diagnostics, and the solver-neutral canonical IR. It
 owns stable fixed, unknown, and prior level definitions; hard memberships;
 minimum-gap order DAGs; connected-component gauge review; field contrast; and
 source-aware membership and fixed conflicts. Memberships admit only one
-unit-weight Value atom, a positive order path cannot connect mathematically
-identical memberships, cycle evidence contains only cycle-participating edges,
-fixed-path comparison is overflow safe, and contrast must reach two
+unit-weight Value atom. A deterministic spanning forest represents the
+transitive level-equality closure induced by shared mathematical Value
+evaluations and retains a proving membership chain without quadratic edge
+storage. A positive order path or distinct fixed values cannot connect levels
+in one equality component, cycle evidence contains only cycle-participating
+edges, fixed-path comparison is overflow safe, and contrast must reach two
 membership-coupled levels. It accepts distinct fixed/prior anchors as contrast
-only when identical Value memberships do not hard-couple those levels. It
-appends one explicit level-variable block to
-caller field variables and emits only canonical equality and linear-bound rows.
+only when their levels belong to different equality components, and its
+missing-contrast evidence can represent a one-level field component without an
+unrelated anchor. It appends one explicit level-variable block to caller field
+variables and emits only canonical equality and linear-bound rows.
 Soft priors remain typed objective metadata until the approved convex objective
 backend is integrated. The level layer does not solve inequalities, eliminate
 levels into a separate model type, select kernels or centers, or introduce

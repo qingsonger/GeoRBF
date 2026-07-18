@@ -28,37 +28,40 @@ shared field node, then requires a fixed or prior anchor in every component.
 Nonzero contrast must be forced between two membership-coupled levels through a
 positive path gap or distinct fixed/prior anchors on those levels. A
 membershipless level cannot supply field contrast. Distinct anchor values count
-only when no mathematically identical Value membership hard-couples the
-anchored levels, so a soft prior mean cannot manufacture contrast against a
-shared hard field equality. Missing-contrast diagnostics identify the failing
-field component.
+only when their levels belong to different transitive membership-equality
+components, so a soft prior mean cannot manufacture contrast against a direct
+or chained hard field equality. Missing-contrast diagnostics identify only the
+failing field component and represent its one-level case without citing an
+unrelated isolated anchor.
 
-Hard-conflict review rejects the same mathematical Value evaluation assigned to
-distinct fixed values regardless of functional provenance, retaining both fixed
-definitions and both membership sources. It also propagates longest
+Hard-conflict review closes equality transitively across shared mathematical
+Value evaluations regardless of functional provenance. It rejects distinct
+fixed values in one equality component, retaining both fixed definitions and a
+deterministic membership chain proving the conflict. It also propagates longest
 minimum-gap paths through the DAG with an overflow-safe scaled representation
 and rejects fixed endpoints that cannot satisfy a direct or transitive required
 gap, retaining endpoint and path sources. A scale-aware roundoff allowance
 makes the semantic precheck conservative at a floating-point boundary; emitted
 individual hard rows are never changed, dropped, softened, or regularized.
 
-Positive direct or transitive order paths between two mathematically identical
-membership evaluations are also rejected because the membership equalities
+Positive direct or transitive order paths between two levels in one transitive
+membership-equality component are also rejected because the membership rows
 force the corresponding level values equal. The structured
-`MembershipOrderConflict` retains both independently sourced memberships and
-every order edge on the selected positive path without emitting or altering any
-hard row.
+`MembershipOrderConflict` retains the deterministic equality-chain memberships
+and every order edge on the selected positive path without emitting or altering
+any hard row.
 
-Eighteen independent tests cover fixed/unknown/prior compilation, explicit
+Twenty independent tests cover fixed/unknown/prior compilation, explicit
 variable indices and signs, prior retention, membership units, deterministic
 topological ties, exact cycle sources, ordinary and extreme transitive fixed
 conflicts, provenance-independent same-functional conflicts with complete
 sources, identical-membership positive-order infeasibility with complete path
 sources, per-component gauge, membership-coupled contrast, identical-membership
-fixed/prior anchor rejection and diagnostic evidence, isolation, undefined
-references, constructor bypass attempts, numeric validation, linearizer
-failures, out-of-range affine terms, and `Send + Sync` across D=1, D=2, and D=3
-public problem types. The focused benchmark builds,
+fixed/prior anchor rejection and diagnostic evidence, transitive membership
+equality conflicts with complete chain sources, one-level component evidence,
+isolation, undefined references, constructor bypass attempts, numeric
+validation, linearizer failures, out-of-range affine terms, and `Send + Sync`
+across D=1, D=2, and D=3 public problem types. The focused benchmark builds,
 validates, and canonicalizes a deterministic 64-level chain; the smoke run
 completed successfully.
 

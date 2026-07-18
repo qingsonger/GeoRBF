@@ -631,12 +631,13 @@ impl GaugeDiagnostic {
     }
 }
 
-/// Structured evidence for a missing level contrast.
+/// Structured evidence for a missing level contrast in a one- or two-level
+/// field component.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[must_use]
 pub struct ContrastDiagnostic {
     lower: LevelId,
-    upper: LevelId,
+    upper: Option<LevelId>,
 }
 
 impl ContrastDiagnostic {
@@ -650,7 +651,18 @@ impl ContrastDiagnostic {
         if lower == upper {
             return Err(DiagnosticValueError::SameContrastLevel { level_id: lower });
         }
-        Ok(Self { lower, upper })
+        Ok(Self {
+            lower,
+            upper: Some(upper),
+        })
+    }
+
+    /// Constructs evidence for a field component containing only one level.
+    pub const fn single(level: LevelId) -> Self {
+        Self {
+            lower: level,
+            upper: None,
+        }
     }
 
     /// Returns the lower level identifier.
@@ -658,8 +670,10 @@ impl ContrastDiagnostic {
         self.lower
     }
 
-    /// Returns the upper level identifier.
-    pub const fn upper(self) -> LevelId {
+    /// Returns the second level identifier, or `None` for a one-level field
+    /// component.
+    #[must_use]
+    pub const fn upper(self) -> Option<LevelId> {
         self.upper
     }
 }
@@ -1088,12 +1102,20 @@ fn fmt_contrast(
 ) -> fmt::Result {
     formatter.write_str("missing contrast")?;
     write_optional_source(formatter, source)?;
-    write!(
-        formatter,
-        ": levels {} and {} have no usable contrast",
-        diagnostic.lower().identifier(),
-        diagnostic.upper().identifier()
-    )
+    if let Some(upper) = diagnostic.upper() {
+        write!(
+            formatter,
+            ": levels {} and {} have no usable contrast",
+            diagnostic.lower().identifier(),
+            upper.identifier()
+        )
+    } else {
+        write!(
+            formatter,
+            ": level {} has no second field-coupled level",
+            diagnostic.lower().identifier()
+        )
+    }
 }
 
 fn fmt_infeasible(
