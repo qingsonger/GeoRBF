@@ -190,3 +190,12 @@ fresh review and local validation before integration.
   registry, review-evidence, history-index, and bounded-handoff change. That
   change introduces no production, test, manifest, schema, CI, build, API,
   normative, numerical, dependency, tag, or release change.
+- The isolated integration-state change is tracked by PR #80 on branch
+  `codex/req-spike-004-integration-state` and must pass its own complete local
+  standard gate and exact Ready-head Windows/Ubuntu/macOS CI before merging.
+- Its final registry and documentation tree passed workspace format,
+  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
+  workspace Rustdoc, all 58 requirement checks, and `git diff --check`. The
+  subsequent edit records only this validation evidence; no production, test,
+  manifest, schema, CI, build, registry, API, normative, numerical, or
+  dependency input changed after that gate.

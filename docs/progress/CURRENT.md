@@ -10,6 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-SPIKE-004, Issue #78 (closed)
 - Implementation pull request: #79, squash-merged as `60f9bb6e`
 - Integration-state branch: `codex/req-spike-004-integration-state`
+- Integration-state pull request: #80 (Draft until exact Ready CI is green)
 - Review record: `docs/reviews/PR-79-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-CONVEX-001 (`planned`)
@@ -54,16 +55,19 @@ records, benchmark reports, Git, and GitHub.
   complete-diff whitespace checks.
 - Exact implementation Ready-head and post-merge `main` three-platform gates
   are green as recorded above.
-- The isolated integration-state tree has not yet run its final complete local
-  standard gate; it must pass before the integration-state PR becomes Ready.
+- The isolated integration-state tree passed the complete local standard gate:
+  format, warning-denying all-target/all-feature Clippy, all-feature workspace
+  tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+  The following edit records only this validation evidence; no production,
+  test, manifest, schema, CI, build, registry, API, normative, numerical, or
+  dependency input changed after the gate.
 
 ## Next task
 
-Publish the isolated integration-state branch as a Draft PR, add its assigned
-PR number to the durable index and handoff, run the complete local standard
-gate on the final tree, and mark the PR Ready. Wait for exact-head Windows,
-Ubuntu, and macOS correctness plus every benchmark smoke, merge exactly once
-only when green, then stop. Do not begin REQ-CONVEX-001 in this task.
+Synchronize the final integration-state evidence on PR #80 and mark it Ready.
+Wait for exact-head Windows, Ubuntu, and macOS correctness plus every benchmark
+smoke, merge exactly once only when green, then stop. Do not begin
+REQ-CONVEX-001 in this task.
 
 ## Checks not yet available
 
