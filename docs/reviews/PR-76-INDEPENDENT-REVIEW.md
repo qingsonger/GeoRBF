@@ -9,7 +9,8 @@
   `8931260b6d37aa87bd82fa9416bd97d119c6d134`
 - Base head: `639289fad1b03f84efd0b7a590516cbca74d5429`
 - Review date: 2026-07-19
-- Result: repair required for R76-001; no other P0-P3 finding remains
+- Result: R76-001 repaired at `b1f15d547333e17b8c8462014046a7b93e5ece00`;
+  fresh independent re-review required; no other original P0-P3 finding remains
 
 ## Scope and independence
 
@@ -81,6 +82,32 @@ dropping, or rewriting any relation.
 Apart from R76-001, the reviewed implementation, tests, benchmark, interfaces,
 registry, and documentation were consistent with the bounded requirement.
 
+## Repair evidence (not an independent re-review)
+
+The Repair task first added
+`field_level_composition_rejects_duplicate_observation_ids`, which reused level
+definition observation ID 100 in a separately valid field hard bound. The test
+failed against the reviewed implementation because composition returned a
+canonical problem instead of `ProblemIrError::DuplicateObservationId`.
+
+Exact repaired implementation head
+`b1f15d547333e17b8c8462014046a7b93e5ece00` enumerates provenance identifiers
+from hard equalities, hard bounds, hard cones, and soft objectives in both
+canonical inputs and rejects the first cross-input duplicate before appending
+any row or objective. It does not modify, drop, reorder, soften, scale, or
+regularize a relation.
+
+On that exact clean head, all eight linear-constraint tests and all 21 level
+tests passed. The complete standard gate also passed: formatting, warning-
+denying workspace/all-target/all-feature Clippy, all-feature workspace tests,
+workspace Rustdoc, all 58 requirement checks, and `git diff --check`. The
+subsequent handoff commit changes only this review record and
+`docs/progress/CURRENT.md`; no production, test, manifest, schema, CI, build,
+registry, API, numerical, or dependency input changed after the gate.
+
+This repair evidence is not an independent re-review. PR #76 remains Draft;
+Ready CI, merge, and integration-state recording have not occurred.
+
 ## Validation evidence reviewed
 
 - The exact implementation head passed the recorded complete standard local
@@ -101,9 +128,9 @@ registry, and documentation were consistent with the bounded requirement.
 
 ## Required next action
 
-Open a fresh Repair task limited to R76-001. Add the independent cross-problem
-duplicate-ID regression, implement the smallest complete structured rejection,
-run focused checks and then the complete standard workspace gate once on the
-stable repaired head, update this review evidence and the bounded handoff,
-commit, push, and stop for a fresh independent re-review. Do not mark PR #76
-Ready, merge it, or begin another requirement in that Repair task.
+Open a fresh Review/re-review task limited to PR #76 and REQ-LINEQ-001. Supply
+the project `math_reviewer` only the bounded requirement/dependency context,
+normative documents, PR diff, original finding, repair, and exact-head
+validation evidence. If no P0-P3 finding remains, follow the repository's
+Ready-CI-merge-integration sequence on that fresh task. Do not begin another
+requirement before REQ-LINEQ-001 is truthfully integrated.

@@ -6,61 +6,64 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; Repair required for R76-001
+- Mode: Repair complete; fresh independent re-review required for R76-001
 - Requirement: REQ-LINEQ-001, Issue #75 (open)
 - Branch: `codex/req-lineq-001-linear-bounds`
 - Draft implementation pull request: #76
-- Reviewed head: `0da5084c3b4f7f909299069c3c8dcf3145d1f282`
+- Exact repaired implementation and complete local-gate head:
+  `b1f15d547333e17b8c8462014046a7b93e5ece00`
 - Registry state remains `implemented`
 - Dependencies: REQ-IR-001 and REQ-LEVEL-001 are `integrated`
-- No later requirement may start until REQ-LINEQ-001 is repaired,
-  independently re-reviewed, passed through exact Ready CI, merged, and
-  recorded as `integrated`
+- No later requirement may start until REQ-LINEQ-001 is independently
+  re-reviewed, passed through exact Ready CI, merged, and recorded as
+  `integrated`
 
-## Independent review result
+## Repair result
 
-- The fresh read-only project `math_reviewer` found no P0, P1, or P3 issue and
-  one P2 issue, recorded as R76-001 in
-  `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`.
-- R76-001: field and level inputs each enforce stable observation-ID uniqueness
-  internally, but canonical composition does not recheck IDs across the two
-  inputs. It can therefore return one canonical problem with ambiguous duplicate
-  provenance identities.
-- Formula signs and units, closed region boundaries, scalar and level gap
-  orientation, monotonicity direction and functional shape, exact row reversal,
-  hard infeasibility evidence, hard/soft separation, D=1/D=2/D=3 behavior,
-  allocation paths, interfaces, benchmark, registry, and documentation were
-  otherwise consistent with the requirement.
+- R76-001 is repaired in production code and regression coverage, but has not
+  yet received the required fresh independent re-review.
+- Composition now compares stable observation identifiers across every hard
+  equality, hard bound, hard cone, and soft objective in the level and field
+  canonical inputs before appending any record.
+- The new regression reuses level-definition observation ID 100 in an otherwise
+  valid field hard bound. It failed before the production repair and now returns
+  `ProblemIrError::DuplicateObservationId` with the duplicated identifier.
+- No relation is changed, dropped, reordered, softened, scaled, regularized, or
+  repaired automatically.
 
 ## Validation state
 
-- Exact implementation head `8931260` retains its complete green local standard
-  gate; `8931260..0da5084` changes only this bounded handoff.
-- Exact reviewed head `0da5084` passed Draft Ubuntu correctness CI.
-- The independent reviewer repeated all seven focused tests, the complete
-  Rustdoc suite, example, benchmark smoke, all 58 requirement checks, and
-  whitespace checks; all passed.
-- The parent Review task passed all seven linear-constraint tests, all 21 level
-  tests, the example, benchmark smoke, all georbf Rustdoc, all 58 requirement
-  checks, and `git diff --check`.
-- No repair, re-review, Ready transition, merge, integration, tag, or release
-  is claimed.
+- On exact repaired head `b1f15d5`, all eight linear-constraint tests and all 21
+  level tests passed.
+- The complete standard gate passed on exact repaired head `b1f15d5`:
+  formatting, warning-denying workspace/all-target/all-feature Clippy,
+  all-feature workspace tests, workspace Rustdoc, all 58 requirement checks,
+  and `git diff --check`.
+- The following evidence-only commit changes only this bounded handoff and
+  `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`; no production, test, manifest,
+  schema, CI, build, registry, API, numerical, or dependency input changed after
+  the complete gate.
+- No fresh re-review, Ready transition, three-platform/benchmark-smoke CI,
+  merge, integration-state change, tag, or release is claimed.
 
 ## Next task
 
-Open a fresh Repair task limited to R76-001. Add a regression in which one field
-bound reuses the observation ID of a level record and require structured
-rejection during composition. Implement the smallest complete cross-problem
-provenance-identity check, run focused checks, then the complete standard gate
-once on the stable repaired head. Update review evidence and this bounded
-handoff, commit, push, and stop for a fresh independent re-review. Do not begin
-another requirement.
+Open a fresh Review/re-review task limited to PR #76 and REQ-LINEQ-001. Create
+and wait for the read-only project `math_reviewer`, providing only the bounded
+requirement/dependency context, normative documents, PR diff, original finding,
+repair, and validation evidence. The reviewer must independently confirm that
+R76-001 is closed and check for new P0-P3 findings. If clean, synchronize review
+evidence, mark PR #76 Ready, wait for complete Windows/Ubuntu/macOS and all
+benchmark-smoke CI on that exact ready head, merge exactly once only when green,
+and record truthful integration state in an isolated follow-up change. Then
+stop; do not begin another requirement in the same task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #75
 - Draft implementation pull request: GitHub PR #76
-- Independent review: `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`
+- Independent review and repair evidence:
+  `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-LINEQ-001.md`
 - Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
 - Architecture: `docs/architecture/PROBLEM_IR.md` and
