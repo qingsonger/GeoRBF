@@ -1198,6 +1198,27 @@ pub struct CanonicalProblem {
 }
 
 impl CanonicalProblem {
+    fn observation_ids(&self) -> impl Iterator<Item = ObservationId> + '_ {
+        self.equalities
+            .iter()
+            .map(|equality| equality.provenance().observation_id())
+            .chain(
+                self.linear_bounds
+                    .iter()
+                    .map(|bound| bound.provenance().observation_id()),
+            )
+            .chain(
+                self.cones
+                    .iter()
+                    .map(|cone| cone.provenance().observation_id()),
+            )
+            .chain(
+                self.soft_objectives
+                    .iter()
+                    .map(|objective| objective.provenance().observation_id()),
+            )
+    }
+
     pub(crate) fn try_from_linear_parts_and_objectives(
         variable_blocks: impl IntoIterator<Item = VariableBlock>,
         equalities: Vec<CanonicalEquality>,
@@ -1245,6 +1266,12 @@ impl CanonicalProblem {
             })
         {
             return Err(ProblemIrError::NonLinearCanonicalComposition);
+        }
+        if let Some(identifier) = field_problem.observation_ids().find(|candidate| {
+            self.observation_ids()
+                .any(|existing| existing == *candidate)
+        }) {
+            return Err(ProblemIrError::DuplicateObservationId { identifier });
         }
 
         let Self {

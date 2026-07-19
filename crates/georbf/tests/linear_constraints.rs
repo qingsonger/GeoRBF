@@ -578,6 +578,64 @@ fn field_bounds_compose_with_explicit_level_rows_without_rewriting_them() -> Tes
 }
 
 #[test]
+fn field_level_composition_rejects_duplicate_observation_ids() -> TestResult {
+    let levels = LevelProblem::try_new(
+        [
+            LevelDefinition::new(
+                LevelId::new(10),
+                LevelValue::try_fixed(0.0)?,
+                provenance(100)?,
+            ),
+            LevelDefinition::new(
+                LevelId::new(20),
+                LevelValue::try_fixed(1.0)?,
+                provenance(101)?,
+            ),
+        ],
+        [
+            LevelMembership::new(
+                LevelId::new(10),
+                value_functional::<1>(0)?,
+                provenance(102)?,
+            ),
+            LevelMembership::new(
+                LevelId::new(20),
+                value_functional::<1>(1)?,
+                provenance(103)?,
+            ),
+        ],
+        [LevelOrder::try_new(
+            LevelId::new(10),
+            LevelId::new(20),
+            0.5,
+            provenance(104)?,
+        )?],
+    )?;
+    let field_block = one_block(2)?;
+    let compiled_levels = levels.try_compile([field_block.clone()], |functional, _| {
+        linearize(functional, 2)
+    })?;
+    let duplicate = SemanticProblemIr::try_new(
+        [LinearConstraint::try_lower(
+            provenance(100)?,
+            value_functional::<1>(0)?,
+            -2.0,
+            Enforcement::Hard,
+        )?
+        .try_into_semantic_constraint()?],
+        ExecutionOptions::default(),
+    )?
+    .try_compile([field_block], |functional, _| linearize(functional, 2))?;
+
+    assert!(matches!(
+        compiled_levels.try_compose_field_linear_problem(duplicate),
+        Err(ProblemIrError::DuplicateObservationId { identifier })
+            if identifier == ObservationId::new(100)
+    ));
+    Ok(())
+}
+
+#[test]
 fn infeasible_constant_row_is_rejected_without_a_solver() -> TestResult {
     let constraint = LinearConstraint::try_lower(
         provenance(8)?,

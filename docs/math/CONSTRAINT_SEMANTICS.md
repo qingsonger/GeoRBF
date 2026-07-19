@@ -76,8 +76,10 @@ exactly match the level problem's field-block prefix. Membership and fixed rows
 remain first, level-order bounds remain the bound prefix, level priors remain
 the objective prefix, and field bounds/objectives append in their own semantic
 order. Scaling, capabilities, memory estimates, and exact cross-problem hard
-conflicts are recomputed from the unchanged rows. Equalities, cones, or a
-different variable space are rejected rather than reinterpreted.
+conflicts are recomputed from the unchanged rows. Before appending, composition
+also rejects any stable observation identifier already used by a hard or soft
+level-side record. Equalities, cones, or a different variable space are rejected
+rather than reinterpreted.
 
 ## Level variables
 

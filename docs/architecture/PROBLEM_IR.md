@@ -37,7 +37,10 @@ hard field bounds after level-order rows and soft field-bound objectives after
 level priors, then reconstructs one immutable `CanonicalProblem`. Memberships,
 fixed rows, order rows, priors, and field relations retain their original
 coefficients, bounds, provenance, and relative order. Non-bound relation
-families and mismatched spaces fail structurally.
+families, mismatched spaces, and stable observation identifiers duplicated
+across the two canonical inputs fail structurally. The cross-input identity
+check covers both hard relations and soft objectives before any record is
+appended.
 
 ## CanonicalProblem
 

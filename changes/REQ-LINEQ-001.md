@@ -25,7 +25,9 @@ compiled level problem's field prefix. It preserves membership/fixed
 equalities, level-order bounds, level priors, and their order, appends field
 bounds/objectives in semantic order, and rebuilds capabilities, identity
 scaling, checked memory estimates, and cross-problem exact conflict review.
-Mismatched spaces or non-bound relation families are rejected structurally.
+Mismatched spaces, non-bound relation families, or a stable observation
+identifier duplicated across any hard or soft record in the two inputs are
+rejected structurally before composition.
 
 Canonical construction now rejects a hard constant row whose closed interval
 excludes zero. It also compares hard bound rows for exact coefficient equality
@@ -37,12 +39,13 @@ does not claim general LP infeasibility, near-duplicate detection, scaling,
 regularization, jitter, pseudoinverse repair, constraint deletion, or
 hard-to-soft conversion.
 
-Seven independent tests cover all relation mappings and signs, both region
+Eight independent tests cover all relation mappings and signs, both region
 orientations, scalar-gap coefficient signs, increasing/decreasing monotonicity,
 invalid numeric and functional shapes, exact same/sign-reversed hard conflicts,
 constant-row infeasibility, feasible touching intervals, provenance and
 insertion order, D=1/D=2/D=3, field/level composition with unchanged row
-prefixes and variable identities, mismatched field spaces, and `Send + Sync`.
+prefixes and variable identities, cross-input duplicate observation IDs,
+mismatched field spaces, and `Send + Sync`.
 Existing level tests retain independent layer-order gap, DAG, gauge, contrast,
 and infeasibility truth. A runnable example and a deterministic 96-constraint
 benchmark accompany the Rustdoc and normative documentation.
