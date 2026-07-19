@@ -7,10 +7,11 @@ use std::num::{NonZeroU32, NonZeroUsize};
 
 use georbf::{
     AffineExpression, AffineTerm, ConvexBackendStatus, ConvexSolveError, ConvexSolveOptions,
-    Enforcement, ExecutionOptions, FunctionalAtom, FunctionalExpr, FunctionalProvenance,
-    FunctionalTerm, ObservationFunctional, ObservationId, Point, SemanticConstraint,
-    SemanticExpression, SemanticProblemIr, SemanticProvenance, SemanticRelation, SoftLoss,
-    SourceLocation, VariableBlock, try_solve_canonical,
+    Enforcement, ExecutionControl, ExecutionOptions, FunctionalAtom, FunctionalExpr,
+    FunctionalProvenance, FunctionalTerm, ObservationFunctional, ObservationId, Point,
+    SemanticConstraint, SemanticExpression, SemanticProblemIr, SemanticProvenance,
+    SemanticRelation, SoftLoss, SourceLocation, VariableBlock, try_solve_canonical,
+    try_solve_canonical_with_control,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -323,6 +324,184 @@ fn mixed_l1_huber_bounds_and_cone_preserve_hard_constraints() -> TestResult {
 }
 
 #[test]
+fn semantic_objective_matches_nonzero_analytic_loss_table() -> TestResult {
+    let semantic = SemanticProblemIr::try_new(
+        [
+            constraint(
+                60,
+                SemanticRelation::Equality {
+                    expression: expression(60)?,
+                    target: 2.0,
+                },
+                Enforcement::Hard,
+            )?,
+            constraint(
+                61,
+                SemanticRelation::Equality {
+                    expression: expression(61)?,
+                    target: 0.0,
+                },
+                Enforcement::Soft {
+                    scale: 2.0,
+                    loss: SoftLoss::SquaredL2,
+                },
+            )?,
+            constraint(
+                62,
+                SemanticRelation::Equality {
+                    expression: expression(62)?,
+                    target: 0.0,
+                },
+                Enforcement::Soft {
+                    scale: 4.0,
+                    loss: SoftLoss::AbsoluteL1,
+                },
+            )?,
+            constraint(
+                63,
+                SemanticRelation::Equality {
+                    expression: expression(63)?,
+                    target: 1.5,
+                },
+                Enforcement::Soft {
+                    scale: 1.0,
+                    loss: SoftLoss::Huber { delta: 1.0 },
+                },
+            )?,
+            constraint(
+                64,
+                SemanticRelation::Equality {
+                    expression: expression(64)?,
+                    target: 0.0,
+                },
+                Enforcement::Soft {
+                    scale: 1.0,
+                    loss: SoftLoss::Huber { delta: 1.0 },
+                },
+            )?,
+            constraint(
+                65,
+                SemanticRelation::LinearBound {
+                    expression: expression(65)?,
+                    lower: None,
+                    upper: Some(1.0),
+                },
+                Enforcement::Soft {
+                    scale: 2.0,
+                    loss: SoftLoss::AbsoluteL1,
+                },
+            )?,
+            constraint(
+                66,
+                SemanticRelation::SecondOrderCone {
+                    lhs: vec![expression(66)?],
+                    rhs: expression(67)?,
+                },
+                Enforcement::Soft {
+                    scale: 2.0,
+                    loss: SoftLoss::SquaredL2,
+                },
+            )?,
+        ],
+        ExecutionOptions::default(),
+    )?;
+    let canonical = semantic.try_compile([block(1)?], |functional, _| {
+        let identifier = functional.expression().terms()[0]
+            .atom()
+            .provenance()
+            .identifier();
+        if identifier == 67 {
+            affine(&[], 1.0)
+        } else {
+            affine(&[(0, 1.0)], 0.0)
+        }
+    })?;
+    let solution = try_solve_canonical(&canonical, options()?)?;
+    let diagnostics = &solution.diagnostics().kkt;
+    assert!(close(solution.values()[0], 2.0));
+    assert!(close(diagnostics.original_objective, 3.875));
+    assert!(close(diagnostics.compiled_primal_objective, 3.875));
+    assert!(close(diagnostics.backend_primal_objective, 3.875));
+    assert!(close(diagnostics.reconstructed_dual_objective, 3.875));
+    assert!(diagnostics.normalized_duality_gap <= options()?.tolerance());
+    Ok(())
+}
+
+#[test]
+fn lorentz_rotation_preserves_solution_and_objective() -> TestResult {
+    fn solve(rotated: bool) -> Result<(Vec<f64>, f64), Box<dyn Error>> {
+        let semantic = SemanticProblemIr::try_new(
+            [
+                constraint(
+                    70,
+                    SemanticRelation::Equality {
+                        expression: expression(70)?,
+                        target: 3.0,
+                    },
+                    Enforcement::Hard,
+                )?,
+                constraint(
+                    71,
+                    SemanticRelation::Equality {
+                        expression: expression(71)?,
+                        target: 4.0,
+                    },
+                    Enforcement::Hard,
+                )?,
+                constraint(
+                    72,
+                    SemanticRelation::SecondOrderCone {
+                        lhs: vec![expression(72)?, expression(73)?],
+                        rhs: expression(74)?,
+                    },
+                    Enforcement::Hard,
+                )?,
+                constraint(
+                    75,
+                    SemanticRelation::Equality {
+                        expression: expression(74)?,
+                        target: 0.0,
+                    },
+                    Enforcement::Soft {
+                        scale: 1.0,
+                        loss: SoftLoss::AbsoluteL1,
+                    },
+                )?,
+            ],
+            ExecutionOptions::default(),
+        )?;
+        let inverse_sqrt_two = std::f64::consts::FRAC_1_SQRT_2;
+        let canonical = semantic.try_compile([block(3)?], |functional, _| {
+            match functional.expression().terms()[0]
+                .atom()
+                .provenance()
+                .identifier()
+            {
+                72 if rotated => affine(&[(0, inverse_sqrt_two), (1, inverse_sqrt_two)], 0.0),
+                73 if rotated => affine(&[(0, -inverse_sqrt_two), (1, inverse_sqrt_two)], 0.0),
+                70 | 72 => affine(&[(0, 1.0)], 0.0),
+                71 | 73 => affine(&[(1, 1.0)], 0.0),
+                74 => affine(&[(2, 1.0)], 0.0),
+                _ => affine(&[], 0.0),
+            }
+        })?;
+        let solution = try_solve_canonical(&canonical, options()?)?;
+        Ok((
+            solution.values().to_vec(),
+            solution.diagnostics().kkt.original_objective,
+        ))
+    }
+
+    let (original_values, original_objective) = solve(false)?;
+    let (rotated_values, rotated_objective) = solve(true)?;
+    assert!(close(original_values[2], 5.0));
+    assert!(close(rotated_values[2], 5.0));
+    assert!(close(original_values[2], rotated_values[2]));
+    assert!(close(original_objective, rotated_objective));
+    Ok(())
+}
+
+#[test]
 fn deterministic_repeats_match_values_objective_and_iterations() -> TestResult {
     let semantic = SemanticProblemIr::try_new(
         [
@@ -450,6 +629,16 @@ fn invalid_policy_and_memory_limit_fail_before_dispatch() -> TestResult {
     assert!(matches!(
         try_solve_canonical(&canonical, tiny),
         Err(ConvexSolveError::MemoryLimitExceeded { .. })
+    ));
+    let execution_tiny = ExecutionOptions::new(true, None, Some(NonZeroUsize::MIN));
+    assert!(matches!(
+        try_solve_canonical_with_control(
+            &canonical,
+            options()?,
+            execution_tiny,
+            ExecutionControl::default(),
+        ),
+        Err(ConvexSolveError::MemoryLimitExceeded { limit_bytes: 1, .. })
     ));
     Ok(())
 }
