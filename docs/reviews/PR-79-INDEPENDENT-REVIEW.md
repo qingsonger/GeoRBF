@@ -4,10 +4,12 @@
 - Issue: https://github.com/qingsonger/GeoRBF/issues/78
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/79
 - Branch: `codex/req-spike-004-qp-socp-backends`
-- Reviewed head: `10e0266fb83fb432f668cc4dfe1edd99dd176da8`
+- Initial reviewed head: `10e0266fb83fb432f668cc4dfe1edd99dd176da8`
+- Re-reviewed repair head: `4b57e72c04e4e8dd7d5ce2c819ca2a02495cdf2c`
 - Base head: `5b5db20f5133dddaf1088c3952a1e241478b312f`
 - Review date: 2026-07-19
-- Result: repair applied for R79-001 and R79-002; independent re-review pending
+- Re-review date: 2026-07-19
+- Result: clean re-review; R79-001 and R79-002 closed; no P0-P3 finding remains
 
 ## Scope and independence
 
@@ -104,8 +106,10 @@ No other P0, P1, P2, or P3 finding was reported.
 
 ## Disposition
 
-PR #79 remains Draft and REQ-SPIKE-004 remains `implemented` pending a fresh
-independent re-review of the repair evidence below. Do not begin
+The repaired exact head is safe to mark Ready. REQ-SPIKE-004 remains
+`implemented` until that exact Ready head passes the complete Windows, Ubuntu,
+and macOS correctness and benchmark-smoke matrix, PR #79 merges exactly once,
+and the isolated integration-state change is complete. Do not begin
 REQ-CONVEX-001.
 
 ## Repair evidence
@@ -132,3 +136,38 @@ REQ-CONVEX-001.
   requirement checks, and `git diff --check`. This final edit records only that
   validation evidence; no production, test, manifest, schema, or build input
   changed afterward.
+
+## Independent re-review
+
+A fresh read-only project `math_reviewer` received only the bounded requirement
+and dependency summaries, Issue #78 acceptance criteria, M4 plan, ADR-0007,
+ADR-0011, solver policy, complete exact PR diff, original findings, repair and
+benchmark evidence, focused and final local checks, and Draft CI. It did not
+inherit the implementation or Repair reasoning and made no repository or
+remote changes.
+
+- R79-001 is closed. Every finite nonzero certificate is normalized by its
+  infinity norm before cone membership, stationarity, and strict-separation
+  review. Zero and nonfinite certificates fail, the formerly accepted tiny
+  nonstationary examples are rejected, and positive rescaling preserves valid
+  certificates.
+- R79-002 is closed. Clarabel uses `n` quadratic and `2n` bound entries, while
+  each OSQP identity uses exactly `n` entries; every fixture is constructed
+  directly in O(n) CSC work. Regressions verify dimensions, entries, row
+  semantics, and linear storage. Repaired timing ranges overlap and make no
+  ordering claim.
+- Independent truth gives QP optimum `(0.5, 1.5)` with objective `-2.25` and
+  SOCP optimum `(5, 3, 4)`. Clarabel and OSQP signs, cone ordering, exact
+  statuses, and Farkas certificate conditions are correct.
+- Hard constraints are unchanged. Clarabel presolve and KKT regularization are
+  disabled; equilibration and refinement are explicit. OSQP adaptive-rho is
+  explicit, with polishing and warm starts disabled. No jitter, pseudoinverse,
+  fallback, or hard-to-soft conversion appears.
+- No new P0, P1, P2, or P3 finding was reported. The reviewer confirmed the
+  clean worktree, exact repair head, and complete-diff whitespace check.
+
+The exact reviewed repair head is
+`4b57e72c04e4e8dd7d5ce2c819ca2a02495cdf2c`. A following evidence-only commit
+may update this review record and the bounded handoff before the Ready event;
+any later production, test, manifest, schema, CI, or build-input change requires
+fresh review and local validation before integration.
