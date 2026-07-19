@@ -6,74 +6,60 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-LINEQ-001 complete
-- Requirement: REQ-LINEQ-001, Issue #75 (closed)
-- Implementation pull request: #76, squash-merged as `42768a8`
-- Integration-state branch: `codex/req-lineq-001-integration-state`
-- Integration-state pull request: #77 (Draft until exact Ready CI is green)
-- Review record: `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-SPIKE-004 (`planned`)
+- Mode: Clean independent re-review complete / Ready integration sequence in progress
+- Requirement: REQ-SPIKE-004, Issue #78
+- Branch: `codex/req-spike-004-qp-socp-backends`
+- Draft pull request: #79
+- Exact repaired implementation and complete local-gate head:
+  `4b57e72c04e4e8dd7d5ce2c819ca2a02495cdf2c`
+- Cleanly re-reviewed repair head:
+  `4b57e72c04e4e8dd7d5ce2c819ca2a02495cdf2c`
+- Registry state in this change: `implemented`
+- Integrated dependency: REQ-BOOTSTRAP-001
+- Review record: `docs/reviews/PR-79-INDEPENDENT-REVIEW.md`
 
-## Integration result
+## Re-review result
 
-- A fresh read-only project `math_reviewer` independently confirmed R76-001 is
-  closed and no P0-P3 finding remains.
-- Exact implementation Ready head
-  `1541eb761ce7acf7dec8d4445875f499a6868804` passed Windows, Ubuntu, and
-  macOS with every configured backend and benchmark-smoke workload in CI run
-  29671462544.
-- PR #76 squash-merged exactly once as
-  `42768a80cadd261d9d45e35a920e8ac7cc929558`; Issue #75 closed as
-  completed.
-- Post-merge `main` run 29671754311 passed the same complete three-platform
-  correctness, backend, benchmark-smoke, and requirement-registry gate on
-  `42768a8`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, normative contract, numerical
-  behavior, dependency, tag, or release.
+- A fresh read-only project `math_reviewer` independently reviewed exact repair
+  head `4b57e72c` against base `5b5db20f` using only bounded requirement,
+  dependency, normative-document, diff, test, benchmark, and CI evidence.
+- R79-001 and R79-002 are closed. Certificate review is scale invariant, zero
+  and nonfinite vectors fail, and both QP benchmark fixtures use directly
+  constructed O(n) CSC data with exact semantic regressions.
+- The reviewer independently confirmed the QP and SOCP analytic optima,
+  objective and row signs, cone ordering, exact statuses, Farkas conditions,
+  hard-constraint preservation, explicit settings, and benchmark claims.
+- No P0, P1, P2, or P3 finding remains. The exact repaired head is safe to mark
+  Ready; merge remains forbidden until its complete Ready CI is green.
 
 ## Validation state
 
-- Exact repaired implementation tree `b1f15d5` passed the complete standard
-  workspace gate: format, warning-denying all-target/all-feature Clippy,
-  all-feature workspace tests, workspace Rustdoc, all 58 requirement checks,
-  and `git diff --check`.
-- The clean reviewer independently passed all eight linear-constraint tests,
-  all 21 level tests, four provenance-allocation tests, all 30 georbf doctests,
-  the example, benchmark smoke, formatting, all 58 requirement checks, and
-  complete-PR whitespace checks.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state tree passed the complete local standard gate:
-  format, warning-denying all-target/all-feature Clippy, all-feature workspace
-  tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+- Focused spike formatting and warning-denying all-target/all-feature Clippy
+  passed.
+- Combined-feature tests passed 11 cases; Clarabel-only passed 8 and OSQP-only
+  passed 6. Empty-backend selection was rejected with the required compile
+  error.
+- The repaired release smoke workload and three complete release benchmark
+  runs passed.
+- After the final code change, the stable repair tree passed workspace format,
+  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
+  workspace Rustdoc, all 58 requirement checks, and `git diff --check`. The
+  later edit records only this validation evidence; no production, test,
+  manifest, schema, or build input changed.
+- Exact repaired Draft head `4b57e72c` passed Ubuntu CI run 29678281944. The
+  Ready-only Windows/Ubuntu/macOS and benchmark-smoke matrix remains pending.
+- This re-review task changes only review and bounded-handoff documentation;
+  no production, test, manifest, schema, CI, build, registry, API, numerical,
+  or dependency input changes.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start REQ-SPIKE-004 or another
-requirement in this task.
-
-## Durable evidence
-
-- Acceptance criteria and exclusions: closed GitHub Issue #75
-- Merged implementation and repair: GitHub PR #76
-- Integration-state pull request: GitHub PR #77
-- Independent review and repair evidence:
-  `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-LINEQ-001.md`
-- Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
-- Architecture: `docs/architecture/PROBLEM_IR.md` and
-  `docs/architecture/ARCHITECTURE.md`
-- Focused tests: `crates/georbf/tests/linear_constraints.rs` plus retained
-  layer-order coverage in `crates/georbf/tests/levels.rs`
-- Example: `crates/georbf/examples/linear_constraints.rs`
-- Benchmark and report:
-  `crates/georbf/benches/linear_constraint_compilation.rs` and
-  `docs/benchmarks/REQ-LINEQ-001.md`
+Synchronize this evidence-only review and handoff commit on PR #79, mark the PR
+Ready, and wait for the complete Windows, Ubuntu, and macOS correctness matrix
+plus every benchmark smoke workload on that exact final evidence head. Merge
+exactly once only when green, then record truthful integration state in an
+isolated follow-up change. If this task is interrupted, resume only this
+integration sequence; do not begin REQ-CONVEX-001.
 
 ## Checks not yet available
 
@@ -81,4 +67,6 @@ requirement in this task.
 installed. Miri is unavailable for pinned Rust 1.96.1. Sanitizers, executable
 fuzzing, mutation testing, general allocation instrumentation, and API/ABI/
 schema snapshot checks are tracked by later requirements and release gates.
-Local `actionlint` is unavailable.
+Local `actionlint` is unavailable. Exact OSV and GitHub advisory API queries
+from the implementation task remain the performed dependency review;
+unavailable tools are not claimed.

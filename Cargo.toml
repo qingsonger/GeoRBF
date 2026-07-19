@@ -6,7 +6,11 @@ members = [
     "crates/georbf-python",
     "xtask",
 ]
-exclude = ["spikes/factorization-backends", "spikes/rank-backends"]
+exclude = [
+    "spikes/convex-backends",
+    "spikes/factorization-backends",
+    "spikes/rank-backends",
+]
 resolver = "3"
 
 [workspace.package]

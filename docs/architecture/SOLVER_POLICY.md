@@ -22,6 +22,16 @@ null-space construction. GeoRBF-owned row-major matrices and diagnostics are
 the only public types. The adapter does not expose or call pseudoinverse or
 minimum-norm solve APIs.
 
+REQ-SPIKE-004 selects the Clarabel 0.11 release line as the preferred later
+production backend for canonical QP and SOCP dispatch. The spike pins 0.11.1
+only in an excluded harness. Production adoption must remain behind one private
+GeoRBF-owned convex adapter, repeat the exact dependency and advisory audit,
+preserve row and cone provenance, and independently review solutions and
+infeasibility certificates in original units. Presolve, KKT regularization,
+equilibration, refinement, tolerances, limits, and thread count must be explicit
+and recorded; no backend setting may relax a hard constraint or change the
+objective silently. ADR-0011 records the mapping and selection evidence.
+
 Each spike reviews correctness, scaling, maintenance, license, MSRV, unsafe
 use, platforms, binary size, alternatives, and deterministic behavior, then
 produces an ADR before dependency lock-in.
