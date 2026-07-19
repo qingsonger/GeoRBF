@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-LINEQ-001, Issue #75 (closed)
 - Implementation pull request: #76, squash-merged as `42768a8`
 - Integration-state branch: `codex/req-lineq-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #77 (Draft until exact Ready CI is green)
 - Review record: `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-SPIKE-004 (`planned`)
@@ -61,7 +61,7 @@ requirement in this task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #75
 - Merged implementation and repair: GitHub PR #76
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #77
 - Independent review and repair evidence:
   `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-LINEQ-001.md`
