@@ -70,6 +70,25 @@ jobs:
           grep -Fq "enable at least one dense factorization backend feature" <<< "$output"
       - name: Smoke-test dense-factorization spike
         run: cargo run --manifest-path spikes/factorization-backends/Cargo.toml --release -- --smoke
+      - name: Lint convex-backend spike
+        run: |
+          cargo fmt --manifest-path spikes/convex-backends/Cargo.toml -- --check
+          cargo clippy --manifest-path spikes/convex-backends/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Test convex-spike feature configurations
+        run: |
+          cargo test --manifest-path spikes/convex-backends/Cargo.toml --all-features
+          cargo test --manifest-path spikes/convex-backends/Cargo.toml --no-default-features --features clarabel-backend
+          cargo test --manifest-path spikes/convex-backends/Cargo.toml --no-default-features --features osqp-backend
+      - name: Reject convex spike without a backend
+        shell: bash
+        run: |
+          if output=$(cargo check --manifest-path spikes/convex-backends/Cargo.toml --no-default-features 2>&1); then
+            echo "convex-backend spike unexpectedly accepted an empty backend selection" >&2
+            exit 1
+          fi
+          grep -Fq "enable at least one convex backend feature" <<< "$output"
+      - name: Smoke-test convex-backend spike
+        run: cargo run --manifest-path spikes/convex-backends/Cargo.toml --release -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check
 
@@ -129,6 +148,25 @@ jobs:
           grep -Fq "enable at least one dense factorization backend feature" <<< "$output"
       - name: Smoke-test dense-factorization spike
         run: cargo run --manifest-path spikes/factorization-backends/Cargo.toml --release -- --smoke
+      - name: Lint convex-backend spike
+        run: |
+          cargo fmt --manifest-path spikes/convex-backends/Cargo.toml -- --check
+          cargo clippy --manifest-path spikes/convex-backends/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Test convex-spike feature configurations
+        run: |
+          cargo test --manifest-path spikes/convex-backends/Cargo.toml --all-features
+          cargo test --manifest-path spikes/convex-backends/Cargo.toml --no-default-features --features clarabel-backend
+          cargo test --manifest-path spikes/convex-backends/Cargo.toml --no-default-features --features osqp-backend
+      - name: Reject convex spike without a backend
+        shell: bash
+        run: |
+          if output=$(cargo check --manifest-path spikes/convex-backends/Cargo.toml --no-default-features 2>&1); then
+            echo "convex-backend spike unexpectedly accepted an empty backend selection" >&2
+            exit 1
+          fi
+          grep -Fq "enable at least one convex backend feature" <<< "$output"
+      - name: Smoke-test convex-backend spike
+        run: cargo run --manifest-path spikes/convex-backends/Cargo.toml --release -- --smoke
       - name: Smoke-test radial kernel calculus benchmark
         run: cargo bench -p georbf --bench radial_kernel_calculus -- --smoke
       - name: Smoke-test polyharmonic spline benchmark
