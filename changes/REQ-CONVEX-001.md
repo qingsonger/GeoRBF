@@ -1,0 +1,59 @@
+# REQ-CONVEX-001
+
+Added a private Clarabel 0.11.1 production adapter for solver-neutral canonical
+problems. Hard equality rows map to zero cones, lower and upper bound sides map
+with explicit signs to nonnegative cones, and each ordered `||lhs|| <= rhs`
+relation maps directly to one Lorentz cone. Soft equality, interval, and cone
+violations receive nonnegative epigraph variables. Squared L2 uses a checked
+diagonal PSD term, absolute L1 a linear epigraph cost, and Huber an exact
+quadratic-plus-linear infimal representation. No hard row enters an objective;
+no pseudoinverse, constraint relaxation, presolve, KKT regularization, hidden
+fallback, warm start, or in-repository interior-point method was added.
+
+The Rust API requires a finite tolerance no looser than `1e-6`, nonzero
+iteration and memory limits, and an optional positive finite time limit. It
+returns only immutable GeoRBF-owned values, statuses, diagnostics, and reviewed
+certificates. Diagnostics record the backend version, requested tolerances,
+limits, serial thread count, equilibration and refinement policy, disabled
+presolve/regularization, original and auxiliary dimensions, sparse rows and
+coefficients, product-cone count, iterations, solve time, objective, KKT and
+cone evidence, peak-memory estimate and limit, and complete original semantic
+provenance with raw and normalized residuals.
+
+Only exact `Solved` is accepted, after independent reconstruction of the
+objective, primal and dual equations, cone membership, complementarity,
+duality gap, and every hard residual in original canonical units. A backend
+`PrimalInfeasible` status is returned only with an infinity-normalized
+GeoRBF-owned certificate whose original compiled `A^T z`, dual-cone membership,
+nonzero magnitude, and strict scale-aware `b^T z < 0` separator all pass.
+Reduced-accuracy, dual-infeasible, limit, numerical-error, insufficient-progress,
+callback, and unsolved statuses are structured failures.
+
+Seven independent tests cover the analytic QP solution `(0.5, 1.5)`, analytic
+SOCP solution `(5, 3, 4)`, hard and soft cones mixed with L1 and Huber epigraphs,
+hard-bound preservation, deterministic repeated values/objective/iterations,
+reviewed conic infeasibility, invalid policy, pre-dispatch memory rejection,
+and `Send + Sync`. A runnable Huber example and deterministic sparse QP
+benchmark are included. Ready/main CI gains the production benchmark smoke on
+Windows, Ubuntu, and macOS.
+
+The production dependency review retained current non-yanked Clarabel 0.11.1,
+Apache-2.0, published 2025-06-11 with declared Rust 1.70. Its repository was
+active, unarchived, and pushed 2026-04-13. The exact active Windows graph has 34
+packages; the all-target lock graph has 48, 2,971,926 bytes of cached crate
+archives, only permissive declared licenses, and a highest declared MSRV of
+Rust 1.77, with some omissions. A conservative all-target scan counted 1,552
+Rust source lines containing `unsafe` across 30 packages; this is exposure, not
+an unsafe-block or defect count. The selected path remains Rust-only and adds
+no native C/Fortran, BLAS/LAPACK, SDP, Python, Julia, or Pardiso delivery. Exact
+OSV batch queries for all 48 packages and the repository security-advisory API
+returned no finding. `cargo-audit` and `cargo-deny` remain unavailable, so they
+are not claimed.
+
+Rust is implemented. CLI is N/A because the stage-0 command exposes only help
+and version and complete project/schema commands belong to M8. C, C++, and
+Python are N/A because their M9 requirements follow Rust API and schema freeze;
+no adapter may expose Clarabel types or reimplement solver semantics. The
+benchmark obligation is implemented. Geological angular/thickness compilation,
+general near-duplicate/conflict diagnostics, fitted-field integration, sparse
+field solving, schemas, bindings, and release work remain later requirements.

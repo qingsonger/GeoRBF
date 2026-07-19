@@ -61,6 +61,8 @@ pub enum ExecutionOperation {
     FieldAssembly,
     /// Checked dense equality solving.
     DenseSolve,
+    /// Canonical convex QP or SOCP solving.
+    ConvexSolve,
 }
 
 impl fmt::Display for ExecutionOperation {
@@ -68,6 +70,7 @@ impl fmt::Display for ExecutionOperation {
         formatter.write_str(match self {
             Self::FieldAssembly => "field assembly",
             Self::DenseSolve => "dense solve",
+            Self::ConvexSolve => "convex solve",
         })
     }
 }
@@ -96,6 +99,10 @@ pub enum ExecutionStage {
     RankReview,
     /// The explicitly selected factorization was constructed.
     Factorization,
+    /// The canonical QP or SOCP backend completed one indivisible solve.
+    BackendSolve,
+    /// A reported infeasibility certificate was independently reviewed.
+    CertificateReview,
     /// One bounded iterative-refinement candidate was reviewed.
     Refinement,
     /// Original-unit residual evidence was reviewed.

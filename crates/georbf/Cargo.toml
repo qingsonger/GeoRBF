@@ -13,6 +13,7 @@ publish = false
 workspace = true
 
 [dependencies]
+clarabel = { version = "=0.11.1", default-features = false, features = ["serde"] }
 nalgebra = { version = "=0.35.0", default-features = false, features = ["std"] }
 
 [[bench]]
@@ -73,4 +74,8 @@ harness = false
 
 [[bench]]
 name = "linear_constraint_compilation"
+harness = false
+
+[[bench]]
+name = "convex_solver"
 harness = false
