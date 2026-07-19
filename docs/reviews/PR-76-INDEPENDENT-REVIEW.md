@@ -5,12 +5,14 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/76
 - Branch: `codex/req-lineq-001-linear-bounds`
 - Reviewed head: `0da5084c3b4f7f909299069c3c8dcf3145d1f282`
-- Exact implementation and complete local-gate head:
+- Original implementation and complete local-gate head:
   `8931260b6d37aa87bd82fa9416bd97d119c6d134`
+- Re-reviewed repair and complete local-gate head:
+  `b1f15d547333e17b8c8462014046a7b93e5ece00`
+- Pre-re-review evidence head: `8eb5fe1031c48f7c9c824c1ebb01b3ff2b7274af`
 - Base head: `639289fad1b03f84efd0b7a590516cbca74d5429`
-- Review date: 2026-07-19
-- Result: R76-001 repaired at `b1f15d547333e17b8c8462014046a7b93e5ece00`;
-  fresh independent re-review required; no other original P0-P3 finding remains
+- Review date: 2026-07-19; fresh re-review: 2026-07-19
+- Result: clean fresh re-review; R76-001 is closed and no P0-P3 finding remains
 
 ## Scope and independence
 
@@ -108,6 +110,45 @@ registry, API, numerical, or dependency input changed after the gate.
 This repair evidence is not an independent re-review. PR #76 remains Draft;
 Ready CI, merge, and integration-state recording have not occurred.
 
+## Fresh independent re-review
+
+A new read-only project `math_reviewer` independently re-reviewed the complete
+implementation through exact repair head
+`b1f15d547333e17b8c8462014046a7b93e5ece00`. It received only the bounded
+requirement summary and integrated dependency closure, Issue #75 criteria and
+exclusions, the M4 plan, scoped normative documents, the complete implementation
+and repair diffs, R76-001, and recorded validation evidence. It did not inherit
+the implementation or Repair task reasoning and made no repository or remote
+change. It also verified that `b1f15d5..8eb5fe1` changes only this review record
+and the bounded handoff.
+
+R76-001 is closed, and no P0, P1, P2, or P3 finding remains. Composition scans
+stable observation identifiers across hard equalities, hard bounds, hard cones,
+and soft objectives in both canonical inputs. It rejects the first cross-input
+duplicate before deconstruction, reservation, or append. The regression reuses
+level-definition identifier 100 in an otherwise valid field hard bound and
+requires `ProblemIrError::DuplicateObservationId`.
+
+The reviewer independently reconfirmed lower, upper, closed-interval, all four
+inside/outside orientation, scalar-gap, layer-order, and increasing/decreasing
+monotonicity signs; directional-unit enforcement; affine-constant shifting;
+constant-row feasibility; exact equal and sign-reversed interval intersection;
+hard/soft separation; deterministic provenance and ordering; identity scaling;
+allocation and checked-count behavior; and the absence of a solver, hidden
+regularization, jitter, pseudoinverse, relation deletion, or hard-to-soft
+conversion. The benchmark's 6,400-byte estimate independently recomputes from
+112 sparse terms and 576 scalar slots. SPD/CPD, center limits, polynomial-rank,
+rotation-invariance, positive-definiteness, and Hessian review remain
+inapplicable because the PR changes no kernel, basis, assembly, solver,
+anisotropy, or fitted-model mathematics.
+
+The reviewer passed all eight linear-constraint tests, all 21 level tests, four
+canonical provenance-allocation tests, all 30 georbf doctests, the example, the
+benchmark smoke with checksum 12,800, formatting, all 58 requirement checks,
+and `git diff --check` over the complete PR. The complete standard gate was not
+rerun because it already passed on immutable repair head `b1f15d5`, and this
+re-review changes only review and handoff documentation.
+
 ## Validation evidence reviewed
 
 - The exact implementation head passed the recorded complete standard local
@@ -128,9 +169,9 @@ Ready CI, merge, and integration-state recording have not occurred.
 
 ## Required next action
 
-Open a fresh Review/re-review task limited to PR #76 and REQ-LINEQ-001. Supply
-the project `math_reviewer` only the bounded requirement/dependency context,
-normative documents, PR diff, original finding, repair, and exact-head
-validation evidence. If no P0-P3 finding remains, follow the repository's
-Ready-CI-merge-integration sequence on that fresh task. Do not begin another
-requirement before REQ-LINEQ-001 is truthfully integrated.
+Synchronize this clean re-review evidence on PR #76 and mark it Ready. Wait for
+the complete Windows, Ubuntu, and macOS correctness matrix plus every benchmark
+smoke workload on this exact evidence head. Merge exactly once only if every
+required check is green, then record truthful REQ-LINEQ-001 integration state
+in a separate integration-state change and bounded handoff. Do not begin another
+requirement in this task.

@@ -6,22 +6,28 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required for R76-001
+- Mode: Clean independent re-review complete; Ready integration sequence in progress
 - Requirement: REQ-LINEQ-001, Issue #75 (open)
 - Branch: `codex/req-lineq-001-linear-bounds`
 - Draft implementation pull request: #76
 - Exact repaired implementation and complete local-gate head:
   `b1f15d547333e17b8c8462014046a7b93e5ece00`
+- Cleanly re-reviewed repair head:
+  `b1f15d547333e17b8c8462014046a7b93e5ece00`
+- Pre-re-review evidence head:
+  `8eb5fe1031c48f7c9c824c1ebb01b3ff2b7274af`
 - Registry state remains `implemented`
 - Dependencies: REQ-IR-001 and REQ-LEVEL-001 are `integrated`
 - No later requirement may start until REQ-LINEQ-001 is independently
   re-reviewed, passed through exact Ready CI, merged, and recorded as
   `integrated`
 
-## Repair result
+## Re-review result
 
-- R76-001 is repaired in production code and regression coverage, but has not
-  yet received the required fresh independent re-review.
+- A new read-only project `math_reviewer` independently reviewed exact repair
+  head `b1f15d5` without inheriting implementation or Repair reasoning and made
+  no repository or remote change.
+- R76-001 is closed. No P0, P1, P2, or P3 finding remains.
 - Composition now compares stable observation identifiers across every hard
   equality, hard bound, hard cone, and soft objective in the level and field
   canonical inputs before appending any record.
@@ -35,6 +41,10 @@ records, benchmark reports, Git, and GitHub.
 
 - On exact repaired head `b1f15d5`, all eight linear-constraint tests and all 21
   level tests passed.
+- The clean reviewer independently passed all eight linear-constraint tests,
+  all 21 level tests, four canonical provenance-allocation tests, all 30 georbf
+  doctests, the example, benchmark smoke, formatting, all 58 requirement
+  checks, and complete-PR whitespace checks.
 - The complete standard gate passed on exact repaired head `b1f15d5`:
   formatting, warning-denying workspace/all-target/all-feature Clippy,
   all-feature workspace tests, workspace Rustdoc, all 58 requirement checks,
@@ -43,20 +53,17 @@ records, benchmark reports, Git, and GitHub.
   `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`; no production, test, manifest,
   schema, CI, build, registry, API, numerical, or dependency input changed after
   the complete gate.
-- No fresh re-review, Ready transition, three-platform/benchmark-smoke CI,
-  merge, integration-state change, tag, or release is claimed.
+- No Ready transition, three-platform/benchmark-smoke CI, merge,
+  integration-state change, tag, or release is claimed yet.
 
 ## Next task
 
-Open a fresh Review/re-review task limited to PR #76 and REQ-LINEQ-001. Create
-and wait for the read-only project `math_reviewer`, providing only the bounded
-requirement/dependency context, normative documents, PR diff, original finding,
-repair, and validation evidence. The reviewer must independently confirm that
-R76-001 is closed and check for new P0-P3 findings. If clean, synchronize review
-evidence, mark PR #76 Ready, wait for complete Windows/Ubuntu/macOS and all
-benchmark-smoke CI on that exact ready head, merge exactly once only when green,
-and record truthful integration state in an isolated follow-up change. Then
-stop; do not begin another requirement in the same task.
+Synchronize the clean review evidence on PR #76, mark it Ready, and wait for the
+complete Windows, Ubuntu, and macOS correctness matrix plus every benchmark
+smoke workload on that exact Ready head. Merge exactly once only when green,
+then record truthful integration state in an isolated follow-up change. If this
+task is interrupted, resume only this integration sequence; do not begin another
+requirement.
 
 ## Durable evidence
 
