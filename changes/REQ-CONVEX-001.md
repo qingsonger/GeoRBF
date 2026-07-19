@@ -57,3 +57,33 @@ no adapter may expose Clarabel types or reimplement solver semantics. The
 benchmark obligation is implemented. Geological angular/thickness compilation,
 general near-duplicate/conflict diagnostics, fitted-field integration, sparse
 field solving, schemas, bindings, and release work remain later requirements.
+
+Repair of independent-review findings R82-001 through R82-007 removes the
+absolute factor-64 acceptance policy and replaces it with exact requested-
+tolerance, dimensionally homogeneous row, component, cone, complementarity,
+gap, and certificate reviews. Certificate stationarity and separation now use
+scaled original-data products with explicit representability rejection, so the
+feasible `1e-12 * x <= -1` counterexample cannot be accepted as infeasible.
+
+The semantic primal objective is now evaluated directly from original
+relations, scales, and `SoftLoss`; compiled and backend primal values are
+separate comparisons, and the dual objective is independently reconstructed as
+`-0.5 * x^T P x - b^T z`. Diagnostics expose the semantic and compiled primal,
+both backend-reported values, the reconstructed dual, normalized
+complementarity, and the semantic primal-dual gap.
+
+The effective memory limit is the smaller of the convex and optional execution
+limits. A nonallocating preflight precedes provenance cloning, includes owned
+metadata and auxiliary storage, and adds a dense full-KKT upper bound for
+QDLDL symbolic/numeric fill; later GeoRBF-owned vectors and provenance copies
+reserve fallibly. All material Clarabel 0.11.1 settings are assigned explicitly
+and mirrored by an exact internal diagnostic snapshot, including direct QDLDL,
+reduced-status thresholds, equilibration bounds, step lengths, refinement
+tolerances, inactive regularization constants, and sparse-zero handling.
+
+Five private regressions cover false and positively rescaled certificates,
+equivalent row scales, semantic-objective perturbation rejection, metadata and
+adversarial-fill memory accounting, the effective execution limit, exact
+settings, and forced status routing. Nine end-to-end tests additionally cover
+fixed nonzero L2, L1, inner/outer Huber, nonunit scale, violated soft-bound and
+soft-cone objectives, and Lorentz rotation invariance.

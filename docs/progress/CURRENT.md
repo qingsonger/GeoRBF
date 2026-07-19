@@ -6,81 +6,85 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete with findings / REQ-CONVEX-001
+- Mode: Repair complete pending fresh re-review / REQ-CONVEX-001
 - Requirement: REQ-CONVEX-001, Issue #81
 - Implementation branch: `codex/req-convex-001-canonical-solver`
 - Implementation pull request: #82 (Draft)
-- Reviewed implementation head: `29ca2a1682d93ba48a47605624bdba1453866f72`
+- Original reviewed implementation head:
+  `29ca2a1682d93ba48a47605624bdba1453866f72`
+- Repair code/test head: `55f339c5d80666b089d2e2bdfae03a8b2029ae12`
 - Review record: `docs/reviews/PR-82-INDEPENDENT-REVIEW.md`
 - Registry state: `implemented`; it is not `integrated`
 - Direct dependencies REQ-SOFT-001, REQ-LINEQ-001, and REQ-SPIKE-004 are all
   `integrated`
 
-## Independent review result
+## Repair disposition
 
-- A fresh read-only project `math_reviewer` reviewed the bounded requirement
-  and dependency summaries, Issue criteria, M4 plan, solver policy, ADR-0011,
-  complete exact PR diff, tests, example, benchmark, dependency evidence,
-  registry, handoff, and exact-head CI. It inherited no implementation
-  reasoning and made no repository or remote change.
-- R82-001 (P1): the absolute `A^T z` threshold accepts a bogus normalized
-  certificate for the feasible scaled problem `1e-12 * x <= -1`.
-- R82-002 (P1): the hidden factor-64 and raw unit floors make solved/hard-row
-  acceptance depend on equivalent nonzero row scaling and exceed the requested
-  tolerance without recorded policy.
-- R82-003 (P1): original objective review reuses compiled auxiliaries, `P`, and
-  `q`, while the duality gap reuses both backend objectives; neither is the
-  independently reconstructed semantic or dual objective claimed by policy.
-- R82-004 (P1): `ExecutionOptions::memory_limit_bytes` is ignored instead of
-  being combined with the convex solver limit.
-- R82-005 (P1): peak-memory checking occurs after compiler allocations, omits
-  owned provenance and unbounded sparse factor fill, and therefore does not
-  justify the documented conservative peak-working-set claim.
-- R82-006 (P2): material Clarabel defaults and the selected direct solver are
-  not completely explicit or recorded in GeoRBF diagnostics.
-- R82-007 (P2): existing regressions do not independently exercise nonzero L2,
-  L1, both Huber branches, scale, violated soft-bound/cone objectives, negative
-  certificate review, status routing, row scaling, or Lorentz rotation.
-- No P0 or other P1-P3 finding was reported. Algebraic hard/soft row signs,
-  ordered cone mapping, L2/L1/Huber formulae, PSD objective, dual-cone
-  convention, disabled presolve/KKT regularization, backend isolation, and
-  interface and registry dispositions were independently confirmed.
+- R82-001 implemented pending independent closure: certificate stationarity
+  and separation use homogeneous scaled original-data products with
+  representability guards. The feasible `1e-12 * x <= -1` bogus certificate
+  is rejected and true certificates are invariant at scales `1e-12`, `1`, and
+  `1e12`.
+- R82-002 implemented pending independent closure: the hidden factor 64 and
+  dimensioned raw floors are removed. Primal, dual, cone, hard-relation,
+  complementarity, gap, and certificate decisions use the exact requested
+  tolerance and homogeneous scales; equivalent equality-row decisions are
+  invariant across `1e-12`, `1`, and `1e12`.
+- R82-003 implemented pending independent closure: the semantic objective is
+  evaluated directly from original relations/scales/losses, compiled and
+  backend primal values are reviewed separately, and the dual is reconstructed
+  as `-0.5 * x^T P x - b^T z`.
+- R82-004 implemented pending independent closure: the effective memory limit
+  is the smaller nonzero convex/execution limit, and diagnostics retain both
+  requested limits plus the effective value.
+- R82-005 implemented pending independent closure: nonallocating preflight
+  precedes compiler/provenance cloning, accounts for owned metadata and
+  auxiliaries, and bounds QDLDL fill by the dense full-KKT lower triangle.
+  Later GeoRBF-owned vector and provenance allocation is fallible.
+- R82-006 implemented pending independent closure: every material Clarabel
+  0.11.1 setting is explicit and mirrored by an exact diagnostic snapshot,
+  including QDLDL and the independent-review tolerance policy.
+- R82-007 implemented pending independent closure: five private regressions
+  and nine end-to-end tests cover certificates, scaling, semantic/dual
+  objectives, memory, settings, status routing, nonzero L2/L1/both Huber
+  branches, nonunit scale, violated soft bound/cone, and Lorentz rotation.
+- No finding is marked closed by this Repair task. PR #82 stays Draft for a
+  fresh independent re-review, and REQ-INFEAS-001 has not begun.
 
 ## Validation state
 
-- Focused warning-denying all-target Clippy and all seven convex solver tests
-  passed.
+- Focused all-target/all-feature warning-denying Clippy, all five private
+  repair tests, and all nine convex integration tests passed.
 - The runnable Huber example passed with zero hard-bound violation.
-- The release smoke benchmark passed at 8 and 16 variables with finite,
-  deterministic checksums; the recorded first run was 0.4392 and 0.3477 ms.
-- Production dependency review found 34 active Windows packages and 48
-  all-target lock packages, only permissive declared licenses, a highest
-  declared MSRV of Rust 1.77 with some omissions, no native-code path, and no
-  finding in exact OSV or repository advisory queries.
-- After the final production and registry changes, the stable tree passed the
-  complete standard gate: workspace format, warning-denying all-target/all-
-  feature Clippy, all-feature workspace tests, workspace Rustdoc, all 58
-  requirement checks, and `git diff --check`. This following edit records only
-  that validation evidence; no production, test, manifest, schema, CI, build,
-  registry, API, normative, numerical, or dependency input changed afterward.
-- Draft CI run 29683566407 passed the configured Ubuntu Draft job on exact
-  reviewed head `29ca2a1`. The Ready-only Windows, Ubuntu, and macOS workspace
-  and benchmark-smoke matrix correctly did not run.
-- This Review task changes only the review record and bounded handoff. It does
-  not change production, test, manifest, schema, CI, build, registry, API,
-  normative, numerical, or dependency inputs.
+- The 8/16 release smoke workload passed with unchanged finite deterministic
+  checksums `4.00000000000000444` and `7.99999999999999911`; this run measured
+  1.0105 and 0.8482 ms and is not a performance promise.
+- After the final production/test change, exact code/test head
+  `55f339c5d80666b089d2e2bdfae03a8b2029ae12` passed the complete standard gate:
+  workspace format, warning-denying all-target/all-feature Clippy, all-feature
+  workspace tests, workspace Rustdoc, all 58 requirement checks, and
+  `git diff --check`.
+- The subsequent review record, solver policy, requirement change fragment,
+  and this bounded handoff change only documentation. They do not change
+  production, test, manifest, schema, CI, build, registry, API, numerical, or
+  dependency inputs, so the immutable code/test-head gate remains applicable.
+- Draft CI run 29686949377 passed the configured Ubuntu Draft job on the prior
+  review-evidence head `f18785d`. Repair-head Draft CI will be triggered by the
+  Repair push; it is not claimed here before execution. Ready-only Windows,
+  Ubuntu, macOS, and benchmark-smoke CI has not run for this Draft repair.
 
 ## Next task
 
-Open a fresh Repair task for Draft PR #82 and REQ-CONVEX-001 only. Repair
-R82-001 through R82-007 without expanding the requirement or beginning
-REQ-INFEAS-001. Add the independent certificate, row-scaling, semantic
-objective, dual reconstruction, effective-memory, pre-allocation/fill,
-settings-snapshot, status-routing, and Lorentz-rotation regressions specified
-in `docs/reviews/PR-82-INDEPENDENT-REVIEW.md`. Run focused checks during repair
-and the complete standard gate once after the final production change. Update
-review evidence and this bounded handoff, commit, push, and stop for a fresh
-independent re-review.
+Open a fresh independent re-review task for Draft PR #82 and REQ-CONVEX-001
+only. Give a fresh read-only project `math_reviewer` the bounded requirement
+and dependency summaries, Issue #81 criteria, M4 plan, solver policy, ADR-0011,
+the complete exact PR diff, original findings, repair evidence, tests, example,
+benchmark, registry, handoff, and exact-head CI state without inheriting this
+Repair reasoning. Independently determine whether R82-001 through R82-007 are
+closed and whether any new P0-P3 finding exists. If findings remain, record
+them and stop without repair. If the re-review is clean, follow the mandatory
+ready-head CI and integration sequence in `docs/CODEX_WORKFLOW.md`. Do not begin
+REQ-INFEAS-001 in the re-review task.
 
 ## Checks not yet available
 

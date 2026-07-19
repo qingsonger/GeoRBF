@@ -207,9 +207,65 @@ algebraic certificate convention.
   KKT regularization, serial QDLDL selection, interface N/A dispositions,
   benchmark qualification, and `implemented` registry state are truthful.
 
-PR #82 remains Draft and REQ-CONVEX-001 remains `implemented`, not
-`integrated`. A fresh Repair task must address only R82-001 through R82-007,
-add the specified independent regressions, rerun focused and final standard
-checks after the last production change, update this review evidence and the
-bounded handoff, push, and stop for a fresh independent re-review. This Review
-task does not repair production code or begin REQ-INFEAS-001.
+At the original reviewed head, PR #82 remained Draft and REQ-CONVEX-001
+remained `implemented`, not `integrated`. The review required a fresh Repair
+limited to R82-001 through R82-007, followed by another independent re-review.
+That Review task made no production-code change and did not begin
+REQ-INFEAS-001; the Repair evidence follows.
+
+## Repair evidence pending fresh re-review
+
+Repair code/test head `55f339c5d80666b089d2e2bdfae03a8b2029ae12`
+implements only R82-001 through R82-007:
+
+- R82-001: certificate stationarity is reviewed componentwise against scaled
+  original-data absolute products, while the separator uses the same
+  homogeneous construction and rejects unrepresentable nonzero products. The
+  feasible `1e-12 * x <= -1` bogus certificate is rejected; a true two-row
+  certificate is accepted at positive row scales `1e-12`, `1`, and `1e12`.
+- R82-002: the factor-64 threshold and dimensioned raw floors are removed.
+  Primal, dual, cone, hard-relation, complementarity, and semantic gap checks
+  use homogeneous scales and exactly the requested tolerance. The only unit
+  reference is the documented dimensionless count of unit-weight soft losses.
+  Synthetic equality review decisions are invariant at row scales `1e-12`,
+  `1`, and `1e12`.
+- R82-003: the semantic objective is evaluated from original variables,
+  relations, scales, and loss definitions; compiled and backend primal values
+  are separate comparisons. The dual value is reconstructed as
+  `-0.5 * x^T P x - b^T z`, and the recorded gap uses the semantic primal and
+  reconstructed dual. A private compiler perturbation is rejected.
+- R82-004: the effective limit is the smaller nonzero convex-option and
+  execution limit, and all three values are recorded. A one-byte execution
+  limit rejects before dispatch even with a larger convex limit.
+- R82-005: a nonallocating preflight now runs before compiler/provenance
+  cloning, includes owned provenance and auxiliary storage, and bounds QDLDL
+  fill by the dense lower triangle of the full KKT dimension. Subsequent
+  GeoRBF-owned vectors and provenance copies use fallible reservation. Large
+  provenance and a 128-variable, one-coefficient adversarial-fill case exercise
+  the accounting.
+- R82-006: every material field in Clarabel 0.11.1 `DefaultSettings` is assigned
+  without a default tail and mirrored by GeoRBF diagnostics, including direct
+  QDLDL, reduced tolerances, equilibration bounds, step lengths, refinement
+  thresholds, disabled-setting constants, and sparse-zero handling. An exact
+  snapshot test covers every available field and the independent-review
+  tolerance policy.
+- R82-007: five private tests and nine end-to-end tests now cover the requested
+  certificate, scale, objective, effective-memory, fill, settings, status,
+  nonzero L2/L1/inner-Huber/outer-Huber, nonunit-scale, violated soft-bound and
+  soft-cone, and Lorentz-rotation cases.
+
+Focused warning-denying all-target/all-feature Clippy, all five private repair
+tests, all nine convex integration tests, the runnable example, and the 8/16
+release smoke workload passed. The smoke checksums remain
+`4.00000000000000444` and `7.99999999999999911`; this repair run measured
+1.0105 and 0.8482 ms and is not a performance promise.
+
+After the last production/test change, exact code/test head
+`55f339c5d80666b089d2e2bdfae03a8b2029ae12` passed the complete standard gate:
+workspace format, warning-denying all-target/all-feature Clippy, all-feature
+workspace tests, workspace Rustdoc, all 58 requirement checks, and
+`git diff --check`. The following repair-record, solver-policy, change-fragment,
+and bounded-handoff edits change only documentation; they do not change
+production, test, manifest, schema, CI, build, registry, API, numerical, or
+dependency inputs. A fresh independent re-review is still required before any
+finding is considered closed or PR #82 is marked ready.
