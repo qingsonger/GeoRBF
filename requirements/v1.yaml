@@ -436,7 +436,7 @@ requirements:
     cpp_api: "N/A: the header-only C++ wrapper follows the stable C ABI in M9"
     python_api: "N/A: the PyO3 and NumPy adapter follows Rust API and schema freeze in M9"
     benchmark: implemented
-    status: implemented
+    status: integrated
 
   - id: REQ-SPIKE-004
     title: Convex QP and SOCP backend spike

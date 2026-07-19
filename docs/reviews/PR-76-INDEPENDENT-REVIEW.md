@@ -167,11 +167,19 @@ re-review changes only review and handoff documentation.
   input changed after the complete local gate.
 - Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run.
 
-## Required next action
+## Integration evidence
 
-Synchronize this clean re-review evidence on PR #76 and mark it Ready. Wait for
-the complete Windows, Ubuntu, and macOS correctness matrix plus every benchmark
-smoke workload on this exact evidence head. Merge exactly once only if every
-required check is green, then record truthful REQ-LINEQ-001 integration state
-in a separate integration-state change and bounded handoff. Do not begin another
-requirement in this task.
+The implementation integration sequence is complete. Exact Ready head
+`1541eb761ce7acf7dec8d4445875f499a6868804` passed the complete Windows,
+Ubuntu, and macOS correctness matrix, both configured backend suites, every
+benchmark smoke, and the requirement-registry gate in CI run 29671462544. PR
+#76 then squash-merged exactly once as
+`42768a80cadd261d9d45e35a920e8ac7cc929558`, and Issue #75 closed as
+completed. Post-merge `main` run 29671754311 passed the same complete
+three-platform gate on that exact merge commit.
+
+The isolated integration-state change records the registry, review evidence,
+history index, and bounded handoff only in integration pull request #77. After
+its own complete local and exact Ready-head CI gates are green and that pull
+request is merged, stop. A fresh task must select the next requirement; this
+task must not begin it.
