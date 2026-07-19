@@ -34,9 +34,15 @@ whose independent optimum is `t = 5`.
 Infeasible cases require the exact primal-infeasible status and independently
 review the returned certificate. The review checks stationarity, a strictly
 negative separating value, and the applicable nonnegative or Lorentz dual-cone
-membership. Approximate solved or infeasible statuses are not accepted as
-success. Every accepted finite solution is checked against the objective,
-equalities, bounds, and cone in original units.
+membership after normalizing every nonzero certificate by its infinity norm.
+Zero and nonfinite certificates are rejected. Approximate solved or infeasible
+statuses are not accepted as success. Every accepted finite solution is checked
+against the objective, equalities, bounds, and cone in original units.
+
+The timed QP paths build their diagonal quadratic and identity-bound operators
+directly in CSC form with O(n) stored entries. Fixture regressions check the
+dimensions, stored nonzero count, and exact diagonal and bound semantics for
+both backends.
 
 The harness fixes tolerances, iteration limits, OSQP's adaptive-rho interval,
 and single-threaded Clarabel dispatch. Clarabel presolve and static and dynamic

@@ -6,7 +6,7 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete / Repair required
+- Mode: Repair complete / independent re-review required
 - Requirement: REQ-SPIKE-004, Issue #78
 - Branch: `codex/req-spike-004-qp-socp-backends`
 - Draft pull request: #79
@@ -14,50 +14,48 @@ records, benchmark reports, Git, and GitHub.
 - Integrated dependency: REQ-BOOTSTRAP-001
 - Review record: `docs/reviews/PR-79-INDEPENDENT-REVIEW.md`
 
-## Review result
+## Repair result
 
-- A fresh read-only project `math_reviewer` reviewed exact PR head `10e0266`
-  against base `5b5db20` using only the bounded requirement, dependency,
-  normative-document, diff, test, benchmark, and CI evidence.
-- R79-001 (P1): absolute certificate thresholds can accept near-zero vectors
-  with unit relative stationarity error. Repair must use normalized or scale-
-  aware certificate review and add invalid-scale and valid-rescaling tests.
-- R79-002 (P2): the timed QP fixture builds Clarabel inputs in O(n) work but
-  emits two n-squared OSQP identities inside the timed region. Repair must make
-  construction equivalent or separate setup/solve timing, add sparse-fixture
-  regressions, and regenerate the affected benchmark table and prose.
-- The reviewer independently confirmed the QP and SOCP analytic optima,
-  canonical signs and cones, exact-status paths, and dual-cone conventions.
-  No other P0-P3 finding was reported.
+- R79-001: certificate review now normalizes every nonzero vector by its
+  infinity norm before checking dual-cone membership, stationarity, and the
+  strict separating inequality. Zero and nonfinite certificates fail.
+- Certificate regressions reject the reported near-zero nonstationary
+  Clarabel and OSQP vectors and accept positive rescalings of valid
+  certificates.
+- R79-002: both OSQP QP identity matrices now use direct O(n) CSC construction
+  instead of n-squared dense iteration. Backend-specific regressions verify
+  dimensions, semantics, and O(n) stored nonzeros for both QP fixtures.
+- Three repaired release benchmark runs had bit-identical per-backend
+  checksums. The regenerated QP ranges overlap and make no backend-ordering
+  claim.
 
 ## Validation state
 
-- Focused harness lint passed with warnings denied.
-- All seven combined-feature tests passed; Clarabel-only passed six and
-  OSQP-only passed four.
-- The release smoke workload passed. Three complete release benchmark runs had
-  bit-identical per-backend checksums and are recorded in
-  `docs/benchmarks/REQ-SPIKE-004.md`.
-- Exact single-feature release harness sizes, reachable graphs, licenses,
-  declared MSRVs, source exposure, upstream activity, and advisory API results
-  are recorded in ADR-0011.
-- Exact implementation commit `682c9a6` passed the complete standard workspace
-  gate: format, warning-denying all-target/all-feature Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and
-  `git diff --check`.
-- Exact reviewed Draft head `10e0266` passed Ubuntu CI run 29674034129. The
-  Ready-only Windows/Ubuntu/macOS and benchmark-smoke matrix remains pending.
-- This Review task changes only review and handoff documentation. Workspace
-  formatting, all 58 requirement checks, and staged whitespace checks passed.
+- Focused spike formatting and warning-denying all-target/all-feature Clippy
+  passed.
+- Combined-feature tests passed 11 cases; Clarabel-only passed 8 and OSQP-only
+  passed 6. Empty-backend selection was rejected with the required compile
+  error.
+- The repaired release smoke workload and three complete release benchmark
+  runs passed.
+- After the final code change, the stable repair tree passed workspace format,
+  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
+  workspace Rustdoc, all 58 requirement checks, and `git diff --check`. The
+  later edit records only this validation evidence; no production, test,
+  manifest, schema, or build input changed.
+- PR #79 remains Draft. Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI
+  remain pending until a clean fresh re-review.
 
 ## Next task
 
-Open a fresh Repair task for only PR #79 findings R79-001 and R79-002. Reproduce
-both findings, add the required certificate-scale and sparse-fixture
-regressions, implement the smallest repairs, regenerate the affected benchmark
-evidence, run focused checks and the final standard workspace gate, update the
-review record and this bounded handoff, commit, push, and stop for a fresh
-independent re-review. Do not begin REQ-CONVEX-001.
+Open a fresh Review/re-review task for only PR #79. Supply the project
+`math_reviewer` with the bounded requirement and dependency summaries,
+normative documents, exact PR diff, original findings, repaired benchmark
+evidence, focused checks, final standard-gate evidence, and Draft CI. Confirm
+independently that R79-001 and R79-002 are closed and check for new P0-P3
+findings. Do not repair production code in that task. If clean, follow the
+mandatory ready, exact-head three-platform plus benchmark-smoke CI, merge, and
+isolated integration-state sequence. Do not begin REQ-CONVEX-001.
 
 ## Checks not yet available
 
@@ -66,4 +64,5 @@ installed. Miri is unavailable for pinned Rust 1.96.1. Sanitizers, executable
 fuzzing, mutation testing, general allocation instrumentation, and API/ABI/
 schema snapshot checks are tracked by later requirements and release gates.
 Local `actionlint` is unavailable. Exact OSV and GitHub advisory API queries
-were used for the dependency review; unavailable tools are not claimed.
+from the implementation task remain the performed dependency review;
+unavailable tools are not claimed.

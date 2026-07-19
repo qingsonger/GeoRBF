@@ -67,19 +67,23 @@ LAPACK, SDP, Python, Julia, or Pardiso path is selected.
 
 ## Evidence and tradeoffs
 
-Seven combined-feature tests pass. Both candidates recover the independent QP
+Eleven combined-feature tests pass. Both candidates recover the independent QP
 solution `(0.5, 1.5)`. Clarabel recovers the independent SOCP solution
 `(5, 3, 4)`. Exact primal-infeasible cases cover linearly constrained QP for
 both candidates and a Lorentz-cone contradiction for Clarabel. Certificate
-reviews check `A^T z`, a strict separator, and applicable dual-cone membership.
-Repeated solve reports are bit-identical per backend. Approximate statuses are
-rejected, as are nonfinite inputs before dispatch.
+reviews normalize each nonzero vector before checking `A^T z`, a scale-aware
+strict separator, and applicable dual-cone membership. Synthetic regressions
+reject zero and near-zero nonstationary vectors while accepting positive
+rescalings of valid certificates. Repeated solve reports are bit-identical per
+backend. Approximate statuses are rejected, as are nonfinite inputs before
+dispatch.
 
 The Windows release probe used fixed input, one process, and three iterations.
-Across sizes 16, 32, and 64, Clarabel QP totals were 0.3950--0.8912 ms and OSQP
-totals were 0.3436--1.1584 ms. The ranges overlap at 16 and 32; Clarabel was
-faster in every 64-variable repeat. Clarabel SOCP totals were
-0.2874--1.0695 ms. Checksums were bit-identical across repeats for each backend
+Both QP paths build diagonal objectives and identity-bound operators directly
+from O(n) CSC storage. Across sizes 16, 32, and 64, Clarabel QP totals were
+0.3528--0.7438 ms and OSQP totals were 0.2753--0.6983 ms, with overlapping
+ranges and no consistent backend ordering. Clarabel SOCP totals were
+0.2622--1.6774 ms. Checksums were bit-identical across repeats for each backend
 and size. These small dependency-selection probes are not production
 performance promises.
 

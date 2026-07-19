@@ -1,3 +1,5 @@
+#[cfg(feature = "osqp-backend")]
+use std::borrow::Cow;
 use std::hint::black_box;
 use std::time::{Duration, Instant};
 
@@ -19,6 +21,8 @@ const SOLUTION_TOLERANCE: f64 = 2.0e-7;
 const RESIDUAL_TOLERANCE: f64 = 2.0e-7;
 #[cfg(test)]
 const CERTIFICATE_TOLERANCE: f64 = 2.0e-7;
+#[cfg(test)]
+const CERTIFICATE_SEPARATOR_MARGIN: f64 = 1.0e-8;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Backend {
@@ -266,12 +270,86 @@ fn solve_socp_truth() -> Result<SolveReport, String> {
     })
 }
 
+#[cfg(test)]
+fn normalized_certificate(label: &str, certificate: &[f64]) -> Result<Vec<f64>, String> {
+    require_finite(label, certificate)?;
+    let scale = infinity_norm(label, certificate)?;
+    if scale == 0.0 {
+        return Err(format!("{label} is the zero vector"));
+    }
+    let normalized = certificate
+        .iter()
+        .map(|value| value / scale)
+        .collect::<Vec<_>>();
+    require_finite(label, &normalized)?;
+    Ok(normalized)
+}
+
+#[cfg(feature = "clarabel-backend")]
+#[cfg(test)]
+fn review_clarabel_certificate(
+    linear_only: bool,
+    certificate: &[f64],
+) -> Result<CertificateReport, String> {
+    let (dimension, rows, rhs): (usize, Vec<Vec<f64>>, Vec<f64>) = if linear_only {
+        (1, vec![vec![-1.0], vec![1.0]], vec![-1.0, 0.0])
+    } else {
+        (
+            2,
+            vec![
+                vec![1.0, 0.0],
+                vec![0.0, 1.0],
+                vec![-1.0, 0.0],
+                vec![0.0, -1.0],
+            ],
+            vec![0.0, 1.0, 0.0, 0.0],
+        )
+    };
+    if certificate.len() != rows.len() {
+        return Err("Clarabel infeasibility certificate has the wrong length".to_owned());
+    }
+    let certificate = normalized_certificate("Clarabel infeasibility certificate", certificate)?;
+    if linear_only {
+        if certificate
+            .iter()
+            .any(|dual| *dual < -CERTIFICATE_TOLERANCE)
+        {
+            return Err("Clarabel QP certificate leaves the nonnegative dual cone".to_owned());
+        }
+    } else if certificate[2] + CERTIFICATE_TOLERANCE < certificate[3].abs() {
+        return Err("Clarabel SOCP certificate leaves the Lorentz dual cone".to_owned());
+    }
+    let mut stationarity = vec![0.0; dimension];
+    for (row, dual) in rows.iter().zip(&certificate) {
+        for (column, value) in row.iter().enumerate() {
+            stationarity[column] = value.mul_add(*dual, stationarity[column]);
+        }
+    }
+    let separating_value = rhs
+        .iter()
+        .zip(&certificate)
+        .map(|(value, dual)| value * dual)
+        .sum::<f64>();
+    let stationarity_residual_inf =
+        infinity_norm("Clarabel certificate stationarity", &stationarity)?;
+    if stationarity_residual_inf > CERTIFICATE_TOLERANCE
+        || separating_value >= -CERTIFICATE_SEPARATOR_MARGIN
+    {
+        return Err(format!(
+            "Clarabel certificate failed review: stationarity={stationarity_residual_inf:.17e}, separator={separating_value:.17e}"
+        ));
+    }
+    Ok(CertificateReport {
+        stationarity_residual_inf,
+        separating_value,
+    })
+}
+
 #[cfg(feature = "clarabel-backend")]
 #[cfg(test)]
 fn clarabel_infeasible(linear_only: bool) -> Result<CertificateReport, String> {
-    let (dimension, quadratic, linear, constraints, rhs, cones) = if linear_only {
+    let (quadratic, linear, constraints, rhs, cones) = if linear_only {
         (
-            1,
             ClarabelCsc::new(1, 1, vec![0, 1], vec![0], vec![1.0]),
             vec![0.0],
             ClarabelCsc::from(&[[-1.0], [1.0]]),
@@ -280,7 +358,6 @@ fn clarabel_infeasible(linear_only: bool) -> Result<CertificateReport, String> {
         )
     } else {
         (
-            2,
             ClarabelCsc::zeros((2, 2)),
             vec![0.0, 0.0],
             ClarabelCsc::from(&[[1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]]),
@@ -304,46 +381,36 @@ fn clarabel_infeasible(linear_only: bool) -> Result<CertificateReport, String> {
             solver.solution.status
         ));
     }
-    let certificate = &solver.solution.z;
-    require_finite("Clarabel infeasibility certificate", certificate)?;
-    if linear_only {
-        if certificate
-            .iter()
-            .any(|dual| *dual < -CERTIFICATE_TOLERANCE)
-        {
-            return Err("Clarabel QP certificate leaves the nonnegative dual cone".to_owned());
-        }
-    } else if certificate.len() != 4
-        || certificate[2] + CERTIFICATE_TOLERANCE < certificate[3].abs()
-    {
-        return Err("Clarabel SOCP certificate leaves the Lorentz dual cone".to_owned());
+    review_clarabel_certificate(linear_only, &solver.solution.z)
+}
+
+#[cfg(feature = "osqp-backend")]
+#[cfg(test)]
+fn review_osqp_certificate(certificate: &[f64]) -> Result<CertificateReport, String> {
+    if certificate.len() != 2 {
+        return Err("OSQP infeasibility certificate has the wrong length".to_owned());
     }
-    let mut stationarity = vec![0.0; dimension];
-    let rows: Vec<Vec<f64>> = if linear_only {
-        vec![vec![-1.0], vec![1.0]]
-    } else {
-        vec![
-            vec![1.0, 0.0],
-            vec![0.0, 1.0],
-            vec![-1.0, 0.0],
-            vec![0.0, -1.0],
-        ]
-    };
-    for (row, dual) in rows.iter().zip(certificate) {
-        for (column, value) in row.iter().enumerate() {
-            stationarity[column] = value.mul_add(*dual, stationarity[column]);
-        }
-    }
-    let separating_value = rhs
+    let certificate = normalized_certificate("OSQP infeasibility certificate", certificate)?;
+    let lower = [1.0, -1.0];
+    let upper = [2.0, 0.0];
+    let stationarity_residual_inf = (certificate[0] + certificate[1]).abs();
+    let separating_value = lower
         .iter()
-        .zip(certificate)
-        .map(|(value, dual)| value * dual)
+        .zip(&upper)
+        .zip(&certificate)
+        .map(|((lower, upper), dual)| {
+            if *dual < 0.0 {
+                lower * dual
+            } else {
+                upper * dual
+            }
+        })
         .sum::<f64>();
-    let stationarity_residual_inf =
-        infinity_norm("Clarabel certificate stationarity", &stationarity)?;
-    if stationarity_residual_inf > CERTIFICATE_TOLERANCE || separating_value >= -1.0e-8 {
+    if stationarity_residual_inf > CERTIFICATE_TOLERANCE
+        || separating_value >= -CERTIFICATE_SEPARATOR_MARGIN
+    {
         return Err(format!(
-            "Clarabel certificate failed review: stationarity={stationarity_residual_inf:.17e}, separator={separating_value:.17e}"
+            "OSQP certificate failed review: stationarity={stationarity_residual_inf:.17e}, separator={separating_value:.17e}"
         ));
     }
     Ok(CertificateReport {
@@ -374,32 +441,40 @@ fn osqp_qp_infeasible() -> Result<CertificateReport, String> {
         osqp::Status::PrimalInfeasible(certificate) => certificate.delta_y(),
         _ => return Err(format!("OSQP infeasible QP returned {status:?}")),
     };
-    require_finite("OSQP infeasibility certificate", certificate)?;
-    if certificate.len() != 2 {
-        return Err("OSQP infeasibility certificate has the wrong length".to_owned());
+    review_osqp_certificate(certificate)
+}
+
+#[cfg(feature = "clarabel-backend")]
+fn clarabel_diagonal_qp_matrices(size: usize) -> (ClarabelCsc, ClarabelCsc) {
+    let quadratic = ClarabelCsc::new(
+        size,
+        size,
+        (0..=size).collect(),
+        (0..size).collect(),
+        vec![1.0; size],
+    );
+    let mut column_pointers = Vec::with_capacity(size + 1);
+    let mut row_indices = Vec::with_capacity(2 * size);
+    let mut values = Vec::with_capacity(2 * size);
+    column_pointers.push(0);
+    for column in 0..size {
+        row_indices.extend([column, size + column]);
+        values.extend([-1.0, 1.0]);
+        column_pointers.push(row_indices.len());
     }
-    let stationarity_residual_inf = (certificate[0] + certificate[1]).abs();
-    let separating_value = lower
-        .iter()
-        .zip(&upper)
-        .zip(certificate)
-        .map(|((lower, upper), dual)| {
-            if *dual < 0.0 {
-                lower * dual
-            } else {
-                upper * dual
-            }
-        })
-        .sum::<f64>();
-    if stationarity_residual_inf > CERTIFICATE_TOLERANCE || separating_value >= -1.0e-8 {
-        return Err(format!(
-            "OSQP certificate failed review: stationarity={stationarity_residual_inf:.17e}, separator={separating_value:.17e}"
-        ));
+    let constraints = ClarabelCsc::new(2 * size, size, column_pointers, row_indices, values);
+    (quadratic, constraints)
+}
+
+#[cfg(feature = "osqp-backend")]
+fn osqp_sparse_identity(size: usize) -> OsqpCsc<'static> {
+    OsqpCsc {
+        nrows: size,
+        ncols: size,
+        indptr: Cow::Owned((0..=size).collect()),
+        indices: Cow::Owned((0..size).collect()),
+        data: Cow::Owned(vec![1.0; size]),
     }
-    Ok(CertificateReport {
-        stationarity_residual_inf,
-        separating_value,
-    })
 }
 
 fn diagonal_qp_case(size: usize, backend: Backend) -> Result<SolveReport, String> {
@@ -417,24 +492,7 @@ fn diagonal_qp_case(size: usize, backend: Backend) -> Result<SolveReport, String
     match backend {
         #[cfg(feature = "clarabel-backend")]
         Backend::Clarabel => {
-            let quadratic = ClarabelCsc::new(
-                size,
-                size,
-                (0..=size).collect(),
-                (0..size).collect(),
-                vec![1.0; size],
-            );
-            let mut column_pointers = Vec::with_capacity(size + 1);
-            let mut row_indices = Vec::with_capacity(2 * size);
-            let mut values = Vec::with_capacity(2 * size);
-            column_pointers.push(0);
-            for column in 0..size {
-                row_indices.extend([column, size + column]);
-                values.extend([-1.0, 1.0]);
-                column_pointers.push(row_indices.len());
-            }
-            let constraints =
-                ClarabelCsc::new(2 * size, size, column_pointers, row_indices, values);
+            let (quadratic, constraints) = clarabel_diagonal_qp_matrices(size);
             let mut rhs = vec![0.0; size];
             rhs.extend(vec![1.0; size]);
             let cones = [NonnegativeConeT(2 * size)];
@@ -459,17 +517,8 @@ fn diagonal_qp_case(size: usize, backend: Backend) -> Result<SolveReport, String
         }
         #[cfg(feature = "osqp-backend")]
         Backend::Osqp => {
-            let identity = || {
-                (0..size.saturating_mul(size)).map(|index| {
-                    if index / size == index % size {
-                        1.0
-                    } else {
-                        0.0
-                    }
-                })
-            };
-            let quadratic = OsqpCsc::from_row_iter(size, size, identity());
-            let constraints = OsqpCsc::from_row_iter(size, size, identity());
+            let quadratic = osqp_sparse_identity(size);
+            let constraints = osqp_sparse_identity(size);
             let lower = vec![0.0; size];
             let upper = vec![1.0; size];
             let linear = targets.iter().map(|value| -value).collect::<Vec<_>>();
@@ -734,6 +783,59 @@ mod convex_spike_cases {
         assert!(report.stationarity_residual_inf <= CERTIFICATE_TOLERANCE);
         assert!(report.separating_value < 0.0);
         Ok(())
+    }
+
+    #[cfg(feature = "clarabel-backend")]
+    #[test]
+    fn clarabel_certificate_review_is_scale_invariant() -> Result<(), String> {
+        assert!(review_clarabel_certificate(true, &[0.0, 0.0]).is_err());
+        assert!(review_clarabel_certificate(true, &[2.0e-8, 0.0]).is_err());
+        let unit = review_clarabel_certificate(true, &[1.0, 1.0])?;
+        let scaled = review_clarabel_certificate(true, &[3.0e-12, 3.0e-12])?;
+        assert_eq!(unit, scaled);
+        Ok(())
+    }
+
+    #[cfg(feature = "osqp-backend")]
+    #[test]
+    fn osqp_certificate_review_is_scale_invariant() -> Result<(), String> {
+        assert!(review_osqp_certificate(&[0.0, 0.0]).is_err());
+        assert!(review_osqp_certificate(&[-2.0e-8, 0.0]).is_err());
+        let unit = review_osqp_certificate(&[-1.0, 1.0])?;
+        let scaled = review_osqp_certificate(&[-3.0e-12, 3.0e-12])?;
+        assert_eq!(unit, scaled);
+        Ok(())
+    }
+
+    #[cfg(feature = "clarabel-backend")]
+    #[test]
+    fn clarabel_qp_fixture_is_linear_sparse_and_semantically_exact() {
+        let size = 7;
+        let (quadratic, constraints) = clarabel_diagonal_qp_matrices(size);
+        assert_eq!((quadratic.m, quadratic.n), (size, size));
+        assert_eq!(quadratic.colptr, (0..=size).collect::<Vec<_>>());
+        assert_eq!(quadratic.rowval, (0..size).collect::<Vec<_>>());
+        assert_eq!(quadratic.nzval, vec![1.0; size]);
+        assert_eq!((constraints.m, constraints.n), (2 * size, size));
+        assert_eq!(constraints.nzval.len(), 2 * size);
+        for column in 0..size {
+            let start = constraints.colptr[column];
+            let end = constraints.colptr[column + 1];
+            assert_eq!(&constraints.rowval[start..end], &[column, size + column]);
+            assert_eq!(&constraints.nzval[start..end], &[-1.0, 1.0]);
+        }
+    }
+
+    #[cfg(feature = "osqp-backend")]
+    #[test]
+    fn osqp_qp_fixture_is_linear_sparse_and_semantically_exact() {
+        let size = 7;
+        for matrix in [osqp_sparse_identity(size), osqp_sparse_identity(size)] {
+            assert_eq!((matrix.nrows, matrix.ncols), (size, size));
+            assert_eq!(matrix.indptr.as_ref(), (0..=size).collect::<Vec<_>>());
+            assert_eq!(matrix.indices.as_ref(), (0..size).collect::<Vec<_>>());
+            assert_eq!(matrix.data.as_ref(), vec![1.0; size]);
+        }
     }
 
     #[test]

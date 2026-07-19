@@ -7,7 +7,7 @@
 - Reviewed head: `10e0266fb83fb432f668cc4dfe1edd99dd176da8`
 - Base head: `5b5db20f5133dddaf1088c3952a1e241478b312f`
 - Review date: 2026-07-19
-- Result: changes requested; R79-001 (P1) and R79-002 (P2) remain
+- Result: repair applied for R79-001 and R79-002; independent re-review pending
 
 ## Scope and independence
 
@@ -104,8 +104,31 @@ No other P0, P1, P2, or P3 finding was reported.
 
 ## Disposition
 
-PR #79 remains Draft and REQ-SPIKE-004 remains `implemented`. A fresh Repair
-task must address only R79-001 and R79-002, add the specified regressions,
-regenerate affected benchmark evidence, run focused and final standard checks,
-record repair evidence here and in the bounded handoff, commit, push, and stop
-for a fresh independent re-review. Do not begin REQ-CONVEX-001.
+PR #79 remains Draft and REQ-SPIKE-004 remains `implemented` pending a fresh
+independent re-review of the repair evidence below. Do not begin
+REQ-CONVEX-001.
+
+## Repair evidence
+
+- R79-001: every nonzero Clarabel and OSQP certificate is now normalized by its
+  infinity norm before dual-cone, stationarity, and strict-separation review.
+  Zero and nonfinite certificates fail explicitly. Synthetic regressions reject
+  the reported `(2e-8, 0)` and `(-2e-8, 0)` nonstationary vectors and accept
+  positive `3e-12` rescalings of valid certificates.
+- R79-002: both OSQP identity matrices are now constructed directly from O(n)
+  CSC arrays instead of examining n-squared dense iterator entries. Backend-
+  specific regressions verify matrix dimensions, exact diagonal and bound-row
+  semantics, and O(n) stored nonzeros for both QP paths.
+- Three consecutive complete release runs on the repaired fixture produced
+  bit-identical per-backend checksums. The regenerated QP ranges overlap and no
+  longer claim a consistent speed ordering; the exact table is in
+  `docs/benchmarks/REQ-SPIKE-004.md`.
+- Focused format, warning-denying all-target/all-feature Clippy, 11 combined-
+  feature tests, 8 Clarabel-only tests, 6 OSQP-only tests, empty-backend
+  rejection, and the release smoke workload passed.
+- After the final code change, the stable repair tree passed the complete
+  standard workspace gate: workspace format, warning-denying all-target/all-
+  feature Clippy, all-feature workspace tests, workspace Rustdoc, all 58
+  requirement checks, and `git diff --check`. This final edit records only that
+  validation evidence; no production, test, manifest, schema, or build input
+  changed afterward.

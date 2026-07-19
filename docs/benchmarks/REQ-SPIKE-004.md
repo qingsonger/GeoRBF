@@ -11,23 +11,27 @@ i7-1260P, `x86_64-pc-windows-msvc`, Rust 1.96.1, one benchmark process. The
 harness pins Clarabel 0.11.1 and OSQP 1.0.1. Each timed iteration constructs and
 solves deterministic canonical data, requires an exact solved status, and
 reviews analytic truth and original-unit equality, bound, and cone residuals.
+Both QP paths construct their diagonal quadratic and identity-bound operators
+directly in CSC form with O(n) stored entries and O(n) setup work.
 
 Three consecutive runs on 2026-07-19 produced these total times for three
 iterations:
 
 | Problem | Size | Clarabel 0.11.1 | OSQP 1.0.1 |
 | --- | ---: | ---: | ---: |
-| Box QP | 16 | 0.3950--0.4451 ms | 0.3436--0.5514 ms |
-| Box QP | 32 | 0.4925--0.5317 ms | 0.4681--0.5882 ms |
-| Box QP | 64 | 0.7306--0.8912 ms | 1.0583--1.1584 ms |
-| SOCP | 16 | 0.2874--0.5157 ms | N/A: OSQP has no second-order cone |
-| SOCP | 32 | 0.5382--0.7393 ms | N/A: OSQP has no second-order cone |
-| SOCP | 64 | 0.7903--1.0695 ms | N/A: OSQP has no second-order cone |
+| Box QP | 16 | 0.3528--0.6381 ms | 0.2753--0.5791 ms |
+| Box QP | 32 | 0.3571--0.5241 ms | 0.3886--0.4335 ms |
+| Box QP | 64 | 0.6048--0.7438 ms | 0.6695--0.6983 ms |
+| SOCP | 16 | 0.2622--0.3757 ms | N/A: OSQP has no second-order cone |
+| SOCP | 32 | 0.3644--0.3866 ms | N/A: OSQP has no second-order cone |
+| SOCP | 64 | 0.6217--1.6774 ms | N/A: OSQP has no second-order cone |
 
 Checksums were bit-identical across all three repeats for every backend,
 problem, and size. Checksums are not compared between QP backends because their
-valid rounding paths differ. Independent tests compare both QP solutions with
-analytic truth and review the returned infeasibility certificates.
+valid rounding paths differ. The overlapping QP ranges do not establish a
+consistent backend ordering. Independent tests compare both QP solutions with
+analytic truth, verify the linear-sparse fixtures, and review normalized
+infeasibility certificates under positive rescaling.
 
 Minimal-feature release binaries were 499,200 bytes for Clarabel alone and
 349,696 bytes for OSQP alone. The exact reachable x86_64 Windows graphs
