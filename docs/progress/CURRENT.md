@@ -6,26 +6,29 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement
+- Mode: Review complete / Repair required
 - Requirement: REQ-SPIKE-004, Issue #78
 - Branch: `codex/req-spike-004-qp-socp-backends`
 - Draft pull request: #79
 - Registry state in this change: `implemented`
 - Integrated dependency: REQ-BOOTSTRAP-001
+- Review record: `docs/reviews/PR-79-INDEPENDENT-REVIEW.md`
 
-## Implemented scope
+## Review result
 
-- Added the excluded `spikes/convex-backends` comparison harness pinned to
-  Clarabel 0.11.1 and OSQP 1.0.1; the production graph remains unchanged.
-- Both candidates pass the same analytic constrained QP and reviewed
-  primal-infeasibility certificate. Clarabel also passes analytic and
-  infeasible Lorentz-cone cases.
-- Accepted ADR-0011 selecting the Clarabel 0.11 release line for later private
-  QP/SOCP adapter adoption, subject to the recorded production re-audit and
-  diagnostic conditions.
-- Added single-feature, combined-feature, negative-empty-feature, lint, and
-  benchmark-smoke CI coverage for the existing three-platform matrix.
-- Updated solver policy, benchmark evidence, changelog, and requirement state.
+- A fresh read-only project `math_reviewer` reviewed exact PR head `10e0266`
+  against base `5b5db20` using only the bounded requirement, dependency,
+  normative-document, diff, test, benchmark, and CI evidence.
+- R79-001 (P1): absolute certificate thresholds can accept near-zero vectors
+  with unit relative stationarity error. Repair must use normalized or scale-
+  aware certificate review and add invalid-scale and valid-rescaling tests.
+- R79-002 (P2): the timed QP fixture builds Clarabel inputs in O(n) work but
+  emits two n-squared OSQP identities inside the timed region. Repair must make
+  construction equivalent or separate setup/solve timing, add sparse-fixture
+  regressions, and regenerate the affected benchmark table and prose.
+- The reviewer independently confirmed the QP and SOCP analytic optima,
+  canonical signs and cones, exact-status paths, and dual-cone conventions.
+  No other P0-P3 finding was reported.
 
 ## Validation state
 
@@ -42,14 +45,19 @@ records, benchmark reports, Git, and GitHub.
   gate: format, warning-denying all-target/all-feature Clippy, all-feature
   workspace tests, workspace Rustdoc, all 58 requirement checks, and
   `git diff --check`.
+- Exact reviewed Draft head `10e0266` passed Ubuntu CI run 29674034129. The
+  Ready-only Windows/Ubuntu/macOS and benchmark-smoke matrix remains pending.
+- This Review task changes only review and handoff documentation. Workspace
+  formatting, all 58 requirement checks, and staged whitespace checks passed.
 
 ## Next task
 
-After this implementation is committed, pushed, and represented by a Draft PR,
-open a fresh Review task for only REQ-SPIKE-004 and that PR. Supply the
-requirement summary and dependencies, ADR-0007, ADR-0011, solver policy, the PR
-diff, and validation evidence to an independent `math_reviewer`. Do not repair
-production code or start REQ-CONVEX-001 in that Review task.
+Open a fresh Repair task for only PR #79 findings R79-001 and R79-002. Reproduce
+both findings, add the required certificate-scale and sparse-fixture
+regressions, implement the smallest repairs, regenerate the affected benchmark
+evidence, run focused checks and the final standard workspace gate, update the
+review record and this bounded handoff, commit, push, and stop for a fresh
+independent re-review. Do not begin REQ-CONVEX-001.
 
 ## Checks not yet available
 
