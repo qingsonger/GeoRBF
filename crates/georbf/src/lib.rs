@@ -18,7 +18,9 @@
 //! progress, and explicit serial-execution controls for assembly and solving,
 //! plus provenance-preserving fixed, unknown, and prior level variables with
 //! hard memberships, order-DAG validation, gauge and contrast checks, and
-//! solver-neutral equality/linear-bound compilation.
+//! solver-neutral equality/linear-bound compilation, plus explicit lower,
+//! upper, interval, region-side, scalar-gap, and directional-monotonicity
+//! semantic compilation with exact hard-bound conflict diagnostics.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -35,6 +37,7 @@ pub mod geometry;
 pub mod kernel;
 pub mod kernel_calculus;
 pub mod levels;
+pub mod linear_constraints;
 pub mod model;
 pub mod orientation;
 pub mod polynomial;
@@ -98,6 +101,9 @@ pub use levels::{
     CanonicalLevelPrior, CompiledLevelProblem, LevelCanonicalizationError, LevelDefinition,
     LevelMembership, LevelOrder, LevelPrior, LevelProblem, LevelProblemDiagnostics,
     LevelProblemError, LevelStorage, LevelValue,
+};
+pub use linear_constraints::{
+    InsideOrientation, LinearConstraint, LinearConstraintError, MonotonicitySense, RegionSide,
 };
 pub use model::{
     FittedField, FittedFieldCapabilities, FittedFieldComponent, FittedFieldDiagnostics,

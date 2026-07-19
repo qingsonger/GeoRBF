@@ -70,3 +70,7 @@ harness = false
 [[bench]]
 name = "soft_objective_compilation"
 harness = false
+
+[[bench]]
+name = "linear_constraint_compilation"
+harness = false

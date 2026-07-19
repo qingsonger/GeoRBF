@@ -205,7 +205,7 @@ pub enum Enforcement {
 }
 
 impl Enforcement {
-    fn validate(self) -> Result<(), ProblemIrError> {
+    pub(crate) fn validate(self) -> Result<(), ProblemIrError> {
         let Self::Soft { scale, loss } = self else {
             return Ok(());
         };
@@ -1227,6 +1227,7 @@ impl CanonicalProblem {
         )
     }
 
+    #[allow(clippy::too_many_lines)]
     fn try_new(
         variable_space: VariableSpace,
         equalities: Vec<CanonicalEquality>,
@@ -1234,6 +1235,7 @@ impl CanonicalProblem {
         cones: Vec<CanonicalSecondOrderCone>,
         soft_objectives: Vec<CanonicalSoftObjective>,
     ) -> Result<Self, ProblemIrError> {
+        validate_hard_linear_bounds(&linear_bounds)?;
         let scaling = CanonicalScaling {
             variable: try_unit_vec(variable_space.variable_count, ProblemIrStorage::Scaling)?,
             equality: try_unit_vec(equalities.len(), ProblemIrStorage::Scaling)?,
@@ -1443,6 +1445,24 @@ pub enum ProblemIrError {
         /// Lower bound.
         lower: f64,
         /// Upper bound.
+        upper: f64,
+    },
+    /// A constant hard linear-bound row excluded zero.
+    InfeasibleConstantLinearBound {
+        /// Complete originating source provenance; contains exactly one entry.
+        sources: Vec<SemanticProvenance>,
+        /// Optional lower bound.
+        lower: Option<f64>,
+        /// Optional upper bound.
+        upper: Option<f64>,
+    },
+    /// Two exact equal or sign-reversed hard rows had disjoint intervals.
+    InfeasibleLinearBounds {
+        /// Complete source provenance in earlier-then-later row order.
+        sources: Vec<SemanticProvenance>,
+        /// Greatest lower endpoint from the conflicting pair.
+        lower: f64,
+        /// Least upper endpoint from the conflicting pair.
         upper: f64,
     },
     /// A second-order cone had no left-hand component.
@@ -1745,6 +1765,107 @@ fn try_unit_vec(count: usize, storage: ProblemIrStorage) -> Result<Vec<f64>, Pro
         })?;
     values.resize(count, 1.0);
     Ok(values)
+}
+
+fn validate_hard_linear_bounds(
+    linear_bounds: &[CanonicalLinearBound],
+) -> Result<(), ProblemIrError> {
+    for bound in linear_bounds {
+        if bound.row.terms.is_empty()
+            && (bound.lower.is_some_and(|lower| lower > 0.0)
+                || bound.upper.is_some_and(|upper| upper < 0.0))
+        {
+            return Err(ProblemIrError::InfeasibleConstantLinearBound {
+                sources: try_conflict_sources([&bound.provenance])?,
+                lower: bound.lower,
+                upper: bound.upper,
+            });
+        }
+    }
+
+    for second_index in 0..linear_bounds.len() {
+        let second = &linear_bounds[second_index];
+        if second.row.terms.is_empty() {
+            continue;
+        }
+        for first in &linear_bounds[..second_index] {
+            let Some(sign_reversed) = exact_row_relation(&first.row, &second.row) else {
+                continue;
+            };
+            let (second_lower, second_upper) = if sign_reversed {
+                (
+                    second.upper.map(|upper| -upper),
+                    second.lower.map(|lower| -lower),
+                )
+            } else {
+                (second.lower, second.upper)
+            };
+            let lower = greatest_lower(first.lower, second_lower);
+            let upper = least_upper(first.upper, second_upper);
+            if let (Some(lower), Some(upper)) = (lower, upper)
+                && lower > upper
+            {
+                return Err(ProblemIrError::InfeasibleLinearBounds {
+                    sources: try_conflict_sources([&first.provenance, &second.provenance])?,
+                    lower,
+                    upper,
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
+fn exact_row_relation(first: &AffineExpression, second: &AffineExpression) -> Option<bool> {
+    if first.terms.len() != second.terms.len() || first.terms.is_empty() {
+        return None;
+    }
+    if first.terms.iter().zip(&second.terms).all(|(left, right)| {
+        left.variable == right.variable && left.coefficient.to_bits() == right.coefficient.to_bits()
+    }) {
+        return Some(false);
+    }
+    first
+        .terms
+        .iter()
+        .zip(&second.terms)
+        .all(|(left, right)| {
+            left.variable == right.variable
+                && left.coefficient.to_bits() == (-right.coefficient).to_bits()
+        })
+        .then_some(true)
+}
+
+fn try_conflict_sources<const N: usize>(
+    provenances: [&SemanticProvenance; N],
+) -> Result<Vec<SemanticProvenance>, ProblemIrError> {
+    let mut sources = Vec::new();
+    sources
+        .try_reserve_exact(N)
+        .map_err(|_| ProblemIrError::AllocationFailed {
+            storage: ProblemIrStorage::CanonicalProvenance,
+            requested: N,
+        })?;
+    for provenance in provenances {
+        sources.push(provenance.try_clone_for_canonical()?);
+    }
+    Ok(sources)
+}
+
+fn greatest_lower(first: Option<f64>, second: Option<f64>) -> Option<f64> {
+    match (first, second) {
+        (Some(first), Some(second)) => Some(first.max(second)),
+        (Some(value), None) | (None, Some(value)) => Some(value),
+        (None, None) => None,
+    }
+}
+
+fn least_upper(first: Option<f64>, second: Option<f64>) -> Option<f64> {
+    match (first, second) {
+        (Some(first), Some(second)) => Some(first.min(second)),
+        (Some(value), None) | (None, Some(value)) => Some(value),
+        (None, None) => None,
+    }
 }
 
 fn count_coefficients(

@@ -6,69 +6,75 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-SOFT-001 complete
-- Requirement: REQ-SOFT-001, Issue #72 (closed)
-- Implementation pull request: #73, squash-merged as `988217c`
-- Integration-state branch: `codex/req-soft-001-integration-state`
-- Integration-state pull request: #74 (Draft until exact Ready CI is green)
-- Review record: `docs/reviews/PR-73-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-LINEQ-001 (`planned`)
+- Mode: Implement complete; fresh independent Review required
+- Requirement: REQ-LINEQ-001, Issue #75 (open)
+- Branch: `codex/req-lineq-001-linear-bounds`
+- Draft implementation pull request: pending first push
+- Registry state in this commit: `in_progress`; becomes `implemented` only
+  after the Draft PR number is recorded
+- Dependencies: REQ-IR-001 and REQ-LEVEL-001 are `integrated`
+- No later requirement may start until REQ-LINEQ-001 is independently reviewed,
+  repaired if needed, passed through exact Ready CI, merged, and recorded as
+  `integrated`
 
-## Integration result
+## Implementation result
 
-- A fresh read-only project `math_reviewer` independently confirmed R73-001 is
-  closed and no P0-P3 finding remains.
-- Exact Ready head `4b6b24d151ec9af3db192b7ff496527d21d2748b`
-  passed the complete Windows, Ubuntu, and macOS matrix with every configured
-  backend and benchmark-smoke workload in CI run 29664739560.
-- PR #73 squash-merged exactly once as
-  `988217cdebf4c49f2db893e001acec1c7d6e0923`; Issue #72 closed as
-  completed.
-- Post-merge `main` run 29665084708 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate on `988217c`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, normative contract, numerical
-  behavior, dependency, tag, or release.
+- Added immutable D=1/D=2/D=3 Rust constructors for lower, upper, closed
+  interval, explicitly oriented closed inside/outside, scalar-gap, and
+  directional-monotonicity semantics.
+- Inside/outside requires `InsideAtOrBelow` or `InsideAtOrAbove`; scalar gaps
+  use `upper - lower >= minimum_gap`; monotonicity accepts exactly one
+  coefficient-one directional derivative and explicit increasing/decreasing
+  sense.
+- All forms lower to existing semantic and canonical linear bounds with stable
+  source provenance and insertion order. Existing explicit `LevelOrder` remains
+  the sole layer-order path.
+- Canonical construction rejects infeasible constant rows and disjoint exact
+  equal/sign-reversed hard-row intervals with complete source evidence. It does
+  not claim general LP feasibility or compare approximate rows.
+- Added six independent tests, a runnable example, a deterministic mixed
+  96-constraint benchmark, normative documentation, a benchmark report, and
+  the requirement change fragment.
+- No solver backend, dependency, schema, fitting support, adapter
+  reimplementation, unsafe code, hidden scaling, jitter, regularization,
+  pseudoinverse, relaxation, deletion, or automatic repair was introduced.
 
 ## Validation state
 
-- Exact implementation tree `530f6fd` passed the complete standard workspace
-  gate: format,
+- Focused linear-constraint tests pass: 6 passed, 0 failed.
+- The runnable example passes and prints the expected inside upper bound and
+  increasing lower rate.
+- The benchmark smoke and 2,000-iteration baseline pass with deterministic
+  6,400-byte-per-iteration canonical memory estimates.
+- The complete stable-head standard workspace gate passes: format,
   warning-denying all-target/all-feature Clippy, all-feature workspace tests,
   workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The clean reviewer independently repeated the repaired capability regression,
-  requirement and dependency checks, and whitespace checks; the parent Review
-  task passed all focused soft-loss, problem-IR, level, and Rustdoc tests plus
-  the D=1/D=2/D=3 96-constraint benchmark smoke.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state tree passed the complete local standard gate:
-  format, warning-denying all-target/all-feature Clippy, all-feature workspace
-  tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+- No CI, independent review, Ready transition, merge, integration, tag, or
+  release is claimed.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start REQ-LINEQ-001 or another
-requirement in this task.
+Open a fresh independent Review task limited to the Draft REQ-LINEQ-001 pull
+request after its number is recorded here. Review every sign and unit,
+inside/outside boundary convention, scalar-gap order, monotonicity direction,
+exact row normalization, hard infeasibility evidence, D=1/D=2/D=3 behavior,
+allocation paths, interface exclusions, benchmark, registry, and documentation.
+Record findings without repairing production code in that Review task. Stop
+without beginning another requirement.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #72
-- Merged implementation and repair: GitHub PR #73
-- Integration-state pull request: GitHub PR #74
-- Independent review and repair evidence:
-  `docs/reviews/PR-73-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-SOFT-001.md`
+- Acceptance criteria and exclusions: GitHub Issue #75
+- Requirement summary: `changes/REQ-LINEQ-001.md`
 - Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
-- Accepted level-prior design: `docs/adr/ADR-0003-explicit-level-variables.md`
-- Architecture: `docs/architecture/ARCHITECTURE.md`
-- Focused tests: `crates/georbf/tests/soft_losses.rs`,
-  `crates/georbf/tests/problem_ir.rs`, and `crates/georbf/tests/levels.rs`
-- Benchmark: `crates/georbf/benches/soft_objective_compilation.rs`
+- Architecture: `docs/architecture/PROBLEM_IR.md` and
+  `docs/architecture/ARCHITECTURE.md`
+- Focused tests: `crates/georbf/tests/linear_constraints.rs` plus retained
+  layer-order coverage in `crates/georbf/tests/levels.rs`
+- Example: `crates/georbf/examples/linear_constraints.rs`
+- Benchmark and report:
+  `crates/georbf/benches/linear_constraint_compilation.rs` and
+  `docs/benchmarks/REQ-LINEQ-001.md`
 
 ## Checks not yet available
 

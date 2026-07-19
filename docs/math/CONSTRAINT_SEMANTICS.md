@@ -33,6 +33,43 @@ the positive distance to the violated bound. Second-order-cone violation is
 `max(0, ||lhs||_2 - rhs)`. These relation shapes, scales, losses, and sources
 remain explicit in canonical IR. No geological term reaches an optimizer.
 
+## Linear semantic constructors
+
+The Rust linear-semantic layer lowers user meaning to the relation shapes
+above. A lower constraint is `g(f) >= lower`, an upper constraint is
+`g(f) <= upper`, and an interval is `lower <= g(f) <= upper`. Every threshold
+is finite and an interval is closed. An inside/outside observation is also a
+closed bound and requires an explicit scalar orientation: either inside values
+are at or below the boundary or inside values are at or above it. The outside
+side is the opposite weak inequality. Consequently a point exactly on the
+boundary satisfies both labels; no strict inequality or hidden epsilon is
+introduced.
+
+A scalar gap between two scalar-valued functional expressions is
+
+```text
+g_upper(f) - g_lower(f) >= minimum_gap,
+```
+
+where the minimum gap is finite and nonnegative. The analogous level relation
+continues to use explicit level variables,
+`h_upper - h_lower >= minimum_gap`, through `LevelOrder`; there is no second
+level model in the linear-semantic layer. Directional monotonicity accepts
+exactly one coefficient-one DirectionalDerivative atom. Increasing along its
+validated unit direction means `u^T grad f >= minimum_rate`; decreasing means
+`u^T grad f <= -minimum_rate`, with a finite nonnegative minimum rate. A Value
+atom, scaled derivative, or multi-atom expression is rejected rather than
+being assigned an implicit direction or unit.
+
+Canonicalization reviews hard linear rows before exposing a problem. A
+constant row whose interval excludes zero is infeasible. Two rows that are
+exactly coefficient-equal or exact sign reversals are placed in one orientation
+and their closed intervals are intersected; an empty intersection returns both
+complete source provenances. This is an exact semantic conflict check, not a
+tolerance, a general LP feasibility solver, or license to modify either row.
+Soft bounds do not participate because they are objective terms rather than
+hard feasibility conditions.
+
 ## Level variables
 
 Each geological level has one explicit scalar `h_k`. A point assigned to that
