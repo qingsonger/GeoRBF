@@ -171,3 +171,22 @@ The exact reviewed repair head is
 may update this review record and the bounded handoff before the Ready event;
 any later production, test, manifest, schema, CI, or build-input change requires
 fresh review and local validation before integration.
+
+## Implementation integration evidence
+
+- Evidence-only Ready head
+  `7e17e546c5378efbce6b7a325dd61e8c21bd5c48` changed only this review record
+  and the bounded handoff after exact reviewed repair head `4b57e72c`.
+- Ready CI run 29679134481 passed Windows, Ubuntu, and macOS on exact head
+  `7e17e546c`, including every configured backend feature combination,
+  empty-backend rejection, every benchmark smoke workload, and requirement
+  registry validation.
+- PR #79 squash-merged exactly once as
+  `60f9bb6e8755b6457a8b509b0357d8ba5ad07551`; Issue #78 is closed as
+  completed.
+- Post-merge `main` CI run 29679504405 passed the same complete three-platform
+  gate on exact merge commit `60f9bb6e`.
+- REQ-SPIKE-004 may therefore be recorded as `integrated` through an isolated
+  registry, review-evidence, history-index, and bounded-handoff change. That
+  change introduces no production, test, manifest, schema, CI, build, API,
+  normative, numerical, dependency, tag, or release change.

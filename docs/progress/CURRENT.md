@@ -6,31 +6,33 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Clean independent re-review complete / Ready integration sequence in progress
-- Requirement: REQ-SPIKE-004, Issue #78
-- Branch: `codex/req-spike-004-qp-socp-backends`
-- Draft pull request: #79
-- Exact repaired implementation and complete local-gate head:
-  `4b57e72c04e4e8dd7d5ce2c819ca2a02495cdf2c`
-- Cleanly re-reviewed repair head:
-  `4b57e72c04e4e8dd7d5ce2c819ca2a02495cdf2c`
-- Registry state in this change: `implemented`
-- Integrated dependency: REQ-BOOTSTRAP-001
+- Mode: Integration state in progress / REQ-SPIKE-004
+- Requirement: REQ-SPIKE-004, Issue #78 (closed)
+- Implementation pull request: #79, squash-merged as `60f9bb6e`
+- Integration-state branch: `codex/req-spike-004-integration-state`
 - Review record: `docs/reviews/PR-79-INDEPENDENT-REVIEW.md`
+- Registry state in this change: `integrated`
+- Next eligible requirement: REQ-CONVEX-001 (`planned`)
 
-## Re-review result
+## Integration result
 
 - A fresh read-only project `math_reviewer` independently reviewed exact repair
   head `4b57e72c` against base `5b5db20f` using only bounded requirement,
   dependency, normative-document, diff, test, benchmark, and CI evidence.
-- R79-001 and R79-002 are closed. Certificate review is scale invariant, zero
-  and nonfinite vectors fail, and both QP benchmark fixtures use directly
-  constructed O(n) CSC data with exact semantic regressions.
-- The reviewer independently confirmed the QP and SOCP analytic optima,
-  objective and row signs, cone ordering, exact statuses, Farkas conditions,
-  hard-constraint preservation, explicit settings, and benchmark claims.
-- No P0, P1, P2, or P3 finding remains. The exact repaired head is safe to mark
-  Ready; merge remains forbidden until its complete Ready CI is green.
+- R79-001 and R79-002 are closed and no P0-P3 finding remains.
+- Exact implementation Ready head
+  `7e17e546c5378efbce6b7a325dd61e8c21bd5c48` passed Windows, Ubuntu, and
+  macOS with every configured backend and benchmark-smoke workload in CI run
+  29679134481.
+- PR #79 squash-merged exactly once as
+  `60f9bb6e8755b6457a8b509b0357d8ba5ad07551`; Issue #78 closed as completed.
+- Post-merge `main` run 29679504405 passed the same complete three-platform
+  correctness, backend, benchmark-smoke, and requirement-registry gate on
+  exact `60f9bb6e`.
+- This isolated integration-state change updates only the registry, review
+  evidence, history index, and bounded handoff. It changes no production code,
+  test, manifest, schema, CI, build input, API, normative contract, numerical
+  behavior, dependency, tag, or release.
 
 ## Validation state
 
@@ -46,20 +48,22 @@ records, benchmark reports, Git, and GitHub.
   workspace Rustdoc, all 58 requirement checks, and `git diff --check`. The
   later edit records only this validation evidence; no production, test,
   manifest, schema, or build input changed.
-- Exact repaired Draft head `4b57e72c` passed Ubuntu CI run 29678281944. The
-  Ready-only Windows/Ubuntu/macOS and benchmark-smoke matrix remains pending.
-- This re-review task changes only review and bounded-handoff documentation;
-  no production, test, manifest, schema, CI, build, registry, API, numerical,
-  or dependency input changes.
+- The clean reviewer independently confirmed the analytic truth, exact status
+  and certificate paths, hard-constraint preservation, explicit settings,
+  deterministic evidence, linear-sparse fixtures, interface dispositions, and
+  complete-diff whitespace checks.
+- Exact implementation Ready-head and post-merge `main` three-platform gates
+  are green as recorded above.
+- The isolated integration-state tree has not yet run its final complete local
+  standard gate; it must pass before the integration-state PR becomes Ready.
 
 ## Next task
 
-Synchronize this evidence-only review and handoff commit on PR #79, mark the PR
-Ready, and wait for the complete Windows, Ubuntu, and macOS correctness matrix
-plus every benchmark smoke workload on that exact final evidence head. Merge
-exactly once only when green, then record truthful integration state in an
-isolated follow-up change. If this task is interrupted, resume only this
-integration sequence; do not begin REQ-CONVEX-001.
+Publish the isolated integration-state branch as a Draft PR, add its assigned
+PR number to the durable index and handoff, run the complete local standard
+gate on the final tree, and mark the PR Ready. Wait for exact-head Windows,
+Ubuntu, and macOS correctness plus every benchmark smoke, merge exactly once
+only when green, then stop. Do not begin REQ-CONVEX-001 in this task.
 
 ## Checks not yet available
 
