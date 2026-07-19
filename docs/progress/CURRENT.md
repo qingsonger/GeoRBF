@@ -10,6 +10,8 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-LINEQ-001, Issue #75 (open)
 - Branch: `codex/req-lineq-001-linear-bounds`
 - Draft implementation pull request: #76
+- Exact implementation and complete local gate head:
+  `8931260b6d37aa87bd82fa9416bd97d119c6d134`
 - Registry state: `implemented`
 - Dependencies: REQ-IR-001 and REQ-LEVEL-001 are `integrated`
 - No later requirement may start until REQ-LINEQ-001 is independently reviewed,
@@ -49,11 +51,15 @@ records, benchmark reports, Git, and GitHub.
   increasing lower rate.
 - The benchmark smoke and 2,000-iteration baseline pass with deterministic
   6,400-byte-per-iteration canonical memory estimates.
-- The complete stable-head standard workspace gate passes: format,
+- Exact implementation head `8931260` passes the complete stable-head standard
+  workspace gate: format,
   warning-denying all-target/all-feature Clippy, all-feature workspace tests,
   workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- No CI, independent review, Ready transition, merge, integration, tag, or
-  release is claimed.
+- The tail after `8931260` changes only this bounded handoff. It changes no
+  production code, test, manifest, schema, CI, build input, registry, API,
+  numerical behavior, or dependency, so the exact-head gate remains valid.
+- Draft CI is not claimed as reviewed. No independent review, Ready transition,
+  merge, integration, tag, or release is claimed.
 
 ## Next task
 
