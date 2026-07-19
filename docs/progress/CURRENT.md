@@ -9,8 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement
 - Requirement: REQ-SPIKE-004, Issue #78
 - Branch: `codex/req-spike-004-qp-socp-backends`
-- Draft pull request: pending initial push
-- Registry state in this change: `in_progress`
+- Draft pull request: #79
+- Registry state in this change: `implemented`
 - Integrated dependency: REQ-BOOTSTRAP-001
 
 ## Implemented scope
@@ -38,7 +38,10 @@ records, benchmark reports, Git, and GitHub.
 - Exact single-feature release harness sizes, reachable graphs, licenses,
   declared MSRVs, source exposure, upstream activity, and advisory API results
   are recorded in ADR-0011.
-- The final standard workspace gate is pending the stable implementation head.
+- Exact implementation commit `682c9a6` passed the complete standard workspace
+  gate: format, warning-denying all-target/all-feature Clippy, all-feature
+  workspace tests, workspace Rustdoc, all 58 requirement checks, and
+  `git diff --check`.
 
 ## Next task
 

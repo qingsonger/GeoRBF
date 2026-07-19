@@ -445,7 +445,7 @@ requirements:
     milestone: M4-v0.4.0
     priority: P0
     issue: 78
-    pull_request: null
+    pull_request: 79
     tests: [qp-socp-spike-cases, infeasibility, platform-build]
     docs: [docs/adr, docs/architecture/SOLVER_POLICY.md]
     rust_api: "N/A: dependency spike exposes no user API"
@@ -454,7 +454,7 @@ requirements:
     cpp_api: "N/A: dependency spike exposes no C++ API"
     python_api: "N/A: dependency spike exposes no Python API"
     benchmark: implemented
-    status: in_progress
+    status: implemented
 
   - id: REQ-CONVEX-001
     title: QP and SOCP canonical solver integration
