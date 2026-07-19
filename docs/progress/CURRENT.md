@@ -6,69 +6,81 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-SOFT-001 complete
-- Requirement: REQ-SOFT-001, Issue #72 (closed)
-- Implementation pull request: #73, squash-merged as `988217c`
-- Integration-state branch: `codex/req-soft-001-integration-state`
-- Integration-state pull request: #74 (Draft until exact Ready CI is green)
-- Review record: `docs/reviews/PR-73-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-LINEQ-001 (`planned`)
+- Mode: Clean independent re-review complete; Ready integration sequence in progress
+- Requirement: REQ-LINEQ-001, Issue #75 (open)
+- Branch: `codex/req-lineq-001-linear-bounds`
+- Draft implementation pull request: #76
+- Exact repaired implementation and complete local-gate head:
+  `b1f15d547333e17b8c8462014046a7b93e5ece00`
+- Cleanly re-reviewed repair head:
+  `b1f15d547333e17b8c8462014046a7b93e5ece00`
+- Pre-re-review evidence head:
+  `8eb5fe1031c48f7c9c824c1ebb01b3ff2b7274af`
+- Registry state remains `implemented`
+- Dependencies: REQ-IR-001 and REQ-LEVEL-001 are `integrated`
+- No later requirement may start until REQ-LINEQ-001 is independently
+  re-reviewed, passed through exact Ready CI, merged, and recorded as
+  `integrated`
 
-## Integration result
+## Re-review result
 
-- A fresh read-only project `math_reviewer` independently confirmed R73-001 is
-  closed and no P0-P3 finding remains.
-- Exact Ready head `4b6b24d151ec9af3db192b7ff496527d21d2748b`
-  passed the complete Windows, Ubuntu, and macOS matrix with every configured
-  backend and benchmark-smoke workload in CI run 29664739560.
-- PR #73 squash-merged exactly once as
-  `988217cdebf4c49f2db893e001acec1c7d6e0923`; Issue #72 closed as
-  completed.
-- Post-merge `main` run 29665084708 passed the same complete three-platform
-  correctness, benchmark-smoke, and requirement-registry gate on `988217c`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, normative contract, numerical
-  behavior, dependency, tag, or release.
+- A new read-only project `math_reviewer` independently reviewed exact repair
+  head `b1f15d5` without inheriting implementation or Repair reasoning and made
+  no repository or remote change.
+- R76-001 is closed. No P0, P1, P2, or P3 finding remains.
+- Composition now compares stable observation identifiers across every hard
+  equality, hard bound, hard cone, and soft objective in the level and field
+  canonical inputs before appending any record.
+- The new regression reuses level-definition observation ID 100 in an otherwise
+  valid field hard bound. It failed before the production repair and now returns
+  `ProblemIrError::DuplicateObservationId` with the duplicated identifier.
+- No relation is changed, dropped, reordered, softened, scaled, regularized, or
+  repaired automatically.
 
 ## Validation state
 
-- Exact implementation tree `530f6fd` passed the complete standard workspace
-  gate: format,
-  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
-  workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The clean reviewer independently repeated the repaired capability regression,
-  requirement and dependency checks, and whitespace checks; the parent Review
-  task passed all focused soft-loss, problem-IR, level, and Rustdoc tests plus
-  the D=1/D=2/D=3 96-constraint benchmark smoke.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state tree passed the complete local standard gate:
-  format, warning-denying all-target/all-feature Clippy, all-feature workspace
-  tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+- On exact repaired head `b1f15d5`, all eight linear-constraint tests and all 21
+  level tests passed.
+- The clean reviewer independently passed all eight linear-constraint tests,
+  all 21 level tests, four canonical provenance-allocation tests, all 30 georbf
+  doctests, the example, benchmark smoke, formatting, all 58 requirement
+  checks, and complete-PR whitespace checks.
+- The complete standard gate passed on exact repaired head `b1f15d5`:
+  formatting, warning-denying workspace/all-target/all-feature Clippy,
+  all-feature workspace tests, workspace Rustdoc, all 58 requirement checks,
+  and `git diff --check`.
+- The following evidence-only commit changes only this bounded handoff and
+  `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`; no production, test, manifest,
+  schema, CI, build, registry, API, numerical, or dependency input changed after
+  the complete gate.
+- No Ready transition, three-platform/benchmark-smoke CI, merge,
+  integration-state change, tag, or release is claimed yet.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start REQ-LINEQ-001 or another
-requirement in this task.
+Synchronize the clean review evidence on PR #76, mark it Ready, and wait for the
+complete Windows, Ubuntu, and macOS correctness matrix plus every benchmark
+smoke workload on that exact Ready head. Merge exactly once only when green,
+then record truthful integration state in an isolated follow-up change. If this
+task is interrupted, resume only this integration sequence; do not begin another
+requirement.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #72
-- Merged implementation and repair: GitHub PR #73
-- Integration-state pull request: GitHub PR #74
+- Acceptance criteria and exclusions: GitHub Issue #75
+- Draft implementation pull request: GitHub PR #76
 - Independent review and repair evidence:
-  `docs/reviews/PR-73-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-SOFT-001.md`
+  `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`
+- Requirement summary: `changes/REQ-LINEQ-001.md`
 - Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
-- Accepted level-prior design: `docs/adr/ADR-0003-explicit-level-variables.md`
-- Architecture: `docs/architecture/ARCHITECTURE.md`
-- Focused tests: `crates/georbf/tests/soft_losses.rs`,
-  `crates/georbf/tests/problem_ir.rs`, and `crates/georbf/tests/levels.rs`
-- Benchmark: `crates/georbf/benches/soft_objective_compilation.rs`
+- Architecture: `docs/architecture/PROBLEM_IR.md` and
+  `docs/architecture/ARCHITECTURE.md`
+- Focused tests: `crates/georbf/tests/linear_constraints.rs` plus retained
+  layer-order coverage in `crates/georbf/tests/levels.rs`
+- Example: `crates/georbf/examples/linear_constraints.rs`
+- Benchmark and report:
+  `crates/georbf/benches/linear_constraint_compilation.rs` and
+  `docs/benchmarks/REQ-LINEQ-001.md`
 
 ## Checks not yet available
 

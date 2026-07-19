@@ -120,6 +120,19 @@ the support edge. It delegates Cartesian tensors and argument signs to kernel
 calculus. It does not select neighborhoods, sparse storage, or solver policy;
 those remain blocked on the dedicated compact-sparse spike and ADR.
 
+The linear-constraint semantic layer sits above the shared problem IR and
+below any future schema or adapter. It gives lower, upper, interval,
+inside/outside, scalar-gap, and directional-monotonicity inputs explicit signs
+before lowering them to ordinary semantic linear bounds. Inside/outside always
+requires a caller-selected scalar orientation. Level order continues through
+the explicit-level layer. Canonical hard-bound review detects only constant
+infeasibility and exact equal/sign-reversed row conflicts with full sources;
+general inequality solution remains blocked on the approved convex backend.
+Field-only bound problems can compose with a compiled explicit-level problem
+only when their named field variable spaces match exactly; the composition
+preserves every existing row and rechecks stable provenance identity across
+hard and soft records, canonical capabilities, memory, and hard conflicts.
+
 The field-assembly layer depends on semantic/canonical problem IR, distinct
 observation and center functional wrappers, kernel metadata/calculus, complete
 polynomial spaces, and CPD rank/null-space enforcement. `FieldProblem<D>` owns

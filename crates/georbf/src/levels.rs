@@ -755,6 +755,34 @@ impl CompiledLevelProblem {
             .and_then(|index| self.level_variable_offset.checked_add(index))
     }
 
+    /// Appends a field-only canonical linear problem while preserving the
+    /// existing membership, fixed-value, level-order, and prior prefix.
+    ///
+    /// The supplied problem must use exactly the field variable blocks that
+    /// preceded this compiled problem's final `levels` block. It may contain
+    /// hard linear bounds and soft linear-bound objectives only. The combined
+    /// canonical problem rejects observation identifiers already used by any
+    /// hard or soft level-side record, rechecks exact hard-bound conflicts
+    /// across level-order and field-side rows, and rebuilds scaling,
+    /// capabilities, and checked memory estimates without modifying any
+    /// relation.
+    ///
+    /// # Errors
+    ///
+    /// Returns a structured IR error for mismatched variable spaces,
+    /// non-linear relation families, cross-problem duplicate observation
+    /// identifiers or hard conflicts, allocation failure, or checked estimate
+    /// overflow. No partial composition is returned.
+    pub fn try_compose_field_linear_problem(
+        mut self,
+        field_problem: CanonicalProblem,
+    ) -> Result<Self, ProblemIrError> {
+        self.canonical = self
+            .canonical
+            .try_append_field_linear_problem(field_problem)?;
+        Ok(self)
+    }
+
     /// Consumes the wrapper and returns the canonical problem.
     pub fn into_canonical_problem(self) -> CanonicalProblem {
         self.canonical

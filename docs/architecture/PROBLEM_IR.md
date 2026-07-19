@@ -19,10 +19,28 @@ changing the mathematical atom or inserting a kernel-derivative sign.
 Semantic expressions contain an `ObservationFunctional<D>` and a finite
 constant. Relations are equality, one- or two-sided linear bound, or
 second-order cone. Enforcement is always explicit: hard constraints compile in
-this requirement, while soft enforcement retains a positive scale and
-SquaredL2, AbsoluteL1, or positive-delta Huber metadata. Soft objective and
-epigraph construction is rejected as an unsupported path until its dedicated
-requirements and approved backend exist.
+this requirement, while soft enforcement compiles to an explicit objective
+contribution with a positive scale and SquaredL2, AbsoluteL1, or positive-delta
+Huber metadata. Exact optimizer-specific quadratic and epigraph lowering still
+waits for its approved backend.
+
+`REQ-LINEQ-001` adds an immutable semantic constructor layer immediately above
+this IR. It owns explicit lower/upper/interval signs, caller-selected scalar
+orientation for closed inside/outside bounds, `upper - lower` scalar-gap signs,
+and increasing/decreasing directional-monotonicity signs. It lowers to ordinary
+`SemanticConstraint` values and adds no canonical relation family. Existing
+`LevelOrder` compilation remains the sole explicit-level path.
+
+`CompiledLevelProblem` can consume a separately canonicalized field-only bound
+problem whose named variable blocks exactly equal its field prefix. It appends
+hard field bounds after level-order rows and soft field-bound objectives after
+level priors, then reconstructs one immutable `CanonicalProblem`. Memberships,
+fixed rows, order rows, priors, and field relations retain their original
+coefficients, bounds, provenance, and relative order. Non-bound relation
+families, mismatched spaces, and stable observation identifiers duplicated
+across the two canonical inputs fail structurally. The cross-input identity
+check covers both hard relations and soft objectives before any record is
+appended.
 
 ## CanonicalProblem
 
@@ -55,6 +73,14 @@ Every owned provenance string is deep-copied through a fallible reservation;
 failure returns `AllocationFailed` before any partial canonical problem can be
 observed. Canonicalization does not scale, regularize, add jitter or hidden
 variables, relax constraints, or select a solver.
+
+Before a `CanonicalProblem` is returned, hard constant bound rows and pairs of
+exact coefficient-equal or exact sign-reversed bound rows are checked for an
+empty interval intersection. A conflict retains the complete provenance of the
+one or two originating rows through fallible owned storage. Soft objectives are
+excluded from this feasibility review. The check is intentionally not a
+general linear-program feasibility algorithm and performs no approximate row
+matching, scaling, relaxation, or repair.
 
 Centers and observations remain separate through both forms. Later semantic
 compilers and assembly requirements add their own finite-value, unit,

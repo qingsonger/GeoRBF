@@ -426,17 +426,17 @@ requirements:
     dependencies: [REQ-IR-001, REQ-LEVEL-001]
     milestone: M4-v0.4.0
     priority: P0
-    issue: null
-    pull_request: null
-    tests: [lower-upper-interval, order-gap, monotonicity, infeasible]
-    docs: [docs/math/CONSTRAINT_SEMANTICS.md, rustdoc]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
-    status: planned
+    issue: 75
+    pull_request: 76
+    tests: [lower-upper-interval, inside-outside-orientation, scalar-gap, order-gap, monotonicity, field-level-composition, exact-row-infeasible, constant-row-infeasible, dimension-thread-safety, invalid-input]
+    docs: [docs/math/CONSTRAINT_SEMANTICS.md, docs/architecture/PROBLEM_IR.md, docs/architecture/ARCHITECTURE.md, docs/benchmarks/REQ-LINEQ-001.md, rustdoc, crates/georbf/examples/linear_constraints.rs]
+    rust_api: implemented
+    cli: "N/A: the stage-0 CLI exposes only help and version; complete project and schema commands belong to M8"
+    c_api: "N/A: the stable C ABI follows Rust API and schema freeze in M9"
+    cpp_api: "N/A: the header-only C++ wrapper follows the stable C ABI in M9"
+    python_api: "N/A: the PyO3 and NumPy adapter follows Rust API and schema freeze in M9"
+    benchmark: implemented
+    status: implemented
 
   - id: REQ-SPIKE-004
     title: Convex QP and SOCP backend spike
