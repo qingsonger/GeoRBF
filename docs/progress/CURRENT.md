@@ -6,68 +6,64 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state in progress / REQ-SPIKE-004
-- Requirement: REQ-SPIKE-004, Issue #78 (closed)
-- Implementation pull request: #79, squash-merged as `60f9bb6e`
-- Integration-state branch: `codex/req-spike-004-integration-state`
-- Integration-state pull request: #80 (Draft until exact Ready CI is green)
-- Review record: `docs/reviews/PR-79-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-CONVEX-001 (`planned`)
+- Mode: Implement complete / REQ-CONVEX-001
+- Requirement: REQ-CONVEX-001, Issue #81
+- Implementation branch: `codex/req-convex-001-canonical-solver`
+- Implementation pull request: #82 (Draft)
+- Registry state: `implemented`; it is not `integrated`
+- Implementation commit: `6796ccc` plus a following registry/handoff-only commit
+- Direct dependencies REQ-SOFT-001, REQ-LINEQ-001, and REQ-SPIKE-004 are all
+  `integrated`
 
-## Integration result
+## Implemented scope
 
-- A fresh read-only project `math_reviewer` independently reviewed exact repair
-  head `4b57e72c` against base `5b5db20f` using only bounded requirement,
-  dependency, normative-document, diff, test, benchmark, and CI evidence.
-- R79-001 and R79-002 are closed and no P0-P3 finding remains.
-- Exact implementation Ready head
-  `7e17e546c5378efbce6b7a325dd61e8c21bd5c48` passed Windows, Ubuntu, and
-  macOS with every configured backend and benchmark-smoke workload in CI run
-  29679134481.
-- PR #79 squash-merged exactly once as
-  `60f9bb6e8755b6457a8b509b0357d8ba5ad07551`; Issue #78 closed as completed.
-- Post-merge `main` run 29679504405 passed the same complete three-platform
-  correctness, backend, benchmark-smoke, and requirement-registry gate on
-  exact `60f9bb6e`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, normative contract, numerical
-  behavior, dependency, tag, or release.
+- One private Clarabel 0.11.1 adapter maps canonical equality, bound, and
+  ordered second-order-cone rows without exposing backend types.
+- Soft L2 uses a diagonal PSD objective; L1 and Huber use exact explicit
+  epigraph constructions. Hard relations never become objective terms.
+- Options require strict tolerance, iteration, time, and memory policy.
+  Serial QDLDL, equilibration, and iterative refinement are recorded;
+  presolve and static/dynamic KKT regularization are disabled.
+- Exact solved status is independently reviewed for original objective,
+  primal/dual equations, cone membership, complementarity, duality gap, and
+  original-unit hard residuals with complete provenance.
+- Primal infeasibility is returned only with a normalized certificate that
+  passes original-data stationarity, dual-cone, nonzero, and strict
+  scale-aware separator review. Every other non-success status is rejected.
+- Rust API, example, analytic/property/error tests, production benchmark,
+  three-platform Ready/main benchmark-smoke routing, architecture policy,
+  dependency audit, and change fragment are present.
+- CLI is N/A until M8. C, C++, and Python are N/A until M9. Geological angular
+  and thickness semantic compilation remains later work.
 
 ## Validation state
 
-- Focused spike formatting and warning-denying all-target/all-feature Clippy
+- Focused warning-denying all-target Clippy and all seven convex solver tests
   passed.
-- Combined-feature tests passed 11 cases; Clarabel-only passed 8 and OSQP-only
-  passed 6. Empty-backend selection was rejected with the required compile
-  error.
-- The repaired release smoke workload and three complete release benchmark
-  runs passed.
-- After the final code change, the stable repair tree passed workspace format,
-  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
-  workspace Rustdoc, all 58 requirement checks, and `git diff --check`. The
-  later edit records only this validation evidence; no production, test,
-  manifest, schema, or build input changed.
-- The clean reviewer independently confirmed the analytic truth, exact status
-  and certificate paths, hard-constraint preservation, explicit settings,
-  deterministic evidence, linear-sparse fixtures, interface dispositions, and
-  complete-diff whitespace checks.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state tree passed the complete local standard gate:
-  format, warning-denying all-target/all-feature Clippy, all-feature workspace
-  tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-  The following edit records only this validation evidence; no production,
-  test, manifest, schema, CI, build, registry, API, normative, numerical, or
-  dependency input changed after the gate.
+- The runnable Huber example passed with zero hard-bound violation.
+- The release smoke benchmark passed at 8 and 16 variables with finite,
+  deterministic checksums; the recorded first run was 0.4392 and 0.3477 ms.
+- Production dependency review found 34 active Windows packages and 48
+  all-target lock packages, only permissive declared licenses, a highest
+  declared MSRV of Rust 1.77 with some omissions, no native-code path, and no
+  finding in exact OSV or repository advisory queries.
+- After the final production and registry changes, the stable tree passed the
+  complete standard gate: workspace format, warning-denying all-target/all-
+  feature Clippy, all-feature workspace tests, workspace Rustdoc, all 58
+  requirement checks, and `git diff --check`. This following edit records only
+  that validation evidence; no production, test, manifest, schema, CI, build,
+  registry, API, normative, numerical, or dependency input changed afterward.
 
 ## Next task
 
-Synchronize the final integration-state evidence on PR #80 and mark it Ready.
-Wait for exact-head Windows, Ubuntu, and macOS correctness plus every benchmark
-smoke, merge exactly once only when green, then stop. Do not begin
-REQ-CONVEX-001 in this task.
+Open a fresh Review task for Draft PR #82 and REQ-CONVEX-001 only. Supply the
+project `math_reviewer` only the bounded requirement/dependency summaries,
+SOLVER_POLICY, ADR-0011, PR diff, test/benchmark/dependency evidence, and CI
+state. Review formulae, signs, epigraph equivalence, PSD objective, cone order,
+hard constraints, original-unit KKT and certificate checks, settings,
+allocations, provenance, interface dispositions, and registry truth. Record
+P0-P3 findings but do not repair production code or begin REQ-INFEAS-001 in the
+same task.
 
 ## Checks not yet available
 
@@ -75,6 +71,5 @@ REQ-CONVEX-001 in this task.
 installed. Miri is unavailable for pinned Rust 1.96.1. Sanitizers, executable
 fuzzing, mutation testing, general allocation instrumentation, and API/ABI/
 schema snapshot checks are tracked by later requirements and release gates.
-Local `actionlint` is unavailable. Exact OSV and GitHub advisory API queries
-from the implementation task remain the performed dependency review;
-unavailable tools are not claimed.
+Local `actionlint` is unavailable. Exact OSV and repository advisory API
+queries are the performed dependency review; unavailable tools are not claimed.

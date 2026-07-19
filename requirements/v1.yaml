@@ -462,17 +462,17 @@ requirements:
     dependencies: [REQ-SOFT-001, REQ-LINEQ-001, REQ-SPIKE-004]
     milestone: M4-v0.4.0
     priority: P0
-    issue: null
-    pull_request: null
+    issue: 81
+    pull_request: 82
     tests: [qp-truth, socp-truth, mixed-constraints, deterministic-repeat]
     docs: [docs/architecture/SOLVER_POLICY.md, rustdoc]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
-    status: planned
+    rust_api: implemented
+    cli: "N/A: stage-0 CLI exposes only help/version; project and schema commands belong to M8"
+    c_api: "N/A: C ABI follows Rust API and schema freeze in M9"
+    cpp_api: "N/A: C++ wrapper follows the C ABI in M9"
+    python_api: "N/A: Python bindings follow Rust API and schema freeze in M9"
+    benchmark: implemented
+    status: implemented
 
   - id: REQ-INFEAS-001
     title: Constraint conflict and infeasibility diagnostics
