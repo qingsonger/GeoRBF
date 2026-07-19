@@ -9,9 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement complete; fresh independent Review required
 - Requirement: REQ-LINEQ-001, Issue #75 (open)
 - Branch: `codex/req-lineq-001-linear-bounds`
-- Draft implementation pull request: pending first push
-- Registry state in this commit: `in_progress`; becomes `implemented` only
-  after the Draft PR number is recorded
+- Draft implementation pull request: #76
+- Registry state: `implemented`
 - Dependencies: REQ-IR-001 and REQ-LEVEL-001 are `integrated`
 - No later requirement may start until REQ-LINEQ-001 is independently reviewed,
   repaired if needed, passed through exact Ready CI, merged, and recorded as
@@ -29,10 +28,14 @@ records, benchmark reports, Git, and GitHub.
 - All forms lower to existing semantic and canonical linear bounds with stable
   source provenance and insertion order. Existing explicit `LevelOrder` remains
   the sole layer-order path.
+- A field-only canonical bound problem can compose with a compiled level
+  problem when its named blocks match the field prefix. Membership/fixed rows,
+  order bounds, priors, variable identities, and all provenance remain
+  unchanged; field bounds/objectives append and canonical metadata is rebuilt.
 - Canonical construction rejects infeasible constant rows and disjoint exact
   equal/sign-reversed hard-row intervals with complete source evidence. It does
   not claim general LP feasibility or compare approximate rows.
-- Added six independent tests, a runnable example, a deterministic mixed
+- Added seven independent tests, a runnable example, a deterministic mixed
   96-constraint benchmark, normative documentation, a benchmark report, and
   the requirement change fragment.
 - No solver backend, dependency, schema, fitting support, adapter
@@ -41,7 +44,7 @@ records, benchmark reports, Git, and GitHub.
 
 ## Validation state
 
-- Focused linear-constraint tests pass: 6 passed, 0 failed.
+- Focused linear-constraint tests pass: 7 passed, 0 failed.
 - The runnable example passes and prints the expected inside upper bound and
   increasing lower rate.
 - The benchmark smoke and 2,000-iteration baseline pass with deterministic
@@ -55,7 +58,7 @@ records, benchmark reports, Git, and GitHub.
 ## Next task
 
 Open a fresh independent Review task limited to the Draft REQ-LINEQ-001 pull
-request after its number is recorded here. Review every sign and unit,
+request #76. Review every sign and unit,
 inside/outside boundary convention, scalar-gap order, monotonicity direction,
 exact row normalization, hard infeasibility evidence, D=1/D=2/D=3 behavior,
 allocation paths, interface exclusions, benchmark, registry, and documentation.
@@ -65,6 +68,7 @@ without beginning another requirement.
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #75
+- Draft implementation pull request: GitHub PR #76
 - Requirement summary: `changes/REQ-LINEQ-001.md`
 - Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
 - Architecture: `docs/architecture/PROBLEM_IR.md` and

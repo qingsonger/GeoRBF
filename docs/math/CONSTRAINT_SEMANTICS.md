@@ -70,6 +70,15 @@ tolerance, a general LP feasibility solver, or license to modify either row.
 Soft bounds do not participate because they are objective terms rather than
 hard feasibility conditions.
 
+A field-only canonical problem containing hard and/or soft linear bounds may
+be composed with a compiled explicit-level problem when its variable blocks
+exactly match the level problem's field-block prefix. Membership and fixed rows
+remain first, level-order bounds remain the bound prefix, level priors remain
+the objective prefix, and field bounds/objectives append in their own semantic
+order. Scaling, capabilities, memory estimates, and exact cross-problem hard
+conflicts are recomputed from the unchanged rows. Equalities, cones, or a
+different variable space are rejected rather than reinterpreted.
+
 ## Level variables
 
 Each geological level has one explicit scalar `h_k`. A point assigned to that

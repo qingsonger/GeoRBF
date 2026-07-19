@@ -128,6 +128,10 @@ requires a caller-selected scalar orientation. Level order continues through
 the explicit-level layer. Canonical hard-bound review detects only constant
 infeasibility and exact equal/sign-reversed row conflicts with full sources;
 general inequality solution remains blocked on the approved convex backend.
+Field-only bound problems can compose with a compiled explicit-level problem
+only when their named field variable spaces match exactly; the composition
+preserves every existing row and rechecks canonical capabilities, memory, and
+hard conflicts.
 
 The field-assembly layer depends on semantic/canonical problem IR, distinct
 observation and center functional wrappers, kernel metadata/calculus, complete

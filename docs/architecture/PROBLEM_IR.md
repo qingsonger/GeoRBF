@@ -31,6 +31,14 @@ and increasing/decreasing directional-monotonicity signs. It lowers to ordinary
 `SemanticConstraint` values and adds no canonical relation family. Existing
 `LevelOrder` compilation remains the sole explicit-level path.
 
+`CompiledLevelProblem` can consume a separately canonicalized field-only bound
+problem whose named variable blocks exactly equal its field prefix. It appends
+hard field bounds after level-order rows and soft field-bound objectives after
+level priors, then reconstructs one immutable `CanonicalProblem`. Memberships,
+fixed rows, order rows, priors, and field relations retain their original
+coefficients, bounds, provenance, and relative order. Non-bound relation
+families and mismatched spaces fail structurally.
+
 ## CanonicalProblem
 
 The complete planned numerical form is

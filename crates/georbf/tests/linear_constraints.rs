@@ -6,6 +6,7 @@ use std::num::NonZeroUsize;
 use georbf::{
     AffineExpression, AffineTerm, CanonicalizationError, Dim, Enforcement, ExecutionOptions,
     FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm, InsideOrientation,
+    LevelDefinition, LevelId, LevelMembership, LevelOrder, LevelProblem, LevelValue,
     LinearConstraint, LinearConstraintError, MonotonicitySense, ObservationFunctional,
     ObservationId, Point, ProblemIrError, RegionSide, SemanticProblemIr, SemanticProvenance,
     SourceLocation, SupportedDimension, UnitDirection, VariableBlock,
@@ -32,11 +33,13 @@ fn value_functional<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
+    let mut coordinates = [0.0; D];
+    coordinates[0] = f64::from(u32::try_from(variable)?);
     Ok(ObservationFunctional::new(FunctionalExpr::try_new([
         FunctionalTerm::try_new(
             1.0,
             FunctionalAtom::value(
-                Point::try_new([0.0; D])?,
+                Point::try_new(coordinates)?,
                 FunctionalProvenance::new(u64::try_from(variable)?),
             ),
         )?,
@@ -474,6 +477,103 @@ fn soft_bounds_remain_objectives_and_are_not_hard_conflicts() -> TestResult {
     let canonical = soft.try_compile([one_block(1)?], |functional, _| linearize(functional, 1))?;
     assert!(canonical.linear_bounds().is_empty());
     assert_eq!(canonical.soft_objectives().len(), 2);
+    Ok(())
+}
+
+#[test]
+fn field_bounds_compose_with_explicit_level_rows_without_rewriting_them() -> TestResult {
+    let levels = LevelProblem::try_new(
+        [
+            LevelDefinition::new(
+                LevelId::new(10),
+                LevelValue::try_fixed(0.0)?,
+                provenance(100)?,
+            ),
+            LevelDefinition::new(
+                LevelId::new(20),
+                LevelValue::try_fixed(1.0)?,
+                provenance(101)?,
+            ),
+        ],
+        [
+            LevelMembership::new(
+                LevelId::new(10),
+                value_functional::<1>(0)?,
+                provenance(102)?,
+            ),
+            LevelMembership::new(
+                LevelId::new(20),
+                value_functional::<1>(1)?,
+                provenance(103)?,
+            ),
+        ],
+        [LevelOrder::try_new(
+            LevelId::new(10),
+            LevelId::new(20),
+            0.5,
+            provenance(104)?,
+        )?],
+    )?;
+    let field_block = one_block(2)?;
+    let compiled_levels = levels.try_compile([field_block.clone()], |functional, _| {
+        linearize(functional, 2)
+    })?;
+    let original = compiled_levels.canonical_problem().clone();
+
+    let field_semantic = SemanticProblemIr::try_new(
+        [
+            LinearConstraint::try_lower(
+                provenance(105)?,
+                value_functional::<1>(0)?,
+                -2.0,
+                Enforcement::Hard,
+            )?
+            .try_into_semantic_constraint()?,
+            LinearConstraint::try_upper(
+                provenance(106)?,
+                value_functional::<1>(1)?,
+                3.0,
+                Enforcement::Hard,
+            )?
+            .try_into_semantic_constraint()?,
+        ],
+        ExecutionOptions::default(),
+    )?;
+    let field_canonical =
+        field_semantic.try_compile([field_block], |functional, _| linearize(functional, 2))?;
+    let combined = compiled_levels.try_compose_field_linear_problem(field_canonical)?;
+    let canonical = combined.canonical_problem();
+
+    assert_eq!(
+        canonical.variable_blocks().collect::<Vec<_>>(),
+        [("field", 0, 2), ("levels", 2, 2)]
+    );
+    assert_eq!(canonical.equalities(), original.equalities());
+    assert_eq!(&canonical.linear_bounds()[..1], original.linear_bounds());
+    assert_eq!(canonical.linear_bounds().len(), 3);
+    assert_eq!(
+        canonical.linear_bounds()[1].provenance().observation_id(),
+        ObservationId::new(105)
+    );
+    assert_eq!(
+        canonical.linear_bounds()[2].provenance().observation_id(),
+        ObservationId::new(106)
+    );
+    assert_eq!(combined.level_variable(LevelId::new(10)), Some(2));
+
+    let mismatch = field_semantic.try_compile(
+        [VariableBlock::try_new(
+            "other".to_owned(),
+            NonZeroUsize::new(2).ok_or("block")?,
+        )?],
+        |functional, _| linearize(functional, 2),
+    )?;
+    let levels_again =
+        levels.try_compile([one_block(2)?], |functional, _| linearize(functional, 2))?;
+    assert!(matches!(
+        levels_again.try_compose_field_linear_problem(mismatch),
+        Err(ProblemIrError::IncompatibleCanonicalVariableSpaces)
+    ));
     Ok(())
 }
 

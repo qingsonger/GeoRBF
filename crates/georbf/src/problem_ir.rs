@@ -1227,6 +1227,70 @@ impl CanonicalProblem {
         )
     }
 
+    pub(crate) fn try_append_field_linear_problem(
+        self,
+        field_problem: Self,
+    ) -> Result<Self, ProblemIrError> {
+        let field_block_count = field_problem.variable_space.blocks.len();
+        if self.variable_space.blocks.len() != field_block_count.saturating_add(1)
+            || self.variable_space.blocks[..field_block_count]
+                != field_problem.variable_space.blocks
+        {
+            return Err(ProblemIrError::IncompatibleCanonicalVariableSpaces);
+        }
+        if !field_problem.equalities.is_empty()
+            || !field_problem.cones.is_empty()
+            || field_problem.soft_objectives.iter().any(|objective| {
+                !matches!(objective.relation(), CanonicalSoftRelation::LinearBound(_))
+            })
+        {
+            return Err(ProblemIrError::NonLinearCanonicalComposition);
+        }
+
+        let Self {
+            variable_space,
+            equalities,
+            mut linear_bounds,
+            cones,
+            mut soft_objectives,
+            ..
+        } = self;
+        let Self {
+            linear_bounds: field_bounds,
+            soft_objectives: field_objectives,
+            ..
+        } = field_problem;
+        let bound_count = linear_bounds
+            .len()
+            .checked_add(field_bounds.len())
+            .ok_or(ProblemIrError::MemoryEstimateOverflow)?;
+        linear_bounds
+            .try_reserve_exact(field_bounds.len())
+            .map_err(|_| ProblemIrError::AllocationFailed {
+                storage: ProblemIrStorage::CanonicalLinearBounds,
+                requested: bound_count,
+            })?;
+        let objective_count = soft_objectives
+            .len()
+            .checked_add(field_objectives.len())
+            .ok_or(ProblemIrError::MemoryEstimateOverflow)?;
+        soft_objectives
+            .try_reserve_exact(field_objectives.len())
+            .map_err(|_| ProblemIrError::AllocationFailed {
+                storage: ProblemIrStorage::CanonicalSoftObjectives,
+                requested: objective_count,
+            })?;
+        linear_bounds.extend(field_bounds);
+        soft_objectives.extend(field_objectives);
+        Self::try_new(
+            variable_space,
+            equalities,
+            linear_bounds,
+            cones,
+            soft_objectives,
+        )
+    }
+
     #[allow(clippy::too_many_lines)]
     fn try_new(
         variable_space: VariableSpace,
@@ -1465,6 +1529,10 @@ pub enum ProblemIrError {
         /// Least upper endpoint from the conflicting pair.
         upper: f64,
     },
+    /// A field-only canonical problem did not match a level problem's field blocks.
+    IncompatibleCanonicalVariableSpaces,
+    /// A field problem composed into a level problem contained a non-bound relation.
+    NonLinearCanonicalComposition,
     /// A second-order cone had no left-hand component.
     EmptyConeLeftHandSide,
     /// A soft residual scale was not finite and positive.

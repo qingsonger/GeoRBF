@@ -6,6 +6,9 @@
 //! [`crate::problem_ir::SemanticConstraint`]. Canonicalization remains owned by
 //! [`crate::problem_ir::SemanticProblemIr`], and no geological name or relation
 //! reaches a solver.
+//! [`crate::levels::CompiledLevelProblem::try_compose_field_linear_problem`]
+//! can append a field-only canonical bound problem after the existing explicit
+//! membership, fixed-value, level-order, and prior rows without rewriting them.
 //!
 //! Inside/outside observations are necessarily relative to an explicit scalar
 //! orientation. Boundaries are closed: a value exactly on the boundary

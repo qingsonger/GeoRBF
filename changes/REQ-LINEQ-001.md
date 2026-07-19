@@ -19,6 +19,14 @@ terms are combined through fallible reserved storage. Existing explicit
 `h_upper - h_lower >= minimum_gap`, so this change does not introduce a second
 level model.
 
+`CompiledLevelProblem::try_compose_field_linear_problem` combines a separately
+canonicalized field-only bound problem when its named blocks exactly match the
+compiled level problem's field prefix. It preserves membership/fixed
+equalities, level-order bounds, level priors, and their order, appends field
+bounds/objectives in semantic order, and rebuilds capabilities, identity
+scaling, checked memory estimates, and cross-problem exact conflict review.
+Mismatched spaces or non-bound relation families are rejected structurally.
+
 Canonical construction now rejects a hard constant row whose closed interval
 excludes zero. It also compares hard bound rows for exact coefficient equality
 or exact sign reversal, transforms them to one orientation, and rejects a
@@ -29,14 +37,15 @@ does not claim general LP infeasibility, near-duplicate detection, scaling,
 regularization, jitter, pseudoinverse repair, constraint deletion, or
 hard-to-soft conversion.
 
-Six independent tests cover all relation mappings and signs, both region
+Seven independent tests cover all relation mappings and signs, both region
 orientations, scalar-gap coefficient signs, increasing/decreasing monotonicity,
 invalid numeric and functional shapes, exact same/sign-reversed hard conflicts,
 constant-row infeasibility, feasible touching intervals, provenance and
-insertion order, D=1/D=2/D=3, and `Send + Sync`. Existing level tests retain
-independent layer-order gap, DAG, gauge, contrast, and infeasibility truth. A
-runnable example and a deterministic 96-constraint benchmark accompany the
-Rustdoc and normative documentation.
+insertion order, D=1/D=2/D=3, field/level composition with unchanged row
+prefixes and variable identities, mismatched field spaces, and `Send + Sync`.
+Existing level tests retain independent layer-order gap, DAG, gauge, contrast,
+and infeasibility truth. A runnable example and a deterministic 96-constraint
+benchmark accompany the Rustdoc and normative documentation.
 
 Rust is implemented. CLI is N/A because the stage-0 command exposes only help
 and version and complete project/schema commands belong to M8. C, C++, and
