@@ -32,6 +32,7 @@ available in Git history through commit `a2be099`.
 | REQ-LEVEL-001 | #69 | #70 | #71 | `docs/reviews/PR-70-INDEPENDENT-REVIEW.md` |
 | REQ-SOFT-001 | #72 | #73 | #74 | `docs/reviews/PR-73-INDEPENDENT-REVIEW.md` |
 | REQ-LINEQ-001 | #75 | #76 | #77 | `docs/reviews/PR-76-INDEPENDENT-REVIEW.md` |
+| REQ-SPIKE-004 | #78 | #79 | #80 | `docs/reviews/PR-79-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
@@ -47,6 +48,6 @@ GitHub. This file is an index, not a second completion registry.
 ## Milestone transition
 
 M0, M1, M2, and M3 are complete. The isolated Issue #31 workflow-efficiency
-repair, REQ-LEVEL-001, REQ-SOFT-001, and REQ-LINEQ-001 are integrated. M4
-continues with the next eligible atomic requirement selected by the registry in
-a fresh task.
+repair, REQ-LEVEL-001, REQ-SOFT-001, REQ-LINEQ-001, and REQ-SPIKE-004 are
+integrated. M4 continues with the next eligible atomic requirement selected by
+the registry in a fresh task.

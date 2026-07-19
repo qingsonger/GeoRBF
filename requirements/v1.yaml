@@ -454,7 +454,7 @@ requirements:
     cpp_api: "N/A: dependency spike exposes no C++ API"
     python_api: "N/A: dependency spike exposes no Python API"
     benchmark: implemented
-    status: implemented
+    status: integrated
 
   - id: REQ-CONVEX-001
     title: QP and SOCP canonical solver integration
