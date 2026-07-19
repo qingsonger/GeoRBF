@@ -6,75 +6,61 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement complete; fresh independent Review required
+- Mode: Review complete; Repair required for R76-001
 - Requirement: REQ-LINEQ-001, Issue #75 (open)
 - Branch: `codex/req-lineq-001-linear-bounds`
 - Draft implementation pull request: #76
-- Exact implementation and complete local gate head:
-  `8931260b6d37aa87bd82fa9416bd97d119c6d134`
-- Registry state: `implemented`
+- Reviewed head: `0da5084c3b4f7f909299069c3c8dcf3145d1f282`
+- Registry state remains `implemented`
 - Dependencies: REQ-IR-001 and REQ-LEVEL-001 are `integrated`
-- No later requirement may start until REQ-LINEQ-001 is independently reviewed,
-  repaired if needed, passed through exact Ready CI, merged, and recorded as
-  `integrated`
+- No later requirement may start until REQ-LINEQ-001 is repaired,
+  independently re-reviewed, passed through exact Ready CI, merged, and
+  recorded as `integrated`
 
-## Implementation result
+## Independent review result
 
-- Added immutable D=1/D=2/D=3 Rust constructors for lower, upper, closed
-  interval, explicitly oriented closed inside/outside, scalar-gap, and
-  directional-monotonicity semantics.
-- Inside/outside requires `InsideAtOrBelow` or `InsideAtOrAbove`; scalar gaps
-  use `upper - lower >= minimum_gap`; monotonicity accepts exactly one
-  coefficient-one directional derivative and explicit increasing/decreasing
-  sense.
-- All forms lower to existing semantic and canonical linear bounds with stable
-  source provenance and insertion order. Existing explicit `LevelOrder` remains
-  the sole layer-order path.
-- A field-only canonical bound problem can compose with a compiled level
-  problem when its named blocks match the field prefix. Membership/fixed rows,
-  order bounds, priors, variable identities, and all provenance remain
-  unchanged; field bounds/objectives append and canonical metadata is rebuilt.
-- Canonical construction rejects infeasible constant rows and disjoint exact
-  equal/sign-reversed hard-row intervals with complete source evidence. It does
-  not claim general LP feasibility or compare approximate rows.
-- Added seven independent tests, a runnable example, a deterministic mixed
-  96-constraint benchmark, normative documentation, a benchmark report, and
-  the requirement change fragment.
-- No solver backend, dependency, schema, fitting support, adapter
-  reimplementation, unsafe code, hidden scaling, jitter, regularization,
-  pseudoinverse, relaxation, deletion, or automatic repair was introduced.
+- The fresh read-only project `math_reviewer` found no P0, P1, or P3 issue and
+  one P2 issue, recorded as R76-001 in
+  `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`.
+- R76-001: field and level inputs each enforce stable observation-ID uniqueness
+  internally, but canonical composition does not recheck IDs across the two
+  inputs. It can therefore return one canonical problem with ambiguous duplicate
+  provenance identities.
+- Formula signs and units, closed region boundaries, scalar and level gap
+  orientation, monotonicity direction and functional shape, exact row reversal,
+  hard infeasibility evidence, hard/soft separation, D=1/D=2/D=3 behavior,
+  allocation paths, interfaces, benchmark, registry, and documentation were
+  otherwise consistent with the requirement.
 
 ## Validation state
 
-- Focused linear-constraint tests pass: 7 passed, 0 failed.
-- The runnable example passes and prints the expected inside upper bound and
-  increasing lower rate.
-- The benchmark smoke and 2,000-iteration baseline pass with deterministic
-  6,400-byte-per-iteration canonical memory estimates.
-- Exact implementation head `8931260` passes the complete stable-head standard
-  workspace gate: format,
-  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
-  workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The tail after `8931260` changes only this bounded handoff. It changes no
-  production code, test, manifest, schema, CI, build input, registry, API,
-  numerical behavior, or dependency, so the exact-head gate remains valid.
-- Draft CI is not claimed as reviewed. No independent review, Ready transition,
-  merge, integration, tag, or release is claimed.
+- Exact implementation head `8931260` retains its complete green local standard
+  gate; `8931260..0da5084` changes only this bounded handoff.
+- Exact reviewed head `0da5084` passed Draft Ubuntu correctness CI.
+- The independent reviewer repeated all seven focused tests, the complete
+  Rustdoc suite, example, benchmark smoke, all 58 requirement checks, and
+  whitespace checks; all passed.
+- The parent Review task passed all seven linear-constraint tests, all 21 level
+  tests, the example, benchmark smoke, all georbf Rustdoc, all 58 requirement
+  checks, and `git diff --check`.
+- No repair, re-review, Ready transition, merge, integration, tag, or release
+  is claimed.
 
 ## Next task
 
-Open a fresh independent Review task limited to the Draft REQ-LINEQ-001 pull
-request #76. Review every sign and unit,
-inside/outside boundary convention, scalar-gap order, monotonicity direction,
-exact row normalization, hard infeasibility evidence, D=1/D=2/D=3 behavior,
-allocation paths, interface exclusions, benchmark, registry, and documentation.
-Record findings without repairing production code in that Review task. Stop
-without beginning another requirement.
+Open a fresh Repair task limited to R76-001. Add a regression in which one field
+bound reuses the observation ID of a level record and require structured
+rejection during composition. Implement the smallest complete cross-problem
+provenance-identity check, run focused checks, then the complete standard gate
+once on the stable repaired head. Update review evidence and this bounded
+handoff, commit, push, and stop for a fresh independent re-review. Do not begin
+another requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #75
 - Draft implementation pull request: GitHub PR #76
+- Independent review: `docs/reviews/PR-76-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-LINEQ-001.md`
 - Mathematical semantics: `docs/math/CONSTRAINT_SEMANTICS.md`
 - Architecture: `docs/architecture/PROBLEM_IR.md` and
