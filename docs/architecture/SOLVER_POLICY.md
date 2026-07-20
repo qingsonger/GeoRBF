@@ -83,6 +83,81 @@ automatic choice records requested and actual solver, amount added, original
 and effective rank, condition estimates, and trigger. No pseudoinverse, jitter,
 or fallback may hide failure.
 
+## Canonical convex implementation
+
+`REQ-CONVEX-001` adopts Clarabel 0.11.1 behind the private `convex` adapter.
+The public boundary contains only GeoRBF-owned options, solutions, statuses,
+provenance, certificates, and diagnostics. The adapter maps hard equalities to
+zero cones, each finite bound side to a nonnegative-cone row, and every ordered
+canonical `||lhs|| <= rhs` relation to one Lorentz cone. It introduces explicit
+violation epigraphs for soft relations: squared L2 contributes a nonnegative
+diagonal PSD term, L1 a linear epigraph cost, and Huber an exact quadratic-plus-
+linear infimal representation. Hard relations are never included in an
+objective or relaxed.
+
+The production settings select direct serial QDLDL and assign every material
+Clarabel 0.11.1 setting explicitly: exact and reduced-status tolerances,
+kappa/tau tolerance, maximum step and line-search lengths, equilibration bounds
+and ten passes, iterative-refinement tolerances, stop ratio and ten steps,
+sparse-zero handling, iteration/time limits, and one thread. Reduced statuses
+remain rejected even though their backend thresholds are explicit. Presolve
+plus static and dynamic KKT regularization are disabled, with their inactive
+constants recorded. No backend fallback or warm start exists. Diagnostics
+mirror the complete settings snapshot, the exact independent-review tolerance
+with multiplier one, backend version, terminal status, iterations, effective
+memory policy, sparse shape, original-variable and auxiliary-variable counts,
+and complete relation provenance.
+
+An exact `Solved` status is necessary but insufficient. GeoRBF evaluates each
+`rho(v(x_original) / scale)` directly from the original canonical relations,
+separately reconstructs the compiled and backend primal objectives, and
+reconstructs the dual objective as `-0.5 * x^T P x - b^T z`. Primal and dual
+equations, product-cone membership, complementarity, semantic primal-dual gap,
+and every hard residual use dimensionally homogeneous component or row scales
+and the exact requested tolerance; there is no hidden multiplier or raw
+dimensioned unit floor. The unit soft-loss count supplies a natural
+dimensionless objective scale at a zero-loss optimum. For a structurally zero
+objective, diagnostics instead record an explicit dimensionless objective-unit
+reference of one. Stationarity converts that reference to each variable's
+gradient units with `max_i |A_ij| / max(|b_i|, |s_i|, |A_ik x_k|)` over nonzero
+original row references. The construction is invariant under positive row
+scaling and variable-unit changes; a zero row supplies no artificial reference,
+and the synthetic nonstationary dual remains rejected.
+
+Before dispatch, the adapter applies a positive infinity normalization to each
+zero-cone and nonnegative-cone row and one common normalization to every
+Lorentz-cone block. The latter restriction preserves the Lorentz cone exactly.
+Backend slack and dual values are mapped back as `s = D^-1 s_backend` and
+`z = D z_backend` before every original-unit KKT or certificate review. The
+complete row-scaling vector is retained in solution and certificate diagnostics;
+it is not a hidden relaxation. This adapter normalization makes equivalent
+hard-only rows at scales `1e-12`, `1`, and `1e12` reach the same exact requested-
+tolerance review policy without depending on the backend's bounded internal
+equilibration factors.
+
+A reported primal-infeasibility vector is infinity-normalized and accepted
+only after componentwise homogeneous original-data `A^T z`, dual-cone,
+nonzero, representability, and strict scale-aware `b^T z < 0` reviews. The
+convex option and optional execution memory limits combine by taking the
+smaller nonzero value. A nonallocating preflight runs before compiler-owned
+cloning, accounts for provenance and adapter auxiliaries, and bounds QDLDL
+symbolic/numeric fill by the dense lower triangle of the complete KKT
+dimension. GeoRBF-owned allocations after that check use fallible reservation.
+Reduced-accuracy, dual-infeasible, limit, numerical-error,
+insufficient-progress, callback, and unsolved statuses remain structured
+failures.
+
+The production re-audit retained the exact 0.11.1 patch because it remained the
+current non-yanked crates.io release on 2026-07-19. The selected default-disabled
+`serde` feature is still required by an unconditional upstream error variant;
+no BLAS, LAPACK, SDP, Python, Julia, Pardiso, native C, or OSQP path is enabled.
+The 34-package active Windows graph and 48-package all-target lock graph are
+permissively licensed, build on Rust 1.96.1, and have no OSV or repository
+security-advisory finding in the recorded audit. The highest declared all-target
+MSRV is Rust 1.77; some transitive crates omit an MSRV. Source lines containing
+the word `unsafe` are dependency-exposure evidence rather than proven defects;
+the GeoRBF core continues to forbid unsafe code.
+
 ## Dense equality implementation
 
 `REQ-SOLVE-001` implements the square dense equality path behind GeoRBF-owned

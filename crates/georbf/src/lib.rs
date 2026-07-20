@@ -21,11 +21,15 @@
 //! solver-neutral equality/linear-bound compilation, plus explicit lower,
 //! upper, interval, region-side, scalar-gap, and directional-monotonicity
 //! semantic compilation with exact hard-bound conflict diagnostics.
+//! Canonical equality, linear-bound, soft L2/L1/Huber, and second-order-cone
+//! problems can be dispatched through a checked Clarabel adapter with explicit
+//! settings, memory policy, provenance, and independent original-unit review.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
 pub mod anisotropy;
+pub mod convex;
 pub mod coordinates;
 pub mod cpd;
 pub mod diagnostics;
@@ -48,6 +52,13 @@ pub mod units;
 
 pub use anisotropy::{
     AnisotropyConditionPolicy, AnisotropyDiagnostics, AnisotropyError, GlobalAnisotropy,
+};
+pub use convex::{
+    ConvexBackendStatus, ConvexCertificateDiagnostics, ConvexConstraintDiagnostics,
+    ConvexConstraintKind, ConvexInfeasibilityCertificate, ConvexKktDiagnostics, ConvexSettingState,
+    ConvexSettingsDiagnostics, ConvexSolution, ConvexSolveDiagnostics, ConvexSolveError,
+    ConvexSolveOptions, ConvexSolverConfigurationError, try_solve_canonical,
+    try_solve_canonical_with_control,
 };
 pub use coordinates::{
     AxisOrder, CoordinateMetadata, CoordinateMetadataError, CoordinateMetadataField, CrsMetadata,
