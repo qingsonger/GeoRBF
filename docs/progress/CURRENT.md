@@ -9,8 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement
 - Requirement: REQ-NORMAL-001, Issue #87
 - Branch: `codex/req-normal-001-observations`
-- Pull request: pending initial push; must remain Draft for independent Review
-- Registry state: `in_progress` until the Draft PR number is recorded
+- Pull request: #88 (Draft; independent Review has not started)
+- Registry state: `implemented`, not `integrated`
 - Dependencies: REQ-ORIENT-001 and REQ-CONVEX-001 are `integrated`
 
 ## Implemented scope
@@ -43,18 +43,23 @@ records, benchmark reports, Git, and GitHub.
 - The stable implementation tree passed the complete standard gate: workspace
   format, warning-denying all-target/all-feature Clippy, all-feature workspace
   tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+- Implementation commit `84779ad` was pushed and Draft PR #88 was opened. The
+  final PR-link registry/handoff tree then passed the same complete standard
+  gate. Only this validation wording changed afterward; no production, test,
+  manifest, schema, CI, build input, API, or numerical behavior changed.
 
 ## Next task boundary
 
-Complete this Implement task only: run the standard gate on the final stable
-implementation, commit and push, open the Draft PR, record its number and
-truthful `implemented` registry state, rerun the required final checks for that
-registry head, push, and stop. Independent mathematical Review must start in a
-fresh task and must not inherit this implementation reasoning.
+After the final PR-link registry/handoff head is pushed, stop. Open a fresh
+Review task for only Draft PR #88 and REQ-NORMAL-001. That task must create the
+project `math_reviewer` independently from bounded requirement/dependency,
+normative, diff, test, benchmark, registry, handoff, and validation evidence;
+it must not inherit this implementation reasoning or start REQ-TANGENT-001.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #87
+- Draft implementation pull request: GitHub PR #88
 - Requirement summary: `changes/REQ-NORMAL-001.md`
 - Focused tests: `crates/georbf/tests/normal_observations.rs`
 - Normative behavior: `docs/math/NORMAL_AND_TANGENT.md`
