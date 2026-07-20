@@ -481,7 +481,7 @@ requirements:
     milestone: M4-v0.4.0
     priority: P0
     issue: 84
-    pull_request: null
+    pull_request: 85
     tests: [duplicate, near-duplicate, conflict, infeasible-certificate]
     docs: [docs/math/CONSTRAINT_SEMANTICS.md, rustdoc]
     rust_api: implemented
@@ -490,7 +490,7 @@ requirements:
     cpp_api: "N/A: C++ wrapper follows the C ABI in M9"
     python_api: "N/A: Python bindings follow Rust API and schema freeze in M9"
     benchmark: implemented
-    status: in_progress
+    status: implemented
 
   - id: REQ-NORMAL-001
     title: Normal observation modes

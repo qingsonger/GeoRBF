@@ -9,8 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement / REQ-INFEAS-001 complete locally
 - Requirement: REQ-INFEAS-001, Issue #84
 - Branch: `codex/req-infeas-001-diagnostics`
-- Pull request: pending initial push; create as Draft
-- Registry state in this change: `in_progress` until the Draft PR number exists
+- Pull request: #85 (Draft)
+- Registry state in this change: `implemented`
 - Dependencies: REQ-CONVEX-001 and REQ-DIAG-001 are `integrated`
 
 ## Implementation result
@@ -43,21 +43,22 @@ records, benchmark reports, Git, and GitHub.
 - The 5,000-iteration 96-constraint benchmark measured 145.75 microseconds per
   review with checksum `480000`; the eight-iteration smoke measured 178.09
   microseconds with checksum `768`. Timings are not performance promises.
-- After the final production/test change, the stable tree passed the complete
+- Exact implementation commit `63f34ed` contains the production, test,
+  manifest, example, benchmark, and normative-document tree that passed the complete
   standard gate: workspace format, warning-denying all-target/all-feature
   Clippy, all-feature workspace tests, workspace Rustdoc, all 58 requirement
   checks, and `git diff --check`.
 
 ## Next task
 
-After the branch is pushed and the Draft PR number is linked in this handoff and
-the registry, open a fresh Review task. It must review only REQ-INFEAS-001 and
-the Draft PR, create and wait for the project `math_reviewer`, record findings,
-and stop without repairing production code or starting another requirement.
+Open a fresh Review task. It must review only REQ-INFEAS-001 and Draft PR #85,
+create and wait for the project `math_reviewer`, record findings, and stop
+without repairing production code or starting another requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #84
+- Draft implementation pull request: GitHub PR #85
 - Requirement summary: `changes/REQ-INFEAS-001.md`
 - Focused tests: `crates/georbf/tests/infeasibility.rs`
 - Example: `crates/georbf/examples/constraint_diagnostics.rs`
