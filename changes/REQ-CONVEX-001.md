@@ -87,3 +87,15 @@ adversarial-fill memory accounting, the effective execution limit, exact
 settings, and forced status routing. Nine end-to-end tests additionally cover
 fixed nonzero L2, L1, inner/outer Huber, nonunit scale, violated soft-bound and
 soft-cone objectives, and Lorentz rotation invariance.
+
+Repair of R82-008 adds an explicit hard-only feasibility policy instead of
+disabling stationarity review. Structurally zero objectives use a recorded
+dimensionless objective-unit reference of one; original row values convert it
+to componentwise objective-gradient units, so no raw dimensioned floor is
+introduced. A synthetic nonstationary dual still fails. Before backend
+dispatch, independent zero/nonnegative rows and whole Lorentz blocks receive
+positive infinity normalization, with the complete scaling recorded and
+backend slacks and duals mapped back before every original-unit review. The
+public `x >= 1` feasibility solve now succeeds for equivalent row scales
+`1e-12`, `1`, and `1e12`, with every normalized KKT and hard-relation diagnostic
+within the exact requested tolerance.

@@ -464,7 +464,7 @@ requirements:
     priority: P0
     issue: 81
     pull_request: 82
-    tests: [qp-truth, socp-truth, mixed-constraints, deterministic-repeat]
+    tests: [qp-truth, socp-truth, mixed-constraints, deterministic-repeat, hard-only-feasibility]
     docs: [docs/architecture/SOLVER_POLICY.md, rustdoc]
     rust_api: implemented
     cli: "N/A: stage-0 CLI exposes only help/version; project and schema commands belong to M8"

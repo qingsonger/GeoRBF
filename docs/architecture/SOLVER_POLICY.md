@@ -116,7 +116,24 @@ equations, product-cone membership, complementarity, semantic primal-dual gap,
 and every hard residual use dimensionally homogeneous component or row scales
 and the exact requested tolerance; there is no hidden multiplier or raw
 dimensioned unit floor. The unit soft-loss count supplies a natural
-dimensionless objective scale at a zero-loss optimum.
+dimensionless objective scale at a zero-loss optimum. For a structurally zero
+objective, diagnostics instead record an explicit dimensionless objective-unit
+reference of one. Stationarity converts that reference to each variable's
+gradient units with `max_i |A_ij| / max(|b_i|, |s_i|, |A_ik x_k|)` over nonzero
+original row references. The construction is invariant under positive row
+scaling and variable-unit changes; a zero row supplies no artificial reference,
+and the synthetic nonstationary dual remains rejected.
+
+Before dispatch, the adapter applies a positive infinity normalization to each
+zero-cone and nonnegative-cone row and one common normalization to every
+Lorentz-cone block. The latter restriction preserves the Lorentz cone exactly.
+Backend slack and dual values are mapped back as `s = D^-1 s_backend` and
+`z = D z_backend` before every original-unit KKT or certificate review. The
+complete row-scaling vector is retained in solution and certificate diagnostics;
+it is not a hidden relaxation. This adapter normalization makes equivalent
+hard-only rows at scales `1e-12`, `1`, and `1e12` reach the same exact requested-
+tolerance review policy without depending on the backend's bounded internal
+equilibration factors.
 
 A reported primal-infeasibility vector is infinity-normalized and accepted
 only after componentwise homogeneous original-data `A^T z`, dual-cone,

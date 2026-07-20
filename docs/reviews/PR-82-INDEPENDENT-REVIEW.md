@@ -354,3 +354,44 @@ PR #82 must remain Draft. REQ-CONVEX-001 remains `implemented`, not
 focused and stable-head standard checks, push, and stop for another fresh
 independent re-review. This re-review made no production-code change and did
 not begin REQ-INFEAS-001.
+
+## R82-008 repair evidence pending fresh re-review
+
+Repair code/test head `c1753bdb98e6abec69486c36713d887491204f67`
+addresses only R82-008:
+
+- A structurally zero objective now activates an explicit recorded
+  dimensionless objective-unit reference of one. Each stationarity component
+  converts that reference to objective-gradient units through the maximum
+  original-row ratio `|A_ij| / max(|b_i|, |s_i|, |A_ik x_k|)`. Positive row
+  scaling and variable-unit scaling cancel in that ratio; an all-zero row adds
+  no artificial reference.
+- The semantic gap, reconstructed/backend dual comparison, and complementarity
+  use the same recorded objective-unit reference. No raw dimensioned floor or
+  tolerance multiplier was introduced.
+- The adapter infinity-normalizes each zero/nonnegative row independently and
+  each Lorentz block uniformly before backend dispatch. Uniform Lorentz scaling
+  preserves the cone. Returned slack and dual values are mapped back to the
+  original compiled units before KKT, hard-relation, or certificate review, and
+  the complete positive row-scaling vector is retained in solution and
+  certificate diagnostics.
+- The public hard-only `x >= 1` regression passes at equivalent row scales
+  `1e-12`, `1`, and `1e12` with hard feasibility and every normalized KKT and
+  original-relation diagnostic at or below the exact requested `1e-9`
+  tolerance. A private synthetic dual with nonzero stationarity remains
+  rejected, so the repair does not bypass dual review.
+
+After the final production/test change, focused warning-denying all-target and
+all-feature Clippy, all six private convex tests, all ten convex integration
+tests, the runnable example, the 8/16 benchmark smoke workload, and
+`git diff --check` passed. Smoke checksums remained
+`4.00000000000000444` and `7.99999999999999911`; measured times of 0.7170 and
+0.3407 ms are not performance promises.
+
+The exact code/test head then passed the complete standard gate: workspace
+format, warning-denying all-target/all-feature workspace Clippy, all-feature
+workspace tests, workspace Rustdoc, all 58 requirement checks, and
+`git diff --check`. PR #82 must remain Draft and REQ-CONVEX-001 remains
+`implemented`, not `integrated`, until a fresh independent re-review confirms
+R82-008 is closed and reports no new finding. This Repair did not reopen any
+closed finding and did not begin REQ-INFEAS-001.
