@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-TANGENT-001, Issue #90 (closed)
 - Implementation pull request: #91, squash-merged as `968afe9`
 - Integration-state branch: `codex/req-tangent-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #92 (Draft until exact Ready CI is green)
 - Review record: `docs/reviews/PR-91-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: select with `cargo xtask requirements next`
@@ -68,7 +68,7 @@ task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #90
 - Merged implementation and repair: GitHub PR #91
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #92
 - Independent review: `docs/reviews/PR-91-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-TANGENT-001.md`
 - Focused tests: `crates/georbf/tests/tangent_observations.rs`
