@@ -148,3 +148,50 @@ the independent regressions, implement the smallest repairs, rerun focused and
 final standard checks after the last code change, update this review evidence
 and the bounded handoff, commit, push, and stop for a fresh independent
 re-review. Do not begin REQ-PROJECT-001 or another requirement.
+
+## Repair evidence pending fresh independent re-review
+
+Repair code, tests, and normative documentation are committed at
+`6bc6c1dc53bdd093110858cbf5d0787e97c702e9`. This section records the Repair
+task's evidence only; it does not independently close the findings.
+
+- THICK002-REV-001: complete measurements now compute the scale-safe Euclidean
+  separation of the returned original-coordinate intersections. An analytic
+  `f(x)=x` regression at `x=1e16` reproduces nominal span three versus stored
+  span four and proves a threshold of 3.5 creates neither a violation nor a
+  proposed constraint.
+- THICK002-REV-002: `try_validate_sampled_thickness_with_control` accepts one
+  borrowed `ExecutionControl`. A checked maximum evaluation budget drives
+  typed deterministic progress, cancellation is checked before and after each
+  fitted-field evaluation, and cancellation returns
+  `SampledThicknessValidationError::Execution` with no partial report. The
+  public regression cancels exactly after evaluation three and observes no
+  later evaluation or `Completed` event.
+- THICK002-REV-003: the fitted parallel-level integration test now compares
+  observation identifier, source path and line, original unit, semantic path,
+  and optional note on every measurement, violation, and proposal against its
+  input location.
+- THICK002-REV-004: the analytic curved field at `x=0.5` now exercises the
+  discriminant-zero lower contact on a four-step grid that misses the tangent
+  root and requires `ThicknessIntersectionFailure::NotFound` while the upper
+  intersection succeeds.
+
+Focused validation passed five public thickness-validation integration tests,
+six module truth/numerical tests, eight execution-control integration tests,
+both sampled-validation Rustdoc tests, warning-denying all-target/all-feature
+Clippy for `georbf`, and the complete diff whitespace check. The repaired
+optimized benchmark measured 2299.12 microseconds per 32-location validation
+with unchanged checksums `16000` and `1000.0`; smoke measured 1793.80
+microseconds with unchanged checksums `32` and `2.0`.
+
+After the final production/test change, exact code/test head `6bc6c1d` passed
+the complete standard local gate: workspace format, warning-denying
+all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
+all 58 requirement checks, and `git diff --check`. This following evidence
+update changes only this review record and the bounded handoff, so it does not
+invalidate that immutable-head gate.
+
+PR #97 remains Draft and REQ-THICK-002 remains `implemented`, not `integrated`.
+A fresh Review task must independently re-review the repaired head before any
+Ready transition, complete three-platform/benchmark-smoke CI, merge, or
+integration-state change. Do not begin REQ-PROJECT-001.
