@@ -6,27 +6,30 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required
+- Mode: Review; clean independent re-review, Ready CI pending
 - Requirement: REQ-NORMAL-001, Issue #87
 - Branch: `codex/req-normal-001-observations`
 - Pull request: #88 (Draft)
-- Reviewed head: `8724f288b1415b95492e2195a2f72e2032d1b9b1`
+- Final re-reviewed head: `826bab05e5d2c2b3861485fd38e95df009637f6c`
 - Repair implementation head: `e94d19bf8baeb94901686f44499e7fdcf9e503c4`
 - Registry state: `implemented`, not `integrated`
 - Dependencies: REQ-ORIENT-001 and REQ-CONVEX-001 are `integrated`
 
-## Repair disposition
+## Review disposition
 
-- R88-001 is repaired with a structured representability error when a positive
-  angle loses its positive cone slope during conversion or tangent evaluation;
-  the minimum-positive-degree regression cannot compile a zero-angle cone.
-- R88-002 is repaired by accepting rotation-invariant SquaredL2 and rejecting
-  componentwise L1/Huber for D=3 multi-row complement semantics. The complete
-  SquaredL2 canonical objective is rotation-tested; D=2 L1 remains supported.
-- R88-003 is repaired with separately fallible final role and constraint
-  reservations and storage-targeted allocation-failpoint regressions.
-- These are repair assertions, not an independent finding closure. Full review
-  and repair evidence is in `docs/reviews/PR-88-INDEPENDENT-REVIEW.md`.
+- R88-001 is independently closed by the structured representability error
+  when a positive angle loses its positive cone slope during conversion or
+  tangent evaluation; the minimum-positive-degree regression cannot compile a
+  zero-angle cone.
+- R88-002 is independently closed by accepting rotation-invariant SquaredL2
+  and rejecting componentwise L1/Huber for D=3 multi-row complement semantics.
+  The complete SquaredL2 canonical objective is rotation-tested; D=2 L1
+  remains supported.
+- R88-003 is independently closed with separately fallible final role and
+  constraint reservations plus storage-targeted allocation-failpoint
+  regressions.
+- No P0, P1, P2, or P3 finding remains. Full independent evidence is in
+  `docs/reviews/PR-88-INDEPENDENT-REVIEW.md`.
 
 ## Validation state
 
@@ -34,23 +37,24 @@ records, benchmark reports, Git, and GitHub.
   Rustdoc, normative-math, and requirement-fragment changes.
 - All 10 focused integration tests and both allocation-failpoint unit tests
   pass after the repairs.
-- After the final code change, the exact implementation tree passed all five
+- The final re-reviewed head independently passed all five
   standard checks: format, workspace/all-target/all-feature Clippy with
   warnings denied, workspace/all-feature tests, workspace doctests, and the
   58-requirement registry check.
-- Draft CI on the earlier reviewed head does not validate this repair. PR #88
-  remains Draft pending a fresh independent re-review and new-head Draft CI.
-- This handoff change and the appended repair evidence are documentation-only;
-  they do not change the validated implementation tree.
+- The independent reviewer also passed the focused tests, example, benchmark
+  smoke with checksum `11088`, registry check, and diff whitespace check.
+- Exact Draft CI run 29724821516 passed its configured Ubuntu gate on
+  `826bab05`; the Ready-only matrix correctly did not run.
+- This handoff and final-review evidence change is documentation-only and does
+  not change the validated implementation tree or any build input.
 
 ## Next task boundary
 
-Open a fresh Review/re-review task for PR #88. Supply the independent reviewer
-only the bounded REQ-NORMAL-001 context, original findings, exact repair diff,
-tests, normative documents, registry/handoff, and validation evidence. Verify
-that R88-001, R88-002, and R88-003 are closed and check for new P0-P3 findings.
-If clean, follow the mandatory ready-head CI and integration sequence in that
-fresh task. Do not begin REQ-TANGENT-001.
+Commit and push the evidence-only review update, mark PR #88 Ready, and wait
+for the complete Windows, Ubuntu, and macOS correctness and benchmark-smoke CI
+on that exact Ready head. Merge exactly once only when it is green, then record
+truthful integration state through an isolated integration-state change. Do
+not begin REQ-TANGENT-001.
 
 ## Durable evidence
 
