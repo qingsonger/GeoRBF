@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-NORMAL-001, Issue #87 (closed)
 - Implementation pull request: #88, squash-merged as `ddfabd6`
 - Integration-state branch: `codex/req-normal-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #89 (Draft until exact Ready CI is green)
 - Review record: `docs/reviews/PR-88-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: select with `cargo xtask requirements next`
@@ -67,7 +67,7 @@ task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #87
 - Merged implementation and repairs: GitHub PR #88
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #89
 - Independent review: `docs/reviews/PR-88-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-NORMAL-001.md`
 - Focused tests: `crates/georbf/tests/normal_observations.rs`
