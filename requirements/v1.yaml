@@ -480,17 +480,17 @@ requirements:
     dependencies: [REQ-CONVEX-001, REQ-DIAG-001]
     milestone: M4-v0.4.0
     priority: P0
-    issue: null
-    pull_request: null
+    issue: 84
+    pull_request: 85
     tests: [duplicate, near-duplicate, conflict, infeasible-certificate]
     docs: [docs/math/CONSTRAINT_SEMANTICS.md, rustdoc]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
-    status: planned
+    rust_api: implemented
+    cli: "N/A: stage-0 CLI exposes only help/version; project and schema commands belong to M8"
+    c_api: "N/A: C ABI follows Rust API and schema freeze in M9"
+    cpp_api: "N/A: C++ wrapper follows the C ABI in M9"
+    python_api: "N/A: Python bindings follow Rust API and schema freeze in M9"
+    benchmark: implemented
+    status: implemented
 
   - id: REQ-NORMAL-001
     title: Normal observation modes

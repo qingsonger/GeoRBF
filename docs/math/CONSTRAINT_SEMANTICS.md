@@ -157,6 +157,34 @@ later lowering to epigraph forms in an approved convex backend. The current
 dense equality solver accepts only hard equality systems and does not pretend
 to solve these objectives. No solver receives geological semantics.
 
-Duplicate and near-duplicate functionals are diagnosed with scale-aware
-criteria. Conflicting hard constraints return source-aware infeasibility; they
-are not silently reconciled.
+Hard affine equalities and linear-bound rows receive a separate immutable
+duplicate review after canonicalization. Each nonzero sparse coefficient row is
+independently divided by its infinity norm, and both direct and sign-reversed
+orientations are compared. A row is an exact duplicate only when every
+corresponding two-by-two determinant vanishes over the exact binary values of
+the finite coefficients. No rounded division or multiply-back result may prove
+exactness. A distinct row is a near
+duplicate when its closest normalized infinity distance is at most
+`128 * epsilon`. The dimensionless threshold, orientation, distance, relation
+families, and both complete source provenances are retained in deterministic
+canonical equality-then-bound order. This review is diagnostic only: it does
+not delete, merge, rescale, perturb, regularize, or soften either relation.
+Soft objectives are excluded from hard-feasibility decisions, and ordered
+second-order cones are not misclassified as affine functionals.
+
+Exact hard-conflict review treats an equality as a singleton closed interval
+and a bound as its supplied closed interval. A constant equality with nonzero
+right-hand side is immediately infeasible. When two nonconstant rows are
+exactly proportional, interval ordering is compared by exact binary
+cross-products without materializing a quotient or transformed endpoint. This
+prevents finite inputs from being skipped on overflow or collapsed on
+underflow. An empty intersection returns both complete sources and
+order-preserving finite endpoint evidence; projection for that `f64` evidence
+occurs only after the exact decision and cannot affect it. Neither stored
+relation is changed. Positive row rescaling and sign reversal therefore do not
+change an exact decision.
+Near-duplicate rows never prove infeasibility. General multi-row and cone
+infeasibility remains the convex solver's responsibility and is accepted only
+with an independently reviewed, infinity-normalized dual certificate retaining
+every canonical row's relation kind and provenance, original-unit stationarity,
+dual-cone membership, nonzero evidence, and a strict scale-aware separator.

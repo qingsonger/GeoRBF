@@ -195,5 +195,7 @@ jobs:
         run: cargo bench -p georbf --bench linear_constraint_compilation -- --smoke
       - name: Smoke-test canonical convex solver benchmark
         run: cargo bench -p georbf --bench convex_solver -- --smoke
+      - name: Smoke-test constraint diagnostics benchmark
+        run: cargo bench -p georbf --bench constraint_diagnostics -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check

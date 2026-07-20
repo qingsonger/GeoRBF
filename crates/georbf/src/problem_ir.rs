@@ -16,6 +16,7 @@
 //! let _ = std::mem::size_of::<SemanticProblemIr<4>>();
 //! ```
 
+use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt;
 use std::num::NonZeroUsize;
@@ -1326,7 +1327,7 @@ impl CanonicalProblem {
         cones: Vec<CanonicalSecondOrderCone>,
         soft_objectives: Vec<CanonicalSoftObjective>,
     ) -> Result<Self, ProblemIrError> {
-        validate_hard_linear_bounds(&linear_bounds)?;
+        validate_hard_affine_constraints(&equalities, &linear_bounds)?;
         let scaling = CanonicalScaling {
             variable: try_unit_vec(variable_space.variable_count, ProblemIrStorage::Scaling)?,
             equality: try_unit_vec(equalities.len(), ProblemIrStorage::Scaling)?,
@@ -1504,6 +1505,8 @@ pub enum ProblemIrStorage {
     CanonicalConeRows,
     /// Owned semantic provenance copied into canonical rows and cones.
     CanonicalProvenance,
+    /// Source-aware duplicate and near-duplicate diagnostics.
+    ConstraintDiagnostics,
     /// Explicit identity scaling vectors.
     Scaling,
 }
@@ -1538,6 +1541,13 @@ pub enum ProblemIrError {
         /// Upper bound.
         upper: f64,
     },
+    /// A constant hard equality had a nonzero right-hand side.
+    InfeasibleConstantEquality {
+        /// Complete originating source provenance; contains exactly one entry.
+        sources: Vec<SemanticProvenance>,
+        /// Rejected nonzero right-hand side.
+        rhs: f64,
+    },
     /// A constant hard linear-bound row excluded zero.
     InfeasibleConstantLinearBound {
         /// Complete originating source provenance; contains exactly one entry.
@@ -1551,9 +1561,26 @@ pub enum ProblemIrError {
     InfeasibleLinearBounds {
         /// Complete source provenance in earlier-then-later row order.
         sources: Vec<SemanticProvenance>,
-        /// Greatest lower endpoint from the conflicting pair.
+        /// Order-preserving finite representation of the conflicting lower endpoint.
+        ///
+        /// The exact comparison is performed before this diagnostic projection.
         lower: f64,
-        /// Least upper endpoint from the conflicting pair.
+        /// Order-preserving finite representation of the conflicting upper endpoint.
+        ///
+        /// The exact comparison is performed before this diagnostic projection.
+        upper: f64,
+    },
+    /// Exact proportional hard rows involving an equality had disjoint intervals.
+    InfeasibleHardAffineConstraints {
+        /// Complete source provenance in canonical earlier-then-later order.
+        sources: Vec<SemanticProvenance>,
+        /// Order-preserving finite representation of the conflicting lower endpoint.
+        ///
+        /// The exact comparison is performed before this diagnostic projection.
+        lower: f64,
+        /// Order-preserving finite representation of the conflicting upper endpoint.
+        ///
+        /// The exact comparison is performed before this diagnostic projection.
         upper: f64,
     },
     /// A field-only canonical problem did not match a level problem's field blocks.
@@ -1862,9 +1889,18 @@ fn try_unit_vec(count: usize, storage: ProblemIrStorage) -> Result<Vec<f64>, Pro
     Ok(values)
 }
 
-fn validate_hard_linear_bounds(
+fn validate_hard_affine_constraints(
+    equalities: &[CanonicalEquality],
     linear_bounds: &[CanonicalLinearBound],
 ) -> Result<(), ProblemIrError> {
+    for equality in equalities {
+        if equality.row.terms.is_empty() && equality.rhs != 0.0 {
+            return Err(ProblemIrError::InfeasibleConstantEquality {
+                sources: try_conflict_sources([&equality.provenance])?,
+                rhs: equality.rhs,
+            });
+        }
+    }
     for bound in linear_bounds {
         if bound.row.terms.is_empty()
             && (bound.lower.is_some_and(|lower| lower > 0.0)
@@ -1878,57 +1914,312 @@ fn validate_hard_linear_bounds(
         }
     }
 
-    for second_index in 0..linear_bounds.len() {
-        let second = &linear_bounds[second_index];
+    let relation_count = equalities
+        .len()
+        .checked_add(linear_bounds.len())
+        .ok_or(ProblemIrError::MemoryEstimateOverflow)?;
+    for second_index in 0..relation_count {
+        let second = hard_affine_interval(equalities, linear_bounds, second_index);
         if second.row.terms.is_empty() {
             continue;
         }
-        for first in &linear_bounds[..second_index] {
-            let Some(sign_reversed) = exact_row_relation(&first.row, &second.row) else {
+        for first_index in 0..second_index {
+            let first = hard_affine_interval(equalities, linear_bounds, first_index);
+            let Some(scale) = exact_row_scale(first.row, second.row) else {
                 continue;
             };
-            let (second_lower, second_upper) = if sign_reversed {
-                (
-                    second.upper.map(|upper| -upper),
-                    second.lower.map(|lower| -lower),
-                )
-            } else {
-                (second.lower, second.upper)
-            };
-            let lower = greatest_lower(first.lower, second_lower);
-            let upper = least_upper(first.upper, second_upper);
-            if let (Some(lower), Some(upper)) = (lower, upper)
-                && lower > upper
-            {
-                return Err(ProblemIrError::InfeasibleLinearBounds {
-                    sources: try_conflict_sources([&first.provenance, &second.provenance])?,
-                    lower,
-                    upper,
-                });
+            if let Some((lower, upper)) = exact_interval_conflict(first, second, scale) {
+                let sources = try_conflict_sources([first.provenance, second.provenance])?;
+                return if first.is_equality || second.is_equality {
+                    Err(ProblemIrError::InfeasibleHardAffineConstraints {
+                        sources,
+                        lower,
+                        upper,
+                    })
+                } else {
+                    Err(ProblemIrError::InfeasibleLinearBounds {
+                        sources,
+                        lower,
+                        upper,
+                    })
+                };
             }
         }
     }
     Ok(())
 }
 
-fn exact_row_relation(first: &AffineExpression, second: &AffineExpression) -> Option<bool> {
+#[derive(Clone, Copy)]
+struct HardAffineInterval<'a> {
+    row: &'a AffineExpression,
+    lower: Option<f64>,
+    upper: Option<f64>,
+    provenance: &'a SemanticProvenance,
+    is_equality: bool,
+}
+
+fn hard_affine_interval<'a>(
+    equalities: &'a [CanonicalEquality],
+    linear_bounds: &'a [CanonicalLinearBound],
+    index: usize,
+) -> HardAffineInterval<'a> {
+    if let Some(equality) = equalities.get(index) {
+        return HardAffineInterval {
+            row: &equality.row,
+            lower: Some(equality.rhs),
+            upper: Some(equality.rhs),
+            provenance: &equality.provenance,
+            is_equality: true,
+        };
+    }
+    let bound = &linear_bounds[index - equalities.len()];
+    HardAffineInterval {
+        row: &bound.row,
+        lower: bound.lower,
+        upper: bound.upper,
+        provenance: &bound.provenance,
+        is_equality: false,
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct ExactRowScale {
+    numerator: f64,
+    denominator: f64,
+}
+
+impl ExactRowScale {
+    fn is_positive(self) -> bool {
+        self.numerator.is_sign_negative() == self.denominator.is_sign_negative()
+    }
+}
+
+pub(crate) fn exact_row_scale(
+    first: &AffineExpression,
+    second: &AffineExpression,
+) -> Option<ExactRowScale> {
     if first.terms.len() != second.terms.len() || first.terms.is_empty() {
         return None;
     }
-    if first.terms.iter().zip(&second.terms).all(|(left, right)| {
-        left.variable == right.variable && left.coefficient.to_bits() == right.coefficient.to_bits()
-    }) {
-        return Some(false);
+    if first
+        .terms
+        .iter()
+        .zip(&second.terms)
+        .any(|(left, right)| left.variable != right.variable)
+    {
+        return None;
     }
+    let numerator = first.terms[0].coefficient;
+    let denominator = second.terms[0].coefficient;
     first
         .terms
         .iter()
         .zip(&second.terms)
         .all(|(left, right)| {
-            left.variable == right.variable
-                && left.coefficient.to_bits() == (-right.coefficient).to_bits()
+            exact_product_order(left.coefficient, denominator, numerator, right.coefficient)
+                == Ordering::Equal
         })
-        .then_some(true)
+        .then_some(ExactRowScale {
+            numerator,
+            denominator,
+        })
+}
+
+fn exact_interval_conflict(
+    first: HardAffineInterval<'_>,
+    second: HardAffineInterval<'_>,
+    scale: ExactRowScale,
+) -> Option<(f64, f64)> {
+    let (second_lower, second_upper) = if scale.is_positive() {
+        (second.lower, second.upper)
+    } else {
+        (second.upper, second.lower)
+    };
+    if let (Some(first_upper), Some(second_lower)) = (first.upper, second_lower)
+        && compare_first_to_scaled_second(first_upper, second_lower, scale) == Ordering::Less
+    {
+        let scaled_lower = scaled_value_for_diagnostics(second_lower, scale);
+        return Some(if scaled_lower > first_upper {
+            (scaled_lower, first_upper)
+        } else if first_upper < f64::MAX {
+            (first_upper.next_up(), first_upper)
+        } else {
+            (f64::MAX, f64::MAX.next_down())
+        });
+    }
+    if let (Some(first_lower), Some(second_upper)) = (first.lower, second_upper)
+        && compare_first_to_scaled_second(first_lower, second_upper, scale) == Ordering::Greater
+    {
+        let scaled_upper = scaled_value_for_diagnostics(second_upper, scale);
+        return Some(if first_lower > scaled_upper {
+            (first_lower, scaled_upper)
+        } else if first_lower > -f64::MAX {
+            (first_lower, first_lower.next_down())
+        } else {
+            ((-f64::MAX).next_up(), -f64::MAX)
+        });
+    }
+    None
+}
+
+fn compare_first_to_scaled_second(first: f64, second: f64, scale: ExactRowScale) -> Ordering {
+    let ordering = exact_product_order(first, scale.denominator, second, scale.numerator);
+    if scale.denominator.is_sign_negative() {
+        ordering.reverse()
+    } else {
+        ordering
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ExactBinary {
+    negative: bool,
+    significand: u64,
+    exponent: i32,
+}
+
+impl ExactBinary {
+    fn from_f64(value: f64) -> Self {
+        debug_assert!(value.is_finite());
+        let bits = value.to_bits();
+        let stored_exponent = ((bits >> 52) & 0x7ff) as i32;
+        let fraction = bits & ((1_u64 << 52) - 1);
+        let (mut significand, mut exponent) = if stored_exponent == 0 {
+            (fraction, -1074)
+        } else {
+            ((1_u64 << 52) | fraction, stored_exponent - 1023 - 52)
+        };
+        if significand == 0 {
+            return Self {
+                negative: false,
+                significand: 0,
+                exponent: 0,
+            };
+        }
+        let trailing_zeros = significand.trailing_zeros();
+        significand >>= trailing_zeros;
+        exponent += trailing_zeros.cast_signed();
+        Self {
+            negative: value.is_sign_negative(),
+            significand,
+            exponent,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ExactProduct {
+    negative: bool,
+    significand: u128,
+    exponent: i32,
+}
+
+impl ExactProduct {
+    fn from_factors(first: f64, second: f64) -> Self {
+        let first = ExactBinary::from_f64(first);
+        let second = ExactBinary::from_f64(second);
+        if first.significand == 0 || second.significand == 0 {
+            return Self {
+                negative: false,
+                significand: 0,
+                exponent: 0,
+            };
+        }
+        Self {
+            negative: first.negative != second.negative,
+            significand: u128::from(first.significand) * u128::from(second.significand),
+            exponent: first.exponent + second.exponent,
+        }
+    }
+
+    fn magnitude_order(self, other: Self) -> Ordering {
+        let self_top = self.exponent + (128 - self.significand.leading_zeros()).cast_signed();
+        let other_top = other.exponent + (128 - other.significand.leading_zeros()).cast_signed();
+        match self_top.cmp(&other_top) {
+            Ordering::Equal => match self.exponent.cmp(&other.exponent) {
+                Ordering::Greater => self
+                    .significand
+                    .checked_shl((self.exponent - other.exponent).cast_unsigned())
+                    .map_or(Ordering::Greater, |shifted| shifted.cmp(&other.significand)),
+                Ordering::Less => other
+                    .significand
+                    .checked_shl((other.exponent - self.exponent).cast_unsigned())
+                    .map_or(Ordering::Less, |shifted| self.significand.cmp(&shifted)),
+                Ordering::Equal => self.significand.cmp(&other.significand),
+            },
+            ordering => ordering,
+        }
+    }
+
+    fn order(self, other: Self) -> Ordering {
+        match (self.significand == 0, other.significand == 0) {
+            (true, true) => Ordering::Equal,
+            (true, false) => {
+                if other.negative {
+                    Ordering::Greater
+                } else {
+                    Ordering::Less
+                }
+            }
+            (false, true) => {
+                if self.negative {
+                    Ordering::Less
+                } else {
+                    Ordering::Greater
+                }
+            }
+            (false, false) if self.negative != other.negative => {
+                if self.negative {
+                    Ordering::Less
+                } else {
+                    Ordering::Greater
+                }
+            }
+            (false, false) if self.negative => self.magnitude_order(other).reverse(),
+            (false, false) => self.magnitude_order(other),
+        }
+    }
+}
+
+fn exact_product_order(
+    first_left: f64,
+    second_left: f64,
+    first_right: f64,
+    second_right: f64,
+) -> Ordering {
+    ExactProduct::from_factors(first_left, second_left)
+        .order(ExactProduct::from_factors(first_right, second_right))
+}
+
+fn scaled_value_for_diagnostics(value: f64, scale: ExactRowScale) -> f64 {
+    if value == 0.0 {
+        return 0.0;
+    }
+    for candidate in [
+        value * (scale.numerator / scale.denominator),
+        (value * scale.numerator) / scale.denominator,
+        (value / scale.denominator) * scale.numerator,
+    ] {
+        if candidate.is_finite() && candidate != 0.0 {
+            return candidate;
+        }
+    }
+
+    let exact_magnitude = ExactProduct::from_factors(value.abs(), scale.numerator.abs());
+    let maximum = ExactProduct::from_factors(f64::MAX, scale.denominator.abs());
+    let magnitude = if exact_magnitude.magnitude_order(maximum) == Ordering::Greater {
+        f64::MAX
+    } else {
+        f64::from_bits(1)
+    };
+    if value.is_sign_negative()
+        ^ scale.numerator.is_sign_negative()
+        ^ scale.denominator.is_sign_negative()
+    {
+        -magnitude
+    } else {
+        magnitude
+    }
 }
 
 fn try_conflict_sources<const N: usize>(
@@ -1945,22 +2236,6 @@ fn try_conflict_sources<const N: usize>(
         sources.push(provenance.try_clone_for_canonical()?);
     }
     Ok(sources)
-}
-
-fn greatest_lower(first: Option<f64>, second: Option<f64>) -> Option<f64> {
-    match (first, second) {
-        (Some(first), Some(second)) => Some(first.max(second)),
-        (Some(value), None) | (None, Some(value)) => Some(value),
-        (None, None) => None,
-    }
-}
-
-fn least_upper(first: Option<f64>, second: Option<f64>) -> Option<f64> {
-    match (first, second) {
-        (Some(first), Some(second)) => Some(first.min(second)),
-        (Some(value), None) | (None, Some(value)) => Some(value),
-        (None, None) => None,
-    }
 }
 
 fn count_coefficients(
