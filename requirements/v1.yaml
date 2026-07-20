@@ -517,7 +517,7 @@ requirements:
     milestone: M5-v0.5.0
     priority: P0
     issue: 90
-    pull_request: null
+    pull_request: 91
     tests: [analytic-tangents, multiple-tangents, soft-tangent, missing-gauge]
     docs: [docs/math/NORMAL_AND_TANGENT.md, rustdoc]
     rust_api: implemented
@@ -526,7 +526,7 @@ requirements:
     cpp_api: "N/A: C++ wrapper follows the C ABI in M9"
     python_api: "N/A: Python bindings follow Rust API and schema freeze in M9"
     benchmark: implemented
-    status: planned
+    status: implemented
 
   - id: REQ-THICK-001
     title: Scalar-gap and local normal-thickness constraints

@@ -9,8 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement
 - Requirement: REQ-TANGENT-001, Issue #90
 - Branch: `codex/req-tangent-001-tangent-constraints`
-- Pull request: pending Draft creation after the first pushed implementation commit
-- Registry state: `planned` until the stable implementation gate and Draft PR exist
+- Pull request: #91 (Draft)
+- Registry state: `implemented`, not `integrated`
 - Dependencies: REQ-FUNC-001, REQ-SOFT-001, and REQ-DIAG-001 are `integrated`
 
 ## Implemented scope
@@ -37,20 +37,25 @@ records, benchmark reports, Git, and GitHub.
 - The example prints two tangent rows and explicit gauge ID 3/value 125.
 - Benchmark smoke checksum is `3824`; the 2,000-iteration checksum is
   `3824000` at 32.43 microseconds per build+compile on the recorded machine.
-- The complete stable-head standard gate is still pending and must run once
-  after the Draft PR number is recorded.
+- After the Draft PR number and implemented registry state were recorded, the
+  stable implementation tree passed the complete standard gate: workspace
+  format, warning-denying all-target/all-feature Clippy, all-feature workspace
+  tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+- This final handoff wording changes documentation only. It does not change
+  production code, tests, manifests, schema, CI, registry, numerical behavior,
+  dependencies, or any validated build input.
 
 ## Next task boundary
 
-Finish the same Implement mode only: create and push the first implementation
-commit, open the Draft PR, record its number and set the registry status to
-`implemented`, run the complete stable-head standard gate, commit/push the
-final evidence, and stop. Independent mathematical review must occur in a
-fresh task; do not begin REQ-THICK-001.
+Commit and push this final implementation evidence, update Draft PR #91, and
+stop. A fresh task must independently review only PR #91 and REQ-TANGENT-001,
+using the project `math_reviewer`; it must not repair production code or begin
+REQ-THICK-001 in the same task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #90
+- Draft implementation pull request: GitHub PR #91
 - Requirement summary: `changes/REQ-TANGENT-001.md`
 - Focused tests: `crates/georbf/tests/tangent_observations.rs`
 - Normative behavior: `docs/math/NORMAL_AND_TANGENT.md`
