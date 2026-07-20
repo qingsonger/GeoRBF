@@ -5,9 +5,10 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/85
 - Branch: `codex/req-infeas-001-diagnostics`
 - Reviewed head: `1833b7ea8e8a414fdcb012c399dd1e35e54e6f2a`
+- Repaired and re-reviewed head: `a6a5fd825b73a794824861bb32e1754727df386c`
 - Base head: `98a4df477f4ca72a2c64024c1c282c9bd1a25a44`
 - Review date: 2026-07-20
-- Result: findings; R85-001 and R85-002 require repair
+- Result: R85-001 and R85-002 closed; P2 R85-003 requires repair
 
 ## Scope and independence
 
@@ -168,3 +169,71 @@ This section records Repair evidence only. It does not independently re-review
 or close R85-001 or R85-002. PR #85 remains Draft and REQ-INFEAS-001 remains
 `implemented`; the next task must be a fresh independent re-review of the exact
 repaired head and must not begin another requirement.
+
+## Fresh independent re-review
+
+A new read-only project `math_reviewer` independently re-reviewed exact PR head
+`a6a5fd825b73a794824861bb32e1754727df386c` against base
+`98a4df477f4ca72a2c64024c1c282c9bd1a25a44`. It received only the bounded
+requirement and dependency summaries, Issue #84 criteria and exclusions, the
+M4 plan, scoped mathematical, architecture, solver, and ADR contracts, the
+complete diff, original findings, repair regressions, benchmark and validation
+evidence, and the Ready CI workflow. It inherited no Implement or Repair
+reasoning and made no repository or remote change.
+
+R85-001 is closed. `exact_row_scale` tests every proportionality determinant as
+an exact equality between two products of the binary coefficient values. Each
+finite `f64` contributes at most a 53-bit significand, so the product fits the
+106-bit range of the `u128` representation without rounded division or
+multiply-back. The one-ULP nonparallel pair remains warning-only, while the
+integer 49x pair is an exact duplicate and its inconsistent targets retain both
+ordered sources in an exact-conflict error.
+
+R85-002 is closed. Proportional interval endpoints are ordered by exact binary
+cross-products. Negative proportionality swaps the later interval endpoints
+and reverses the comparison for a negative denominator. Quotients are used
+only after the exact decision to project finite diagnostic evidence; the
+adjacent-float fallbacks preserve strict `lower > upper`. The finite overflow
+and underflow regressions both retain their two ordered sources and cannot skip
+or collapse the conflicts.
+
+### P2 R85-003: the new benchmark is absent from Ready CI
+
+The Ready-only three-platform workspace job in `.github/workflows/ci.yml` runs
+the existing benchmark-smoke sequence and then proceeds directly from the
+`convex_solver` benchmark to requirement-registry validation. The new
+`constraint_diagnostics` benchmark is declared in `crates/georbf/Cargo.toml`,
+implements `--smoke`, and is truthfully listed as implemented in the registry,
+but the workflow never invokes it. Exact Ready-head CI can therefore pass
+without exercising REQ-INFEAS-001's representative benchmark.
+
+Required repair: add a Ready-workspace step running
+`cargo bench -p georbf --bench constraint_diagnostics -- --smoke`. The repaired
+exact Ready head must pass that step on Windows, Ubuntu, and macOS with the
+fixed smoke checksum `768`.
+
+No other P0, P1, P2, or P3 finding was identified. Hard rows remain unchanged;
+approximate rows remain warning-only; soft objectives and cones remain
+separate; general infeasibility remains on the independently reviewed
+certificate path. No hidden regularization, presolve, pseudoinverse,
+constraint relaxation, unsafe code, or relevant SPD/CPD, center-limit,
+polynomial, or Hessian change was found.
+
+The reviewer inspected the exact base, head, merge base, complete PR diff,
+repair diff, changed implementation, tests, example, benchmark, manifest,
+registry, bounded documents, and CI workflow. `680d497..a6a5fd8` changes only
+this review record and `docs/progress/CURRENT.md`; exact whitespace checks for
+the complete and evidence-only diffs passed. The parent task independently
+reran all eight infeasibility tests and the benchmark smoke on `a6a5fd8` with
+checksum `768`, and `git diff --check` passed. Draft Ubuntu CI run 29716310057
+passed on that exact head. The complete standard gate recorded for stable
+repair head `680d497` remains applicable because the later commits changed no
+production, test, manifest, schema, CI, build, API, numerical, or dependency
+input.
+
+PR #85 must remain Draft and REQ-INFEAS-001 must remain `implemented`. Open a
+fresh Repair task limited to R85-003, add only the missing Ready-workspace
+benchmark-smoke step, run the focused workflow check and the final standard
+gate on the stable repaired head, update this evidence and the bounded handoff,
+push, and stop for another fresh independent re-review. Do not begin another
+requirement.
