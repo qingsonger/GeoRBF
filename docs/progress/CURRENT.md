@@ -6,60 +6,54 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement
+- Mode: Review complete; Repair required
 - Requirement: REQ-NORMAL-001, Issue #87
 - Branch: `codex/req-normal-001-observations`
-- Pull request: #88 (Draft; independent Review has not started)
+- Pull request: #88 (Draft)
+- Reviewed head: `8724f288b1415b95492e2195a2f72e2032d1b9b1`
 - Registry state: `implemented`, not `integrated`
 - Dependencies: REQ-ORIENT-001 and REQ-CONVEX-001 are `integrated`
 
-## Implemented scope
+## Independent review findings
 
-- Five immutable normal modes lower to the shared semantic IR with one unique
-  provenance per generated scalar relation and public deterministic roles.
-- Gradient components, complement equalities, oriented projection bounds, and
-  angular Lorentz cones preserve explicit hard/soft enforcement. No geological
-  term reaches the canonical solver.
-- D=2/D=3 complements are deterministic, orthonormal to roundoff, and
-  binary-exact under axial sign reversal. Vacuous or angle-insensitive D=1
-  modes are rejected; the two meaningful D=1 modes remain available.
-- Degree/radian angular domains and nonnegative minimum projection are checked
-  without clipping or fallback. Near-zero fitted gradients use an explicit
-  same-unit scale and threshold and remain diagnostics only.
-- Rustdoc, normative mathematics, eight independent tests, an example, a
-  mixed-mode benchmark and Ready/main CI smoke entry are present. CLI is N/A
-  until M8; C, C++, and Python are N/A until M9.
+- P1 R88-001: a positive degree angle can underflow to zero during radians
+  conversion, silently strengthening the requested hard angular cone.
+- P2 R88-002: componentwise L1 and Huber losses on D=3 complement rows depend
+  on the arbitrary complement basis and are not rotation invariant.
+- P2 R88-003: the final AngularCone roles and constraints use infallible `vec!`
+  allocations despite the structured allocation-failure contract.
+- Full evidence and required regressions are in
+  `docs/reviews/PR-88-INDEPENDENT-REVIEW.md`.
 
 ## Validation state
 
-- `cargo test -p georbf --test normal_observations` passed all 8 tests.
-- `cargo run -p georbf --example normal_observations` passed and reported one
-  cone plus projection lower bound `0.05`.
-- `cargo bench -p georbf --bench normal_observation_compilation -- --smoke`
-  passed with checksum `11088`.
-- The 2,000-iteration benchmark passed at 87.47 microseconds per iteration with
-  checksum `11088000` on the recorded Windows baseline.
-- Focused GeoRBF all-target/all-feature warning-denying Clippy passed.
-- The stable implementation tree passed the complete standard gate: workspace
-  format, warning-denying all-target/all-feature Clippy, all-feature workspace
-  tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- Implementation commit `84779ad` was pushed and Draft PR #88 was opened. The
-  final PR-link registry/handoff tree then passed the same complete standard
-  gate. Only this validation wording changed afterward; no production, test,
-  manifest, schema, CI, build input, API, or numerical behavior changed.
+- A fresh read-only project `math_reviewer` independently reviewed exact base
+  `0ae9714` and head `8724f28` from bounded requirement, dependency, normative,
+  diff, test, benchmark, registry, handoff, and validation evidence.
+- The reviewer and parent task each passed all 8 focused normal-observation
+  tests; the current tests do not cover R88-001, R88-002, or R88-003.
+- The parent task passed the example and benchmark smoke; checksum was `11088`.
+- Draft CI run 29723009629 passed the configured Ubuntu correctness job on exact
+  reviewed head `8724f28`. Ready-only three-platform and benchmark smoke jobs
+  correctly did not run.
+- The complete standard gate recorded for exact implementation head `8724f28`
+  remains valid. This Review task changes only review and bounded-handoff
+  documents; it changes no production, test, manifest, schema, CI, build input,
+  API, or numerical behavior.
 
 ## Next task boundary
 
-After the final PR-link registry/handoff head is pushed, stop. Open a fresh
-Review task for only Draft PR #88 and REQ-NORMAL-001. That task must create the
-project `math_reviewer` independently from bounded requirement/dependency,
-normative, diff, test, benchmark, registry, handoff, and validation evidence;
-it must not inherit this implementation reasoning or start REQ-TANGENT-001.
+Open a fresh Repair task limited to R88-001, R88-002, and R88-003. Add the
+specified independent regressions before or alongside the smallest complete
+repairs, run focused checks during repair and the complete standard gate after
+the final code change, update review evidence and this bounded handoff, push,
+and stop for a fresh independent re-review. Do not begin REQ-TANGENT-001.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #87
 - Draft implementation pull request: GitHub PR #88
+- Independent review: `docs/reviews/PR-88-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-NORMAL-001.md`
 - Focused tests: `crates/georbf/tests/normal_observations.rs`
 - Normative behavior: `docs/math/NORMAL_AND_TANGENT.md`
