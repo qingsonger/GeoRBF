@@ -6,55 +6,53 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / REQ-THICK-001 findings recorded
+- Mode: Repair / REQ-THICK-001 findings addressed; independent re-review required
 - Requirement: REQ-THICK-001, Issue #93
 - Branch: `codex/req-thick-001-local-thickness`
 - Draft pull request: #94
 - Reviewed head: `0821084b36d9602c2b34cc9bedd3cf20380a335d`
+- Repair implementation head: `551d93f05a2f2023fc5bca5454176e111a88ed69`
 - Registry state: `implemented`
 - Dependencies: REQ-LEVEL-001, REQ-NORMAL-001, and REQ-CONVEX-001 are integrated
 
-## Independent review result
+## Repair result
 
-- No P0 or P1 finding was reported.
-- P2 THICK-REV-001: `try_collect_constraints` reserves a loose iterator
-  `size_hint` upper bound, which can reject a trivial valid iterator, and its
-  unknown-length path performs unchecked `Vec::push` growth instead of
-  returning the promised structured allocation error.
-- P3 THICK-REV-002: current tests do not prove that the explicit sample point
-  and every complete `SemanticProvenance` field cross the linearizer and
-  canonical-cone boundaries.
-- P3 THICK-REV-003: coefficient multiplication overflow and underflow are
-  tested, but the corresponding nonzero affine-constant branches are not.
-- Formula, signs, dimensions, units, D=1/D=2/D=3 layout, explicit level
-  indices, hard enforcement, rotation invariance, diagnostic separation, and
-  deferred interfaces were otherwise independently verified.
+- THICK-REV-001 is repaired with trusted-lower-bound reservation and fallible
+  growth. Regressions accept a one-item iterator with loose upper bound
+  `usize::MAX` and force structured growth-allocation failure for a two-item
+  unknown-length iterator before any linearization or partial result.
+- THICK-REV-002 is covered by a D=3 regression that requires the exact
+  nontrivial sample point and every complete provenance field at all Cartesian
+  callbacks and at the final canonical cone.
+- THICK-REV-003 is covered for affine-constant overflow, underflow, and exact
+  zero in addition to the existing coefficient paths.
+- These are Repair-task conclusions, not an independent finding closure. PR
+  #94 remains Draft and REQ-THICK-001 remains `implemented`.
 
 ## Validation state
 
-- Exact implementation head `f91ca4a` passed the complete standard local gate
-  recorded by the Implement task.
+- Exact repair implementation head `551d93f` passed all ten thickness
+  integration tests, the module allocation-failure regression, the thickness
+  Rustdoc compile-fail check, the runnable example, benchmark smoke checksum
+  `8304`, all 58 requirement checks, and `git diff --check`.
+- The same stable repair head passed the complete standard local gate:
+  workspace format, warning-denying all-target/all-feature Clippy, all-feature
+  workspace tests, workspace Rustdoc, and all 58 requirement checks.
 - Exact reviewed head `0821084b` passed Draft Ubuntu CI run 29739383159. The
   Ready-only three-platform and benchmark matrix was skipped as designed.
-- The reviewer passed all eight focused thickness tests, the thickness Rustdoc
-  compile-fail check, example, benchmark smoke checksum `8304`, all 58
-  requirement checks, and `git diff --check`.
-- The parent Review task independently passed the eight focused tests, example,
-  benchmark smoke checksum `8304`, all 58 requirement checks, and the complete
-  PR diff whitespace check.
-- After adding the Review evidence files, the parent task passed workspace
-  format, warning-denying all-target/all-feature Clippy, all-feature workspace
-  tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-  The final wording changes only the review record and this bounded handoff.
+- The final evidence and handoff changes are documentation-only and change no
+  production, test, manifest, schema, CI, build, API, numerical, registry, or
+  dependency input. CI for the pushed final repair head remains to be observed
+  by the fresh re-review task.
 
 ## Next task
 
-Open a fresh Repair task for only THICK-REV-001, THICK-REV-002, and
-THICK-REV-003 on Draft PR #94. Reproduce each finding with an independent
-regression, repair the collector with the existing fallible-growth pattern,
-run focused checks and the final standard gate after the last code change,
-update review evidence and this bounded handoff, commit and push, then stop for
-a fresh independent re-review. Do not begin REQ-THICK-002.
+Open a fresh independent re-review task for exact Draft PR #94 head. Supply the
+bounded requirement and dependency summaries, normative documents, complete PR
+and repair diffs, prior findings, new regressions, and validation evidence to a
+fresh project `math_reviewer`. Confirm THICK-REV-001 through THICK-REV-003 are
+closed and check for new P0--P3 findings. Do not repair production code in that
+Review task and do not begin REQ-THICK-002.
 
 ## Durable evidence
 

@@ -5,9 +5,10 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/94
 - Branch: `codex/req-thick-001-local-thickness`
 - Reviewed head: `0821084b36d9602c2b34cc9bedd3cf20380a335d`
+- Repair implementation head: `551d93f05a2f2023fc5bca5454176e111a88ed69`
 - Base head: `1d770395f1022c81d7ad314c4d38221a5c1a66c4`
 - Review date: 2026-07-20
-- Result: one P2 and two P3 findings; Repair required
+- Result: repair recorded; fresh independent re-review required
 
 ## Scope and independence
 
@@ -85,6 +86,32 @@ exact zero constant.
 
 No other P0, P1, P2, or P3 finding was reported.
 
+## Repair evidence (not an independent re-review)
+
+Repair implementation head `551d93f05a2f2023fc5bca5454176e111a88ed69`
+addresses only THICK-REV-001, THICK-REV-002, and THICK-REV-003.
+
+- THICK-REV-001: constraint collection now reserves only the iterator's
+  guaranteed lower bound. If actual input outgrows capacity, each growth is
+  preceded by `try_reserve`, so allocation failure returns the documented
+  structured error. A one-element iterator with upper bound `usize::MAX` now
+  succeeds. A module failpoint forces growth failure for a two-element
+  unknown-length iterator, requires `AllocationFailed { requested: 1 }`, and
+  proves the linearizer is never reached and no partial problem is returned.
+- THICK-REV-002: a D=3 regression supplies point `(1.25, -2.5, 3.75)` and
+  distinct values for every `SemanticProvenance` field. Every Cartesian-axis
+  callback must receive the exact point and complete borrowed provenance in
+  order, and the final cone must own a complete equal provenance value.
+- THICK-REV-003: the scaling regression now separately requires structured
+  constant overflow and underflow errors for nonzero affine constants and
+  retains acceptance of an exact zero constant.
+
+The repair changes no thickness formula, ordered-cone sign, dimension or unit
+contract, hard enforcement, public API, interface disposition, dependency,
+registry state, or later-requirement scope. A fresh project `math_reviewer`
+must still independently confirm that all three findings are closed and that
+no new P0--P3 finding was introduced.
+
 ## Independent mathematical review
 
 For the local first-order model, the maximum scalar change per unit distance
@@ -134,11 +161,15 @@ scoped contracts.
 - This final evidence wording changes only this review record and the bounded
   handoff; it changes no production, test, manifest, schema, CI, build input,
   API, numerical behavior, registry, or dependency input.
+- Exact repair implementation head `551d93f` passed all ten thickness
+  integration tests, the module allocation-failure regression, the thickness
+  Rustdoc compile-fail check, the runnable example, benchmark smoke checksum
+  `8304`, all 58 requirement checks, `git diff --check`, and the complete
+  standard local gate: workspace format, warning-denying all-target/all-feature
+  Clippy, all-feature workspace tests, and workspace Rustdoc.
 
 PR #94 must remain Draft and REQ-THICK-001 must remain `implemented`. Open a
-fresh Repair task scoped only to THICK-REV-001, THICK-REV-002, and
-THICK-REV-003. Add the independent regressions, implement the smallest
-collector repair, rerun focused and final standard checks after the last code
-change, update this review evidence and the bounded handoff, commit, push, and
-stop for a fresh independent re-review. Do not begin REQ-THICK-002 or another
-requirement.
+fresh independent re-review task for the exact final PR head and
+THICK-REV-001 through THICK-REV-003. If no P0--P3 finding remains, follow the
+repository's Ready-CI integration sequence. Do not begin REQ-THICK-002 or any
+other requirement.

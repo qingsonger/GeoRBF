@@ -31,14 +31,23 @@ or underflow to zero. There is no softening, automatic scale, implicit gauge,
 hidden regularization, constraint relaxation, geometric search, automatic
 constraint generation, or automatic refit.
 
-Eight independent integration tests cover scalar/cone separation, diagnostic
-kind and guarantee, exact D=1/D=2/D=3 Cartesian row ordering, endpoint signs,
-an analytic parallel-level boundary with gradient `(3,4)`, provenance,
+Ten independent integration tests plus one module allocation-failure
+regression cover scalar/cone separation, diagnostic kind and guarantee, exact
+D=1/D=2/D=3 Cartesian row ordering, endpoint signs, an analytic parallel-level
+boundary with gradient `(3,4)`, complete point and provenance transfer,
 immutability and `Send + Sync`, invalid construction, empty input, unknown
 levels, duplicate existing and local identifiers, indexed linearizer errors,
-field-variable boundaries, and multiplication overflow and underflow. A
-runnable example and a deterministic 32-cone D=3 compilation benchmark are
-included, with Ready/main benchmark-smoke wiring.
+field-variable boundaries, fallible collection for loose and unknown iterator
+lengths, and coefficient and affine-constant multiplication overflow and
+underflow. A runnable example and a deterministic 32-cone D=3 compilation
+benchmark are included, with Ready/main benchmark-smoke wiring.
+
+The independent-review repair makes constraint collection reserve only a
+trusted iterator lower bound and uses fallible growth before every capacity-
+exceeding push. It therefore neither rejects a trivial valid iterator because
+of a loose upper bound nor permits unknown-length growth to bypass the
+structured allocation error contract. The repair changes no formula, sign,
+diagnostic, interface, or registry state.
 
 Rust is implemented. CLI is N/A because the stage-0 command exposes only help
 and version and complete project/schema commands belong to M8. C, C++, and
