@@ -260,3 +260,54 @@ This section records Repair evidence only; it does not independently close
 R85-003. PR #85 remains Draft and REQ-INFEAS-001 remains `implemented`. The
 next task must freshly re-review the exact PR head and must not begin another
 requirement.
+
+## Final independent re-review
+
+A fresh read-only project `math_reviewer` independently reviewed exact PR head
+`0c465e7e869d1118a56c39cabc73c2cf1b29cf92` against base and merge base
+`98a4df477f4ca72a2c64024c1c282c9bd1a25a44`. It received only the bounded
+requirement and dependency summaries, Issue #84 criteria and exclusions, M4
+plan, scoped mathematical, architecture, solver, and ADR contracts, complete
+exact PR and focused repair diffs, prior findings and repair evidence, tests,
+example, benchmark, registry, handoff, CI workflow, and validation evidence. It
+inherited no Implement or Repair reasoning and made no repository or remote
+change.
+
+- R85-003 is closed. The Ready-only `workspace` job retains its
+  Windows/Ubuntu/macOS matrix and now runs
+  `cargo bench -p georbf --bench constraint_diagnostics -- --smoke`. Actual
+  green Ready-head CI remains the mandatory integration gate rather than a
+  review claim.
+- Exact row proportionality uses vanishing determinants of the exact binary
+  coefficient values, and exact interval ordering handles positive and
+  negative scales without materializing an overflowing or underflowing
+  quotient. An independent exact-rational differential check matched 200,000
+  random finite product comparisons.
+- Constant and exact proportional equality/equality, equality/bound, and
+  bound/bound conflicts remain source-complete and non-mutating. Near-duplicate
+  tolerance remains warning-only; pair order and provenance are deterministic.
+- Soft objectives and cones remain outside affine hard-feasibility
+  classification. General multi-row infeasibility retains the independently
+  reviewed original-unit certificate path. Allocation and provenance failures
+  remain structured and expose no partial report.
+- No hidden regularization, presolve, jitter, pseudoinverse, constraint
+  relaxation, unsafe code, dependency, backend, SPD/CPD, center, polynomial,
+  rotation, positive-definiteness, or Hessian change was found. Rust,
+  benchmark, documentation, `implemented` registry state, and CLI/C/C++/Python
+  dispositions remain truthful; D=1/D=2/D=3 and `Send + Sync` are covered.
+
+The reviewer passed all eight infeasibility tests, all eight linear-constraint
+tests, four problem-IR provenance-allocation fault tests, the benchmark smoke
+with checksum `768`, the runnable example with one exact and two sign-reversed
+near-duplicate pairs, GeoRBF all-target/all-feature Clippy with warnings denied,
+workspace format, all 58 requirement checks, and both complete and focused diff
+whitespace checks. Exact Draft CI run 29718863367 also passed its configured
+Ubuntu gate on `0c465e7`; the Ready-only matrix correctly did not run.
+
+No P0, P1, P2, or P3 finding remains. This evidence-only commit changes only
+this review record and `docs/progress/CURRENT.md`; it changes no production,
+test, manifest, schema, CI, build, API, numerical, registry, or dependency
+input. PR #85 may proceed to Ready CI. REQ-INFEAS-001 remains `implemented`,
+not `integrated`, until the exact Ready head passes the complete Windows,
+Ubuntu, and macOS correctness and benchmark-smoke matrix, PR #85 merges exactly
+once, and the isolated integration-state change completes.
