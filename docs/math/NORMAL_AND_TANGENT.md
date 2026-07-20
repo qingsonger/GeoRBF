@@ -91,6 +91,65 @@ Unknown polarity does not justify the non-convex claim
 `|n^T grad f| >= g_min`. A fitted near-zero gradient is reported as a
 diagnostic, not prevented by a fictitious convex constraint.
 
+### Implemented scalar lowering
+
+`NormalObservation<D>` lowers every vector observation to existing
+solver-neutral scalar relations. Each generated relation receives one unique
+caller-owned `SemanticProvenance`; this preserves the IR invariant that a
+stable `ObservationId` names exactly one equality, bound, cone, or soft
+objective. The deterministic provenance and role orders are:
+
+- `GradientVector`: the D Cartesian component equalities in axis order.
+- `DirectionOnly` and `AxialDirection`: the D-1 complement equalities in basis
+  order.
+- `DirectionWithPolarity`: the D-1 complement equalities followed by the
+  oriented projection lower bound.
+- `AngularCone`: the ordered Lorentz cone followed by the oriented projection
+  lower bound.
+
+Hard or supported explicit soft enforcement is copied to every generated
+scalar relation. D=3 complement-based modes support soft SquaredL2 because the
+sum of squared complement components is invariant under an orthonormal basis
+change. Componentwise AbsoluteL1 and Huber losses are rejected for these D=3
+multi-row semantics because their sums depend on the arbitrary complement
+basis. They remain supported for the single complement row in D=2 and for
+scalar relations whose geometry is already rotation invariant. Soft rows
+remain objectives and never participate in hard feasibility decisions. The
+solver sees only equality, linear-bound, and ordered second-order-cone
+relations; it receives no normal-mode enum.
+
+The implemented D=2/D=3 complement chooses the Cartesian axis least aligned
+with `n`, projects it with `I - n n^T`, normalizes it, and in D=3 completes the
+frame with a cross product. The first nonzero component of every basis vector
+is made positive. This makes direction-only and axial rows binary-exact under
+`n -> -n`, while still satisfying the projector identities up to floating-
+point roundoff. The construction uses no geological convention, solver
+regularization, or data-dependent tolerance.
+
+Angular inputs carry `AngleUnit::Degrees` or `AngleUnit::Radians`; negative
+zero is canonicalized to positive zero before conversion. Non-finite angles,
+negative angles, and the closed upper boundary at 90 degrees or `pi/2` are
+rejected rather than clipped. `g_min` is always caller supplied and is rejected
+when negative or non-finite; zero has no implicit default meaning. A positive
+angle is rejected with a structured representability error if unit conversion
+or tangent evaluation would turn it into a zero cone slope.
+
+### Near-zero fitted-gradient review
+
+Near-zero review is diagnostic-only. `GradientMagnitudePolicy` requires a
+positive finite reference scale in the same units as `||grad f||` and a finite
+nonnegative dimensionless relative threshold. The reported absolute threshold
+is their checked product. `NormalGradientDiagnostics` retains the complete
+source path, computes an overflow/underflow-resistant Euclidean magnitude, and
+reports the binary decision
+
+```text
+||grad f|| <= relative_threshold * reference_scale.
+```
+
+There is no hidden default scale, unit conversion, fit mutation, constraint
+insertion, or claim that an axial direction has nonzero magnitude.
+
 ## Tangents and derivative-only gauges
 
 An exact tangent `t` imposes `t^T grad f(x) = 0`; soft tangents use an explicit

@@ -25,7 +25,10 @@
 //! problems can be dispatched through a checked Clarabel adapter with explicit
 //! settings, memory policy, provenance, and independent original-unit review;
 //! hard affine functionals also have source-aware exact-duplicate and
-//! scale-aware near-duplicate diagnostics without constraint rewriting.
+//! scale-aware near-duplicate diagnostics without constraint rewriting. Five
+//! provenance-preserving normal-observation modes lower exact gradient,
+//! orthogonal-complement, oriented projection, and convex angular semantics to
+//! those shared scalar relations, with explicit near-zero gradient review.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -46,6 +49,7 @@ pub mod kernel_calculus;
 pub mod levels;
 pub mod linear_constraints;
 pub mod model;
+pub mod normal_observations;
 pub mod orientation;
 pub mod polynomial;
 pub mod problem_ir;
@@ -129,6 +133,10 @@ pub use model::{
     FittedFieldEvaluation, FittedFieldEvaluationError, FittedFieldFitError, FittedFieldOutput,
     FittedFieldRecord, FittedFieldSecondOrderEvaluation, FittedFieldStorage, KernelDefinition,
     KernelDefinitionEvaluationError,
+};
+pub use normal_observations::{
+    GradientMagnitudePolicy, NormalConstraintRole, NormalGradientDiagnostics, NormalMode,
+    NormalObservation, NormalObservationError,
 };
 pub use orientation::{
     LinearOrientation, OrientationAngleField, OrientationError, OrientationPolarity,

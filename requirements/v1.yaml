@@ -498,17 +498,17 @@ requirements:
     dependencies: [REQ-ORIENT-001, REQ-CONVEX-001]
     milestone: M5-v0.5.0
     priority: P0
-    issue: null
-    pull_request: null
+    issue: 87
+    pull_request: 88
     tests: [analytic-gradients, polarity, axial-sign, cone-rotation, invalid-angle, dimension-boundaries, small-gradient]
     docs: [docs/math/NORMAL_AND_TANGENT.md, rustdoc]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
-    status: planned
+    rust_api: implemented
+    cli: "N/A: stage-0 CLI exposes only help/version; project and schema commands belong to M8"
+    c_api: "N/A: C ABI follows Rust API and schema freeze in M9"
+    cpp_api: "N/A: C++ wrapper follows the C ABI in M9"
+    python_api: "N/A: Python bindings follow Rust API and schema freeze in M9"
+    benchmark: implemented
+    status: implemented
 
   - id: REQ-TANGENT-001
     title: Tangent and derivative-only constraints
