@@ -79,3 +79,7 @@ harness = false
 [[bench]]
 name = "convex_solver"
 harness = false
+
+[[bench]]
+name = "constraint_diagnostics"
+harness = false

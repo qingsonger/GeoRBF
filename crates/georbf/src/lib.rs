@@ -23,7 +23,9 @@
 //! semantic compilation with exact hard-bound conflict diagnostics.
 //! Canonical equality, linear-bound, soft L2/L1/Huber, and second-order-cone
 //! problems can be dispatched through a checked Clarabel adapter with explicit
-//! settings, memory policy, provenance, and independent original-unit review.
+//! settings, memory policy, provenance, and independent original-unit review;
+//! hard affine functionals also have source-aware exact-duplicate and
+//! scale-aware near-duplicate diagnostics without constraint rewriting.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -38,6 +40,7 @@ pub mod execution;
 pub mod field;
 pub mod functional;
 pub mod geometry;
+pub mod infeasibility;
 pub mod kernel;
 pub mod kernel_calculus;
 pub mod levels;
@@ -91,6 +94,11 @@ pub use functional::{
     FunctionalStorage, FunctionalTerm, KernelActionError, ObservationFunctional, ScalarFieldSample,
 };
 pub use geometry::{Direction, GeometryError, Point, UnitDirection, Vector};
+pub use infeasibility::{
+    ConstraintPairDiagnostics, ConstraintReviewDiagnostics, FunctionalOrientation,
+    FunctionalSimilarity, HardAffineConstraintKind, NEAR_DUPLICATE_THRESHOLD,
+    try_review_constraints,
+};
 pub use kernel::{
     CpdOrder, CpdOrderError, Gaussian, InverseMultiquadric, KernelDefiniteness,
     KernelDerivativeCapabilities, KernelDerivativeCapabilitiesError, KernelDerivativeCapability,

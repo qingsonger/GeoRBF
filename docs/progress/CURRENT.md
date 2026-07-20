@@ -6,89 +6,64 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-CONVEX-001 complete
-- Requirement: REQ-CONVEX-001, Issue #81 (closed)
-- Implementation pull request: #82, squash-merged as `742ee57`
-- Integration-state branch: `codex/req-convex-001-integration-state`
-- Integration-state pull request: #83 (Draft until exact Ready CI is green)
-- Review record: `docs/reviews/PR-82-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-INFEAS-001 (`planned`)
+- Mode: Implement / REQ-INFEAS-001 complete locally
+- Requirement: REQ-INFEAS-001, Issue #84
+- Branch: `codex/req-infeas-001-diagnostics`
+- Pull request: pending initial push; create as Draft
+- Registry state in this change: `in_progress` until the Draft PR number exists
+- Dependencies: REQ-CONVEX-001 and REQ-DIAG-001 are `integrated`
 
-## Integration result
+## Implementation result
 
-- A fresh read-only project `math_reviewer` independently reviewed the exact
-  repaired PR head using only bounded requirement, dependency, normative-
-  document, diff, test, benchmark, registry, handoff, and CI evidence. It did
-  not inherit implementation or Repair reasoning.
-- R82-001 through R82-008 are closed. No P0, P1, P2, or P3 finding remains.
-- Structurally zero objectives now use a recorded dimensionless objective-unit
-  reference. Original row values convert it to componentwise gradient units;
-  no raw dimensioned floor or tolerance multiplier was added.
-- The adapter positively infinity-normalizes independent zero/nonnegative rows
-  and whole Lorentz blocks before dispatch, maps backend slack and dual values
-  back to original units, and records the complete scaling vector.
-- The public hard-only `x >= 1` regression succeeds at row scales `1e-12`, `1`,
-  and `1e12`, with every normalized KKT and hard-relation review at or below the
-  exact requested `1e-9` tolerance. A synthetic nonstationary dual is still
-  rejected.
-- Exact implementation Ready head `e6a3621` passed Windows, Ubuntu, and macOS
-  with every configured backend and benchmark-smoke workload in CI run
-  29711773645.
-- PR #82 squash-merged exactly once as `742ee57`; Issue #81 closed as
-  completed.
-- Post-merge `main` run 29712183062 passed the same complete three-platform
-  correctness, backend, benchmark-smoke, and requirement-registry gate on
-  `742ee57`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, normative contract, numerical
-  behavior, dependency, tag, or release.
+- Added immutable source-aware exact-duplicate and scale-aware near-duplicate
+  review for hard canonical affine equality and linear-bound functionals.
+- Rows are independently infinity-normalized and compared in both sign
+  orientations. The explicit warning-only threshold is `128 * epsilon`.
+- Diagnostics retain relation kinds, both complete provenances, orientation,
+  normalized distance, and threshold in deterministic equality-then-bound pair
+  order. Canonical rows remain byte-for-byte unchanged.
+- Exact conflict review now covers constant equalities and exactly proportional
+  equality/equality, equality/bound, and bound/bound intervals. Only exact
+  proportionality can reject a pair; near duplicates never prove infeasibility.
+- Soft objectives remain outside hard-feasibility decisions. Ordered cones and
+  general multi-row infeasibility remain on the independently reviewed convex
+  certificate path.
+- Rust, example, benchmark, Rustdoc, normative constraint/architecture docs,
+  changelog, and explicit CLI/C/C++/Python dispositions are complete.
 
 ## Validation state
 
-- Focused warning-denying all-target/all-feature Clippy, all six private convex
-  tests, all ten convex integration tests, the runnable example, the 8/16
-  benchmark smoke workload, and `git diff --check` passed after the final
-  production/test change. Smoke checksums remained
-  `4.00000000000000444` and `7.99999999999999911`; timings are not performance
-  promises.
-- Exact code/test head `c1753bdb98e6abec69486c36713d887491204f67`
-  passed the complete standard gate: workspace format, warning-denying
-  all-target/all-feature Clippy, all-feature workspace tests, workspace
-  Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The later solver-policy, requirement change fragment, review evidence, and
-  registry test-name update change no production, test, manifest, schema, CI,
-  build, API, numerical, or dependency input. The updated registry separately
-  passed all 58 requirement checks and exact whitespace checks.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state tree passed the complete local standard gate:
-  workspace format, warning-denying all-target/all-feature Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and
-  `git diff --check`.
+- Five independent `infeasibility` tests pass: exact duplicates, sign-reversed
+  near duplicates, source/order preservation, unchanged canonical input,
+  equality/bound and constant-equality conflicts at row scales `1e-12`, `1`,
+  and `1e12`, soft exclusion, D=1/D=2/D=3, `Send + Sync`, and a reviewed
+  three-row primal-infeasibility certificate.
+- The adjacent problem-IR, linear-constraint, and convex-solver suites pass.
+- The runnable example reports one exact and two near-duplicate pairs.
+- The 5,000-iteration 96-constraint benchmark measured 145.75 microseconds per
+  review with checksum `480000`; the eight-iteration smoke measured 178.09
+  microseconds with checksum `768`. Timings are not performance promises.
+- After the final production/test change, the stable tree passed the complete
+  standard gate: workspace format, warning-denying all-target/all-feature
+  Clippy, all-feature workspace tests, workspace Rustdoc, all 58 requirement
+  checks, and `git diff --check`.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start REQ-INFEAS-001 or another
-requirement in this task.
+After the branch is pushed and the Draft PR number is linked in this handoff and
+the registry, open a fresh Review task. It must review only REQ-INFEAS-001 and
+the Draft PR, create and wait for the project `math_reviewer`, record findings,
+and stop without repairing production code or starting another requirement.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #81
-- Merged implementation and repairs: GitHub PR #82
-- Integration-state pull request: GitHub PR #83
-- Independent review and repair evidence:
-  `docs/reviews/PR-82-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-CONVEX-001.md`
-- Solver policy and backend decision: `docs/architecture/SOLVER_POLICY.md` and
-  `docs/adr/ADR-0011-clarabel-convex-backend.md`
-- Focused tests: `crates/georbf/tests/convex_solver.rs`
-- Example and benchmark: `crates/georbf/examples/convex_solver.rs`,
-  `crates/georbf/benches/convex_solver.rs`, and
-  `docs/benchmarks/REQ-CONVEX-001.md`
+- Acceptance criteria and exclusions: GitHub Issue #84
+- Requirement summary: `changes/REQ-INFEAS-001.md`
+- Focused tests: `crates/georbf/tests/infeasibility.rs`
+- Example: `crates/georbf/examples/constraint_diagnostics.rs`
+- Benchmark and report: `crates/georbf/benches/constraint_diagnostics.rs` and
+  `docs/benchmarks/REQ-INFEAS-001.md`
+- Normative behavior: `docs/math/CONSTRAINT_SEMANTICS.md`
 
 ## Checks not yet available
 
@@ -96,5 +71,4 @@ requirement in this task.
 installed. Miri is unavailable for pinned Rust 1.96.1. Sanitizers, executable
 fuzzing, mutation testing, general allocation instrumentation, and API/ABI/
 schema snapshot checks are tracked by later requirements and release gates.
-Local `actionlint` is unavailable. Exact OSV and repository advisory API
-queries are the performed dependency review; unavailable tools are not claimed.
+Local `actionlint` is unavailable. No unavailable check is claimed as passed.

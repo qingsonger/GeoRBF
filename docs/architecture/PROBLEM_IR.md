@@ -74,13 +74,23 @@ failure returns `AllocationFailed` before any partial canonical problem can be
 observed. Canonicalization does not scale, regularize, add jitter or hidden
 variables, relax constraints, or select a solver.
 
-Before a `CanonicalProblem` is returned, hard constant bound rows and pairs of
-exact coefficient-equal or exact sign-reversed bound rows are checked for an
-empty interval intersection. A conflict retains the complete provenance of the
-one or two originating rows through fallible owned storage. Soft objectives are
-excluded from this feasibility review. The check is intentionally not a
-general linear-program feasibility algorithm and performs no approximate row
-matching, scaling, relaxation, or repair.
+Before a `CanonicalProblem` is returned, hard constant equality and bound rows
+are checked, and every pair of exactly proportional hard affine equality/bound
+rows is placed in one orientation for a closed-interval intersection. A
+conflict retains the complete provenance of the one or two originating rows
+through fallible owned storage. Positive row scaling and sign reversal do not
+change the decision. Soft objectives are excluded from this feasibility
+review. The check is intentionally not a general linear-program feasibility
+algorithm and performs no tolerance-based rejection, relaxation, or repair.
+
+The public constraint-review layer separately reports exact duplicate and
+scale-aware near-duplicate hard affine functionals. It independently
+infinity-normalizes each sparse row, compares both sign orientations, and uses
+the explicit dimensionless `128 * epsilon` threshold only for warnings. Pair
+order is deterministic, complete source provenance is cloned fallibly, and the
+canonical coefficients, targets, bounds, ordering, and enforcement remain
+unchanged. Hard cones are counted but not reinterpreted as affine rows; general
+infeasibility uses the convex adapter's independently reviewed certificate.
 
 Centers and observations remain separate through both forms. Later semantic
 compilers and assembly requirements add their own finite-value, unit,

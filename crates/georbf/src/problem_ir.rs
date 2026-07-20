@@ -1326,7 +1326,7 @@ impl CanonicalProblem {
         cones: Vec<CanonicalSecondOrderCone>,
         soft_objectives: Vec<CanonicalSoftObjective>,
     ) -> Result<Self, ProblemIrError> {
-        validate_hard_linear_bounds(&linear_bounds)?;
+        validate_hard_affine_constraints(&equalities, &linear_bounds)?;
         let scaling = CanonicalScaling {
             variable: try_unit_vec(variable_space.variable_count, ProblemIrStorage::Scaling)?,
             equality: try_unit_vec(equalities.len(), ProblemIrStorage::Scaling)?,
@@ -1504,6 +1504,8 @@ pub enum ProblemIrStorage {
     CanonicalConeRows,
     /// Owned semantic provenance copied into canonical rows and cones.
     CanonicalProvenance,
+    /// Source-aware duplicate and near-duplicate diagnostics.
+    ConstraintDiagnostics,
     /// Explicit identity scaling vectors.
     Scaling,
 }
@@ -1538,6 +1540,13 @@ pub enum ProblemIrError {
         /// Upper bound.
         upper: f64,
     },
+    /// A constant hard equality had a nonzero right-hand side.
+    InfeasibleConstantEquality {
+        /// Complete originating source provenance; contains exactly one entry.
+        sources: Vec<SemanticProvenance>,
+        /// Rejected nonzero right-hand side.
+        rhs: f64,
+    },
     /// A constant hard linear-bound row excluded zero.
     InfeasibleConstantLinearBound {
         /// Complete originating source provenance; contains exactly one entry.
@@ -1554,6 +1563,15 @@ pub enum ProblemIrError {
         /// Greatest lower endpoint from the conflicting pair.
         lower: f64,
         /// Least upper endpoint from the conflicting pair.
+        upper: f64,
+    },
+    /// Exact proportional hard rows involving an equality had disjoint intervals.
+    InfeasibleHardAffineConstraints {
+        /// Complete source provenance in canonical earlier-then-later order.
+        sources: Vec<SemanticProvenance>,
+        /// Greatest lower endpoint in the earlier row's orientation.
+        lower: f64,
+        /// Least upper endpoint in the earlier row's orientation.
         upper: f64,
     },
     /// A field-only canonical problem did not match a level problem's field blocks.
@@ -1862,9 +1880,18 @@ fn try_unit_vec(count: usize, storage: ProblemIrStorage) -> Result<Vec<f64>, Pro
     Ok(values)
 }
 
-fn validate_hard_linear_bounds(
+fn validate_hard_affine_constraints(
+    equalities: &[CanonicalEquality],
     linear_bounds: &[CanonicalLinearBound],
 ) -> Result<(), ProblemIrError> {
+    for equality in equalities {
+        if equality.row.terms.is_empty() && equality.rhs != 0.0 {
+            return Err(ProblemIrError::InfeasibleConstantEquality {
+                sources: try_conflict_sources([&equality.provenance])?,
+                rhs: equality.rhs,
+            });
+        }
+    }
     for bound in linear_bounds {
         if bound.row.terms.is_empty()
             && (bound.lower.is_some_and(|lower| lower > 0.0)
@@ -1878,57 +1905,124 @@ fn validate_hard_linear_bounds(
         }
     }
 
-    for second_index in 0..linear_bounds.len() {
-        let second = &linear_bounds[second_index];
+    let relation_count = equalities
+        .len()
+        .checked_add(linear_bounds.len())
+        .ok_or(ProblemIrError::MemoryEstimateOverflow)?;
+    for second_index in 0..relation_count {
+        let second = hard_affine_interval(equalities, linear_bounds, second_index);
         if second.row.terms.is_empty() {
             continue;
         }
-        for first in &linear_bounds[..second_index] {
-            let Some(sign_reversed) = exact_row_relation(&first.row, &second.row) else {
+        for first_index in 0..second_index {
+            let first = hard_affine_interval(equalities, linear_bounds, first_index);
+            let Some(scale) = exact_row_scale(first.row, second.row) else {
                 continue;
             };
-            let (second_lower, second_upper) = if sign_reversed {
-                (
-                    second.upper.map(|upper| -upper),
-                    second.lower.map(|lower| -lower),
-                )
-            } else {
-                (second.lower, second.upper)
+            let Some((second_lower, second_upper)) =
+                scale_interval(second.lower, second.upper, scale)
+            else {
+                continue;
             };
             let lower = greatest_lower(first.lower, second_lower);
             let upper = least_upper(first.upper, second_upper);
             if let (Some(lower), Some(upper)) = (lower, upper)
                 && lower > upper
             {
-                return Err(ProblemIrError::InfeasibleLinearBounds {
-                    sources: try_conflict_sources([&first.provenance, &second.provenance])?,
-                    lower,
-                    upper,
-                });
+                let sources = try_conflict_sources([first.provenance, second.provenance])?;
+                return if first.is_equality || second.is_equality {
+                    Err(ProblemIrError::InfeasibleHardAffineConstraints {
+                        sources,
+                        lower,
+                        upper,
+                    })
+                } else {
+                    Err(ProblemIrError::InfeasibleLinearBounds {
+                        sources,
+                        lower,
+                        upper,
+                    })
+                };
             }
         }
     }
     Ok(())
 }
 
-fn exact_row_relation(first: &AffineExpression, second: &AffineExpression) -> Option<bool> {
+#[derive(Clone, Copy)]
+struct HardAffineInterval<'a> {
+    row: &'a AffineExpression,
+    lower: Option<f64>,
+    upper: Option<f64>,
+    provenance: &'a SemanticProvenance,
+    is_equality: bool,
+}
+
+fn hard_affine_interval<'a>(
+    equalities: &'a [CanonicalEquality],
+    linear_bounds: &'a [CanonicalLinearBound],
+    index: usize,
+) -> HardAffineInterval<'a> {
+    if let Some(equality) = equalities.get(index) {
+        return HardAffineInterval {
+            row: &equality.row,
+            lower: Some(equality.rhs),
+            upper: Some(equality.rhs),
+            provenance: &equality.provenance,
+            is_equality: true,
+        };
+    }
+    let bound = &linear_bounds[index - equalities.len()];
+    HardAffineInterval {
+        row: &bound.row,
+        lower: bound.lower,
+        upper: bound.upper,
+        provenance: &bound.provenance,
+        is_equality: false,
+    }
+}
+
+pub(crate) fn exact_row_scale(first: &AffineExpression, second: &AffineExpression) -> Option<f64> {
     if first.terms.len() != second.terms.len() || first.terms.is_empty() {
         return None;
     }
-    if first.terms.iter().zip(&second.terms).all(|(left, right)| {
-        left.variable == right.variable && left.coefficient.to_bits() == right.coefficient.to_bits()
-    }) {
-        return Some(false);
+    if first
+        .terms
+        .iter()
+        .zip(&second.terms)
+        .any(|(left, right)| left.variable != right.variable)
+    {
+        return None;
+    }
+    let scale = first.terms[0].coefficient / second.terms[0].coefficient;
+    if !scale.is_finite() || scale == 0.0 {
+        return None;
     }
     first
         .terms
         .iter()
         .zip(&second.terms)
-        .all(|(left, right)| {
-            left.variable == right.variable
-                && left.coefficient.to_bits() == (-right.coefficient).to_bits()
-        })
-        .then_some(true)
+        .all(|(left, right)| left.coefficient.to_bits() == (scale * right.coefficient).to_bits())
+        .then_some(scale)
+}
+
+fn scale_interval(
+    lower: Option<f64>,
+    upper: Option<f64>,
+    scale: f64,
+) -> Option<(Option<f64>, Option<f64>)> {
+    let scaled_lower = lower.map(|value| value * scale);
+    let scaled_upper = upper.map(|value| value * scale);
+    if scaled_lower.is_some_and(|value| !value.is_finite())
+        || scaled_upper.is_some_and(|value| !value.is_finite())
+    {
+        return None;
+    }
+    if scale > 0.0 {
+        Some((scaled_lower, scaled_upper))
+    } else {
+        Some((scaled_upper, scaled_lower))
+    }
 }
 
 fn try_conflict_sources<const N: usize>(
