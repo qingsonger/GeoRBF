@@ -311,3 +311,19 @@ input. PR #85 may proceed to Ready CI. REQ-INFEAS-001 remains `implemented`,
 not `integrated`, until the exact Ready head passes the complete Windows,
 Ubuntu, and macOS correctness and benchmark-smoke matrix, PR #85 merges exactly
 once, and the isolated integration-state change completes.
+
+## Integration evidence
+
+The implementation integration sequence is complete. Exact Ready evidence head
+`4fec622e554e29ee981d246227b5dcf0cdb56d7e` passed the complete Windows,
+Ubuntu, and macOS correctness matrix, every configured backend path, all
+benchmark-smoke workloads including `constraint_diagnostics`, and the
+requirement-registry gate in CI run 29719420711. PR #85 then squash-merged
+exactly once as `0262a0450bd3973302ea8f586fe2c1116ff4fc14`, and Issue #84
+closed as completed. Post-merge `main` run 29719948949 passed the same complete
+three-platform gate on that exact merge commit.
+
+The isolated integration-state change records the registry, review evidence,
+history index, and bounded handoff only. After its own complete local and exact
+Ready-head CI gates are green and its pull request is merged, stop. A fresh task
+must select the next requirement; this task must not begin it.
