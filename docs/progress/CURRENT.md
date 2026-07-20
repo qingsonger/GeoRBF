@@ -6,57 +6,69 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review clean; Ready CI pending
-- Requirement: REQ-TANGENT-001, Issue #90
-- Branch: `codex/req-tangent-001-tangent-constraints`
-- Pull request: #91 (Draft)
-- Reviewed implementation head: `86d1d3dcc948d70f6825822d1efe94b92b8b4f5b`
-- Repair implementation head: `5e99aa629118ca4b4c81927d31adf67f19822b58`
-- Independently re-reviewed head: `ab84fda560229fcb8e8c2ccf0e0361bba3751f30`
-- Review result: R91-001 closed; no P0-P3 findings remain
-- Registry state: `implemented`, not `integrated`
-- Dependencies: REQ-FUNC-001, REQ-SOFT-001, and REQ-DIAG-001 are `integrated`
+- Mode: Integration state / REQ-TANGENT-001 complete
+- Requirement: REQ-TANGENT-001, Issue #90 (closed)
+- Implementation pull request: #91, squash-merged as `968afe9`
+- Integration-state branch: `codex/req-tangent-001-integration-state`
+- Integration-state pull request: pending
+- Review record: `docs/reviews/PR-91-INDEPENDENT-REVIEW.md`
+- Registry state in this change: `integrated`
+- Next eligible requirement: select with `cargo xtask requirements next`
 
-## Independent re-review result
+## Integration result
 
-- A fresh read-only project `math_reviewer` independently confirmed that the
-  no-gauge path consumes exactly one item before any size inspection,
-  reservation, or collection. R91-001 is closed.
-- The paired unbounded-iterator regressions prove source-aware
-  `GEORBF-E4001` without a gauge and retain `CountOverflow` with an explicit
-  gauge.
-- Tangent formula, sign, reversal invariance, units, hard/soft semantics,
-  value-gauge mathematics, deterministic provenance, finite input handling,
-  adapter dispositions, benchmark and CI wiring, and registry truth are clean.
-- No P0, P1, P2, or P3 finding remains. Kernel, center, polynomial, rank,
-  SPD/CPD, anisotropy, and Hessian concerns are unchanged and out of scope.
+- A fresh read-only project `math_reviewer` independently re-reviewed the exact
+  complete PR and repair using only bounded requirement, dependency, normative,
+  diff, test, benchmark, registry, handoff, and validation evidence.
+- R91-001 is closed. Missing-gauge inputs inspect only the first tangent before
+  returning source-aware `GEORBF-E4001`; the explicit-gauge unbounded path
+  retains structured `CountOverflow`.
+- No P0, P1, P2, or P3 finding remained before integration; the independent
+  review requirement is complete.
+- Exact implementation Ready head `e780ad9` passed Windows, Ubuntu, and macOS
+  with every configured backend and benchmark-smoke workload, including
+  `tangent_observation_compilation`, in CI run 29732074353.
+- PR #91 squash-merged exactly once as `968afe9`; Issue #90 closed as
+  completed.
+- Post-merge `main` run 29732840766 passed the same complete three-platform
+  correctness, backend, benchmark-smoke, and requirement-registry gate on
+  `968afe9`.
+- This isolated integration-state change updates only the registry, review
+  evidence, history index, and bounded handoff. It changes no production code,
+  test, manifest, schema, CI, build input, API, normative contract, numerical
+  behavior, dependency, tag, or release.
 
 ## Validation state
 
-- Exact independently re-reviewed head `ab84fda` passed workspace format,
-  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
-  workspace doctests, all 58 requirement checks, and `git diff --check`.
-- The same head passed all eight focused tangent integration tests, both
-  tangent module regressions, the runnable example, and benchmark smoke
-  checksum `3824`.
-- Draft CI run 29731323902 passed the configured Ubuntu correctness gate on
-  exact head `ab84fda`. The Ready-only matrix correctly did not run.
-- This final evidence update changes only the independent review record and
-  this bounded handoff. It changes no production code, test, manifest, schema,
-  CI, build, API, numerical, registry, or dependency input.
+- Exact repair implementation head `5e99aa6` and final evidence head `e780ad9`
+  passed the complete standard local gate: workspace format, warning-denying
+  all-target/all-feature Clippy, all-feature workspace tests, workspace
+  Rustdoc, all 58 requirement checks, and `git diff --check`.
+- The final reviewer confirmed R91-001 closure and no P0-P3 findings. The
+  parent task passed all eight tangent-observation tests, both module
+  regressions, the benchmark smoke with checksum `3824`, the example, registry
+  check, and the complete PR diff whitespace check.
+- Exact implementation Ready-head and post-merge `main` three-platform gates
+  are green as recorded above.
+- The isolated integration-state tree passed the complete local standard gate:
+  workspace format, warning-denying all-target/all-feature Clippy, all-feature
+  workspace tests, workspace Rustdoc, all 58 requirement checks, and
+  `git diff --check`.
+- Local `actionlint` and the later unavailable tools listed below remain
+  unavailable and are not claimed as passed.
 
-## Next task boundary
+## Next task
 
-Commit and push this clean re-review evidence, mark PR #91 ready, and wait for
-the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact Ready
-head. Merge exactly once only when it is green, then record truthful registry
-and handoff state through an isolated integration-state change. Do not begin
-REQ-THICK-001 or any other requirement.
+After the isolated integration-state pull request is green and merged, open a
+fresh task and perform the mandatory preflight. Use
+`cargo xtask requirements next`; do not start another requirement in this
+task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #90
-- Draft implementation pull request: GitHub PR #91
+- Acceptance criteria and exclusions: closed GitHub Issue #90
+- Merged implementation and repair: GitHub PR #91
+- Integration-state pull request: pending
 - Independent review: `docs/reviews/PR-91-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-TANGENT-001.md`
 - Focused tests: `crates/georbf/tests/tangent_observations.rs`

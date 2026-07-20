@@ -176,3 +176,19 @@ Ready CI. REQ-TANGENT-001 remains `implemented`, not `integrated`, until the
 exact Ready evidence head passes the complete Windows, Ubuntu, and macOS
 correctness and benchmark-smoke matrix, PR #91 merges exactly once, and the
 isolated integration-state change completes.
+
+## Integration evidence
+
+The implementation integration sequence is complete. Exact Ready evidence head
+`e780ad977848dddf1c90f259e0447222e4a22d9a` passed the complete Windows,
+Ubuntu, and macOS correctness matrix, every configured backend path, all
+benchmark-smoke workloads including `tangent_observation_compilation`, and the
+requirement-registry gate in CI run 29732074353. PR #91 then squash-merged
+exactly once as `968afe9c758e4fbebb2c5c04832b3d1a9b529c0d`, and Issue #90
+closed as completed. Post-merge `main` run 29732840766 passed the same complete
+three-platform gate on that exact merge commit.
+
+The isolated integration-state change records only the registry, review
+evidence, history index, and bounded handoff. After its own complete local and
+exact Ready-head CI gates are green and that pull request is merged, stop. A
+fresh task must select the next requirement; this task must not begin it.
