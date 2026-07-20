@@ -6,17 +6,16 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Clean independent re-review complete; Ready integration sequence in
-  progress / REQ-INFEAS-001
-- Requirement: REQ-INFEAS-001, Issue #84
-- Implementation branch: `codex/req-infeas-001-diagnostics`
-- Implementation pull request: #85 (Draft until evidence synchronization)
-- Stable CI-repair head: `1982d89af58344e3150cd7e547c8ac0b30ddab02`
-- Clean re-reviewed head: `0c465e7e869d1118a56c39cabc73c2cf1b29cf92`
-- Registry state: `implemented`; it is not `integrated`
-- Dependencies: REQ-CONVEX-001 and REQ-DIAG-001 are `integrated`
+- Mode: Integration state / REQ-INFEAS-001 complete
+- Requirement: REQ-INFEAS-001, Issue #84 (closed)
+- Implementation pull request: #85, squash-merged as `0262a04`
+- Integration-state branch: `codex/req-infeas-001-integration-state`
+- Integration-state pull request: #86 (Draft until exact Ready CI is green)
+- Review record: `docs/reviews/PR-85-INDEPENDENT-REVIEW.md`
+- Registry state in this change: `integrated`
+- Next eligible requirement: REQ-NORMAL-001 (`planned`)
 
-## Final re-review disposition
+## Integration result
 
 - A fresh read-only project `math_reviewer` independently reviewed the exact
   complete PR and R85-003 repair using only bounded requirement, dependency,
@@ -26,9 +25,20 @@ records, benchmark reports, Git, and GitHub.
   remain warning-only; hard rows remain unchanged; soft objectives and cones
   remain separate; the Ready-only constraint-diagnostics smoke spans Windows,
   Ubuntu, and macOS.
-- No P0, P1, P2, or P3 finding remains. PR #85 may proceed to Ready CI;
-  REQ-INFEAS-001 remains `implemented` until the full integration sequence
-  completes.
+- No P0, P1, P2, or P3 finding remained before integration; the independent
+  review requirement is complete.
+- Exact implementation Ready head `4fec622` passed Windows, Ubuntu, and macOS
+  with every configured backend and benchmark-smoke workload, including
+  `constraint_diagnostics`, in CI run 29719420711.
+- PR #85 squash-merged exactly once as `0262a04`; Issue #84 closed as
+  completed.
+- Post-merge `main` run 29719948949 passed the same complete three-platform
+  correctness, backend, benchmark-smoke, and requirement-registry gate on
+  `0262a04`.
+- This isolated integration-state change updates only the registry, review
+  evidence, history index, and bounded handoff. It changes no production code,
+  test, manifest, schema, CI, build input, API, normative contract, numerical
+  behavior, dependency, tag, or release.
 
 ## Validation state
 
@@ -45,27 +55,27 @@ records, benchmark reports, Git, and GitHub.
 - Draft CI run 29718863367 passed the configured Ubuntu gate on exact reviewed
   head `0c465e7`. The Ready-only Windows/Ubuntu/macOS matrix correctly did not
   run while the PR was Draft.
-- This re-review task changes only the review record and bounded handoff. The
-  complete stable-head gate remains applicable because no production, test,
-  manifest, schema, CI, build, API, numerical, registry, or dependency input
-  changes.
+- Exact implementation Ready-head and post-merge `main` three-platform gates
+  are green as recorded above.
+- The isolated integration-state tree passed the complete local standard gate:
+  workspace format, warning-denying all-target/all-feature Clippy, all-feature
+  workspace tests, workspace Rustdoc, all 58 requirement checks, and
+  `git diff --check`.
 - Local `actionlint` is unavailable and is not claimed as passed. The later
   unavailable-tool dispositions below are unchanged.
 
 ## Next task
 
-Synchronize this evidence-only re-review and handoff commit on PR #85, mark the
-PR Ready, and wait for the complete Windows, Ubuntu, and macOS correctness
-matrix plus every benchmark-smoke workload on that exact final evidence head.
-Merge exactly once only when green, wait for green post-merge `main` CI, then
-record truthful integration state in an isolated follow-up change. If this task
-is interrupted, resume only this integration sequence; do not begin another
-requirement.
+After the isolated integration-state pull request is green and merged, open a
+fresh task and perform the mandatory preflight. Use
+`cargo xtask requirements next`; do not start another requirement in this
+task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #84
-- Draft implementation pull request: GitHub PR #85
+- Acceptance criteria and exclusions: closed GitHub Issue #84
+- Merged implementation and repairs: GitHub PR #85
+- Integration-state pull request: GitHub PR #86
 - Independent review: `docs/reviews/PR-85-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-INFEAS-001.md`
 - Focused tests: `crates/georbf/tests/infeasibility.rs`
