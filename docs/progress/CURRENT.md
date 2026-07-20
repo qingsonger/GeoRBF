@@ -6,56 +6,60 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement
+- Mode: Review complete; repair required
 - Requirement: REQ-TANGENT-001, Issue #90
 - Branch: `codex/req-tangent-001-tangent-constraints`
 - Pull request: #91 (Draft)
+- Reviewed implementation head: `86d1d3dcc948d70f6825822d1efe94b92b8b4f5b`
+- Review result: P2 R91-001
 - Registry state: `implemented`, not `integrated`
 - Dependencies: REQ-FUNC-001, REQ-SOFT-001, and REQ-DIAG-001 are `integrated`
 
-## Implemented scope
+## Review result
 
-- `TangentObservation<D>` lowers one validated D=1/D=2/D=3 tangent to the
-  scalar equality `t^T grad f(x) = 0` with hard or explicit scalar
-  SquaredL2/L1/Huber enforcement.
-- Multiple unique tangent observations may share a point and preserve input
-  order and full semantic provenance.
-- `TangentProblem<D>` requires and records one caller-owned hard
-  `DerivativeGaugeAnchor<D>` after every tangent. Missing gauge returns the
-  first tangent source through stable `GEORBF-E4001`; no anchor is inferred.
-- Six independent integration tests and two allocation/diagnostic unit tests
-  cover analytic rows, multiple tangents, all soft losses, gauge recording,
-  missing gauge, invalid metadata, duplicate IDs, dimensions, and storage
-  failure.
-- Rustdoc, normative math, runnable example, deterministic benchmark, Ready-CI
-  smoke wiring, benchmark record, and requirement fragment are present.
+- A fresh read-only project `math_reviewer` independently reviewed exact PR
+  head `86d1d3d` using only bounded requirement, dependency, normative, diff,
+  test, benchmark, registry-hunk, handoff, and validation evidence.
+- P2 R91-001: `TangentProblem::try_new` reserves and consumes the entire
+  observation iterator before checking the known absence of a gauge. A missing
+  gauge can therefore return `CountOverflow` or `AllocationFailed`, or never
+  return for an unbounded iterator, instead of source-aware `GEORBF-E4001`.
+- Required regression: `std::iter::repeat(valid_tangent)` plus no gauge must
+  return `MissingGauge`, `GEORBF-E4001`, and the first tangent identifier;
+  the same iterator with an explicit gauge must retain `CountOverflow`.
+- The tangent formula, sign, units, reversal invariance, explicit hard and
+  scalar soft semantics, value-gauge mathematics, provenance, dimension bounds,
+  adapter dispositions, and absence of hidden regularization are otherwise
+  consistent. No P0, P1, P3, or additional P2 finding was reported.
 
 ## Validation state
 
-- Focused six-test integration suite and two unit regressions pass.
-- Warning-denying all-target/all-feature Clippy passes for `georbf`.
-- The example prints two tangent rows and explicit gauge ID 3/value 125.
-- Benchmark smoke checksum is `3824`; the 2,000-iteration checksum is
-  `3824000` at 32.43 microseconds per build+compile on the recorded machine.
-- After the Draft PR number and implemented registry state were recorded, the
-  stable implementation tree passed the complete standard gate: workspace
-  format, warning-denying all-target/all-feature Clippy, all-feature workspace
-  tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- This final handoff wording changes documentation only. It does not change
-  production code, tests, manifests, schema, CI, registry, numerical behavior,
-  dependencies, or any validated build input.
+- Draft CI run 29729498305 passed its configured Ubuntu correctness job on
+  exact implementation head `86d1d3d`; Ready-only matrix jobs did not run.
+- The parent Review task passed all six focused integration tests, both unit
+  regressions, the example, benchmark smoke checksum `3824`, all 58 requirement
+  checks, and the complete PR diff whitespace check.
+- The Review evidence tree passed the complete standard gate: workspace format,
+  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
+  workspace doctests, all 58 requirement checks, and `git diff --check`.
+- Exact implementation head `86d1d3d` retains its recorded complete local gate.
+  This final evidence wording touches only the independent review record and
+  this bounded handoff, not production, tests, manifests, schema, CI, registry,
+  numerical behavior, dependencies, or build inputs.
 
 ## Next task boundary
 
-Commit and push this final implementation evidence, update Draft PR #91, and
-stop. A fresh task must independently review only PR #91 and REQ-TANGENT-001,
-using the project `math_reviewer`; it must not repair production code or begin
-REQ-THICK-001 in the same task.
+Open a fresh Repair task limited to R91-001. Add the independent missing-gauge
+precedence regressions, implement the smallest repair, run focused checks and
+the final stable-head standard gate, update review evidence and this handoff,
+push, and stop for a fresh independent re-review. Do not begin REQ-THICK-001 or
+any other requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #90
 - Draft implementation pull request: GitHub PR #91
+- Independent review: `docs/reviews/PR-91-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-TANGENT-001.md`
 - Focused tests: `crates/georbf/tests/tangent_observations.rs`
 - Normative behavior: `docs/math/NORMAL_AND_TANGENT.md`
