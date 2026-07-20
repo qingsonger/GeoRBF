@@ -20,14 +20,22 @@ are structurally rejected in D=1 because they would be vacuous or angle
 insensitive. `GradientVector` and oriented projection remain available in D=1.
 
 Angular inputs explicitly select degrees or radians and must lie in the convex
-domain from zero inclusive to a right angle exclusive. Minimum oriented
-gradient projections are finite, nonnegative, and always caller supplied;
-zero is accepted only explicitly. Invalid or non-finite directions are
-prevented by `UnitDirection`. Invalid angles, minimums, provenance counts,
-duplicate scalar-row identifiers, soft-loss metadata, allocation, and shared
-IR failures return structured errors. Nothing clips an angle, weakens a hard
-constraint, adds jitter or regularization, or invents the non-convex claim
-`|n^T grad f| >= g_min`.
+domain from zero inclusive to a right angle exclusive. A positive angle that
+would lose its positive cone slope during conversion or tangent evaluation is
+rejected as unrepresentable instead of being compiled as a zero-angle cone.
+Minimum oriented gradient projections are finite, nonnegative, and always
+caller supplied; zero is accepted only explicitly. Invalid or non-finite
+directions are prevented by `UnitDirection`. Invalid angles, minimums,
+provenance counts, duplicate scalar-row identifiers, soft-loss metadata,
+allocation, and shared IR failures return structured errors. Nothing clips an
+angle, weakens a hard constraint, adds jitter or regularization, or invents the
+non-convex claim `|n^T grad f| >= g_min`.
+
+D=3 complement modes accept soft SquaredL2 because the complete sum of squares
+is invariant under an orthonormal complement-basis rotation. Componentwise L1
+and Huber are rejected for those multi-row semantics rather than exposing an
+objective that changes with the arbitrary basis. D=2 single-row complement
+losses and rotation-invariant scalar cone/bound losses remain available.
 
 Near-zero fitted-gradient review is diagnostic-only. The caller supplies a
 positive finite reference scale in gradient units and a finite nonnegative
@@ -35,13 +43,17 @@ dimensionless threshold. The checked absolute threshold, overflow-safe
 Euclidean magnitude, decision, complete source path, and observation ID remain
 observable. There is no hidden default scale or constraint insertion.
 
-Eight independent tests cover analytic gradient components, polarity signs,
-orthonormal complements, binary-exact axial sign reversal, rotated angular-
-cone margins, degree/radian equivalence, invalid angles and directions,
-provenance counts, explicit hard/soft lowering, D=1/D=2/D=3 boundaries,
-subnormal near-zero magnitudes, diagnostic sources, determinism, and
-`Send + Sync`. A runnable angular-cone example and deterministic mixed-mode
-D=3 compilation benchmark accompany Rustdoc and the normative mathematics.
+Ten independent integration tests cover analytic gradient components,
+polarity signs, orthonormal complements, binary-exact axial sign reversal,
+rotated angular-cone margins, degree/radian equivalence, minimum-positive
+representability, invalid angles and directions, provenance counts, explicit
+hard/soft lowering, D=3 soft-objective rotation invariance, unsupported
+componentwise losses, D=1/D=2/D=3 boundaries, subnormal near-zero magnitudes,
+diagnostic sources, determinism, and `Send + Sync`. Two targeted allocation-
+failpoint unit regressions separately cover the final angular-cone role and
+constraint reservations. A runnable angular-cone example and deterministic
+mixed-mode D=3 compilation benchmark accompany Rustdoc and the normative
+mathematics.
 
 Rust is implemented. CLI is N/A because the stage-0 command exposes only help
 and version and complete project/schema commands belong to M8. C, C++, and

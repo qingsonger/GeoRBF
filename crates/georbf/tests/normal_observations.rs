@@ -3,11 +3,11 @@
 use std::error::Error;
 
 use georbf::{
-    AffineExpression, AffineTerm, AngleUnit, CanonicalProblem, DiagnosticPath, Dim, Enforcement,
-    ExecutionOptions, FunctionalAtom, GradientMagnitudePolicy, NormalConstraintRole, NormalMode,
-    NormalObservation, NormalObservationError, ObservationId, Point, ProblemIrError,
-    SemanticProblemIr, SemanticProvenance, SoftLoss, SourceLocation, SupportedDimension,
-    UnitDirection, VariableBlock, Vector,
+    AffineExpression, AffineTerm, AngleUnit, CanonicalProblem, CanonicalSoftRelation,
+    DiagnosticPath, Dim, Enforcement, ExecutionOptions, FunctionalAtom, GradientMagnitudePolicy,
+    NormalConstraintRole, NormalMode, NormalObservation, NormalObservationError, ObservationId,
+    Point, ProblemIrError, SemanticProblemIr, SemanticProvenance, SoftLoss, SourceLocation,
+    SupportedDimension, UnitDirection, VariableBlock, Vector,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -331,6 +331,41 @@ fn invalid_angles_minimums_provenance_and_directions_are_rejected() -> TestResul
 }
 
 #[test]
+fn minimum_positive_degree_angle_cannot_silently_become_a_zero_cone() -> TestResult {
+    let point = Point::try_new([0.0, 0.0])?;
+    let normal = UnitDirection::try_new([0.0, 1.0])?;
+    let minimum_positive = f64::from_bits(1);
+    assert!(matches!(
+        NormalObservation::try_angular_cone(
+            provenances(113, 2)?,
+            point,
+            normal,
+            minimum_positive,
+            AngleUnit::Degrees,
+            0.0,
+            Enforcement::Hard,
+        ),
+        Err(NormalObservationError::AngularConeAngleNotRepresentable {
+            value,
+            unit: AngleUnit::Degrees,
+        }) if value.to_bits() == minimum_positive.to_bits()
+    ));
+
+    let radians = compile(NormalObservation::try_angular_cone(
+        provenances(115, 2)?,
+        point,
+        normal,
+        minimum_positive,
+        AngleUnit::Radians,
+        0.0,
+        Enforcement::Hard,
+    )?)?;
+    let rhs = row::<2>(radians.second_order_cones()[0].rhs());
+    assert_eq!(rhs[1].to_bits(), minimum_positive.to_bits());
+    Ok(())
+}
+
+#[test]
 fn soft_normal_relations_remain_explicit_objectives() -> TestResult {
     let enforcement = Enforcement::Soft {
         scale: 2.5,
@@ -363,6 +398,107 @@ fn soft_normal_relations_remain_explicit_objectives() -> TestResult {
     assert!(cone.second_order_cones().is_empty());
     assert!(cone.linear_bounds().is_empty());
     assert_eq!(cone.soft_objectives().len(), 2);
+    Ok(())
+}
+
+fn squared_soft_equality_objective(
+    problem: &CanonicalProblem,
+    gradient: [f64; 3],
+) -> Result<f64, std::io::Error> {
+    let mut total = 0.0;
+    for objective in problem.soft_objectives() {
+        if objective.loss() != SoftLoss::SquaredL2 {
+            return Err(std::io::Error::other(
+                "direction-only objective did not retain squared L2 loss",
+            ));
+        }
+        let CanonicalSoftRelation::Equality(equality) = objective.relation() else {
+            return Err(std::io::Error::other(
+                "direction-only objective did not retain equality geometry",
+            ));
+        };
+        let residual =
+            (dot(row::<3>(equality.row()), gradient) - equality.rhs()) / objective.scale();
+        total += residual * residual;
+    }
+    Ok(total)
+}
+
+#[test]
+fn d3_complement_soft_losses_preserve_rotation_invariance_or_are_rejected() -> TestResult {
+    let point = Point::try_new([0.0, 0.0, 0.0])?;
+    let normal = UnitDirection::try_new([0.0, 0.0, 1.0])?;
+    let squared = compile(NormalObservation::try_direction_only(
+        provenances(160, 2)?,
+        point,
+        normal,
+        Enforcement::Soft {
+            scale: 1.0,
+            loss: SoftLoss::SquaredL2,
+        },
+    )?)?;
+    let original = squared_soft_equality_objective(&squared, [1.0, 1.0, 0.0])?;
+    let rotated = squared_soft_equality_objective(&squared, [std::f64::consts::SQRT_2, 0.0, 0.0])?;
+    assert!(close(original, rotated));
+
+    for (loss, start) in [
+        (SoftLoss::AbsoluteL1, 170),
+        (SoftLoss::Huber { delta: 1.0 }, 180),
+    ] {
+        let enforcement = Enforcement::Soft { scale: 1.0, loss };
+        let cases = [
+            (
+                NormalMode::DirectionOnly,
+                NormalObservation::try_direction_only(
+                    provenances(start, 2)?,
+                    point,
+                    normal,
+                    enforcement,
+                ),
+            ),
+            (
+                NormalMode::AxialDirection,
+                NormalObservation::try_axial_direction(
+                    provenances(start + 2, 2)?,
+                    point,
+                    normal,
+                    enforcement,
+                ),
+            ),
+            (
+                NormalMode::DirectionWithPolarity,
+                NormalObservation::try_direction_with_polarity(
+                    provenances(start + 4, 3)?,
+                    point,
+                    normal,
+                    0.0,
+                    enforcement,
+                ),
+            ),
+        ];
+        for (mode, result) in cases {
+            assert!(matches!(
+                result,
+                Err(NormalObservationError::UnsupportedComplementSoftLoss {
+                    mode: actual_mode,
+                    loss: actual_loss,
+                }) if actual_mode == mode && actual_loss == loss
+            ));
+        }
+    }
+
+    assert!(
+        NormalObservation::try_direction_only(
+            [provenance(190)?],
+            Point::try_new([0.0, 0.0])?,
+            UnitDirection::try_new([0.0, 1.0])?,
+            Enforcement::Soft {
+                scale: 1.0,
+                loss: SoftLoss::AbsoluteL1,
+            },
+        )
+        .is_ok()
+    );
     Ok(())
 }
 

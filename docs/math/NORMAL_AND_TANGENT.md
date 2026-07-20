@@ -107,10 +107,16 @@ objective. The deterministic provenance and role orders are:
 - `AngularCone`: the ordered Lorentz cone followed by the oriented projection
   lower bound.
 
-Hard or explicit soft enforcement is copied to every generated scalar
-relation. Soft rows remain objectives and never participate in hard
-feasibility decisions. The solver sees only equality, linear-bound, and
-ordered second-order-cone relations; it receives no normal-mode enum.
+Hard or supported explicit soft enforcement is copied to every generated
+scalar relation. D=3 complement-based modes support soft SquaredL2 because the
+sum of squared complement components is invariant under an orthonormal basis
+change. Componentwise AbsoluteL1 and Huber losses are rejected for these D=3
+multi-row semantics because their sums depend on the arbitrary complement
+basis. They remain supported for the single complement row in D=2 and for
+scalar relations whose geometry is already rotation invariant. Soft rows
+remain objectives and never participate in hard feasibility decisions. The
+solver sees only equality, linear-bound, and ordered second-order-cone
+relations; it receives no normal-mode enum.
 
 The implemented D=2/D=3 complement chooses the Cartesian axis least aligned
 with `n`, projects it with `I - n n^T`, normalizes it, and in D=3 completes the
@@ -124,7 +130,9 @@ Angular inputs carry `AngleUnit::Degrees` or `AngleUnit::Radians`; negative
 zero is canonicalized to positive zero before conversion. Non-finite angles,
 negative angles, and the closed upper boundary at 90 degrees or `pi/2` are
 rejected rather than clipped. `g_min` is always caller supplied and is rejected
-when negative or non-finite; zero has no implicit default meaning.
+when negative or non-finite; zero has no implicit default meaning. A positive
+angle is rejected with a structured representability error if unit conversion
+or tangent evaluation would turn it into a zero cone slope.
 
 ### Near-zero fitted-gradient review
 

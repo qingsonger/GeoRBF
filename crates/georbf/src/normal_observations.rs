@@ -9,6 +9,9 @@
 //! equality. They never invent a nonzero gradient magnitude. Oriented modes
 //! use an explicit nonnegative minimum projection, and angular cones accept
 //! only the convex domain from zero (inclusive) to a right angle (exclusive).
+//! D=3 multi-row complement semantics accept soft squared L2 loss only;
+//! componentwise L1 and Huber losses are rejected because they depend on the
+//! arbitrary orthonormal-complement basis.
 //!
 //! Normal observations are available only in one, two, or three dimensions:
 //!
@@ -30,7 +33,7 @@ use crate::functional::{
 use crate::geometry::{GeometryError, Point, UnitDirection, Vector};
 use crate::problem_ir::{
     Enforcement, ProblemIrError, SemanticConstraint, SemanticExpression, SemanticProvenance,
-    SemanticRelation,
+    SemanticRelation, SoftLoss,
 };
 use crate::units::AngleUnit;
 
@@ -193,8 +196,8 @@ where
     ) -> Result<Self, NormalObservationError> {
         let provenances = collect_provenances(provenances, D)?;
         validate_enforcement(enforcement)?;
-        let mut roles = reserve(D)?;
-        let mut constraints = reserve(D)?;
+        let mut roles = reserve(D, NormalObservationStorage::Roles)?;
+        let mut constraints = reserve(D, NormalObservationStorage::Constraints)?;
         for (axis, (provenance, target)) in provenances
             .into_iter()
             .zip(gradient.into_components())
@@ -224,7 +227,8 @@ where
     /// # Errors
     ///
     /// Rejects D=1, a provenance count mismatch or duplicate, invalid soft
-    /// enforcement, allocation failure, or shared functional/IR failure.
+    /// enforcement, componentwise L1 or Huber loss in D=3, allocation failure,
+    /// or shared functional/IR failure.
     pub fn try_direction_only(
         provenances: impl IntoIterator<Item = SemanticProvenance>,
         point: Point<D>,
@@ -249,8 +253,8 @@ where
     /// # Errors
     ///
     /// Rejects a negative or non-finite minimum, provenance count mismatch or
-    /// duplicate, invalid soft enforcement, allocation failure, or shared
-    /// functional/IR failure.
+    /// duplicate, invalid soft enforcement, componentwise L1 or Huber loss in
+    /// D=3, allocation failure, or shared functional/IR failure.
     pub fn try_direction_with_polarity(
         provenances: impl IntoIterator<Item = SemanticProvenance>,
         point: Point<D>,
@@ -259,11 +263,11 @@ where
         enforcement: Enforcement,
     ) -> Result<Self, NormalObservationError> {
         validate_minimum_gradient(minimum_gradient)?;
-        validate_enforcement(enforcement)?;
+        validate_complement_enforcement::<D>(NormalMode::DirectionWithPolarity, enforcement)?;
         let provenances = collect_provenances(provenances, D)?;
         let basis = complement_basis(normal)?;
-        let mut roles = reserve(D)?;
-        let mut constraints = reserve(D)?;
+        let mut roles = reserve(D, NormalObservationStorage::Roles)?;
+        let mut constraints = reserve(D, NormalObservationStorage::Constraints)?;
         let mut provenance_iter = provenances.into_iter();
         for (index, direction) in basis.into_iter().enumerate() {
             let provenance = next_provenance(&mut provenance_iter)?;
@@ -301,9 +305,9 @@ where
     ///
     /// # Errors
     ///
-    /// Rejects D=1, an invalid angle or minimum, provenance count mismatch or
-    /// duplicate, invalid soft enforcement, allocation failure, or shared
-    /// functional/IR failure.
+    /// Rejects D=1, an invalid or unrepresentable angle, an invalid minimum,
+    /// provenance count mismatch or duplicate, invalid soft enforcement,
+    /// allocation failure, or shared functional/IR failure.
     pub fn try_angular_cone(
         provenances: impl IntoIterator<Item = SemanticProvenance>,
         point: Point<D>,
@@ -325,11 +329,17 @@ where
         if !slope.is_finite() || slope < 0.0 {
             return Err(NormalObservationError::AngularConeSlopeOverflow { angle_radians });
         }
+        if angle > 0.0 && (angle_radians == 0.0 || slope == 0.0) {
+            return Err(NormalObservationError::AngularConeAngleNotRepresentable {
+                value: angle,
+                unit: angle_unit,
+            });
+        }
         let provenances = collect_provenances(provenances, 2)?;
         let basis = complement_basis(normal)?;
         let mut provenance_iter = provenances.into_iter();
         let cone_provenance = next_provenance(&mut provenance_iter)?;
-        let mut lhs = reserve(basis.len())?;
+        let mut lhs = reserve(basis.len(), NormalObservationStorage::ConeLhs)?;
         for direction in basis {
             lhs.push(derivative_expression(
                 point,
@@ -352,13 +362,16 @@ where
             minimum_gradient,
             enforcement,
         )?;
+        let mut roles = reserve(2, NormalObservationStorage::Roles)?;
+        roles.push(NormalConstraintRole::AngularCone);
+        roles.push(NormalConstraintRole::PolarProjection);
+        let mut constraints = reserve(2, NormalObservationStorage::Constraints)?;
+        constraints.push(cone);
+        constraints.push(projection);
         Ok(Self {
             mode: NormalMode::AngularCone,
-            roles: vec![
-                NormalConstraintRole::AngularCone,
-                NormalConstraintRole::PolarProjection,
-            ],
-            constraints: vec![cone, projection],
+            roles,
+            constraints,
         })
     }
 
@@ -370,7 +383,8 @@ where
     /// # Errors
     ///
     /// Rejects D=1, a provenance count mismatch or duplicate, invalid soft
-    /// enforcement, allocation failure, or shared functional/IR failure.
+    /// enforcement, componentwise L1 or Huber loss in D=3, allocation failure,
+    /// or shared functional/IR failure.
     pub fn try_axial_direction(
         provenances: impl IntoIterator<Item = SemanticProvenance>,
         point: Point<D>,
@@ -396,12 +410,12 @@ where
         if D == 1 {
             return Err(NormalObservationError::UnsupportedModeInOneDimension { mode });
         }
-        validate_enforcement(enforcement)?;
+        validate_complement_enforcement::<D>(mode, enforcement)?;
         let count = D - 1;
         let provenances = collect_provenances(provenances, count)?;
         let basis = complement_basis(normal)?;
-        let mut roles = reserve(count)?;
-        let mut constraints = reserve(count)?;
+        let mut roles = reserve(count, NormalObservationStorage::Roles)?;
+        let mut constraints = reserve(count, NormalObservationStorage::Constraints)?;
         for (index, (provenance, direction)) in provenances.into_iter().zip(basis).enumerate() {
             constraints.push(equality_constraint(
                 provenance,
@@ -476,7 +490,7 @@ fn collect_provenances(
     expected: usize,
 ) -> Result<Vec<SemanticProvenance>, NormalObservationError> {
     let iterator = provenances.into_iter();
-    let mut stored = reserve(expected)?;
+    let mut stored = reserve(expected, NormalObservationStorage::Provenances)?;
     for provenance in iterator {
         if stored.len() == expected {
             return Err(NormalObservationError::ProvenanceCountMismatch {
@@ -502,7 +516,40 @@ fn collect_provenances(
     Ok(stored)
 }
 
-fn reserve<T>(requested: usize) -> Result<Vec<T>, NormalObservationError> {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum NormalObservationStorage {
+    Provenances,
+    ComplementBasis,
+    ConeLhs,
+    Roles,
+    Constraints,
+}
+
+#[cfg(test)]
+std::thread_local! {
+    static FORCED_ALLOCATION_FAILURE: std::cell::Cell<Option<NormalObservationStorage>> =
+        const { std::cell::Cell::new(None) };
+}
+
+fn reserve<T>(
+    requested: usize,
+    storage: NormalObservationStorage,
+) -> Result<Vec<T>, NormalObservationError> {
+    #[cfg(not(test))]
+    let _ = storage;
+
+    #[cfg(test)]
+    if FORCED_ALLOCATION_FAILURE.with(|forced| {
+        if forced.get() == Some(storage) {
+            forced.set(None);
+            true
+        } else {
+            false
+        }
+    }) {
+        return Err(NormalObservationError::AllocationFailed { requested });
+    }
+
     let mut values = Vec::new();
     values
         .try_reserve_exact(requested)
@@ -520,6 +567,20 @@ fn next_provenance(
 
 fn validate_enforcement(enforcement: Enforcement) -> Result<(), NormalObservationError> {
     enforcement.validate().map_err(NormalObservationError::Ir)
+}
+
+fn validate_complement_enforcement<const D: usize>(
+    mode: NormalMode,
+    enforcement: Enforcement,
+) -> Result<(), NormalObservationError> {
+    validate_enforcement(enforcement)?;
+    if D == 3
+        && let Enforcement::Soft { loss, .. } = enforcement
+        && matches!(loss, SoftLoss::AbsoluteL1 | SoftLoss::Huber { .. })
+    {
+        return Err(NormalObservationError::UnsupportedComplementSoftLoss { mode, loss });
+    }
+    Ok(())
 }
 
 fn validate_minimum_gradient(value: f64) -> Result<(), NormalObservationError> {
@@ -625,7 +686,7 @@ where
     Dim<D>: SupportedDimension,
 {
     let count = D.saturating_sub(1);
-    let mut basis = reserve(count)?;
+    let mut basis = reserve(count, NormalObservationStorage::ComplementBasis)?;
     if D == 1 {
         return Ok(basis);
     }
@@ -723,10 +784,24 @@ pub enum NormalObservationError {
         /// Supplied unit.
         unit: AngleUnit,
     },
+    /// A positive valid-domain angle lost its positive value during conversion or tangent.
+    AngularConeAngleNotRepresentable {
+        /// Rejected value in the supplied unit.
+        value: f64,
+        /// Supplied unit.
+        unit: AngleUnit,
+    },
     /// A valid-domain angle produced a non-finite tangent slope.
     AngularConeSlopeOverflow {
         /// Converted radians.
         angle_radians: f64,
+    },
+    /// A componentwise soft loss would depend on a D=3 complement basis.
+    UnsupportedComplementSoftLoss {
+        /// Rejected complement-based mode.
+        mode: NormalMode,
+        /// Rejected componentwise loss.
+        loss: SoftLoss,
     },
     /// A gradient reference scale was non-finite or not positive.
     InvalidGradientReferenceScale {
@@ -801,5 +876,71 @@ impl From<ProblemIrError> for NormalObservationError {
 impl From<DiagnosticPathError> for NormalObservationError {
     fn from(source: DiagnosticPathError) -> Self {
         Self::DiagnosticPath(source)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::num::NonZeroUsize;
+
+    use super::*;
+    use crate::problem_ir::{ObservationId, SourceLocation};
+
+    type TestResult = Result<(), Box<dyn Error>>;
+
+    struct ForcedAllocationFailure;
+
+    impl ForcedAllocationFailure {
+        fn new(storage: NormalObservationStorage) -> Self {
+            FORCED_ALLOCATION_FAILURE.with(|forced| forced.set(Some(storage)));
+            Self
+        }
+    }
+
+    impl Drop for ForcedAllocationFailure {
+        fn drop(&mut self) {
+            FORCED_ALLOCATION_FAILURE.with(|forced| forced.set(None));
+        }
+    }
+
+    fn provenance(identifier: u64) -> Result<SemanticProvenance, ProblemIrError> {
+        SemanticProvenance::try_new(
+            ObservationId::new(identifier),
+            SourceLocation::try_new("tests/normal_observations.rs".to_owned(), NonZeroUsize::MIN)?,
+            "gradient-unit".to_owned(),
+            "fields.stratigraphy.normals".to_owned(),
+            Some("normal".to_owned()),
+        )
+    }
+
+    fn assert_angular_cone_allocation_failure(storage: NormalObservationStorage) -> TestResult {
+        let provenances = [provenance(1)?, provenance(2)?];
+        let point = Point::try_new([0.0, 0.0, 0.0])?;
+        let normal = UnitDirection::try_new([0.0, 0.0, 1.0])?;
+        let _failure = ForcedAllocationFailure::new(storage);
+        let result = NormalObservation::try_angular_cone(
+            provenances,
+            point,
+            normal,
+            10.0,
+            AngleUnit::Degrees,
+            0.0,
+            Enforcement::Hard,
+        );
+        assert!(matches!(
+            result,
+            Err(NormalObservationError::AllocationFailed { requested: 2 })
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn angular_cone_role_allocation_failure_is_structured() -> TestResult {
+        assert_angular_cone_allocation_failure(NormalObservationStorage::Roles)
+    }
+
+    #[test]
+    fn angular_cone_constraint_allocation_failure_is_structured() -> TestResult {
+        assert_angular_cone_allocation_failure(NormalObservationStorage::Constraints)
     }
 }
