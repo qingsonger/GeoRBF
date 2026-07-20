@@ -33,7 +33,7 @@ available in Git history through commit `a2be099`.
 | REQ-SOFT-001 | #72 | #73 | #74 | `docs/reviews/PR-73-INDEPENDENT-REVIEW.md` |
 | REQ-LINEQ-001 | #75 | #76 | #77 | `docs/reviews/PR-76-INDEPENDENT-REVIEW.md` |
 | REQ-SPIKE-004 | #78 | #79 | #80 | `docs/reviews/PR-79-INDEPENDENT-REVIEW.md` |
-| REQ-CONVEX-001 | #81 | #82 | pending | `docs/reviews/PR-82-INDEPENDENT-REVIEW.md` |
+| REQ-CONVEX-001 | #81 | #82 | #83 | `docs/reviews/PR-82-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,

@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-CONVEX-001, Issue #81 (closed)
 - Implementation pull request: #82, squash-merged as `742ee57`
 - Integration-state branch: `codex/req-convex-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #83 (Draft until exact Ready CI is green)
 - Review record: `docs/reviews/PR-82-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-INFEAS-001 (`planned`)
@@ -79,7 +79,7 @@ requirement in this task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #81
 - Merged implementation and repairs: GitHub PR #82
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #83
 - Independent review and repair evidence:
   `docs/reviews/PR-82-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-CONVEX-001.md`
