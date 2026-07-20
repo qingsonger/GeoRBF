@@ -269,3 +269,88 @@ and bounded-handoff edits change only documentation; they do not change
 production, test, manifest, schema, CI, build, registry, API, numerical, or
 dependency inputs. A fresh independent re-review is still required before any
 finding is considered closed or PR #82 is marked ready.
+
+## Independent re-review
+
+A fresh read-only project `math_reviewer` received only the bounded requirement
+and dependency summaries, Issue #81 acceptance criteria, M4 plan, solver
+policy, ADR-0011, the complete exact PR diff, original findings, repair and
+benchmark evidence, tests, example, registry, handoff, and exact-head Draft CI.
+It did not inherit the implementation or Repair reasoning and made no
+repository or remote change.
+
+- R82-001 is closed. Certificate stationarity and separation use homogeneous
+  scaled original-data products, reject unrepresentable products, reject the
+  feasible bogus certificate, and preserve true certificates under positive
+  row scaling.
+- R82-002 is not closed. The factor 64 and dimensioned raw floors are gone, but
+  zero-objective hard-feasibility problems still have no independent objective-
+  gradient or gap reference. R82-008 below is the remaining defect.
+- R82-003 is closed. Semantic soft loss is evaluated independently from the
+  original relations, compiled and backend primal values are reviewed
+  separately, and the dual is reconstructed as `-0.5 * x^T P x - b^T z`.
+- R82-004 is closed. The smaller nonzero convex and execution memory limit is
+  effective and all requested and effective values are diagnosed.
+- R82-005 is closed. Nonallocating preflight precedes compilation, includes
+  metadata and auxiliaries, conservatively bounds full-KKT fill, and the
+  repaired GeoRBF-owned vector and provenance paths reserve fallibly.
+- R82-006 is closed. Every Clarabel 0.11.1 setting is explicit and mirrored in
+  diagnostics; presolve and static and dynamic KKT regularization remain
+  disabled.
+- R82-007 is closed for its specified regression matrix. Certificate, scale,
+  objective, memory, settings and status, Huber, soft-bound and cone, and
+  Lorentz-rotation cases are present. R82-008 requires one additional hard-only
+  feasibility regression.
+
+### P1 R82-008: zero-objective hard-feasibility problems are rejected
+
+`crates/georbf/src/convex.rs:1255-1260`, `1301-1331`, and `1348-1357`
+provide no nonzero objective-gradient or gap reference when `P = 0`, `q = 0`,
+and there are no soft objectives. The stationarity scale begins at `|q_j|`,
+adds `|P_jj x_j|`, and then adds the same `|A_ij z_i|` terms whose signed sum is
+the stationarity residual. For a single hard row, every nonzero approximate
+dual therefore gives normalized residual one, regardless of its magnitude or
+the exact requested tolerance.
+
+The independent reviewer reproduced this through the public API with
+
+```text
+minimize 0 subject to x >= 1
+tolerance = 1e-9
+```
+
+Clarabel returned exact `Solved`, after which GeoRBF returned
+`SolutionReviewFailed { reason: "dual stationarity review", value: 1.0,
+tolerance: 1e-9 }`. The supported feasible hard-only linear-inequality problem
+therefore cannot reliably return an accepted solution; analogous hard-cone
+feasibility problems have the same zero-objective risk.
+
+Required repair: define and record a dimensionally coherent objective-gradient
+and gap reference for identically zero objectives, or a mathematically
+equivalent zero-objective review policy. It must preserve nonzero row and unit
+scaling invariance and must not reintroduce an unrecorded dimensioned floor.
+Add an end-to-end hard-only `x >= 1` regression at row scales `1e-12`, `1`, and
+`1e12`, requiring success, hard feasibility, and every normalized KKT review
+within the exact requested tolerance. Retain a synthetic nonstationary-dual
+rejection case so the repair cannot merely disable stationarity review.
+
+No other P0, P1, P2, or P3 finding remains. The reviewer independently
+confirmed signs, ordered Lorentz mapping, L2/L1/Huber epigraph formulae, PSD
+classification, primal-infeasibility convention, hard-constraint preservation,
+cone rotation, hidden-regularization policy, status routing, interface
+dispositions, and truthful `implemented` registry state. CPD/SPD kernels,
+center limits, polynomial rank, and Hessian capability are not exercised by
+this canonical adapter.
+
+The independent reviewer ran `cargo build -p georbf`, all five private repair
+tests, all nine convex integration tests, workspace format, all 58 requirement
+checks, exact-range `git diff --check`, and the public hard-only counterexample.
+All existing checks passed and the counterexample reproduced R82-008. Draft CI
+run 29689552476 passed Ubuntu on exact evidence head
+`5cca75668d97d60fa2a8c5c0760bd08713af6c9c`; the Ready-only matrix has not run.
+
+PR #82 must remain Draft. REQ-CONVEX-001 remains `implemented`, not
+`integrated`. A fresh Repair task must address only R82-008, run the required
+focused and stable-head standard checks, push, and stop for another fresh
+independent re-review. This re-review made no production-code change and did
+not begin REQ-INFEAS-001.
