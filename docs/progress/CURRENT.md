@@ -6,65 +6,68 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Independent re-review complete with finding / REQ-CONVEX-001
+- Mode: Repair complete; fresh independent re-review required / REQ-CONVEX-001
 - Requirement: REQ-CONVEX-001, Issue #81
 - Implementation branch: `codex/req-convex-001-canonical-solver`
 - Implementation pull request: #82 (Draft)
-- Repair code/test head: `55f339c5d80666b089d2e2bdfae03a8b2029ae12`
-- Re-review input head: `5cca75668d97d60fa2a8c5c0760bd08713af6c9c`
+- R82-008 repair code/test head: `c1753bdb98e6abec69486c36713d887491204f67`
+- Repair evidence head: `26da57b86d8865604285e3e1cfeea8f124329763`
 - Review record: `docs/reviews/PR-82-INDEPENDENT-REVIEW.md`
 - Registry state: `implemented`; it is not `integrated`
 - Direct dependencies REQ-SOFT-001, REQ-LINEQ-001, and REQ-SPIKE-004 are all
   `integrated`
 
-## Independent re-review disposition
+## R82-008 repair disposition
 
-- R82-001 and R82-003 through R82-007 are closed.
-- R82-002 remains open through new P1 R82-008. For a supported hard-only
-  feasibility problem with `P = q = 0`, the dual-stationarity normalization
-  divides a nonzero single-row residual only by that residual's own absolute
-  contribution, producing one regardless of its magnitude or requested
-  tolerance.
-- The reviewer reproduced `minimize 0 subject to x >= 1` through the public API
-  at tolerance `1e-9`. Clarabel returned exact `Solved`, but GeoRBF returned
-  `SolutionReviewFailed` for dual stationarity with normalized value `1.0`.
-- R82-008 requires a dimensionally coherent recorded zero-objective KKT/gap
-  reference or equivalent policy, row-scale-invariant end-to-end hard-only
-  regressions at `1e-12`, `1`, and `1e12`, and retained rejection of a synthetic
-  nonstationary dual.
-- No other P0-P3 finding remains. PR #82 stays Draft and REQ-INFEAS-001 has not
-  begun.
+- R82-001 and R82-003 through R82-007 remain closed by the prior independent
+  re-review. This Repair did not modify their disposition.
+- R82-008 is implemented but remains open pending fresh independent re-review.
+- Structurally zero objectives now use a recorded dimensionless objective-unit
+  reference. Original row values convert it to componentwise gradient units;
+  no raw dimensioned floor or tolerance multiplier was added.
+- The adapter positively infinity-normalizes independent zero/nonnegative rows
+  and whole Lorentz blocks before dispatch, maps backend slack and dual values
+  back to original units, and records the complete scaling vector.
+- The public hard-only `x >= 1` regression succeeds at row scales `1e-12`, `1`,
+  and `1e12`, with every normalized KKT and hard-relation review at or below the
+  exact requested `1e-9` tolerance. A synthetic nonstationary dual is still
+  rejected.
+- PR #82 remains Draft. REQ-INFEAS-001 has not begun.
 
 ## Validation state
 
-- The independent reviewer ran `cargo build -p georbf`, all five private repair
-  tests, all nine convex integration tests, workspace format, all 58
-  requirement checks, exact-range whitespace checks, and the public hard-only
-  counterexample. Existing checks passed; the counterexample reproduced
-  R82-008.
-- After the final production/test change, exact code/test head
-  `55f339c5d80666b089d2e2bdfae03a8b2029ae12` passed the complete standard gate:
-  workspace format, warning-denying all-target/all-feature Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and
-  `git diff --check`.
-- The subsequent review record, solver policy, requirement change fragment,
-  and this bounded handoff change only documentation. They do not change
-  production, test, manifest, schema, CI, build, registry, API, numerical, or
-  dependency inputs, so the immutable code/test-head gate remains applicable.
-- Draft CI run 29689552476 passed the configured Ubuntu job on exact re-review
-  input head `5cca7566`. Ready-only Windows, Ubuntu, macOS, and benchmark-smoke
-  CI has not run for this Draft PR.
+- Focused warning-denying all-target/all-feature Clippy, all six private convex
+  tests, all ten convex integration tests, the runnable example, the 8/16
+  benchmark smoke workload, and `git diff --check` passed after the final
+  production/test change. Smoke checksums remained
+  `4.00000000000000444` and `7.99999999999999911`; timings are not performance
+  promises.
+- Exact code/test head `c1753bdb98e6abec69486c36713d887491204f67`
+  passed the complete standard gate: workspace format, warning-denying
+  all-target/all-feature Clippy, all-feature workspace tests, workspace
+  Rustdoc, all 58 requirement checks, and `git diff --check`.
+- The later solver-policy, requirement change fragment, review evidence, and
+  registry test-name update change no production, test, manifest, schema, CI,
+  build, API, numerical, or dependency input. The updated registry separately
+  passed all 58 requirement checks and exact whitespace checks.
+- Draft CI run 29710719948 passed the configured Ubuntu job on pre-repair head
+  `3117f874`. Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not
+  run for the repaired head. A new Draft CI run is expected after push.
 
 ## Next task
 
-Open a fresh Repair task for Draft PR #82 and REQ-CONVEX-001 limited to P1
-R82-008. First preserve the public hard-only `x >= 1` failure and scaled-row
-variants as regressions, then implement the smallest dimensionally coherent
-zero-objective stationarity and gap review policy without a hidden unit floor
-or weakened rejection. Run focused checks and the complete stable-head standard
-gate, update the review evidence and bounded handoff, push, and stop for another
-fresh independent re-review. Do not repair any closed finding and do not begin
-REQ-INFEAS-001.
+Open a fresh independent re-review task for Draft PR #82 and REQ-CONVEX-001,
+limited to R82-008 and regression risk from its repair. Supply only the bounded
+requirement/dependency summaries, Issue #81 criteria, M4 plan, solver policy,
+ADR-0011, exact PR diff, review record, tests, benchmark evidence, registry,
+this handoff, and exact-head CI evidence to the project `math_reviewer`; do not
+inherit Repair reasoning. Verify the zero-objective reference is dimensionally
+coherent, backend row scaling preserves each product cone and original-unit
+dual/slack/certificate mapping, the three-scale public regression is genuine,
+and the synthetic dual remains rejected. If any P0-P3 finding remains, record
+it and stop without repair. If the review is clean, follow the mandatory ready
+CI and one-merge sequence in `docs/CODEX_WORKFLOW.md`. Do not begin
+REQ-INFEAS-001 in this task.
 
 ## Checks not yet available
 
