@@ -441,3 +441,20 @@ Ready CI. REQ-CONVEX-001 remains `implemented`, not `integrated`, until the
 exact Ready head passes the complete Windows, Ubuntu, and macOS correctness and
 benchmark-smoke matrix, PR #82 merges exactly once, and the isolated
 integration-state change completes.
+
+## Integration evidence
+
+The implementation integration sequence is complete. Exact Ready evidence head
+`e6a3621430bd315dabc6950f13a19c5c1b9366a3` passed the complete Windows,
+Ubuntu, and macOS correctness matrix, every configured backend path, all
+benchmark-smoke workloads, and the requirement-registry gate in CI run
+29711773645. PR #82 then squash-merged exactly once as
+`742ee57c3ae112c6dc6594285375299378b8df4b`, and Issue #81 closed as completed.
+Post-merge `main` run 29712183062 passed the same complete three-platform gate
+on that exact merge commit.
+
+The isolated integration-state change records the registry, review evidence,
+history index, and bounded handoff only in integration pull request #83. After
+its own complete local and exact Ready-head CI gates are green and that pull
+request is merged, stop. A fresh task must select the next requirement; this
+task must not begin REQ-INFEAS-001.
