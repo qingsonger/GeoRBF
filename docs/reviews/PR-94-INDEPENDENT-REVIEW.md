@@ -8,7 +8,7 @@
 - Repair implementation head: `551d93f05a2f2023fc5bca5454176e111a88ed69`
 - Base head: `1d770395f1022c81d7ad314c4d38221a5c1a66c4`
 - Review date: 2026-07-20
-- Result: repair recorded; fresh independent re-review required
+- Result: clean independent re-review; Ready CI pending
 
 ## Scope and independence
 
@@ -173,3 +173,59 @@ fresh independent re-review task for the exact final PR head and
 THICK-REV-001 through THICK-REV-003. If no P0--P3 finding remains, follow the
 repository's Ready-CI integration sequence. Do not begin REQ-THICK-002 or any
 other requirement.
+
+## Final independent re-review
+
+A fresh read-only project `math_reviewer` independently reviewed exact PR head
+`522a2098d9b4390d568a784300c863cd3e963c43` against base
+`1d770395f1022c81d7ad314c4d38221a5c1a66c4`. It received only the bounded
+requirement and dependency summaries, Issue #93 criteria and exclusions, M5
+scope, relevant mathematical, architecture, problem-IR, solver, and ADR
+contracts, the complete exact PR and focused repair diffs, prior findings and
+repair evidence, tests, example, benchmark, registry, handoff, CI workflow,
+and validation evidence. It inherited no Implement or Repair reasoning and
+made no repository or remote change.
+
+- THICK-REV-001 is closed. Constraint collection trusts only the iterator's
+  guaranteed lower bound and performs fallible growth before each capacity-
+  exceeding push. The loose `usize::MAX` upper-bound regression succeeds, and
+  the unknown-length allocation failpoint returns structured
+  `AllocationFailed` before linearization or a partial result.
+- THICK-REV-002 is closed. Every Cartesian derivative atom retains the exact
+  sample point; complete borrowed provenance reaches each ordered callback and
+  complete owned provenance reaches the final canonical cone. The D=3
+  regression checks all three axes, the nontrivial point, and every provenance
+  field.
+- THICK-REV-003 is closed. Affine scaling separately rejects coefficient and
+  nonzero constant overflow or underflow while retaining exact zero constants.
+  The regression exercises every one of those paths.
+- The local first-order derivation remains
+  `T_min ||grad f(x)||_2 <= h_upper - h_lower`. Every Cartesian derivative row
+  receives the same positive scale; the ordered cone uses `+1` on the upper
+  level and `-1` on the lower level. Both sides have field units, and the full
+  Cartesian norm is invariant under orthogonal coordinate changes.
+- Public semantics remain restricted to D=1, D=2, and D=3. Derivative rows are
+  validated against the field-variable prefix before level indices are used,
+  and cones enter only the hard canonical collection. Unknown endpoints,
+  duplicate identifiers, allocation failure, and unrepresentable products are
+  structured failures without observable partial success.
+- Scalar-gap and sampled-local diagnostics, the deferred M8/M9 adapter
+  dispositions, benchmark and Ready-CI wiring, and the `implemented` registry
+  state remain truthful. No SPD/CPD or rank decision, center selection, hidden
+  regularization, relaxation, Hessian capability, geometric validation, or
+  later-requirement behavior was introduced.
+
+No P0, P1, P2, or P3 finding remains. The parent task passed the five standard
+checks, `git diff --check`, all ten focused thickness integration tests, the
+module allocation-failure regression, the runnable example, and benchmark
+smoke checksum `8304` on the same exact head. Draft CI run 29745163151 also
+passed its configured Ubuntu correctness gate on `522a209`; the Ready-only
+matrix correctly did not run.
+
+This evidence-only change updates only this review record and
+`docs/progress/CURRENT.md`; it changes no production, test, manifest, schema,
+CI, build, API, numerical, registry, or dependency input. PR #94 may proceed to
+Ready CI. REQ-THICK-001 remains `implemented`, not `integrated`, until the
+exact Ready evidence head passes the complete Windows, Ubuntu, and macOS
+correctness and benchmark-smoke matrix, PR #94 merges exactly once, and the
+isolated integration-state change completes.
