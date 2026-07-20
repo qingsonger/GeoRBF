@@ -83,3 +83,7 @@ harness = false
 [[bench]]
 name = "constraint_diagnostics"
 harness = false
+
+[[bench]]
+name = "normal_observation_compilation"
+harness = false

@@ -6,80 +6,59 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-INFEAS-001 complete
-- Requirement: REQ-INFEAS-001, Issue #84 (closed)
-- Implementation pull request: #85, squash-merged as `0262a04`
-- Integration-state branch: `codex/req-infeas-001-integration-state`
-- Integration-state pull request: #86 (Draft until exact Ready CI is green)
-- Review record: `docs/reviews/PR-85-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: REQ-NORMAL-001 (`planned`)
+- Mode: Implement
+- Requirement: REQ-NORMAL-001, Issue #87
+- Branch: `codex/req-normal-001-observations`
+- Pull request: pending initial push; must remain Draft for independent Review
+- Registry state: `in_progress` until the Draft PR number is recorded
+- Dependencies: REQ-ORIENT-001 and REQ-CONVEX-001 are `integrated`
 
-## Integration result
+## Implemented scope
 
-- A fresh read-only project `math_reviewer` independently reviewed the exact
-  complete PR and R85-003 repair using only bounded requirement, dependency,
-  normative, diff, test, benchmark, registry, handoff, and validation evidence.
-- R85-001, R85-002, and R85-003 are closed. Exact proportionality and interval
-  decisions remain binary-exact and scale/sign invariant; approximate rows
-  remain warning-only; hard rows remain unchanged; soft objectives and cones
-  remain separate; the Ready-only constraint-diagnostics smoke spans Windows,
-  Ubuntu, and macOS.
-- No P0, P1, P2, or P3 finding remained before integration; the independent
-  review requirement is complete.
-- Exact implementation Ready head `4fec622` passed Windows, Ubuntu, and macOS
-  with every configured backend and benchmark-smoke workload, including
-  `constraint_diagnostics`, in CI run 29719420711.
-- PR #85 squash-merged exactly once as `0262a04`; Issue #84 closed as
-  completed.
-- Post-merge `main` run 29719948949 passed the same complete three-platform
-  correctness, backend, benchmark-smoke, and requirement-registry gate on
-  `0262a04`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, normative contract, numerical
-  behavior, dependency, tag, or release.
+- Five immutable normal modes lower to the shared semantic IR with one unique
+  provenance per generated scalar relation and public deterministic roles.
+- Gradient components, complement equalities, oriented projection bounds, and
+  angular Lorentz cones preserve explicit hard/soft enforcement. No geological
+  term reaches the canonical solver.
+- D=2/D=3 complements are deterministic, orthonormal to roundoff, and
+  binary-exact under axial sign reversal. Vacuous or angle-insensitive D=1
+  modes are rejected; the two meaningful D=1 modes remain available.
+- Degree/radian angular domains and nonnegative minimum projection are checked
+  without clipping or fallback. Near-zero fitted gradients use an explicit
+  same-unit scale and threshold and remain diagnostics only.
+- Rustdoc, normative mathematics, eight independent tests, an example, a
+  mixed-mode benchmark and Ready/main CI smoke entry are present. CLI is N/A
+  until M8; C, C++, and Python are N/A until M9.
 
 ## Validation state
 
-- The focused `constraint_diagnostics --smoke` command passed locally with
-  checksum `768`; `git diff --check` passed.
-- After the last CI/build-input change, stable repair head `1982d89` passed the
-  complete standard gate: format, workspace all-targets/all-features Clippy,
-  workspace all-features tests, workspace doctests, and all 58 requirement
-  checks.
-- The final reviewer passed all eight infeasibility tests, all eight linear-
-  constraint tests, four provenance-allocation fault tests, the benchmark smoke
-  with checksum `768`, the example, GeoRBF all-target/all-feature Clippy,
-  format, all 58 requirement checks, and both requested diff checks.
-- Draft CI run 29718863367 passed the configured Ubuntu gate on exact reviewed
-  head `0c465e7`. The Ready-only Windows/Ubuntu/macOS matrix correctly did not
-  run while the PR was Draft.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state tree passed the complete local standard gate:
-  workspace format, warning-denying all-target/all-feature Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and
-  `git diff --check`.
-- Local `actionlint` is unavailable and is not claimed as passed. The later
-  unavailable-tool dispositions below are unchanged.
+- `cargo test -p georbf --test normal_observations` passed all 8 tests.
+- `cargo run -p georbf --example normal_observations` passed and reported one
+  cone plus projection lower bound `0.05`.
+- `cargo bench -p georbf --bench normal_observation_compilation -- --smoke`
+  passed with checksum `11088`.
+- The 2,000-iteration benchmark passed at 87.47 microseconds per iteration with
+  checksum `11088000` on the recorded Windows baseline.
+- Focused GeoRBF all-target/all-feature warning-denying Clippy passed.
+- The stable implementation tree passed the complete standard gate: workspace
+  format, warning-denying all-target/all-feature Clippy, all-feature workspace
+  tests, workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
 
-## Next task
+## Next task boundary
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start another requirement in this
-task.
+Complete this Implement task only: run the standard gate on the final stable
+implementation, commit and push, open the Draft PR, record its number and
+truthful `implemented` registry state, rerun the required final checks for that
+registry head, push, and stop. Independent mathematical Review must start in a
+fresh task and must not inherit this implementation reasoning.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #84
-- Merged implementation and repairs: GitHub PR #85
-- Integration-state pull request: GitHub PR #86
-- Independent review: `docs/reviews/PR-85-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-INFEAS-001.md`
-- Focused tests: `crates/georbf/tests/infeasibility.rs`
-- Normative behavior: `docs/math/CONSTRAINT_SEMANTICS.md`
+- Acceptance criteria and exclusions: GitHub Issue #87
+- Requirement summary: `changes/REQ-NORMAL-001.md`
+- Focused tests: `crates/georbf/tests/normal_observations.rs`
+- Normative behavior: `docs/math/NORMAL_AND_TANGENT.md`
+- Benchmark: `docs/benchmarks/REQ-NORMAL-001.md`
 
 ## Checks not yet available
 
