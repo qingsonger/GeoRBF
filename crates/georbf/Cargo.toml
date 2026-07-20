@@ -87,3 +87,7 @@ harness = false
 [[bench]]
 name = "normal_observation_compilation"
 harness = false
+
+[[bench]]
+name = "tangent_observation_compilation"
+harness = false

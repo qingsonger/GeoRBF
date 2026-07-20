@@ -1,0 +1,23 @@
+# REQ-TANGENT-001 Tangent Compilation Baseline
+
+Command:
+
+```text
+cargo bench -p georbf --bench tangent_observation_compilation
+```
+
+Baseline environment: Microsoft Windows NT 10.0.26200.0, 12th Gen Intel Core
+i7-1260P, `x86_64-pc-windows-msvc`, Rust 1.96.1, single benchmark process. Each
+iteration constructs 30 D=3 tangent observations at one point with unique
+provenance, rotating directions, and explicit SquaredL2, AbsoluteL1, and Huber
+losses, plus one hard value gauge. The 31 relations are canonicalized over
+three synthetic gradient variables and one value variable with identity
+scaling and a checked numeric-storage estimate.
+
+The 2,000-iteration run on 2026-07-20 measured 32.43 microseconds per complete
+build and compilation and produced checksum `3824000`, corresponding to a
+bit-identical checked numeric estimate of 1,912 bytes per iteration. The
+two-iteration `--smoke` run completed at 68.25 microseconds per iteration with
+checksum `3824`. Timings are a local regression baseline, not a cross-machine
+performance promise. CI uses the shorter smoke workload on Ready PRs and
+`main`.

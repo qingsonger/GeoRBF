@@ -199,5 +199,7 @@ jobs:
         run: cargo bench -p georbf --bench constraint_diagnostics -- --smoke
       - name: Smoke-test normal-observation compilation benchmark
         run: cargo bench -p georbf --bench normal_observation_compilation -- --smoke
+      - name: Smoke-test tangent-observation compilation benchmark
+        run: cargo bench -p georbf --bench tangent_observation_compilation -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check
