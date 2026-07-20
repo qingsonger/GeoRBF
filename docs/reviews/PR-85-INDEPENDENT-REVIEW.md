@@ -6,9 +6,10 @@
 - Branch: `codex/req-infeas-001-diagnostics`
 - Reviewed head: `1833b7ea8e8a414fdcb012c399dd1e35e54e6f2a`
 - Repaired and re-reviewed head: `a6a5fd825b73a794824861bb32e1754727df386c`
+- CI repair head pending fresh re-review: `1982d89af58344e3150cd7e547c8ac0b30ddab02`
 - Base head: `98a4df477f4ca72a2c64024c1c282c9bd1a25a44`
 - Review date: 2026-07-20
-- Result: R85-001 and R85-002 closed; P2 R85-003 requires repair
+- Result: R85-001 and R85-002 closed; P2 R85-003 repaired pending fresh re-review
 
 ## Scope and independence
 
@@ -236,4 +237,26 @@ fresh Repair task limited to R85-003, add only the missing Ready-workspace
 benchmark-smoke step, run the focused workflow check and the final standard
 gate on the stable repaired head, update this evidence and the bounded handoff,
 push, and stop for another fresh independent re-review. Do not begin another
+requirement.
+
+## R85-003 repair evidence pending fresh re-review
+
+Repair commit `1982d89af58344e3150cd7e547c8ac0b30ddab02` addresses only
+R85-003. The Ready-only `workspace` job now runs
+`cargo bench -p georbf --bench constraint_diagnostics -- --smoke` immediately
+after the existing convex-solver smoke. Because that job retains its
+Windows/Ubuntu/macOS matrix, every Ready head and `main` run will exercise the
+representative REQ-INFEAS-001 workload on all three platforms. Draft behavior
+is unchanged.
+
+The focused benchmark smoke passed locally with checksum `768`, and
+`git diff --check` passed. Local `actionlint` is unavailable and is not claimed
+as passed. After the workflow change, the stable repair head passed all five
+standard checks: format, workspace all-targets/all-features Clippy with
+warnings denied, workspace all-features tests, workspace doctests, and all 58
+requirement checks.
+
+This section records Repair evidence only; it does not independently close
+R85-003. PR #85 remains Draft and REQ-INFEAS-001 remains `implemented`. The
+next task must freshly re-review the exact PR head and must not begin another
 requirement.
