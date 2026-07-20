@@ -6,49 +6,52 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required
+- Mode: Review clean; Ready CI pending
 - Requirement: REQ-TANGENT-001, Issue #90
 - Branch: `codex/req-tangent-001-tangent-constraints`
 - Pull request: #91 (Draft)
 - Reviewed implementation head: `86d1d3dcc948d70f6825822d1efe94b92b8b4f5b`
 - Repair implementation head: `5e99aa629118ca4b4c81927d31adf67f19822b58`
-- Review result: P2 R91-001 repaired; independent closure not yet confirmed
+- Independently re-reviewed head: `ab84fda560229fcb8e8c2ccf0e0361bba3751f30`
+- Review result: R91-001 closed; no P0-P3 findings remain
 - Registry state: `implemented`, not `integrated`
 - Dependencies: REQ-FUNC-001, REQ-SOFT-001, and REQ-DIAG-001 are `integrated`
 
-## Repair result
+## Independent re-review result
 
-- Repair head `5e99aa6` checks the already-known absence of a gauge before
-  inspecting iterator size, reserving storage, or collecting observations. It
-  reads only the first item to distinguish an empty problem from a source-aware
-  `GEORBF-E4001`; no-gauge infinite iterators now terminate immediately.
-- Two independent regressions use `std::iter::repeat(valid_tangent)`: without a
-  gauge it returns `MissingGauge`, `GEORBF-E4001`, and the first tangent ID;
-  with an explicit gauge it retains `CountOverflow`.
-- Empty-input behavior and the explicit-gauge collection path remain unchanged.
-  No formula, sign, units, hard/soft semantics, canonical relation, adapter,
-  dependency, registry status, or later-requirement scope changed.
+- A fresh read-only project `math_reviewer` independently confirmed that the
+  no-gauge path consumes exactly one item before any size inspection,
+  reservation, or collection. R91-001 is closed.
+- The paired unbounded-iterator regressions prove source-aware
+  `GEORBF-E4001` without a gauge and retain `CountOverflow` with an explicit
+  gauge.
+- Tangent formula, sign, reversal invariance, units, hard/soft semantics,
+  value-gauge mathematics, deterministic provenance, finite input handling,
+  adapter dispositions, benchmark and CI wiring, and registry truth are clean.
+- No P0, P1, P2, or P3 finding remains. Kernel, center, polynomial, rank,
+  SPD/CPD, anisotropy, and Hessian concerns are unchanged and out of scope.
 
 ## Validation state
 
-- Repair implementation head `5e99aa6` passed all eight focused tangent
-  integration tests, both tangent module regressions, the runnable example,
-  and benchmark smoke checksum `3824`.
-- The same immutable repair head passed the complete standard gate: workspace
-  format, warning-denying all-target/all-feature Clippy, all-feature workspace
-  tests, workspace doctests, all 58 requirement checks, and `git diff --check`.
-- The evidence update after `5e99aa6` changes only the requirement change
-  fragment, independent review record, and this bounded handoff. It changes no
-  production code, test, manifest, schema, CI, registry, dependency, API, or
-  numerical behavior. Draft Ready-only matrix jobs remain intentionally absent.
+- Exact independently re-reviewed head `ab84fda` passed workspace format,
+  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
+  workspace doctests, all 58 requirement checks, and `git diff --check`.
+- The same head passed all eight focused tangent integration tests, both
+  tangent module regressions, the runnable example, and benchmark smoke
+  checksum `3824`.
+- Draft CI run 29731323902 passed the configured Ubuntu correctness gate on
+  exact head `ab84fda`. The Ready-only matrix correctly did not run.
+- This final evidence update changes only the independent review record and
+  this bounded handoff. It changes no production code, test, manifest, schema,
+  CI, build, API, numerical, registry, or dependency input.
 
 ## Next task boundary
 
-Open a fresh independent re-review task for PR #91. Review exact PR head and
-confirm whether R91-001 is closed without new P0-P3 findings. If clean, mark the
-PR ready, wait for the complete Windows/Ubuntu/macOS and benchmark-smoke CI on
-that exact ready head, merge only when green, and record integration state.
-Do not begin REQ-THICK-001 or any other requirement.
+Commit and push this clean re-review evidence, mark PR #91 ready, and wait for
+the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact Ready
+head. Merge exactly once only when it is green, then record truthful registry
+and handoff state through an isolated integration-state change. Do not begin
+REQ-THICK-001 or any other requirement.
 
 ## Durable evidence
 
