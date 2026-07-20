@@ -37,7 +37,7 @@ available in Git history through commit `a2be099`.
 | REQ-INFEAS-001 | #84 | #85 | #86 | `docs/reviews/PR-85-INDEPENDENT-REVIEW.md` |
 | REQ-NORMAL-001 | #87 | #88 | #89 | `docs/reviews/PR-88-INDEPENDENT-REVIEW.md` |
 | REQ-TANGENT-001 | #90 | #91 | #92 | `docs/reviews/PR-91-INDEPENDENT-REVIEW.md` |
-| REQ-THICK-001 | #93 | #94 | pending | `docs/reviews/PR-94-INDEPENDENT-REVIEW.md` |
+| REQ-THICK-001 | #93 | #94 | #95 | `docs/reviews/PR-94-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
