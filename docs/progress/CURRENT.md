@@ -6,19 +6,16 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Clean independent re-review complete; Ready integration sequence in progress / REQ-CONVEX-001
-- Requirement: REQ-CONVEX-001, Issue #81
-- Implementation branch: `codex/req-convex-001-canonical-solver`
-- Implementation pull request: #82 (Draft)
-- R82-008 repair code/test head: `c1753bdb98e6abec69486c36713d887491204f67`
-- Repair evidence head: `26da57b86d8865604285e3e1cfeea8f124329763`
-- Clean re-reviewed head: `ad677e33ea2e4d99b0f6f3f93c66743dd98e8cac`
+- Mode: Integration state / REQ-CONVEX-001 complete
+- Requirement: REQ-CONVEX-001, Issue #81 (closed)
+- Implementation pull request: #82, squash-merged as `742ee57`
+- Integration-state branch: `codex/req-convex-001-integration-state`
+- Integration-state pull request: pending
 - Review record: `docs/reviews/PR-82-INDEPENDENT-REVIEW.md`
-- Registry state: `implemented`; it is not `integrated`
-- Direct dependencies REQ-SOFT-001, REQ-LINEQ-001, and REQ-SPIKE-004 are all
-  `integrated`
+- Registry state in this change: `integrated`
+- Next eligible requirement: REQ-INFEAS-001 (`planned`)
 
-## Final re-review disposition
+## Integration result
 
 - A fresh read-only project `math_reviewer` independently reviewed the exact
   repaired PR head using only bounded requirement, dependency, normative-
@@ -35,7 +32,18 @@ records, benchmark reports, Git, and GitHub.
   and `1e12`, with every normalized KKT and hard-relation review at or below the
   exact requested `1e-9` tolerance. A synthetic nonstationary dual is still
   rejected.
-- PR #82 may proceed to Ready CI. REQ-INFEAS-001 has not begun.
+- Exact implementation Ready head `e6a3621` passed Windows, Ubuntu, and macOS
+  with every configured backend and benchmark-smoke workload in CI run
+  29711773645.
+- PR #82 squash-merged exactly once as `742ee57`; Issue #81 closed as
+  completed.
+- Post-merge `main` run 29712183062 passed the same complete three-platform
+  correctness, backend, benchmark-smoke, and requirement-registry gate on
+  `742ee57`.
+- This isolated integration-state change updates only the registry, review
+  evidence, history index, and bounded handoff. It changes no production code,
+  test, manifest, schema, CI, build input, API, normative contract, numerical
+  behavior, dependency, tag, or release.
 
 ## Validation state
 
@@ -53,22 +61,34 @@ records, benchmark reports, Git, and GitHub.
   registry test-name update change no production, test, manifest, schema, CI,
   build, API, numerical, or dependency input. The updated registry separately
   passed all 58 requirement checks and exact whitespace checks.
-- Draft CI run 29711320592 passed the configured Ubuntu job on exact cleanly
-  re-reviewed head `ad677e33`. Ready-only Windows, Ubuntu, macOS, and benchmark-
-  smoke CI has not run for the final evidence head.
-- This re-review task changes only the review record and bounded handoff; no
-  production, test, manifest, schema, CI, build, registry, API, numerical, or
-  dependency input changes.
+- Exact implementation Ready-head and post-merge `main` three-platform gates
+  are green as recorded above.
+- The isolated integration-state tree passed the complete local standard gate:
+  workspace format, warning-denying all-target/all-feature Clippy, all-feature
+  workspace tests, workspace Rustdoc, all 58 requirement checks, and
+  `git diff --check`.
 
 ## Next task
 
-Synchronize this evidence-only re-review and handoff commit on PR #82, mark the
-PR Ready, and wait for the complete Windows, Ubuntu, and macOS correctness
-matrix plus every benchmark-smoke workload on that exact final evidence head.
-Merge exactly once only when green, wait for green post-merge `main` CI, then
-record truthful integration state in an isolated follow-up change. If this task
-is interrupted, resume only this integration sequence; do not begin
-REQ-INFEAS-001.
+After the isolated integration-state pull request is green and merged, open a
+fresh task and perform the mandatory preflight. Use
+`cargo xtask requirements next`; do not start REQ-INFEAS-001 or another
+requirement in this task.
+
+## Durable evidence
+
+- Acceptance criteria and exclusions: closed GitHub Issue #81
+- Merged implementation and repairs: GitHub PR #82
+- Integration-state pull request: pending
+- Independent review and repair evidence:
+  `docs/reviews/PR-82-INDEPENDENT-REVIEW.md`
+- Requirement summary: `changes/REQ-CONVEX-001.md`
+- Solver policy and backend decision: `docs/architecture/SOLVER_POLICY.md` and
+  `docs/adr/ADR-0011-clarabel-convex-backend.md`
+- Focused tests: `crates/georbf/tests/convex_solver.rs`
+- Example and benchmark: `crates/georbf/examples/convex_solver.rs`,
+  `crates/georbf/benches/convex_solver.rs`, and
+  `docs/benchmarks/REQ-CONVEX-001.md`
 
 ## Checks not yet available
 
