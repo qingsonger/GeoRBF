@@ -6,74 +6,60 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-TANGENT-001 complete
-- Requirement: REQ-TANGENT-001, Issue #90 (closed)
-- Implementation pull request: #91, squash-merged as `968afe9`
-- Integration-state branch: `codex/req-tangent-001-integration-state`
-- Integration-state pull request: #92 (Draft until exact Ready CI is green)
-- Review record: `docs/reviews/PR-91-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: select with `cargo xtask requirements next`
+- Mode: Implement / REQ-THICK-001 complete pending Draft PR publication
+- Requirement: REQ-THICK-001, Issue #93
+- Branch: `codex/req-thick-001-local-thickness`
+- Draft pull request: pending first push
+- Registry state in this change: `in_progress` until the Draft PR number is recorded
+- Dependencies: REQ-LEVEL-001, REQ-NORMAL-001, and REQ-CONVEX-001 are integrated
 
-## Integration result
+## Implemented scope
 
-- A fresh read-only project `math_reviewer` independently re-reviewed the exact
-  complete PR and repair using only bounded requirement, dependency, normative,
-  diff, test, benchmark, registry, handoff, and validation evidence.
-- R91-001 is closed. Missing-gauge inputs inspect only the first tangent before
-  returning source-aware `GEORBF-E4001`; the explicit-gauge unbounded path
-  retains structured `CountOverflow`.
-- No P0, P1, P2, or P3 finding remained before integration; the independent
-  review requirement is complete.
-- Exact implementation Ready head `e780ad9` passed Windows, Ubuntu, and macOS
-  with every configured backend and benchmark-smoke workload, including
-  `tangent_observation_compilation`, in CI run 29732074353.
-- PR #91 squash-merged exactly once as `968afe9`; Issue #90 closed as
-  completed.
-- Post-merge `main` run 29732840766 passed the same complete three-platform
-  correctness, backend, benchmark-smoke, and requirement-registry gate on
-  `968afe9`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, normative contract, numerical
-  behavior, dependency, tag, or release.
+- Scalar `LevelOrder` gaps remain canonical linear bounds and are labeled
+  `ScalarLevelGap / ScalarOnly`; no scalar gap is presented as a geometric
+  distance.
+- Immutable D=1/D=2/D=3 `LocalNormalThickness` values compile the hard sampled
+  first-order relation `T_min ||grad f(x)|| <= h_upper - h_lower` over explicit
+  level variables.
+- Compilation requests Cartesian derivatives in deterministic axis order,
+  owns the positive thickness scale and both level signs, preserves provenance,
+  and exposes only affine rows and ordered cones to the canonical solver.
+- Diagnostics label the cone `SampledLocalNormalCone /
+  SampledLocalFirstOrder`; sampled geometric validation remains deferred to
+  REQ-THICK-002 and is not implied.
+- Structured failures cover invalid thickness and endpoints, empty input,
+  unknown levels, duplicate IDs, caller linearization, field-variable bounds,
+  allocation, and unrepresentable scaled coefficients or constants.
+- Rust API, Rustdoc, normative documentation, example, focused benchmark,
+  benchmark-smoke CI wiring, tests, and change evidence are implemented. CLI is
+  N/A until M8; C, C++, and Python are N/A until M9.
 
 ## Validation state
 
-- Exact repair implementation head `5e99aa6` and final evidence head `e780ad9`
-  passed the complete standard local gate: workspace format, warning-denying
-  all-target/all-feature Clippy, all-feature workspace tests, workspace
-  Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The final reviewer confirmed R91-001 closure and no P0-P3 findings. The
-  parent task passed all eight tangent-observation tests, both module
-  regressions, the benchmark smoke with checksum `3824`, the example, registry
-  check, and the complete PR diff whitespace check.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state tree passed the complete local standard gate:
-  workspace format, warning-denying all-target/all-feature Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and
-  `git diff --check`.
-- Local `actionlint` and the later unavailable tools listed below remain
-  unavailable and are not claimed as passed.
+- All eight focused `thickness` integration tests pass.
+- The `local_thickness` example runs and reports one scalar bound and one local
+  cone with distinct diagnostic classifications.
+- Benchmark smoke passes with checksum `8304`; the 2,000-iteration baseline is
+  40.17 microseconds per build/compile with checksum `8304000` on the recorded
+  Windows environment.
+- Warning-denying all-target/all-feature Clippy for `georbf` passes.
+- The complete stable-head standard gate remains to be run after the final code
+  change and before publication.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start another requirement in this
-task.
+After this implementation is committed, pushed, and opened as a Draft PR,
+record its number and set the requirement to `implemented`. Then open a fresh
+Review task for only REQ-THICK-001 and that PR. The reviewer must be independent
+and read-only; do not repair findings or begin REQ-THICK-002 in the Review task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #90
-- Merged implementation and repair: GitHub PR #91
-- Integration-state pull request: GitHub PR #92
-- Independent review: `docs/reviews/PR-91-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-TANGENT-001.md`
-- Focused tests: `crates/georbf/tests/tangent_observations.rs`
-- Normative behavior: `docs/math/NORMAL_AND_TANGENT.md`
-- Benchmark: `docs/benchmarks/REQ-TANGENT-001.md`
+- Acceptance criteria and exclusions: GitHub Issue #93
+- Requirement summary: `changes/REQ-THICK-001.md`
+- Focused tests: `crates/georbf/tests/thickness.rs`
+- Normative behavior: `docs/math/THICKNESS.md`
+- Benchmark: `docs/benchmarks/REQ-THICK-001.md`
 
 ## Checks not yet available
 

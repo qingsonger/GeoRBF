@@ -22,8 +22,8 @@ use crate::dimension::{Dim, SupportedDimension};
 use crate::functional::{FunctionalAtom, ObservationFunctional};
 use crate::problem_ir::{
     AffineExpression, AffineTerm, CanonicalEquality, CanonicalLinearBound, CanonicalProblem,
-    CanonicalSoftObjective, CanonicalSoftRelation, ObservationId, ProblemIrError,
-    SemanticProvenance, SoftLoss, VariableBlock,
+    CanonicalSecondOrderCone, CanonicalSoftObjective, CanonicalSoftRelation, ObservationId,
+    ProblemIrError, SemanticProvenance, SoftLoss, VariableBlock,
 };
 
 const LEVEL_VARIABLE_BLOCK: &str = "levels";
@@ -780,6 +780,14 @@ impl CompiledLevelProblem {
         self.canonical = self
             .canonical
             .try_append_field_linear_problem(field_problem)?;
+        Ok(self)
+    }
+
+    pub(crate) fn try_append_hard_cones(
+        mut self,
+        cones: Vec<CanonicalSecondOrderCone>,
+    ) -> Result<Self, ProblemIrError> {
+        self.canonical = self.canonical.try_append_hard_cones(cones)?;
         Ok(self)
     }
 

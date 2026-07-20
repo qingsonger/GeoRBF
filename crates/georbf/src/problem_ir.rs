@@ -925,6 +925,18 @@ pub struct CanonicalSecondOrderCone {
 }
 
 impl CanonicalSecondOrderCone {
+    pub(crate) const fn from_parts(
+        lhs: Vec<AffineExpression>,
+        rhs: AffineExpression,
+        provenance: SemanticProvenance,
+    ) -> Self {
+        Self {
+            lhs,
+            rhs,
+            provenance,
+        }
+    }
+
     /// Borrows vector-valued affine left-hand expressions.
     pub fn lhs(&self) -> &[AffineExpression] {
         &self.lhs
@@ -1220,6 +1232,11 @@ impl CanonicalProblem {
             )
     }
 
+    pub(crate) fn contains_observation_id(&self, identifier: ObservationId) -> bool {
+        self.observation_ids()
+            .any(|existing| existing == identifier)
+    }
+
     pub(crate) fn try_from_linear_parts_and_objectives(
         variable_blocks: impl IntoIterator<Item = VariableBlock>,
         equalities: Vec<CanonicalEquality>,
@@ -1310,6 +1327,51 @@ impl CanonicalProblem {
             })?;
         linear_bounds.extend(field_bounds);
         soft_objectives.extend(field_objectives);
+        Self::try_new(
+            variable_space,
+            equalities,
+            linear_bounds,
+            cones,
+            soft_objectives,
+        )
+    }
+
+    pub(crate) fn try_append_hard_cones(
+        self,
+        appended_cones: Vec<CanonicalSecondOrderCone>,
+    ) -> Result<Self, ProblemIrError> {
+        for (index, cone) in appended_cones.iter().enumerate() {
+            let identifier = cone.provenance().observation_id();
+            if self
+                .observation_ids()
+                .any(|existing| existing == identifier)
+                || appended_cones[..index]
+                    .iter()
+                    .any(|existing| existing.provenance().observation_id() == identifier)
+            {
+                return Err(ProblemIrError::DuplicateObservationId { identifier });
+            }
+        }
+
+        let Self {
+            variable_space,
+            equalities,
+            linear_bounds,
+            mut cones,
+            soft_objectives,
+            ..
+        } = self;
+        let cone_count = cones
+            .len()
+            .checked_add(appended_cones.len())
+            .ok_or(ProblemIrError::MemoryEstimateOverflow)?;
+        cones.try_reserve_exact(appended_cones.len()).map_err(|_| {
+            ProblemIrError::AllocationFailed {
+                storage: ProblemIrStorage::CanonicalCones,
+                requested: cone_count,
+            }
+        })?;
+        cones.extend(appended_cones);
         Self::try_new(
             variable_space,
             equalities,

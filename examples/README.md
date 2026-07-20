@@ -121,3 +121,11 @@ capabilities:
 ```text
 cargo run -p georbf --example immutable_fitted_field
 ```
+
+`REQ-THICK-001` adds `crates/georbf/examples/local_thickness.rs`, which keeps
+a scalar level gap separate from a sampled local first-order thickness cone
+and prints both diagnostic classifications and canonical relation counts:
+
+```text
+cargo run -p georbf --example local_thickness
+```
