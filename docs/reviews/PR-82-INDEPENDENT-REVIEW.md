@@ -4,10 +4,12 @@
 - Issue: https://github.com/qingsonger/GeoRBF/issues/81
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/82
 - Branch: `codex/req-convex-001-canonical-solver`
-- Reviewed head: `29ca2a1682d93ba48a47605624bdba1453866f72`
+- Initial reviewed head: `29ca2a1682d93ba48a47605624bdba1453866f72`
+- Final re-reviewed repair head: `ad677e33ea2e4d99b0f6f3f93c66743dd98e8cac`
 - Base head: `a4d7d3631bb30203ffa464bea32050a5a12caf67`
 - Review date: 2026-07-19
-- Result: five P1 and two P2 findings; no P0 finding
+- Final re-review date: 2026-07-20
+- Result: clean final re-review; R82-001 through R82-008 closed; no P0-P3 finding remains
 
 ## Scope and independence
 
@@ -355,7 +357,7 @@ focused and stable-head standard checks, push, and stop for another fresh
 independent re-review. This re-review made no production-code change and did
 not begin REQ-INFEAS-001.
 
-## R82-008 repair evidence pending fresh re-review
+## R82-008 repair evidence
 
 Repair code/test head `c1753bdb98e6abec69486c36713d887491204f67`
 addresses only R82-008:
@@ -391,7 +393,51 @@ tests, the runnable example, the 8/16 benchmark smoke workload, and
 The exact code/test head then passed the complete standard gate: workspace
 format, warning-denying all-target/all-feature workspace Clippy, all-feature
 workspace tests, workspace Rustdoc, all 58 requirement checks, and
-`git diff --check`. PR #82 must remain Draft and REQ-CONVEX-001 remains
-`implemented`, not `integrated`, until a fresh independent re-review confirms
-R82-008 is closed and reports no new finding. This Repair did not reopen any
-closed finding and did not begin REQ-INFEAS-001.
+`git diff --check`. This Repair did not reopen any closed finding and did not
+begin REQ-INFEAS-001.
+
+## Final independent re-review
+
+A fresh read-only project `math_reviewer` received only the bounded requirement
+and dependency summaries, Issue #81 criteria, M4 plan, solver policy, ADR-0011,
+complete exact PR and focused repair diffs, original findings, repair, test and
+benchmark evidence, registry and handoff state, and exact-head Draft CI. It did
+not inherit implementation or Repair reasoning and made no repository or
+remote change.
+
+- R82-008 is closed. For row unit `U_i` and variable unit `X_j`, the original-
+  row ratio `|A_ij| / max(|b_i|, |s_i|, |A_ik x_k|)` has unit `1 / X_j`.
+  Multiplying by the recorded dimensionless zero-objective reference gives the
+  required objective-gradient unit. Positive row scaling cancels from this
+  ratio, and variable-unit changes scale the stationarity component and its
+  reference identically. Zero rows add no fabricated reference.
+- Adapter dispatch uses `A_backend = D A` and `b_backend = D b`, with positive
+  independent factors on zero/nonnegative rows and one common factor for each
+  Lorentz block. These are product-cone automorphisms. Mapping returned values
+  as `s = D^-1 s_backend` and `z = D z_backend` preserves `A^T z`, `s^T z`,
+  `b^T z`, the reconstructed dual objective, hard reviews, and infeasibility
+  certificates in original units.
+- The public hard-only regression constructs the same `x >= 1` problem at row
+  scales `1e-12`, `1`, and `1e12`, requests exact tolerance `1e-9`, requires
+  successful hard feasibility, and checks every normalized KKT and original-
+  relation diagnostic against that tolerance. The private synthetic candidate
+  still requires rejection for `dual stationarity review`.
+- No regression was found in signs, cone ordering or membership,
+  complementarity, primal-dual gap reconstruction, hard-constraint
+  preservation, certificates, hidden regularization, allocations, diagnostics,
+  interface dispositions, or truthful `implemented` registry state. CPD/SPD
+  kernels, centers, polynomial rank, and Hessian capability remain outside this
+  canonical adapter.
+- The reviewer passed all six private convex tests, all ten convex integration
+  tests, workspace format, all 58 requirement checks, and the complete PR
+  whitespace check. Draft CI run 29711320592 passed on exact reviewed head
+  `ad677e33ea2e4d99b0f6f3f93c66743dd98e8cac`.
+
+No P0, P1, P2, or P3 finding remains. A following evidence-only commit may
+update this record and the bounded handoff before the Ready event; any later
+production, test, manifest, schema, CI, build, API, numerical, or dependency
+input change requires fresh review and local validation. PR #82 may proceed to
+Ready CI. REQ-CONVEX-001 remains `implemented`, not `integrated`, until the
+exact Ready head passes the complete Windows, Ubuntu, and macOS correctness and
+benchmark-smoke matrix, PR #82 merges exactly once, and the isolated
+integration-state change completes.

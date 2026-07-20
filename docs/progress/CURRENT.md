@@ -6,22 +6,25 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required / REQ-CONVEX-001
+- Mode: Clean independent re-review complete; Ready integration sequence in progress / REQ-CONVEX-001
 - Requirement: REQ-CONVEX-001, Issue #81
 - Implementation branch: `codex/req-convex-001-canonical-solver`
 - Implementation pull request: #82 (Draft)
 - R82-008 repair code/test head: `c1753bdb98e6abec69486c36713d887491204f67`
 - Repair evidence head: `26da57b86d8865604285e3e1cfeea8f124329763`
+- Clean re-reviewed head: `ad677e33ea2e4d99b0f6f3f93c66743dd98e8cac`
 - Review record: `docs/reviews/PR-82-INDEPENDENT-REVIEW.md`
 - Registry state: `implemented`; it is not `integrated`
 - Direct dependencies REQ-SOFT-001, REQ-LINEQ-001, and REQ-SPIKE-004 are all
   `integrated`
 
-## R82-008 repair disposition
+## Final re-review disposition
 
-- R82-001 and R82-003 through R82-007 remain closed by the prior independent
-  re-review. This Repair did not modify their disposition.
-- R82-008 is implemented but remains open pending fresh independent re-review.
+- A fresh read-only project `math_reviewer` independently reviewed the exact
+  repaired PR head using only bounded requirement, dependency, normative-
+  document, diff, test, benchmark, registry, handoff, and CI evidence. It did
+  not inherit implementation or Repair reasoning.
+- R82-001 through R82-008 are closed. No P0, P1, P2, or P3 finding remains.
 - Structurally zero objectives now use a recorded dimensionless objective-unit
   reference. Original row values convert it to componentwise gradient units;
   no raw dimensioned floor or tolerance multiplier was added.
@@ -32,7 +35,7 @@ records, benchmark reports, Git, and GitHub.
   and `1e12`, with every normalized KKT and hard-relation review at or below the
   exact requested `1e-9` tolerance. A synthetic nonstationary dual is still
   rejected.
-- PR #82 remains Draft. REQ-INFEAS-001 has not begun.
+- PR #82 may proceed to Ready CI. REQ-INFEAS-001 has not begun.
 
 ## Validation state
 
@@ -50,24 +53,22 @@ records, benchmark reports, Git, and GitHub.
   registry test-name update change no production, test, manifest, schema, CI,
   build, API, numerical, or dependency input. The updated registry separately
   passed all 58 requirement checks and exact whitespace checks.
-- Draft CI run 29710719948 passed the configured Ubuntu job on pre-repair head
-  `3117f874`. Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not
-  run for the repaired head. A new Draft CI run is expected after push.
+- Draft CI run 29711320592 passed the configured Ubuntu job on exact cleanly
+  re-reviewed head `ad677e33`. Ready-only Windows, Ubuntu, macOS, and benchmark-
+  smoke CI has not run for the final evidence head.
+- This re-review task changes only the review record and bounded handoff; no
+  production, test, manifest, schema, CI, build, registry, API, numerical, or
+  dependency input changes.
 
 ## Next task
 
-Open a fresh independent re-review task for Draft PR #82 and REQ-CONVEX-001,
-limited to R82-008 and regression risk from its repair. Supply only the bounded
-requirement/dependency summaries, Issue #81 criteria, M4 plan, solver policy,
-ADR-0011, exact PR diff, review record, tests, benchmark evidence, registry,
-this handoff, and exact-head CI evidence to the project `math_reviewer`; do not
-inherit Repair reasoning. Verify the zero-objective reference is dimensionally
-coherent, backend row scaling preserves each product cone and original-unit
-dual/slack/certificate mapping, the three-scale public regression is genuine,
-and the synthetic dual remains rejected. If any P0-P3 finding remains, record
-it and stop without repair. If the review is clean, follow the mandatory ready
-CI and one-merge sequence in `docs/CODEX_WORKFLOW.md`. Do not begin
-REQ-INFEAS-001 in this task.
+Synchronize this evidence-only re-review and handoff commit on PR #82, mark the
+PR Ready, and wait for the complete Windows, Ubuntu, and macOS correctness
+matrix plus every benchmark-smoke workload on that exact final evidence head.
+Merge exactly once only when green, wait for green post-merge `main` CI, then
+record truthful integration state in an isolated follow-up change. If this task
+is interrupted, resume only this integration sequence; do not begin
+REQ-INFEAS-001.
 
 ## Checks not yet available
 
