@@ -508,7 +508,7 @@ requirements:
     cpp_api: "N/A: C++ wrapper follows the C ABI in M9"
     python_api: "N/A: Python bindings follow Rust API and schema freeze in M9"
     benchmark: implemented
-    status: implemented
+    status: integrated
 
   - id: REQ-TANGENT-001
     title: Tangent and derivative-only constraints

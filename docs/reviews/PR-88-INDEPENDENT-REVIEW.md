@@ -208,3 +208,19 @@ input. PR #88 may proceed to Ready CI. REQ-NORMAL-001 remains `implemented`,
 not `integrated`, until the exact Ready evidence head passes the complete
 Windows, Ubuntu, and macOS correctness and benchmark-smoke matrix, PR #88
 merges exactly once, and the isolated integration-state change completes.
+
+## Integration evidence
+
+The implementation integration sequence is complete. Exact Ready evidence head
+`f57b0aedc8607fcbed624550d998821995205429` passed the complete Windows,
+Ubuntu, and macOS correctness matrix, every configured backend path, all
+benchmark-smoke workloads including `normal_observation_compilation`, and the
+requirement-registry gate in CI run 29725550747. PR #88 then squash-merged
+exactly once as `ddfabd6b2d103f87b760b42ecc8a1c47a71a0c3f`, and Issue #87
+closed as completed. Post-merge `main` run 29726263324 passed the same complete
+three-platform gate on that exact merge commit.
+
+The isolated integration-state change records only the registry, review
+evidence, history index, and bounded handoff. After its own complete local and
+exact Ready-head CI gates are green and that pull request is merged, stop. A
+fresh task must select the next requirement; this task must not begin it.
