@@ -1,5 +1,7 @@
 # REQ-THICK-002
 
+Implementation: GitHub Issue #96 and Draft PR #97.
+
 Added immutable post-fit sampled geometric thickness validation for exactly
 D=1, D=2, and D=3. `SampledThicknessRequest<D>` owns distinct lower/upper
 level identifiers and strictly increasing fitted scalar values, a positive

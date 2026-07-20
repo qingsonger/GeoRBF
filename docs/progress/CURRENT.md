@@ -9,9 +9,8 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement complete; independent Review required
 - Requirement: REQ-THICK-002, Issue #96
 - Branch: `codex/req-thick-002-sampled-validation`
-- Draft pull request: pending publication from this implementation task
-- Registry state: `in_progress` until the Draft PR number is recorded; the
-  scoped implementation itself is complete and not integrated
+- Draft pull request: #97
+- Registry state: `implemented`, not `integrated`
 - Dependencies: REQ-THICK-001 and REQ-MODEL-001 are integrated
 
 ## Implementation result
@@ -62,6 +61,7 @@ that Review task.
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #96
+- Implementation pull request: GitHub PR #97
 - Requirement summary: `changes/REQ-THICK-002.md`
 - Independent truth/error tests: `crates/georbf/tests/thickness_validation.rs`
 - Normative behavior: `docs/math/THICKNESS.md`

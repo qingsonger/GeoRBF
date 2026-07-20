@@ -553,7 +553,7 @@ requirements:
     milestone: M5-v0.5.0
     priority: P1
     issue: 96
-    pull_request: null
+    pull_request: 97
     tests: [analytic-parallel-levels, curved-levels, no-intersection, quantiles]
     docs: [docs/math/THICKNESS.md, rustdoc]
     rust_api: implemented
@@ -562,7 +562,7 @@ requirements:
     cpp_api: "N/A: C++ wrapper follows the C ABI in M9"
     python_api: "N/A: Python bindings follow Rust API and schema freeze in M9"
     benchmark: implemented
-    status: in_progress
+    status: implemented
 
   - id: REQ-PROJECT-001
     title: Independent multi-field projects
