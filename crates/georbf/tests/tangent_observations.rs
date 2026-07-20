@@ -263,6 +263,48 @@ fn missing_gauge_is_rejected_with_the_first_tangent_source() -> TestResult {
 }
 
 #[test]
+fn missing_gauge_precedes_unbounded_iterator_collection() -> TestResult {
+    let repeated = tangent(31, Point::try_new([0.0])?, [1.0], Enforcement::Hard)?;
+    let Err(error) = TangentProblem::try_new(
+        std::iter::repeat(repeated),
+        None,
+        ExecutionOptions::default(),
+    ) else {
+        return Err("an unbounded derivative-only problem selected an implicit anchor".into());
+    };
+    let diagnostic = error
+        .gauge_diagnostic()
+        .ok_or("missing public gauge diagnostic")?;
+    assert_eq!(diagnostic.code(), ErrorCode::MissingGauge);
+    assert_eq!(
+        diagnostic
+            .primary_source()
+            .and_then(georbf::DiagnosticPath::observation_id),
+        Some(ObservationId::new(31))
+    );
+    assert_eq!(
+        diagnostic.to_string().split_whitespace().next(),
+        Some("GEORBF-E4001")
+    );
+    Ok(())
+}
+
+#[test]
+fn explicit_gauge_retains_unbounded_iterator_count_overflow() -> TestResult {
+    let point = Point::try_new([0.0])?;
+    let repeated = tangent(32, point, [1.0], Enforcement::Hard)?;
+    let Err(error) = TangentProblem::try_new(
+        std::iter::repeat(repeated),
+        Some(gauge(33, point, 0.0)?),
+        ExecutionOptions::default(),
+    ) else {
+        return Err("an unbounded tangent iterator did not report count overflow".into());
+    };
+    assert!(matches!(error, TangentProblemError::CountOverflow));
+    Ok(())
+}
+
+#[test]
 fn invalid_metadata_and_duplicate_identifiers_fail_structurally() -> TestResult {
     let Err(invalid) = TangentObservation::try_new(
         provenance(40, "1/m")?,

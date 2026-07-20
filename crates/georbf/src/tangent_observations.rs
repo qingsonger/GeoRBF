@@ -203,7 +203,18 @@ where
         gauge_anchor: Option<DerivativeGaugeAnchor<D>>,
         execution: ExecutionOptions,
     ) -> Result<Self, TangentProblemError> {
-        let iterator = observations.into_iter();
+        let mut iterator = observations.into_iter();
+        let Some(gauge_anchor) = gauge_anchor else {
+            let Some(first) = iterator.next() else {
+                return Err(TangentProblemError::EmptyTangentProblem);
+            };
+            let source = DiagnosticPath::try_observation(first.constraint().provenance())?;
+            let diagnostic = GaugeDiagnostic::try_new(1)?;
+            return Err(TangentProblemError::MissingGauge(GeoRbfError::Gauge {
+                source: Some(source),
+                diagnostic,
+            }));
+        };
         let minimum = iterator.size_hint().0;
         let requested = minimum
             .checked_add(1)
@@ -223,14 +234,6 @@ where
             return Err(TangentProblemError::EmptyTangentProblem);
         }
         let tangent_count = constraints.len();
-        let Some(gauge_anchor) = gauge_anchor else {
-            let source = DiagnosticPath::try_observation(constraints[0].provenance())?;
-            let diagnostic = GaugeDiagnostic::try_new(1)?;
-            return Err(TangentProblemError::MissingGauge(GeoRbfError::Gauge {
-                source: Some(source),
-                diagnostic,
-            }));
-        };
         if constraints.len() == constraints.capacity() {
             let requested = constraints
                 .len()
