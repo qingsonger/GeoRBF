@@ -157,3 +157,24 @@ loss and scale. Several independent tangents may share a point. A field with
 only derivative observations has an additive constant freedom. The default is
 to require an explicit anchor. Any future opt-in automatic anchor must be
 reported in diagnostics and persisted in the model.
+
+### Implemented tangent lowering and gauge contract
+
+`TangentObservation<D>` accepts a validated unit tangent for exactly D=1, D=2,
+or D=3 and emits one equality in the shared semantic IR. Hard enforcement stays
+hard. Soft SquaredL2, AbsoluteL1, and positive-delta Huber remain explicit
+scalar objectives with a positive caller-supplied residual scale. No loss is
+applied componentwise across an arbitrary basis because a tangent already is
+one caller-defined scalar direction. Stable provenance identifies each scalar
+row, so multiple tangents at the same finite point are independent and retain
+input order.
+
+`TangentProblem<D>` is the tangent-only field compilation path. It rejects an
+empty tangent collection and requires one `DerivativeGaugeAnchor<D>` that
+lowers to the hard equality `f(x_anchor) = value_anchor`. The finite point,
+finite value, and stable observation identifier remain directly inspectable;
+the gauge equality follows every tangent row in deterministic order. Omitting
+the anchor returns the source-aware stable `GEORBF-E4001` diagnostic using the
+first tangent source. An anchor identifier reused by a tangent is rejected by
+the shared IR. The compiler does not choose a point, insert a zero value,
+convert a soft relation to hard, or claim an automatic anchoring policy.

@@ -28,7 +28,9 @@
 //! scale-aware near-duplicate diagnostics without constraint rewriting. Five
 //! provenance-preserving normal-observation modes lower exact gradient,
 //! orthogonal-complement, oriented projection, and convex angular semantics to
-//! those shared scalar relations, with explicit near-zero gradient review.
+//! those shared scalar relations, with explicit near-zero gradient review,
+//! while tangent observations lower to scalar directional equalities and a
+//! derivative-only tangent problem requires one recorded hard value gauge.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -54,6 +56,7 @@ pub mod orientation;
 pub mod polynomial;
 pub mod problem_ir;
 pub mod solver;
+pub mod tangent_observations;
 pub mod transform;
 pub mod units;
 
@@ -158,6 +161,10 @@ pub use solver::{
     DenseResidualDiagnostics, DenseSolution, DenseSolveDiagnostics, DenseSolveError,
     DenseSolveOptions, DenseSolverConfigurationError, Regularization, try_solve_field,
     try_solve_field_with_control,
+};
+pub use tangent_observations::{
+    DerivativeGaugeAnchor, TangentObservation, TangentObservationError, TangentProblem,
+    TangentProblemError,
 };
 pub use transform::{AffineNormalization, TransformError, TransformOperation};
 pub use units::{AngleUnit, LengthUnit, UnitError};
