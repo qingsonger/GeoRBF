@@ -229,3 +229,20 @@ Ready CI. REQ-THICK-001 remains `implemented`, not `integrated`, until the
 exact Ready evidence head passes the complete Windows, Ubuntu, and macOS
 correctness and benchmark-smoke matrix, PR #94 merges exactly once, and the
 isolated integration-state change completes.
+
+## Integration evidence
+
+The implementation integration sequence is complete. Exact Ready evidence head
+`e1ac47aadb1b8ad91a4dbb3fafbeec486cc65eee` passed the complete Windows,
+Ubuntu, and macOS correctness matrix, every configured backend path, all
+benchmark-smoke workloads including `local_thickness_compilation`, and the
+requirement-registry gate in CI run 29750190504. PR #94 then squash-merged
+exactly once as `59a42d93361f55ebe4a2bbf9a72406d4600f513a`, and Issue #93
+closed as completed. Post-merge `main` run 29752225970 passed the same complete
+three-platform gate on that exact merge commit.
+
+The isolated integration-state change records only the registry, review
+evidence, history index, and bounded handoff in pull request #95. After its own
+complete local and exact Ready-head CI gates are green and that pull request is
+merged, stop. A fresh task must select the next requirement; this task must not
+begin it.

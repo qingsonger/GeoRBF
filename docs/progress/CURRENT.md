@@ -6,59 +6,66 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review clean; Ready CI pending
-- Requirement: REQ-THICK-001, Issue #93
-- Branch: `codex/req-thick-001-local-thickness`
-- Draft pull request: #94
-- Reviewed head: `0821084b36d9602c2b34cc9bedd3cf20380a335d`
-- Repair implementation head: `551d93f05a2f2023fc5bca5454176e111a88ed69`
-- Independently re-reviewed head: `522a2098d9b4390d568a784300c863cd3e963c43`
-- Review result: THICK-REV-001 through THICK-REV-003 closed; no P0-P3 findings remain
-- Registry state: `implemented`, not `integrated`
-- Dependencies: REQ-LEVEL-001, REQ-NORMAL-001, and REQ-CONVEX-001 are integrated
+- Mode: Integration state / REQ-THICK-001 complete
+- Requirement: REQ-THICK-001, Issue #93 (closed)
+- Implementation pull request: #94, squash-merged as `59a42d9`
+- Integration-state branch: `codex/req-thick-001-integration-state`
+- Integration-state pull request: #95 (Draft until exact Ready CI is green)
+- Review record: `docs/reviews/PR-94-INDEPENDENT-REVIEW.md`
+- Registry state in this change: `integrated`
+- Next eligible requirement: select with `cargo xtask requirements next`
 
-## Independent re-review result
+## Integration result
 
-- A fresh read-only project `math_reviewer` independently confirmed that
-  trusted-lower-bound reservation and fallible growth close THICK-REV-001.
-- The D=3 sample-point and complete-provenance regression closes
-  THICK-REV-002, and coefficient/constant representability regressions close
-  THICK-REV-003.
-- Formula, ordered-cone signs, dimensions and units, D=1/D=2/D=3 bounds, hard
-  enforcement, field-variable boundary, rotation invariance, diagnostics,
-  interface dispositions, benchmark and CI wiring, and registry truth are
-  clean.
-- No P0, P1, P2, or P3 finding remains. Rank, SPD/CPD, center, anisotropy,
-  Hessian, and sampled geometric-validation concerns remain unchanged or out
-  of scope.
+- A fresh read-only project `math_reviewer` independently re-reviewed the exact
+  complete PR and repair using only bounded requirement, dependency, normative,
+  diff, test, benchmark, registry, handoff, and validation evidence.
+- THICK-REV-001 through THICK-REV-003 are closed. No P0, P1, P2, or P3 finding
+  remained before integration; the independent review requirement is complete.
+- Exact implementation Ready head `e1ac47a` passed Windows, Ubuntu, and macOS
+  with every configured backend and benchmark-smoke workload, including
+  `local_thickness_compilation`, in CI run 29750190504.
+- PR #94 squash-merged exactly once as `59a42d9`; Issue #93 closed as
+  completed.
+- Post-merge `main` run 29752225970 passed the same complete three-platform
+  correctness, backend, benchmark-smoke, and requirement-registry gate on
+  `59a42d9`.
+- This isolated integration-state change updates only the registry, review
+  evidence, history index, and bounded handoff. It changes no production code,
+  test, manifest, schema, CI, build input, API, normative contract, numerical
+  behavior, dependency, tag, or release.
 
 ## Validation state
 
-- Exact independently re-reviewed head `522a209` passed all ten thickness
-  integration tests, the module allocation-failure regression, the thickness
-  Rustdoc compile-fail check, the runnable example, benchmark smoke checksum
-  `8304`, all 58 requirement checks, and `git diff --check`.
-- The same exact head passed the complete standard local gate:
+- Exact independently re-reviewed head `522a209` and final Ready evidence head
+  `e1ac47a` passed the complete standard local gate: workspace format,
+  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
+  workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
+- The final reviewer confirmed all three finding closures and no P0-P3
+  findings. The parent task passed all ten thickness integration tests, the
+  module allocation-failure regression, the benchmark smoke with checksum
+  `8304`, the example, registry check, and complete PR diff whitespace check.
+- Exact implementation Ready-head and post-merge `main` three-platform gates
+  are green as recorded above.
+- The isolated integration-state tree passed the complete local standard gate:
   workspace format, warning-denying all-target/all-feature Clippy, all-feature
-  workspace tests, workspace Rustdoc, and all 58 requirement checks.
-- Exact re-reviewed head `522a209` passed Draft Ubuntu CI run 29745163151. The
-  Ready-only three-platform and benchmark matrix was skipped as designed.
-- This final evidence and handoff change is documentation-only and changes no
-  production, test, manifest, schema, CI, build, API, numerical, registry, or
-  dependency input.
+  workspace tests, workspace Rustdoc, all 58 requirement checks, and
+  `git diff --check`.
+- Local `actionlint` and the later unavailable tools listed below remain
+  unavailable and are not claimed as passed.
 
-## Next task boundary
+## Next task
 
-Commit and push this clean re-review evidence, mark PR #94 ready, and wait for
-the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact Ready
-head. Merge exactly once only when it is green, then record truthful registry
-and handoff state through an isolated integration-state change. Do not begin
-REQ-THICK-002 or any other requirement.
+After the isolated integration-state pull request is green and merged, open a
+fresh task and perform the mandatory preflight. Use
+`cargo xtask requirements next`; do not start another requirement in this
+task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #93
-- Implementation pull request: GitHub PR #94
+- Acceptance criteria and exclusions: closed GitHub Issue #93
+- Merged implementation and repair: GitHub PR #94
+- Integration-state pull request: GitHub PR #95
 - Independent review: `docs/reviews/PR-94-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-THICK-001.md`
 - Focused tests: `crates/georbf/tests/thickness.rs`
