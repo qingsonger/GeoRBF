@@ -75,13 +75,18 @@ observed. Canonicalization does not scale, regularize, add jitter or hidden
 variables, relax constraints, or select a solver.
 
 Before a `CanonicalProblem` is returned, hard constant equality and bound rows
-are checked, and every pair of exactly proportional hard affine equality/bound
-rows is placed in one orientation for a closed-interval intersection. A
-conflict retains the complete provenance of the one or two originating rows
-through fallible owned storage. Positive row scaling and sign reversal do not
-change the decision. Soft objectives are excluded from this feasibility
-review. The check is intentionally not a general linear-program feasibility
-algorithm and performs no tolerance-based rejection, relaxation, or repair.
+are checked. Exact proportionality of hard affine equality/bound rows is proved
+by zero exact-binary cross-products rather than rounded division and
+multiplication. Their closed intervals are ordered with the same exact product
+representation, so no quotient or transformed endpoint can overflow,
+underflow, or change the decision. A conflict retains the complete provenance
+of the one or two originating rows through fallible owned storage. Its `f64`
+endpoint evidence is projected only after the exact decision and preserves the
+strict disjoint ordering when the transformed value is not representable.
+Positive row scaling and sign reversal do not change the decision. Soft
+objectives are excluded from this feasibility review. The check is
+intentionally not a general linear-program feasibility algorithm and performs
+no tolerance-based rejection, relaxation, or repair.
 
 The public constraint-review layer separately reports exact duplicate and
 scale-aware near-duplicate hard affine functionals. It independently

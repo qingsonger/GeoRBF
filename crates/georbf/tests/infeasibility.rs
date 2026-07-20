@@ -239,6 +239,217 @@ fn exact_affine_conflicts_and_constant_equalities_retain_sources() -> TestResult
 }
 
 #[test]
+fn one_ulp_nonparallel_rows_are_only_near_duplicates() -> TestResult {
+    let next_after_three = f64::from_bits(3.0_f64.to_bits() + 1);
+    let nonparallel = SemanticProblemIr::try_new(
+        [
+            constraint(
+                13,
+                SemanticRelation::Equality {
+                    expression: expression::<1>(13)?,
+                    target: 0.0,
+                },
+                Enforcement::Hard,
+            )?,
+            constraint(
+                14,
+                SemanticRelation::Equality {
+                    expression: expression::<1>(14)?,
+                    target: 3.0,
+                },
+                Enforcement::Hard,
+            )?,
+        ],
+        ExecutionOptions::default(),
+    )?;
+    let canonical = nonparallel.try_compile([block(2)?], |_, source| {
+        if source.observation_id() == ObservationId::new(13) {
+            affine(&[(0, 1.0), (1, 1.0)])
+        } else {
+            affine(&[(0, 3.0), (1, next_after_three)])
+        }
+    })?;
+    let review = try_review_constraints(&canonical)?;
+    assert_eq!(review.pairs.len(), 1);
+    assert_eq!(
+        review.pairs[0].similarity,
+        FunctionalSimilarity::NearDuplicate
+    );
+    Ok(())
+}
+
+#[test]
+fn integer_scaled_rows_are_exact_duplicates_and_conflict_exactly() -> TestResult {
+    let exact = SemanticProblemIr::try_new(
+        [
+            constraint(
+                15,
+                SemanticRelation::Equality {
+                    expression: expression::<1>(15)?,
+                    target: 0.0,
+                },
+                Enforcement::Hard,
+            )?,
+            constraint(
+                16,
+                SemanticRelation::Equality {
+                    expression: expression::<1>(16)?,
+                    target: 0.0,
+                },
+                Enforcement::Hard,
+            )?,
+        ],
+        ExecutionOptions::default(),
+    )?;
+    let canonical = exact.try_compile([block(3)?], |_, source| {
+        if source.observation_id() == ObservationId::new(15) {
+            affine(&[(0, 1.0), (1, 7.0), (2, 13.0)])
+        } else {
+            affine(&[(0, 49.0), (1, 343.0), (2, 637.0)])
+        }
+    })?;
+    assert_eq!(
+        try_review_constraints(&canonical)?.pairs[0].similarity,
+        FunctionalSimilarity::Duplicate
+    );
+
+    let conflicting = SemanticProblemIr::try_new(
+        [
+            constraint(
+                17,
+                SemanticRelation::Equality {
+                    expression: expression::<1>(17)?,
+                    target: 0.0,
+                },
+                Enforcement::Hard,
+            )?,
+            constraint(
+                18,
+                SemanticRelation::Equality {
+                    expression: expression::<1>(18)?,
+                    target: 49.0,
+                },
+                Enforcement::Hard,
+            )?,
+        ],
+        ExecutionOptions::default(),
+    )?;
+    assert!(matches!(
+        conflicting.try_compile([block(3)?], |_, source| {
+            if source.observation_id() == ObservationId::new(17) {
+                affine(&[(0, 1.0), (1, 7.0), (2, 13.0)])
+            } else {
+                affine(&[(0, 49.0), (1, 343.0), (2, 637.0)])
+            }
+        }),
+        Err(CanonicalizationError::Ir(
+            ProblemIrError::InfeasibleHardAffineConstraints { sources, .. }
+        )) if sources
+            .iter()
+            .map(|source| source.observation_id().identifier())
+            .collect::<Vec<_>>() == vec![17, 18]
+    ));
+    Ok(())
+}
+
+#[test]
+fn exact_interval_conflicts_survive_scaled_overflow_and_underflow() -> TestResult {
+    let overflow = SemanticProblemIr::try_new(
+        [
+            constraint(
+                19,
+                SemanticRelation::Equality {
+                    expression: expression::<1>(19)?,
+                    target: 0.0,
+                },
+                Enforcement::Hard,
+            )?,
+            constraint(
+                20,
+                SemanticRelation::LinearBound {
+                    expression: expression::<1>(20)?,
+                    lower: Some(1.0e308),
+                    upper: None,
+                },
+                Enforcement::Hard,
+            )?,
+        ],
+        ExecutionOptions::default(),
+    )?;
+    let Err(error) = overflow.try_compile([block(1)?], |_, source| {
+        affine(&[(
+            0,
+            if source.observation_id() == ObservationId::new(19) {
+                1.0e308
+            } else {
+                1.0
+            },
+        )])
+    }) else {
+        return Err("scaled lower endpoint overflow must not hide a conflict".into());
+    };
+    assert!(matches!(
+        error,
+        CanonicalizationError::Ir(ProblemIrError::InfeasibleHardAffineConstraints {
+            sources,
+            lower,
+            upper,
+        }) if sources
+            .iter()
+            .map(|source| source.observation_id().identifier())
+            .collect::<Vec<_>>() == vec![19, 20]
+            && lower > upper
+    ));
+
+    let underflow = SemanticProblemIr::try_new(
+        [
+            constraint(
+                21,
+                SemanticRelation::Equality {
+                    expression: expression::<1>(21)?,
+                    target: 0.0,
+                },
+                Enforcement::Hard,
+            )?,
+            constraint(
+                22,
+                SemanticRelation::Equality {
+                    expression: expression::<1>(22)?,
+                    target: 1.0e-308,
+                },
+                Enforcement::Hard,
+            )?,
+        ],
+        ExecutionOptions::default(),
+    )?;
+    let Err(error) = underflow.try_compile([block(1)?], |_, source| {
+        affine(&[(
+            0,
+            if source.observation_id() == ObservationId::new(21) {
+                1.0e-308
+            } else {
+                1.0
+            },
+        )])
+    }) else {
+        return Err("scaled nonzero endpoint underflow must not collapse a conflict".into());
+    };
+    assert!(matches!(
+        error,
+        CanonicalizationError::Ir(ProblemIrError::InfeasibleHardAffineConstraints {
+            sources,
+            lower,
+            upper,
+        }) if sources
+            .iter()
+            .map(|source| source.observation_id().identifier())
+            .collect::<Vec<_>>() == vec![21, 22]
+            && lower > upper
+    ));
+    Ok(())
+}
+
+#[test]
 fn soft_objectives_are_excluded_from_hard_duplicate_review() -> TestResult {
     let semantic = SemanticProblemIr::try_new(
         [

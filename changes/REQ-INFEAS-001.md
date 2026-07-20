@@ -27,7 +27,7 @@ infeasibility. General multi-row and cone infeasibility remains on the existing
 Clarabel path and is accepted only after GeoRBF's independent original-unit
 dual-certificate review.
 
-Five independent integration tests cover exact duplicates, sign-reversed near
+Eight independent integration tests cover exact duplicates, sign-reversed near
 duplicates, deterministic ordering, unchanged canonical inputs, equality/bound
 and constant-equality conflicts, positive scalar-unit rescaling, soft-objective
 exclusion, D=1/D=2/D=3, `Send + Sync`, and a three-row infeasible system with a
@@ -35,6 +35,16 @@ source-complete independently reviewed certificate. Existing problem-IR,
 linear-semantic, and convex-solver suites remain green. A runnable example and
 a deterministic 96-constraint benchmark accompany Rustdoc and the normative
 constraint and architecture documents.
+
+The bounded repair for review findings R85-001 and R85-002 replaces rounded
+divide-and-multiply proportionality with exact cross-products of the binary
+coefficient values. The same representation compares proportional interval
+endpoints without materializing a quotient, so finite overflow and underflow
+examples remain exact conflicts. Independent public-canonicalization
+regressions cover the one-ULP nonparallel pair, the exactly proportional
+`[1, 7, 13]` and `[49, 343, 637]` pair, and both extreme single-variable
+interval conflicts. No canonical row, solver policy, dependency, or interface
+was changed.
 
 Rust is implemented. CLI is N/A because the stage-0 command exposes only help
 and version and project/schema commands belong to M8. C, C++, and Python are
