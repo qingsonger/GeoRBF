@@ -91,3 +91,7 @@ harness = false
 [[bench]]
 name = "tangent_observation_compilation"
 harness = false
+
+[[bench]]
+name = "local_thickness_compilation"
+harness = false

@@ -31,6 +31,8 @@
 //! those shared scalar relations, with explicit near-zero gradient review,
 //! while tangent observations lower to scalar directional equalities and a
 //! derivative-only tangent problem requires one recorded hard value gauge.
+//! Sampled local normal-thickness constraints remain distinct from scalar level
+//! gaps and lower to hard first-order Lorentz cones over explicit level values.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -57,6 +59,7 @@ pub mod polynomial;
 pub mod problem_ir;
 pub mod solver;
 pub mod tangent_observations;
+pub mod thickness;
 pub mod transform;
 pub mod units;
 
@@ -165,6 +168,10 @@ pub use solver::{
 pub use tangent_observations::{
     DerivativeGaugeAnchor, TangentObservation, TangentObservationError, TangentProblem,
     TangentProblemError,
+};
+pub use thickness::{
+    LocalNormalThickness, LocalNormalThicknessError, ThicknessCanonicalizationError,
+    ThicknessDiagnosticKind, ThicknessDiagnostics, ThicknessGuarantee,
 };
 pub use transform::{AffineNormalization, TransformError, TransformOperation};
 pub use units::{AngleUnit, LengthUnit, UnitError};
