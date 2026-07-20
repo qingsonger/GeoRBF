@@ -535,7 +535,7 @@ requirements:
     milestone: M5-v0.5.0
     priority: P0
     issue: 93
-    pull_request: null
+    pull_request: 94
     tests: [scalar-gap, local-cone, analytic-thickness, diagnostic-kind]
     docs: [docs/math/THICKNESS.md, rustdoc]
     rust_api: implemented
@@ -544,7 +544,7 @@ requirements:
     cpp_api: "N/A: C++ wrapper follows the C ABI in M9"
     python_api: "N/A: Python bindings follow Rust API and schema freeze in M9"
     benchmark: implemented
-    status: in_progress
+    status: implemented
 
   - id: REQ-THICK-002
     title: Sampled geometric thickness validation

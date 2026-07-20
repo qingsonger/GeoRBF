@@ -6,11 +6,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / REQ-THICK-001 complete pending Draft PR publication
+- Mode: Implement / REQ-THICK-001 complete
 - Requirement: REQ-THICK-001, Issue #93
 - Branch: `codex/req-thick-001-local-thickness`
-- Draft pull request: pending first push
-- Registry state in this change: `in_progress` until the Draft PR number is recorded
+- Draft pull request: #94
+- Registry state in this change: `implemented`
 - Dependencies: REQ-LEVEL-001, REQ-NORMAL-001, and REQ-CONVEX-001 are integrated
 
 ## Implemented scope
@@ -43,19 +43,21 @@ records, benchmark reports, Git, and GitHub.
   40.17 microseconds per build/compile with checksum `8304000` on the recorded
   Windows environment.
 - Warning-denying all-target/all-feature Clippy for `georbf` passes.
-- The complete stable-head standard gate remains to be run after the final code
-  change and before publication.
+- Exact implementation head `f91ca4a` passed the complete standard local gate:
+  workspace format, warning-denying all-target/all-feature Clippy, all-feature
+  workspace tests, workspace Rustdoc, all 58 requirement checks, and
+  `git diff --check`.
 
 ## Next task
 
-After this implementation is committed, pushed, and opened as a Draft PR,
-record its number and set the requirement to `implemented`. Then open a fresh
-Review task for only REQ-THICK-001 and that PR. The reviewer must be independent
-and read-only; do not repair findings or begin REQ-THICK-002 in the Review task.
+Open a fresh Review task for only REQ-THICK-001 and Draft PR #94. The reviewer
+must be independent and read-only; do not repair findings or begin
+REQ-THICK-002 in the Review task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #93
+- Implementation pull request: GitHub PR #94
 - Requirement summary: `changes/REQ-THICK-001.md`
 - Focused tests: `crates/georbf/tests/thickness.rs`
 - Normative behavior: `docs/math/THICKNESS.md`
