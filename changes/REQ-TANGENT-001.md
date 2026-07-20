@@ -19,13 +19,16 @@ relaxed. Duplicate tangent/gauge identifiers, invalid soft metadata,
 non-finite gauge values, count overflow, and allocation failure return
 structured errors without partial success.
 
-Six independent integration tests cover analytic directional rows, two
+Eight independent integration tests cover analytic directional rows, two
 independent tangents at one point, all three scalar soft losses, deterministic
 gauge recording, the missing-gauge source and error code, invalid metadata,
 duplicate identifiers, dimensional bounds, immutability, and `Send + Sync`.
-Two unit regressions cover the stable diagnostic display and fallible final
-problem storage. A runnable example and deterministic D=3 tangent-plus-gauge
-compilation benchmark accompany Rustdoc and the normative mathematics.
+They also prove that a missing gauge inspects only the first item of an
+unbounded tangent iterator before returning `GEORBF-E4001`, while the same
+iterator with an explicit gauge retains structured count overflow. Two unit
+regressions cover the stable diagnostic display and fallible final problem
+storage. A runnable example and deterministic D=3 tangent-plus-gauge compilation
+benchmark accompany Rustdoc and the normative mathematics.
 
 Rust is implemented. CLI is N/A because the stage-0 command exposes only help
 and version and complete project/schema commands belong to M8. C, C++, and

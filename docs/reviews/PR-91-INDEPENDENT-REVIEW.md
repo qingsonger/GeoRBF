@@ -7,7 +7,7 @@
 - Reviewed head: `86d1d3dcc948d70f6825822d1efe94b92b8b4f5b`
 - Base head: `60952be9cd84c098c09482b5373ec2e7665d0e7e`
 - Review date: 2026-07-20
-- Result: P2 R91-001; repair required
+- Result: P2 R91-001; repaired on `5e99aa6`, fresh independent re-review required
 
 ## Scope and independence
 
@@ -58,6 +58,25 @@ the structured `CountOverflow` result.
 
 No other P0, P1, P2, or P3 finding was reported.
 
+## Repair evidence (not an independent re-review)
+
+Repair implementation head `5e99aa629118ca4b4c81927d31adf67f19822b58`
+moves the already-known missing-gauge branch before iterator size inspection,
+reservation, and collection. With no gauge, the constructor reads exactly the
+first tangent: an empty iterator still returns `EmptyTangentProblem`, while a
+nonempty iterator immediately returns source-aware `GEORBF-E4001`. With an
+explicit gauge, the original complete collection path and its checked count
+overflow remain unchanged.
+
+Two independent integration regressions use `std::iter::repeat(valid_tangent)`.
+The missing-gauge case requires `ErrorCode::MissingGauge`, display code
+`GEORBF-E4001`, and the first tangent identifier; the explicit-gauge companion
+requires `TangentProblemError::CountOverflow`. This repair changes no formula,
+sign, units, enforcement, canonical relation, adapter disposition, dependency,
+registry status, or later-requirement scope. A fresh project `math_reviewer`
+must still independently confirm that R91-001 is closed and that no new finding
+was introduced.
+
 ## Independent mathematical review
 
 The scalar row is otherwise correct: `t^T grad f(x) = 0` lowers with a positive
@@ -93,9 +112,13 @@ contracts.
   This final evidence wording changes only this review record and the bounded
   handoff; it changes no production code, test, manifest, schema, CI, build
   input, API, numerical behavior, registry, or dependency input.
+- Repair implementation head `5e99aa6` passed all eight tangent integration
+  tests, both tangent module regressions, the runnable example, benchmark smoke
+  checksum `3824`, workspace format, warning-denying all-target/all-feature
+  Clippy, all-feature workspace tests, workspace doctests, all 58 requirement
+  checks, and `git diff --check`.
 
-PR #91 must remain Draft and REQ-TANGENT-001 must remain `implemented`. Open a
-fresh Repair task limited to R91-001, add the required independent regressions,
-run focused checks and the final stable-head standard gate, update this review
-evidence and the bounded handoff, push, and stop for a fresh independent
-re-review. Do not begin REQ-THICK-001 or any other requirement.
+PR #91 remains Draft and REQ-TANGENT-001 remains `implemented`. Open a fresh
+independent re-review task for exact PR head and R91-001. If no P0-P3 finding
+remains, follow the repository's Ready-CI integration sequence. Do not begin
+REQ-THICK-001 or any other requirement.
