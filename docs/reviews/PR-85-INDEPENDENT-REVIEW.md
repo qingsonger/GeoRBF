@@ -324,6 +324,7 @@ closed as completed. Post-merge `main` run 29719948949 passed the same complete
 three-platform gate on that exact merge commit.
 
 The isolated integration-state change records the registry, review evidence,
-history index, and bounded handoff only. After its own complete local and exact
-Ready-head CI gates are green and its pull request is merged, stop. A fresh task
-must select the next requirement; this task must not begin it.
+history index, and bounded handoff only in pull request #86. After its own
+complete local and exact Ready-head CI gates are green and that pull request is
+merged, stop. A fresh task must select the next requirement; this task must not
+begin it.

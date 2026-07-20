@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-INFEAS-001, Issue #84 (closed)
 - Implementation pull request: #85, squash-merged as `0262a04`
 - Integration-state branch: `codex/req-infeas-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #86 (Draft until exact Ready CI is green)
 - Review record: `docs/reviews/PR-85-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: REQ-NORMAL-001 (`planned`)
@@ -75,7 +75,7 @@ task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #84
 - Merged implementation and repairs: GitHub PR #85
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #86
 - Independent review: `docs/reviews/PR-85-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-INFEAS-001.md`
 - Focused tests: `crates/georbf/tests/infeasibility.rs`
