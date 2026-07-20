@@ -63,6 +63,8 @@ pub enum ExecutionOperation {
     DenseSolve,
     /// Canonical convex QP or SOCP solving.
     ConvexSolve,
+    /// Post-fit sampled geometric thickness validation.
+    SampledThicknessValidation,
 }
 
 impl fmt::Display for ExecutionOperation {
@@ -71,6 +73,7 @@ impl fmt::Display for ExecutionOperation {
             Self::FieldAssembly => "field assembly",
             Self::DenseSolve => "dense solve",
             Self::ConvexSolve => "convex solve",
+            Self::SampledThicknessValidation => "sampled thickness validation",
         })
     }
 }
@@ -107,6 +110,8 @@ pub enum ExecutionStage {
     Refinement,
     /// Original-unit residual evidence was reviewed.
     ResidualReview,
+    /// One sampled-thickness fitted-field evaluation completed.
+    SampledThicknessEvaluation,
     /// The operation completed successfully.
     Completed,
 }

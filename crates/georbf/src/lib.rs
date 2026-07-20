@@ -35,7 +35,8 @@
 //! gaps and lower to hard first-order Lorentz cones over explicit level values;
 //! post-fit sampled geometric validation separately brackets and refines
 //! adjacent level intersections along selected fitted-field normals, reports
-//! deterministic distance evidence, and never refits implicitly.
+//! deterministic returned-point Euclidean distance evidence, supports
+//! caller-owned cancellation and progress, and never refits implicitly.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]

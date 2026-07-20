@@ -14,7 +14,10 @@ original-coordinate gradient, forms a scale-safe unit normal, uniformly
 brackets the lower target along the negative normal and the upper target along
 the positive normal, then refines sign-changing brackets by deterministic
 bisection. Complete measurements retain both intersections, the oriented
-normal, line distance, sample index, point, and provenance. Low gradients,
+normal, returned-point Euclidean distance, sample index, point, and provenance.
+Measuring the stored intersections rather than summing nominal search
+parameters prevents coordinate rounding at large magnitudes from creating a
+false violation or proposed constraint. Low gradients,
 missing intersections, and exhausted refinement limits are per-location
 failures; fitted evaluation, allocation, geometry, overflow, and invalid input
 remain structured top-level errors.
@@ -23,6 +26,11 @@ The validator prepares fitted-field polynomial scratch once per complete
 validation and reuses it for every selected point, bracket step, and bisection
 step. The sampled batch therefore performs no polynomial scratch allocation
 per evaluation; report and sorting storage use checked bounded reservations.
+The controlled public entry point reports deterministic progress against a
+checked maximum evaluation budget and checks cancellation before and after
+each fitted-field evaluation. Cancellation is a typed execution error and
+returns no partial report; the convenience entry point retains its original
+empty-control behavior.
 
 Reports expose the minimum, caller-ordered deterministic type-7 quantiles,
 violation locations, and optional proposed `LocalNormalThickness<D>` values.
@@ -35,9 +43,13 @@ hard constraint, regularizes, solves, or refits. The diagnostic label
 
 Independent tests cover an exactly reproduced fitted parallel-level field,
 analytic curved level sets with independently solved normal-line roots,
-no-intersection reporting, minimum and quantile aggregation, invalid input,
-violation and proposal provenance, repeat determinism, and D=1/D=2/D=3
-`Send + Sync`. Module tests also cover scale-safe extreme gradient norms. A
+an off-grid tangential contact reported as `NotFound`, no-intersection
+reporting, minimum and quantile aggregation, invalid input, exact measurement,
+violation, and proposal provenance, deterministic cancellation after an exact
+evaluation count with no partial report, large-coordinate returned-point
+distance semantics without a false proposal, repeat determinism, and
+D=1/D=2/D=3 `Send + Sync`. Module tests also cover scale-safe extreme gradient
+norms. A
 documented Rust example and a deterministic 32-location fitted-field benchmark
 are included, with Ready/main three-platform benchmark-smoke wiring.
 

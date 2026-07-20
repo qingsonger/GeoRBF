@@ -79,6 +79,15 @@ limit explicit. The request is available for exactly D=1, D=2, and D=3. A
 selected location owns complete provenance; it need not be a fitting center or
 an earlier observation.
 
+`try_validate_sampled_thickness_with_control` accepts one borrowed
+`ExecutionControl`. It checks cancellation before work, after reusable fitted-
+field evaluation storage is prepared, and before and after every field
+evaluation in the location, bracketing, and refinement loops. Progress uses a
+checked maximum evaluation budget and deterministic input/search order. A
+cancelled call returns a typed execution error and no partial report; neither
+the control nor its token or sink is retained by the fitted field. The
+uncontrolled convenience method uses an empty control.
+
 For each selected location `x`, the validator evaluates the immutable fitted
 field once for `(f(x), grad f(x))`. A scale-safe gradient norm below the
 explicit threshold is reported as a per-location failure. Otherwise the
@@ -99,11 +108,15 @@ lands within the value tolerance nor changes sign is therefore truthfully
 reported as not found.
 
 When both intersections exist, the reported quantity is the Euclidean length
-of that one normal-line segment,
+between the two returned original-coordinate points,
 
 ```text
-d_sample = t_lower + t_upper.
+d_sample = ||x_upper - x_lower||_2.
 ```
+
+In exact arithmetic this equals `t_lower + t_upper`. The returned-point
+formula is authoritative in finite precision so coordinate rounding cannot
+turn a larger stored separation into a false violation or proposed constraint.
 
 It is sampled geometric evidence, not a proof of the global minimum distance
 between curved level sets. The distinct diagnostic classification is

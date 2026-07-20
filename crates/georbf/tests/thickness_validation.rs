@@ -2,17 +2,20 @@
 
 use std::error::Error;
 use std::num::{NonZeroU32, NonZeroUsize};
+use std::sync::Mutex;
 
 use georbf::{
-    AffineNormalization, AngleUnit, AxisOrder, CenterRepresenter, ConditionPolicy,
-    CoordinateMetadata, CrsMetadata, DenseFactorization, DenseSolveOptions, Enforcement,
-    ExecutionOptions, FieldProblem, FittedField, FunctionalAtom, FunctionalExpr,
+    AffineNormalization, AngleUnit, AxisOrder, CancellationToken, CenterRepresenter,
+    ConditionPolicy, CoordinateMetadata, CrsMetadata, DenseFactorization, DenseSolveOptions,
+    Enforcement, ExecutionControl, ExecutionError, ExecutionOperation, ExecutionOptions,
+    ExecutionStage, FieldProblem, FittedField, FunctionalAtom, FunctionalExpr,
     FunctionalProvenance, FunctionalTerm, Handedness, KernelDefinition, LengthUnit, LevelId,
-    ObservationFunctional, ObservationId, Point, PolyharmonicSpline, Regularization,
-    SampledThicknessFailureReason, SampledThicknessLocation, SampledThicknessRequest,
-    SampledThicknessSettings, SemanticConstraint, SemanticExpression, SemanticProblemIr,
-    SemanticProvenance, SemanticRelation, SourceLocation, ThicknessDiagnosticKind,
-    ThicknessGuarantee, VerticalDirection,
+    ObservationFunctional, ObservationId, Point, PolyharmonicSpline, ProgressEvent, ProgressSink,
+    Regularization, SampledThicknessFailureReason, SampledThicknessLocation,
+    SampledThicknessRequest, SampledThicknessSettings, SampledThicknessValidationError,
+    SemanticConstraint, SemanticExpression, SemanticProblemIr, SemanticProvenance,
+    SemanticRelation, SourceLocation, ThicknessDiagnosticKind, ThicknessGuarantee,
+    VerticalDirection,
 };
 
 const TEST_MEMORY_LIMIT_BYTES: usize = 64 * 1024 * 1024;
@@ -110,17 +113,64 @@ fn locations() -> Result<Vec<SampledThicknessLocation<1>>, Box<dyn Error>> {
         .collect()
 }
 
+fn assert_provenance(actual: &SemanticProvenance, expected: &SemanticProvenance) {
+    assert_eq!(actual.observation_id(), expected.observation_id());
+    assert_eq!(actual.source().path(), expected.source().path());
+    assert_eq!(actual.source().line(), expected.source().line());
+    assert_eq!(actual.original_units(), expected.original_units());
+    assert_eq!(actual.field_path(), expected.field_path());
+    assert_eq!(actual.constraint_group(), expected.constraint_group());
+}
+
+struct CancelAfterEvaluations {
+    token: CancellationToken,
+    completed: usize,
+    events: Mutex<Vec<ProgressEvent>>,
+}
+
+impl CancelAfterEvaluations {
+    fn new(token: CancellationToken, completed: usize) -> Self {
+        Self {
+            token,
+            completed,
+            events: Mutex::new(Vec::new()),
+        }
+    }
+
+    fn events(&self) -> Vec<ProgressEvent> {
+        self.events
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+    }
+}
+
+impl ProgressSink for CancelAfterEvaluations {
+    fn on_progress(&self, event: ProgressEvent) {
+        self.events
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .push(event);
+        if event.stage() == ExecutionStage::SampledThicknessEvaluation
+            && event.completed() == self.completed
+        {
+            self.token.cancel();
+        }
+    }
+}
+
 #[test]
 fn fitted_parallel_levels_measure_quantiles_violations_and_proposals_deterministically()
 -> Result<(), Box<dyn Error>> {
     let model = linear_model()?;
+    let selected_locations = locations()?;
     let request = SampledThicknessRequest::try_new(
         LevelId::new(100),
         -1.0,
         LevelId::new(200),
         1.0,
         2.5,
-        locations()?,
+        selected_locations.clone(),
         vec![0.0, 0.5, 1.0],
         true,
         settings(2.0)?,
@@ -145,6 +195,18 @@ fn fitted_parallel_levels_measure_quantiles_violations_and_proposals_determinist
         assert!((measurement.lower_intersection().components()[0] + 1.0).abs() <= 1.0e-12);
         assert!((measurement.upper_intersection().components()[0] - 1.0).abs() <= 1.0e-12);
         assert!((measurement.distance() - 2.0).abs() <= 1.0e-12);
+        assert_provenance(
+            measurement.provenance(),
+            selected_locations[index].provenance(),
+        );
+        assert_provenance(
+            report.violations()[index].provenance(),
+            selected_locations[index].provenance(),
+        );
+        assert_provenance(
+            report.proposed_constraints()[index].provenance(),
+            selected_locations[index].provenance(),
+        );
     }
     assert_eq!(
         report.diagnostics().kind(),
@@ -153,6 +215,52 @@ fn fitted_parallel_levels_measure_quantiles_violations_and_proposals_determinist
     assert_eq!(
         report.diagnostics().guarantee(),
         ThicknessGuarantee::SampledGeometricEvidence
+    );
+    Ok(())
+}
+
+#[test]
+fn controlled_validation_cancels_at_an_exact_evaluation_boundary_without_a_report()
+-> Result<(), Box<dyn Error>> {
+    let model = linear_model()?;
+    let request = SampledThicknessRequest::try_new(
+        LevelId::new(1),
+        -1.0,
+        LevelId::new(2),
+        1.0,
+        2.5,
+        locations()?,
+        vec![0.5],
+        false,
+        settings(2.0)?,
+    )?;
+    let token = CancellationToken::new();
+    let sink = CancelAfterEvaluations::new(token.clone(), 3);
+
+    let result = model.try_validate_sampled_thickness_with_control(
+        &request,
+        ExecutionControl::new(Some(&token), Some(&sink)),
+    );
+    assert!(matches!(
+        result,
+        Err(SampledThicknessValidationError::Execution(
+            ExecutionError::Cancelled {
+                operation: ExecutionOperation::SampledThicknessValidation,
+                stage: ExecutionStage::SampledThicknessEvaluation,
+            }
+        ))
+    ));
+    let events = sink.events();
+    let evaluation_events = events
+        .iter()
+        .filter(|event| event.stage() == ExecutionStage::SampledThicknessEvaluation)
+        .count();
+    assert_eq!(evaluation_events, 3);
+    assert_eq!(events.last().map(|event| event.completed()), Some(3));
+    assert!(
+        !events
+            .iter()
+            .any(|event| event.stage() == ExecutionStage::Completed)
     );
     Ok(())
 }

@@ -20,3 +20,10 @@ microseconds with measurement checksum `32` and distance checksum `2.0`.
 Timings are a local regression baseline, not a cross-machine performance
 promise. Ready PR and `main` CI run the smoke workload on Windows, Ubuntu, and
 macOS.
+
+The THICK002-REV-001 through THICK002-REV-004 repair adds checked progress and
+cancellation boundaries to each fitted-field evaluation and measures the
+returned intersections directly. On the same machine, the repaired optimized
+run measured 2299.12 microseconds per validation with unchanged checksums
+`16000` and `1000.0`; the repaired smoke measured 1793.80 microseconds with
+unchanged checksums `32` and `2.0`.

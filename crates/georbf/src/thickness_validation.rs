@@ -66,9 +66,12 @@ use std::sync::Arc;
 
 use crate::LevelId;
 use crate::dimension::{Dim, SupportedDimension};
+use crate::execution::{
+    ExecutionControl, ExecutionError, ExecutionOperation, ExecutionStage, ProgressTracker,
+};
 use crate::geometry::{GeometryError, Point, UnitDirection};
 use crate::model::{FittedField, FittedFieldEvaluationError, FittedFieldOutput};
-use crate::problem_ir::{ProblemIrError, SemanticProvenance};
+use crate::problem_ir::{ExecutionOptions, ProblemIrError, SemanticProvenance};
 use crate::thickness::{LocalNormalThickness, LocalNormalThicknessError, ThicknessDiagnostics};
 
 /// One selected original-coordinate validation location and its provenance.
@@ -599,26 +602,49 @@ where
         &self,
         request: &SampledThicknessRequest<D>,
     ) -> Result<SampledThicknessReport<D>, SampledThicknessValidationError<D>> {
-        let mut scratch = self
+        self.try_validate_sampled_thickness_with_control(request, ExecutionControl::default())
+    }
+
+    /// Validates sampled separation with caller-owned cancellation and progress controls.
+    ///
+    /// Cancellation is checked before work, after reusable evaluation storage is
+    /// prepared, and after every fitted-field evaluation. A cancellation returns
+    /// no partial report. The borrowed control is never retained by the model.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same failures as [`Self::try_validate_sampled_thickness`], plus
+    /// a typed execution error when cancellation is observed.
+    pub fn try_validate_sampled_thickness_with_control(
+        &self,
+        request: &SampledThicknessRequest<D>,
+        control: ExecutionControl<'_>,
+    ) -> Result<SampledThicknessReport<D>, SampledThicknessValidationError<D>> {
+        let mut progress = validation_progress(request, control)?;
+        let scratch_result = self
             .try_evaluation_scratch(FittedFieldOutput::Gradient)
             .map_err(|source| SampledThicknessValidationError::Preparation {
                 source: Box::new(source),
+            });
+        let mut scratch = progress.observe_result(ExecutionStage::Started, scratch_result)?;
+        let report =
+            try_validate_with_progress(request, &mut progress, |point, demand| match demand {
+                EvaluationDemand::Value => {
+                    self.try_value_with_scratch(point, &mut scratch)
+                        .map(|value| FieldEvaluation {
+                            value,
+                            gradient: [0.0; D],
+                        })
+                }
+                EvaluationDemand::ValueGradient => self
+                    .try_evaluate_with_scratch(point, &mut scratch)
+                    .map(|evaluation| FieldEvaluation {
+                        value: evaluation.value(),
+                        gradient: evaluation.gradient().into_components(),
+                    }),
             })?;
-        try_validate_with(request, |point, demand| match demand {
-            EvaluationDemand::Value => {
-                self.try_value_with_scratch(point, &mut scratch)
-                    .map(|value| FieldEvaluation {
-                        value,
-                        gradient: [0.0; D],
-                    })
-            }
-            EvaluationDemand::ValueGradient => self
-                .try_evaluate_with_scratch(point, &mut scratch)
-                .map(|evaluation| FieldEvaluation {
-                    value: evaluation.value(),
-                    gradient: evaluation.gradient().into_components(),
-                }),
-        })
+        progress.complete()?;
+        Ok(report)
     }
 }
 
@@ -647,8 +673,72 @@ where
 }
 
 #[allow(clippy::too_many_lines)]
+#[cfg(test)]
 fn try_validate_with<const D: usize, E>(
     request: &SampledThicknessRequest<D>,
+    evaluate: E,
+) -> Result<SampledThicknessReport<D>, SampledThicknessValidationError<D>>
+where
+    Dim<D>: SupportedDimension,
+    E: FnMut(
+        Point<D>,
+        EvaluationDemand,
+    ) -> Result<FieldEvaluation<D>, FittedFieldEvaluationError<D>>,
+{
+    let mut progress = validation_progress(request, ExecutionControl::default())?;
+    let report = try_validate_with_progress(request, &mut progress, evaluate)?;
+    progress.complete()?;
+    Ok(report)
+}
+
+fn validation_progress<'a, const D: usize>(
+    request: &SampledThicknessRequest<D>,
+    control: ExecutionControl<'a>,
+) -> Result<ProgressTracker<'a>, SampledThicknessValidationError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let search_steps = usize::try_from(request.settings.search_steps.get()).map_err(|_| {
+        SampledThicknessValidationError::WorkBudgetOverflow {
+            location_count: request.locations.len(),
+            search_steps: request.settings.search_steps.get(),
+            refinement_iterations: request.settings.refinement_iterations.get(),
+        }
+    })?;
+    let refinement_iterations = usize::try_from(request.settings.refinement_iterations.get())
+        .map_err(|_| SampledThicknessValidationError::WorkBudgetOverflow {
+            location_count: request.locations.len(),
+            search_steps: request.settings.search_steps.get(),
+            refinement_iterations: request.settings.refinement_iterations.get(),
+        })?;
+    let per_location = search_steps
+        .checked_add(refinement_iterations)
+        .and_then(|per_side| per_side.checked_mul(2))
+        .and_then(|both_sides| both_sides.checked_add(1))
+        .ok_or(SampledThicknessValidationError::WorkBudgetOverflow {
+            location_count: request.locations.len(),
+            search_steps: request.settings.search_steps.get(),
+            refinement_iterations: request.settings.refinement_iterations.get(),
+        })?;
+    let total = request.locations.len().checked_mul(per_location).ok_or(
+        SampledThicknessValidationError::WorkBudgetOverflow {
+            location_count: request.locations.len(),
+            search_steps: request.settings.search_steps.get(),
+            refinement_iterations: request.settings.refinement_iterations.get(),
+        },
+    )?;
+    Ok(ProgressTracker::try_new(
+        control,
+        ExecutionOperation::SampledThicknessValidation,
+        ExecutionOptions::default(),
+        total,
+    )?)
+}
+
+#[allow(clippy::too_many_lines)]
+fn try_validate_with_progress<const D: usize, E>(
+    request: &SampledThicknessRequest<D>,
+    progress: &mut ProgressTracker<'_>,
     mut evaluate: E,
 ) -> Result<SampledThicknessReport<D>, SampledThicknessValidationError<D>>
 where
@@ -671,13 +761,13 @@ where
         try_vec(proposed_count, SampledThicknessStorage::ProposedConstraints)?;
 
     for (sample_index, location) in request.locations.iter().enumerate() {
-        let evaluated =
-            evaluate(location.point, EvaluationDemand::ValueGradient).map_err(|source| {
-                SampledThicknessValidationError::Evaluation {
-                    sample_index,
-                    source: Box::new(source),
-                }
-            })?;
+        let evaluated = evaluate_with_progress(
+            sample_index,
+            location.point,
+            EvaluationDemand::ValueGradient,
+            &mut evaluate,
+            progress,
+        )?;
         let gradient_norm = stable_norm(evaluated.gradient);
         if gradient_norm < request.settings.minimum_gradient_norm {
             failures.push(SampledThicknessFailure {
@@ -706,6 +796,7 @@ where
             -1.0,
             request.lower_value,
             &mut evaluate,
+            progress,
         )?;
         let upper = search_intersection(
             request,
@@ -716,6 +807,7 @@ where
             1.0,
             request.upper_value,
             &mut evaluate,
+            progress,
         )?;
         match (lower, upper) {
             (
@@ -728,7 +820,7 @@ where
                     distance: upper_distance,
                 },
             ) => {
-                let distance = lower_distance + upper_distance;
+                let distance = intersection_distance(lower_intersection, upper_intersection);
                 if !distance.is_finite() {
                     return Err(SampledThicknessValidationError::DistanceNotRepresentable {
                         sample_index,
@@ -820,6 +912,7 @@ fn search_intersection<const D: usize, E>(
     sign: f64,
     target: f64,
     evaluate: &mut E,
+    progress: &mut ProgressTracker<'_>,
 ) -> Result<SearchOutcome<D>, SampledThicknessValidationError<D>>
 where
     Dim<D>: SupportedDimension,
@@ -842,12 +935,13 @@ where
         let ratio = f64::from(step) / f64::from(settings.search_steps.get());
         let distance = settings.maximum_search_distance * ratio;
         let point = point_along(origin, normal, sign, distance, sample_index)?;
-        let evaluated = evaluate(point, EvaluationDemand::Value).map_err(|source| {
-            SampledThicknessValidationError::Evaluation {
-                sample_index,
-                source: Box::new(source),
-            }
-        })?;
+        let evaluated = evaluate_with_progress(
+            sample_index,
+            point,
+            EvaluationDemand::Value,
+            evaluate,
+            progress,
+        )?;
         let residual = checked_residual(evaluated.value, target, sample_index)?;
         if residual.abs() <= settings.value_tolerance {
             return Ok(SearchOutcome::Found { point, distance });
@@ -865,6 +959,7 @@ where
                 distance,
                 residual,
                 evaluate,
+                progress,
             );
         }
         previous_distance = distance;
@@ -888,6 +983,7 @@ fn refine_intersection<const D: usize, E>(
     mut right: f64,
     mut right_residual: f64,
     evaluate: &mut E,
+    progress: &mut ProgressTracker<'_>,
 ) -> Result<SearchOutcome<D>, SampledThicknessValidationError<D>>
 where
     Dim<D>: SupportedDimension,
@@ -900,12 +996,13 @@ where
     for _ in 0..settings.refinement_iterations.get() {
         let middle = left + (right - left) * 0.5;
         let point = point_along(origin, normal, sign, middle, sample_index)?;
-        let evaluated = evaluate(point, EvaluationDemand::Value).map_err(|source| {
-            SampledThicknessValidationError::Evaluation {
-                sample_index,
-                source: Box::new(source),
-            }
-        })?;
+        let evaluated = evaluate_with_progress(
+            sample_index,
+            point,
+            EvaluationDemand::Value,
+            evaluate,
+            progress,
+        )?;
         let residual = checked_residual(evaluated.value, target, sample_index)?;
         last_residual = residual.abs();
         if last_residual <= settings.value_tolerance || right - left <= settings.distance_tolerance
@@ -930,6 +1027,41 @@ where
             value_residual: last_residual,
         },
     ))
+}
+
+fn evaluate_with_progress<const D: usize, E>(
+    sample_index: usize,
+    point: Point<D>,
+    demand: EvaluationDemand,
+    evaluate: &mut E,
+    progress: &mut ProgressTracker<'_>,
+) -> Result<FieldEvaluation<D>, SampledThicknessValidationError<D>>
+where
+    Dim<D>: SupportedDimension,
+    E: FnMut(
+        Point<D>,
+        EvaluationDemand,
+    ) -> Result<FieldEvaluation<D>, FittedFieldEvaluationError<D>>,
+{
+    progress.observe_result(
+        ExecutionStage::SampledThicknessEvaluation,
+        Ok::<(), SampledThicknessValidationError<D>>(()),
+    )?;
+    let result =
+        evaluate(point, demand).map_err(|source| SampledThicknessValidationError::Evaluation {
+            sample_index,
+            source: Box::new(source),
+        });
+    progress.finish_work(ExecutionStage::SampledThicknessEvaluation, result)
+}
+
+fn intersection_distance<const D: usize>(lower: Point<D>, upper: Point<D>) -> f64
+where
+    Dim<D>: SupportedDimension,
+{
+    stable_norm::<D>(std::array::from_fn(|axis| {
+        upper.components()[axis] - lower.components()[axis]
+    }))
 }
 
 fn checked_residual<const D: usize>(
@@ -1128,6 +1260,17 @@ where
         /// Supplied probability.
         probability: f64,
     },
+    /// The checked maximum fitted-evaluation budget was not representable.
+    WorkBudgetOverflow {
+        /// Number of selected locations.
+        location_count: usize,
+        /// Maximum uniform search steps per side.
+        search_steps: u32,
+        /// Maximum bisection iterations per side.
+        refinement_iterations: u32,
+    },
+    /// Caller execution control stopped validation.
+    Execution(ExecutionError),
     /// Checked temporary allocation failed.
     AllocationFailed {
         /// Storage role.
@@ -1179,13 +1322,13 @@ where
         /// Concrete geometry failure.
         source: GeometryError,
     },
-    /// The sum of two finite intersection distances overflowed.
+    /// The Euclidean separation of the returned intersections was not representable.
     DistanceNotRepresentable {
         /// Zero-based input location index.
         sample_index: usize,
-        /// Lower-side distance.
+        /// Nominal lower-side line parameter retained for diagnostic context.
         lower_distance: f64,
-        /// Upper-side distance.
+        /// Nominal upper-side line parameter retained for diagnostic context.
         upper_distance: f64,
     },
     /// Proposed local-constraint construction failed.
@@ -1218,6 +1361,15 @@ where
                 formatter,
                 "sampled thickness quantile {index} must lie in [0, 1], got {probability}"
             ),
+            Self::WorkBudgetOverflow {
+                location_count,
+                search_steps,
+                refinement_iterations,
+            } => write!(
+                formatter,
+                "sampled thickness work budget is not representable for {location_count} locations, {search_steps} search steps, and {refinement_iterations} refinement iterations"
+            ),
+            Self::Execution(source) => source.fmt(formatter),
             Self::AllocationFailed { storage, requested } => write!(
                 formatter,
                 "could not reserve {requested} sampled thickness entries for {storage:?}"
@@ -1269,7 +1421,7 @@ where
                 upper_distance,
             } => write!(
                 formatter,
-                "sampled thickness distance at location {sample_index} is not representable from {lower_distance} and {upper_distance}"
+                "sampled thickness Euclidean intersection distance at location {sample_index} is not representable for nominal line parameters {lower_distance} and {upper_distance}"
             ),
             Self::ProposedConstraint(source) => source.fmt(formatter),
         }
@@ -1287,6 +1439,7 @@ where
                 Some(source)
             }
             Self::Provenance { source, .. } => Some(source),
+            Self::Execution(source) => Some(source),
             Self::ProposedConstraint(source) => Some(source),
             Self::EqualLevels { .. }
             | Self::InvalidLevelValues { .. }
@@ -1294,10 +1447,20 @@ where
             | Self::EmptyLocations
             | Self::EmptyQuantiles
             | Self::InvalidQuantile { .. }
+            | Self::WorkBudgetOverflow { .. }
             | Self::AllocationFailed { .. }
             | Self::ResidualNotRepresentable { .. }
             | Self::DistanceNotRepresentable { .. } => None,
         }
+    }
+}
+
+impl<const D: usize> From<ExecutionError> for SampledThicknessValidationError<D>
+where
+    Dim<D>: SupportedDimension,
+{
+    fn from(source: ExecutionError) -> Self {
+        Self::Execution(source)
     }
 }
 
@@ -1395,6 +1558,55 @@ mod tests {
     }
 
     #[test]
+    fn rounded_search_points_use_returned_intersection_distance_without_false_proposals()
+    -> Result<(), Box<dyn Error>> {
+        let origin = 1.0e16;
+        let request = SampledThicknessRequest::try_new(
+            LevelId::new(1),
+            origin - 2.0,
+            LevelId::new(2),
+            origin + 2.0,
+            3.5,
+            vec![SampledThicknessLocation::new(
+                Point::try_new([origin])?,
+                provenance(11)?,
+            )],
+            vec![0.5],
+            true,
+            SampledThicknessSettings::try_new(
+                2.0,
+                NonZeroU32::new(4).ok_or("search steps")?,
+                NonZeroU32::new(4).ok_or("refinement iterations")?,
+                1.0e-12,
+                1.0e-12,
+                1.0e-12,
+            )?,
+        )?;
+        let report = try_validate_with(
+            &request,
+            |point, _| -> Result<FieldEvaluation<1>, FittedFieldEvaluationError<1>> {
+                Ok(FieldEvaluation {
+                    value: point.components()[0],
+                    gradient: [1.0],
+                })
+            },
+        )?;
+        let measurement = &report.measurements()[0];
+        let euclidean_distance = (measurement.upper_intersection().components()[0]
+            - measurement.lower_intersection().components()[0])
+            .abs();
+
+        assert_eq!(euclidean_distance.to_bits(), 4.0_f64.to_bits());
+        assert_eq!(
+            measurement.distance().to_bits(),
+            euclidean_distance.to_bits()
+        );
+        assert!(report.violations().is_empty());
+        assert!(report.proposed_constraints().is_empty());
+        Ok(())
+    }
+
+    #[test]
     fn curved_level_truth_matches_independent_line_roots_and_quantiles()
     -> Result<(), Box<dyn Error>> {
         let xs = [0.0_f64, 0.25, 1.0];
@@ -1464,6 +1676,51 @@ mod tests {
             (report.quantiles()[2].distance().ok_or("maximum quantile")? - expected[2]).abs()
                 <= 2.0e-10
         );
+        Ok(())
+    }
+
+    #[test]
+    fn off_grid_tangential_contact_is_reported_as_not_found() -> Result<(), Box<dyn Error>> {
+        let request = SampledThicknessRequest::try_new(
+            LevelId::new(1),
+            -1.0,
+            LevelId::new(2),
+            1.0,
+            1.0,
+            vec![SampledThicknessLocation::new(
+                Point::try_new([0.5, -0.25])?,
+                provenance(10)?,
+            )],
+            vec![0.5],
+            false,
+            SampledThicknessSettings::try_new(
+                2.0,
+                NonZeroU32::new(4).ok_or("search steps")?,
+                NonZeroU32::new(64).ok_or("refinement iterations")?,
+                1.0e-12,
+                1.0e-12,
+                1.0e-12,
+            )?,
+        )?;
+        let report = try_validate_with(
+            &request,
+            |point, _| -> Result<FieldEvaluation<2>, FittedFieldEvaluationError<2>> {
+                let [x, y] = *point.components();
+                Ok(FieldEvaluation {
+                    value: x * x + y,
+                    gradient: [2.0 * x, 1.0],
+                })
+            },
+        )?;
+
+        assert!(report.measurements().is_empty());
+        assert!(matches!(
+            report.failures()[0].reason(),
+            super::SampledThicknessFailureReason::Intersections {
+                lower: Some(super::ThicknessIntersectionFailure::NotFound),
+                upper: None,
+            }
+        ));
         Ok(())
     }
 }
