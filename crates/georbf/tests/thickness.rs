@@ -121,6 +121,22 @@ where
     )?)
 }
 
+struct LooseUpperBound<T> {
+    item: Option<T>,
+}
+
+impl<T> Iterator for LooseUpperBound<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.item.take()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(usize::MAX))
+    }
+}
+
 fn compile_local<const D: usize>(
     minimum_thickness: f64,
 ) -> Result<georbf::CompiledLevelProblem, Box<dyn Error>>
@@ -198,6 +214,86 @@ fn local_cones_are_dimension_safe_and_preserve_ordered_signs() -> TestResult {
     assert_dimension::<1>()?;
     assert_dimension::<2>()?;
     assert_dimension::<3>()?;
+    Ok(())
+}
+
+#[test]
+fn loose_iterator_upper_bound_does_not_reject_a_trivial_constraint() -> TestResult {
+    let constraints = LooseUpperBound {
+        item: Some(local_constraint::<1>(400, 1.0)?),
+    };
+    let compiled = compile_level_problem::<1>()?.try_compose_local_normal_thickness(
+        constraints,
+        |functional, _| {
+            let FunctionalAtom::DirectionalDerivative { direction, .. } =
+                functional.expression().terms()[0].atom()
+            else {
+                return Err(ProblemIrError::MemoryEstimateOverflow);
+            };
+            let axis = direction
+                .components()
+                .iter()
+                .position(|component| component.to_bits() == 1.0_f64.to_bits())
+                .ok_or(ProblemIrError::MemoryEstimateOverflow)?;
+            AffineExpression::try_new([AffineTerm::try_new(axis + 2, 1.0)?], 0.0)
+        },
+    )?;
+    assert_eq!(compiled.canonical_problem().second_order_cones().len(), 1);
+    Ok(())
+}
+
+#[test]
+fn sample_point_and_complete_provenance_cross_compilation_boundaries() -> TestResult {
+    let point = Point::try_new([1.25, -2.5, 3.75])?;
+    let expected_provenance = SemanticProvenance::try_new(
+        ObservationId::new(777),
+        SourceLocation::try_new(
+            "sections/alpha-thickness.csv".to_owned(),
+            NonZeroUsize::new(37).ok_or("line")?,
+        )?,
+        "metres".to_owned(),
+        "fields.stratigraphy.local_thickness.samples[7]".to_owned(),
+        Some("section-alpha".to_owned()),
+    )?;
+    let constraint = LocalNormalThickness::try_new(
+        LevelId::new(10),
+        LevelId::new(20),
+        point,
+        2.0,
+        expected_provenance.clone(),
+    )?;
+    let mut expected_axis = 0_usize;
+    let compiled = compile_level_problem::<3>()?.try_compose_local_normal_thickness(
+        [constraint],
+        |functional, provenance| {
+            assert_eq!(provenance, &expected_provenance);
+            let [term] = functional.expression().terms() else {
+                return Err(ProblemIrError::MemoryEstimateOverflow);
+            };
+            let FunctionalAtom::DirectionalDerivative {
+                point: callback_point,
+                direction,
+                ..
+            } = term.atom()
+            else {
+                return Err(ProblemIrError::MemoryEstimateOverflow);
+            };
+            assert_eq!(callback_point, point);
+            let axis = direction
+                .components()
+                .iter()
+                .position(|component| component.to_bits() == 1.0_f64.to_bits())
+                .ok_or(ProblemIrError::MemoryEstimateOverflow)?;
+            assert_eq!(axis, expected_axis);
+            expected_axis += 1;
+            AffineExpression::try_new([AffineTerm::try_new(axis + 2, 1.0)?], 0.0)
+        },
+    )?;
+    assert_eq!(expected_axis, 3);
+    assert_eq!(
+        compiled.canonical_problem().second_order_cones()[0].provenance(),
+        &expected_provenance
+    );
     Ok(())
 }
 
@@ -398,7 +494,7 @@ fn invalid_or_failed_linearization_is_source_indexed() -> TestResult {
 }
 
 #[test]
-fn thickness_scaling_rejects_overflow_and_underflow() -> TestResult {
+fn thickness_scaling_rejects_coefficient_and_constant_overflow_and_underflow() -> TestResult {
     let overflow = compile_level_problem::<1>()?
         .try_compose_local_normal_thickness([local_constraint::<1>(400, 2.0)?], |_, _| {
             AffineExpression::try_new([AffineTerm::try_new(2, f64::MAX)?], 0.0)
@@ -428,6 +524,47 @@ fn thickness_scaling_rejects_overflow_and_underflow() -> TestResult {
             }
         )
     ));
+
+    let constant_overflow = compile_level_problem::<1>()?
+        .try_compose_local_normal_thickness([local_constraint::<1>(400, 2.0)?], |_, _| {
+            AffineExpression::try_new([], f64::MAX)
+        });
+    assert!(matches!(
+        constant_overflow,
+        Err(
+            ThicknessCanonicalizationError::ScaledGradientConstantNotRepresentable {
+                constraint_index: 0,
+                axis: 0,
+                ..
+            }
+        )
+    ));
+
+    let constant_underflow = compile_level_problem::<1>()?.try_compose_local_normal_thickness(
+        [local_constraint::<1>(400, f64::from_bits(1))?],
+        |_, _| AffineExpression::try_new([], f64::MIN_POSITIVE),
+    );
+    assert!(matches!(
+        constant_underflow,
+        Err(
+            ThicknessCanonicalizationError::ScaledGradientConstantNotRepresentable {
+                constraint_index: 0,
+                axis: 0,
+                ..
+            }
+        )
+    ));
+
+    let exact_zero_constant = compile_level_problem::<1>()?
+        .try_compose_local_normal_thickness([local_constraint::<1>(400, 2.0)?], |_, _| {
+            AffineExpression::try_new([AffineTerm::try_new(2, 1.0)?], 0.0)
+        })?;
+    assert_eq!(
+        exact_zero_constant.canonical_problem().second_order_cones()[0].lhs()[0]
+            .constant()
+            .to_bits(),
+        0.0_f64.to_bits()
+    );
     Ok(())
 }
 

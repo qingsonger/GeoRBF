@@ -348,16 +348,41 @@ where
     Dim<D>: SupportedDimension,
 {
     let iterator = constraints.into_iter();
-    let (minimum, maximum) = iterator.size_hint();
-    let requested = maximum.unwrap_or(minimum);
+    let minimum = iterator.size_hint().0;
     let mut values = Vec::new();
-    values
-        .try_reserve(requested)
-        .map_err(|_| ThicknessCanonicalizationError::AllocationFailed { requested })?;
+    if minimum > 0 {
+        values
+            .try_reserve_exact(minimum)
+            .map_err(|_| ThicknessCanonicalizationError::AllocationFailed { requested: minimum })?;
+    }
     for value in iterator {
+        if values.len() == values.capacity() {
+            let requested = values.len().saturating_add(1);
+            try_reserve_constraint_growth(&mut values, requested)?;
+        }
         values.push(value);
     }
     Ok(values)
+}
+
+#[cfg(test)]
+std::thread_local! {
+    static FORCE_CONSTRAINT_GROWTH_ALLOCATION_FAILURE: std::cell::Cell<bool> =
+        const { std::cell::Cell::new(false) };
+}
+
+fn try_reserve_constraint_growth<T, E>(
+    values: &mut Vec<T>,
+    requested: usize,
+) -> Result<(), ThicknessCanonicalizationError<E>> {
+    #[cfg(test)]
+    if FORCE_CONSTRAINT_GROWTH_ALLOCATION_FAILURE.with(|force| force.replace(false)) {
+        return Err(ThicknessCanonicalizationError::AllocationFailed { requested });
+    }
+
+    values
+        .try_reserve(1)
+        .map_err(|_| ThicknessCanonicalizationError::AllocationFailed { requested })
 }
 
 fn cartesian_derivative<const D: usize>(
@@ -631,5 +656,150 @@ where
             | Self::ScaledGradientConstantNotRepresentable { .. }
             | Self::AllocationFailed { .. } => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::num::NonZeroUsize;
+
+    use super::*;
+    use crate::levels::{LevelDefinition, LevelMembership, LevelProblem, LevelValue};
+    use crate::problem_ir::{SourceLocation, VariableBlock};
+
+    type TestResult<T = ()> = Result<T, Box<dyn Error>>;
+
+    struct ForcedConstraintGrowthAllocationFailure;
+
+    impl ForcedConstraintGrowthAllocationFailure {
+        fn new() -> Self {
+            FORCE_CONSTRAINT_GROWTH_ALLOCATION_FAILURE.with(|force| force.set(true));
+            Self
+        }
+    }
+
+    impl Drop for ForcedConstraintGrowthAllocationFailure {
+        fn drop(&mut self) {
+            FORCE_CONSTRAINT_GROWTH_ALLOCATION_FAILURE.with(|force| force.set(false));
+        }
+    }
+
+    struct UnknownLength<T, const N: usize> {
+        inner: std::array::IntoIter<T, N>,
+    }
+
+    impl<T, const N: usize> Iterator for UnknownLength<T, N> {
+        type Item = T;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            self.inner.next()
+        }
+
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            (0, None)
+        }
+    }
+
+    fn provenance(identifier: u64, field_path: &str) -> TestResult<SemanticProvenance> {
+        Ok(SemanticProvenance::try_new(
+            ObservationId::new(identifier),
+            SourceLocation::try_new(
+                "tests/thickness.rs".to_owned(),
+                NonZeroUsize::new(usize::try_from(identifier)? + 1).ok_or("line")?,
+            )?,
+            "m".to_owned(),
+            field_path.to_owned(),
+            Some("thickness".to_owned()),
+        )?)
+    }
+
+    fn value_functional(identifier: u64, x: f64) -> TestResult<ObservationFunctional<1>> {
+        Ok(ObservationFunctional::new(FunctionalExpr::try_new([
+            FunctionalTerm::try_new(
+                1.0,
+                FunctionalAtom::value(Point::try_new([x])?, FunctionalProvenance::new(identifier)),
+            )?,
+        ])?))
+    }
+
+    fn compiled_level_problem() -> TestResult<CompiledLevelProblem> {
+        let lower = LevelId::new(10);
+        let upper = LevelId::new(20);
+        let levels = LevelProblem::try_new(
+            [
+                LevelDefinition::new(
+                    lower,
+                    LevelValue::try_fixed(0.0)?,
+                    provenance(100, "levels.lower")?,
+                ),
+                LevelDefinition::new(
+                    upper,
+                    LevelValue::try_fixed(10.0)?,
+                    provenance(101, "levels.upper")?,
+                ),
+            ],
+            [
+                LevelMembership::new(
+                    lower,
+                    value_functional(200, 0.0)?,
+                    provenance(200, "memberships.lower")?,
+                ),
+                LevelMembership::new(
+                    upper,
+                    value_functional(201, 10.0)?,
+                    provenance(201, "memberships.upper")?,
+                ),
+            ],
+            [LevelOrder::try_new(
+                lower,
+                upper,
+                2.0,
+                provenance(300, "orders.scalar_gap")?,
+            )?],
+        )?;
+        let mut membership_variable = 0_usize;
+        Ok(levels.try_compile(
+            [VariableBlock::try_new(
+                "field".to_owned(),
+                NonZeroUsize::new(3).ok_or("field block")?,
+            )?],
+            |_, _| {
+                let variable = membership_variable;
+                membership_variable += 1;
+                AffineExpression::try_new([AffineTerm::try_new(variable, 1.0)?], 0.0)
+            },
+        )?)
+    }
+
+    fn local_constraint(identifier: u64) -> TestResult<LocalNormalThickness<1>> {
+        Ok(LocalNormalThickness::try_new(
+            LevelId::new(10),
+            LevelId::new(20),
+            Point::try_new([0.5])?,
+            1.0,
+            provenance(identifier, &format!("local_thickness[{identifier}]"))?,
+        )?)
+    }
+
+    #[test]
+    fn unknown_length_growth_allocation_failure_is_structured_without_partial_problem()
+    -> TestResult<()> {
+        let compiled = compiled_level_problem()?;
+        let constraints = UnknownLength {
+            inner: [local_constraint(400)?, local_constraint(401)?].into_iter(),
+        };
+        let _failure = ForcedConstraintGrowthAllocationFailure::new();
+        let mut linearizer_called = false;
+        let result = compiled.try_compose_local_normal_thickness(constraints, |_, _| {
+            linearizer_called = true;
+            AffineExpression::try_new([AffineTerm::try_new(2, 1.0)?], 0.0)
+        });
+
+        assert!(matches!(
+            result,
+            Err(ThicknessCanonicalizationError::AllocationFailed { requested: 1 })
+        ));
+        assert!(!linearizer_called);
+        Ok(())
     }
 }
