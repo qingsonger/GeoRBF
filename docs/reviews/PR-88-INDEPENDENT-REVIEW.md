@@ -7,7 +7,8 @@
 - Reviewed head: `8724f288b1415b95492e2195a2f72e2032d1b9b1`
 - Base head: `0ae971439a900d3649051dd22bc5ba62d4830307`
 - Review date: 2026-07-20
-- Result: P1 R88-001, P2 R88-002, and P2 R88-003 require repair
+- Result: repairs implemented for R88-001, R88-002, and R88-003; fresh
+  independent re-review required
 
 ## Scope and independence
 
@@ -90,6 +91,36 @@ succeed; each must return `AllocationFailed { requested: 2 }` without aborting.
 
 No other P0, P1, P2, or P3 finding was reported.
 
+## Repair evidence (not an independent re-review)
+
+Repair implementation head `e94d19bf8baeb94901686f44499e7fdcf9e503c4`
+addresses only the three findings above:
+
+- R88-001: positive angular inputs now return the structured
+  `AngularConeAngleNotRepresentable` error if degree conversion or tangent
+  evaluation loses the positive cone slope. An independent regression rejects
+  `f64::from_bits(1)` degrees and proves that the same smallest positive value
+  in radians retains a nonzero canonical right-hand-side coefficient.
+- R88-002: D=3 complement-based `DirectionOnly`, `AxialDirection`, and
+  `DirectionWithPolarity` now reject componentwise AbsoluteL1 and Huber losses
+  with `UnsupportedComplementSoftLoss`. SquaredL2 remains supported, and a
+  regression evaluates the complete canonical objective before and after a
+  45-degree rotation about the same normal. D=2's single complement row remains
+  available for L1, while scalar cone and bound losses are unchanged.
+- R88-003: final AngularCone role and constraint vectors now use separately
+  fallible exact reservations. Storage-targeted allocation failpoints force
+  each final reservation independently after provenance, basis, and cone-row
+  allocation and receive `AllocationFailed { requested: 2 }` without partial
+  success.
+
+Ten focused integration tests and two allocation-failpoint unit tests pass.
+After the final code change, the exact implementation tree passed
+`cargo fmt --all -- --check`, workspace/all-target/all-feature Clippy with
+warnings denied, workspace/all-feature tests, workspace doctests, and
+`cargo xtask requirements check` (58 requirements). The requirement remains
+`implemented`, PR #88 remains Draft, and none of these repair assertions is a
+substitute for the required fresh independent re-review.
+
 ## Independent mathematical review
 
 The gradient equalities, oriented lower-bound sign, ordered Lorentz layout,
@@ -124,8 +155,7 @@ correctly `implemented` rather than `integrated`.
   CI, build input, API, or numerical behavior changes.
 
 PR #88 must remain Draft and REQ-NORMAL-001 must remain `implemented`. Open a
-fresh Repair task limited to R88-001, R88-002, and R88-003, add the required
-independent regressions, implement the smallest complete repairs, run focused
-checks and the final stable-head standard gate, update this review evidence and
-the bounded handoff, push, and stop for a fresh independent re-review. Do not
-begin REQ-TANGENT-001 or any other requirement.
+fresh Review/re-review task for exact repair implementation head `e94d19b` and
+the final evidence-only head. The independent reviewer must verify that
+R88-001, R88-002, and R88-003 are closed and check for new P0-P3 findings. Do
+not begin REQ-TANGENT-001 or any other requirement.

@@ -6,48 +6,51 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; Repair required
+- Mode: Repair complete; fresh independent re-review required
 - Requirement: REQ-NORMAL-001, Issue #87
 - Branch: `codex/req-normal-001-observations`
 - Pull request: #88 (Draft)
 - Reviewed head: `8724f288b1415b95492e2195a2f72e2032d1b9b1`
+- Repair implementation head: `e94d19bf8baeb94901686f44499e7fdcf9e503c4`
 - Registry state: `implemented`, not `integrated`
 - Dependencies: REQ-ORIENT-001 and REQ-CONVEX-001 are `integrated`
 
-## Independent review findings
+## Repair disposition
 
-- P1 R88-001: a positive degree angle can underflow to zero during radians
-  conversion, silently strengthening the requested hard angular cone.
-- P2 R88-002: componentwise L1 and Huber losses on D=3 complement rows depend
-  on the arbitrary complement basis and are not rotation invariant.
-- P2 R88-003: the final AngularCone roles and constraints use infallible `vec!`
-  allocations despite the structured allocation-failure contract.
-- Full evidence and required regressions are in
-  `docs/reviews/PR-88-INDEPENDENT-REVIEW.md`.
+- R88-001 is repaired with a structured representability error when a positive
+  angle loses its positive cone slope during conversion or tangent evaluation;
+  the minimum-positive-degree regression cannot compile a zero-angle cone.
+- R88-002 is repaired by accepting rotation-invariant SquaredL2 and rejecting
+  componentwise L1/Huber for D=3 multi-row complement semantics. The complete
+  SquaredL2 canonical objective is rotation-tested; D=2 L1 remains supported.
+- R88-003 is repaired with separately fallible final role and constraint
+  reservations and storage-targeted allocation-failpoint regressions.
+- These are repair assertions, not an independent finding closure. Full review
+  and repair evidence is in `docs/reviews/PR-88-INDEPENDENT-REVIEW.md`.
 
 ## Validation state
 
-- A fresh read-only project `math_reviewer` independently reviewed exact base
-  `0ae9714` and head `8724f28` from bounded requirement, dependency, normative,
-  diff, test, benchmark, registry, handoff, and validation evidence.
-- The reviewer and parent task each passed all 8 focused normal-observation
-  tests; the current tests do not cover R88-001, R88-002, or R88-003.
-- The parent task passed the example and benchmark smoke; checksum was `11088`.
-- Draft CI run 29723009629 passed the configured Ubuntu correctness job on exact
-  reviewed head `8724f28`. Ready-only three-platform and benchmark smoke jobs
-  correctly did not run.
-- The complete standard gate recorded for exact implementation head `8724f28`
-  remains valid. This Review task changes only review and bounded-handoff
-  documents; it changes no production, test, manifest, schema, CI, build input,
-  API, or numerical behavior.
+- Exact repair implementation head `e94d19b` contains the production, test,
+  Rustdoc, normative-math, and requirement-fragment changes.
+- All 10 focused integration tests and both allocation-failpoint unit tests
+  pass after the repairs.
+- After the final code change, the exact implementation tree passed all five
+  standard checks: format, workspace/all-target/all-feature Clippy with
+  warnings denied, workspace/all-feature tests, workspace doctests, and the
+  58-requirement registry check.
+- Draft CI on the earlier reviewed head does not validate this repair. PR #88
+  remains Draft pending a fresh independent re-review and new-head Draft CI.
+- This handoff change and the appended repair evidence are documentation-only;
+  they do not change the validated implementation tree.
 
 ## Next task boundary
 
-Open a fresh Repair task limited to R88-001, R88-002, and R88-003. Add the
-specified independent regressions before or alongside the smallest complete
-repairs, run focused checks during repair and the complete standard gate after
-the final code change, update review evidence and this bounded handoff, push,
-and stop for a fresh independent re-review. Do not begin REQ-TANGENT-001.
+Open a fresh Review/re-review task for PR #88. Supply the independent reviewer
+only the bounded REQ-NORMAL-001 context, original findings, exact repair diff,
+tests, normative documents, registry/handoff, and validation evidence. Verify
+that R88-001, R88-002, and R88-003 are closed and check for new P0-P3 findings.
+If clean, follow the mandatory ready-head CI and integration sequence in that
+fresh task. Do not begin REQ-TANGENT-001.
 
 ## Durable evidence
 
