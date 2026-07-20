@@ -750,9 +750,8 @@ where
     /// Returns structured transform, capability, kernel, polynomial,
     /// allocation, or finite-representation diagnostics.
     pub fn try_value(&self, point: Point<D>) -> Result<f64, FittedFieldEvaluationError<D>> {
-        Ok(self
-            .try_evaluate_normalized(point, FittedFieldOutput::Value)?
-            .value)
+        let mut scratch = self.try_evaluation_scratch(FittedFieldOutput::Value)?;
+        self.try_value_with_scratch(point, &mut scratch)
     }
 
     /// Evaluates scalar value and Cartesian gradient in original coordinates.
@@ -765,7 +764,18 @@ where
         &self,
         point: Point<D>,
     ) -> Result<FittedFieldEvaluation<D>, FittedFieldEvaluationError<D>> {
-        let normalized = self.try_evaluate_normalized(point, FittedFieldOutput::Gradient)?;
+        let mut scratch = self.try_evaluation_scratch(FittedFieldOutput::Gradient)?;
+        self.try_evaluate_with_scratch(point, &mut scratch)
+    }
+
+    /// Evaluates value and gradient with reusable crate-internal storage.
+    pub(crate) fn try_evaluate_with_scratch(
+        &self,
+        point: Point<D>,
+        scratch: &mut FittedFieldEvaluationScratch<D>,
+    ) -> Result<FittedFieldEvaluation<D>, FittedFieldEvaluationError<D>> {
+        let normalized =
+            self.try_evaluate_normalized_with_scratch(point, FittedFieldOutput::Gradient, scratch)?;
         let gradient = self
             .normalization
             .gradient_to_original(Vector::try_new(normalized.gradient).map_err(|_| {
@@ -780,6 +790,17 @@ where
         })
     }
 
+    /// Evaluates a value with reusable crate-internal storage.
+    pub(crate) fn try_value_with_scratch(
+        &self,
+        point: Point<D>,
+        scratch: &mut FittedFieldEvaluationScratch<D>,
+    ) -> Result<f64, FittedFieldEvaluationError<D>> {
+        Ok(self
+            .try_evaluate_normalized_with_scratch(point, FittedFieldOutput::Value, scratch)?
+            .value)
+    }
+
     /// Evaluates scalar value, gradient, and Hessian in original coordinates.
     ///
     /// # Errors
@@ -791,7 +812,12 @@ where
         &self,
         point: Point<D>,
     ) -> Result<FittedFieldSecondOrderEvaluation<D>, FittedFieldEvaluationError<D>> {
-        let normalized = self.try_evaluate_normalized(point, FittedFieldOutput::Hessian)?;
+        let mut scratch = self.try_evaluation_scratch(FittedFieldOutput::Hessian)?;
+        let normalized = self.try_evaluate_normalized_with_scratch(
+            point,
+            FittedFieldOutput::Hessian,
+            &mut scratch,
+        )?;
         let gradient = self
             .normalization
             .gradient_to_original(Vector::try_new(normalized.gradient).map_err(|_| {
@@ -839,10 +865,35 @@ where
     }
 
     #[allow(clippy::too_many_lines)]
-    fn try_evaluate_normalized(
+    /// Allocates reusable polynomial storage for a crate-internal batch.
+    pub(crate) fn try_evaluation_scratch(
+        &self,
+        output: FittedFieldOutput,
+    ) -> Result<FittedFieldEvaluationScratch<D>, FittedFieldEvaluationError<D>> {
+        let count = self
+            .polynomial_space()
+            .map_or(0, PolynomialSpace::term_count);
+        Ok(FittedFieldEvaluationScratch {
+            values: try_filled(count, 0.0, FittedFieldStorage::PolynomialValues)?,
+            gradients: if output >= FittedFieldOutput::Gradient {
+                try_filled(count, [0.0; D], FittedFieldStorage::PolynomialGradients)?
+            } else {
+                Vec::new()
+            },
+            hessians: if output >= FittedFieldOutput::Hessian {
+                try_filled(count, [[0.0; D]; D], FittedFieldStorage::PolynomialHessians)?
+            } else {
+                Vec::new()
+            },
+        })
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn try_evaluate_normalized_with_scratch(
         &self,
         original_point: Point<D>,
         output: FittedFieldOutput,
+        scratch: &mut FittedFieldEvaluationScratch<D>,
     ) -> Result<NormalizedEvaluation<D>, FittedFieldEvaluationError<D>> {
         let overall_capability = self.capabilities.for_output(output);
         if overall_capability == KernelDerivativeCapability::Unsupported {
@@ -949,7 +1000,7 @@ where
             }
         }
 
-        self.try_add_polynomial(query, output, &mut evaluation)?;
+        self.try_add_polynomial(query, output, &mut evaluation, scratch)?;
         Ok(evaluation)
     }
 
@@ -958,31 +1009,25 @@ where
         query: Point<D>,
         output: FittedFieldOutput,
         evaluation: &mut NormalizedEvaluation<D>,
+        scratch: &mut FittedFieldEvaluationScratch<D>,
     ) -> Result<(), FittedFieldEvaluationError<D>> {
         let Some(space) = self.polynomial_space() else {
             return Ok(());
         };
-        let count = space.term_count();
-        let mut values = try_filled(count, 0.0, FittedFieldStorage::PolynomialValues)?;
-        let mut gradients = if output >= FittedFieldOutput::Gradient {
-            try_filled(count, [0.0; D], FittedFieldStorage::PolynomialGradients)?
-        } else {
-            Vec::new()
-        };
-        let mut hessians = if output >= FittedFieldOutput::Hessian {
-            try_filled(count, [[0.0; D]; D], FittedFieldStorage::PolynomialHessians)?
-        } else {
-            Vec::new()
-        };
         match output {
             FittedFieldOutput::Value => space
-                .try_evaluate_values(query, &mut values)
+                .try_evaluate_values(query, &mut scratch.values)
                 .map_err(FittedFieldEvaluationError::Polynomial)?,
             FittedFieldOutput::Gradient => space
-                .try_evaluate(query, &mut values, &mut gradients)
+                .try_evaluate(query, &mut scratch.values, &mut scratch.gradients)
                 .map_err(FittedFieldEvaluationError::Polynomial)?,
             FittedFieldOutput::Hessian => space
-                .try_evaluate_through_second(query, &mut values, &mut gradients, &mut hessians)
+                .try_evaluate_through_second(
+                    query,
+                    &mut scratch.values,
+                    &mut scratch.gradients,
+                    &mut scratch.hessians,
+                )
                 .map_err(FittedFieldEvaluationError::Polynomial)?,
         }
 
@@ -991,12 +1036,12 @@ where
             accumulate_polynomial(
                 &mut evaluation.value,
                 coefficient,
-                values[term_index],
+                scratch.values[term_index],
                 FittedFieldComponent::Value,
                 term_index,
             )?;
             if output >= FittedFieldOutput::Gradient {
-                for (axis, action) in gradients[term_index].iter().copied().enumerate() {
+                for (axis, action) in scratch.gradients[term_index].iter().copied().enumerate() {
                     accumulate_polynomial(
                         &mut evaluation.gradient[axis],
                         coefficient,
@@ -1007,7 +1052,7 @@ where
                 }
             }
             if output >= FittedFieldOutput::Hessian {
-                for (row, values) in hessians[term_index].iter().enumerate() {
+                for (row, values) in scratch.hessians[term_index].iter().enumerate() {
                     for (column, action) in values.iter().copied().enumerate() {
                         accumulate_polynomial(
                             &mut evaluation.hessian[row][column],
@@ -1387,6 +1432,16 @@ struct NormalizedEvaluation<const D: usize> {
     value: f64,
     gradient: [f64; D],
     hessian: [[f64; D]; D],
+}
+
+/// Reusable polynomial work buffers for crate-internal batch evaluation.
+pub(crate) struct FittedFieldEvaluationScratch<const D: usize>
+where
+    Dim<D>: SupportedDimension,
+{
+    values: Vec<f64>,
+    gradients: Vec<[f64; D]>,
+    hessians: Vec<[[f64; D]; D]>,
 }
 
 const fn combined_order(

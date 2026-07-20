@@ -6,71 +6,66 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-THICK-001 complete
-- Requirement: REQ-THICK-001, Issue #93 (closed)
-- Implementation pull request: #94, squash-merged as `59a42d9`
-- Integration-state branch: `codex/req-thick-001-integration-state`
-- Integration-state pull request: #95 (Draft until exact Ready CI is green)
-- Review record: `docs/reviews/PR-94-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: select with `cargo xtask requirements next`
+- Mode: Implement complete; independent Review required
+- Requirement: REQ-THICK-002, Issue #96
+- Branch: `codex/req-thick-002-sampled-validation`
+- Draft pull request: pending publication from this implementation task
+- Registry state: `in_progress` until the Draft PR number is recorded; the
+  scoped implementation itself is complete and not integrated
+- Dependencies: REQ-THICK-001 and REQ-MODEL-001 are integrated
 
-## Integration result
+## Implementation result
 
-- A fresh read-only project `math_reviewer` independently re-reviewed the exact
-  complete PR and repair using only bounded requirement, dependency, normative,
-  diff, test, benchmark, registry, handoff, and validation evidence.
-- THICK-REV-001 through THICK-REV-003 are closed. No P0, P1, P2, or P3 finding
-  remained before integration; the independent review requirement is complete.
-- Exact implementation Ready head `e1ac47a` passed Windows, Ubuntu, and macOS
-  with every configured backend and benchmark-smoke workload, including
-  `local_thickness_compilation`, in CI run 29750190504.
-- PR #94 squash-merged exactly once as `59a42d9`; Issue #93 closed as
-  completed.
-- Post-merge `main` run 29752225970 passed the same complete three-platform
-  correctness, backend, benchmark-smoke, and requirement-registry gate on
-  `59a42d9`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, normative contract, numerical
-  behavior, dependency, tag, or release.
+- Added an immutable fitted-field validation API for exactly D=1, D=2, and
+  D=3 with explicit adjacent level values, selected original-coordinate
+  locations, minimum thickness, search/refinement limits, tolerances,
+  quantiles, provenance, and proposal opt-in.
+- Lower and upper intersections use deterministic uniform bracketing along the
+  negative and positive fitted-gradient normal followed by bounded bisection.
+  Low gradients, no intersection, and refinement exhaustion remain explicit
+  per-location failures.
+- Reports preserve measurements, failures, minimum, deterministic type-7
+  quantiles, violations, and optional proposed local constraints. Proposals do
+  not mutate a problem or trigger solving/refitting.
+- Sampled validation has the distinct
+  `SampledGeometricValidation / SampledGeometricEvidence` label and makes no
+  global minimum-distance claim.
 
 ## Validation state
 
-- Exact independently re-reviewed head `522a209` and final Ready evidence head
-  `e1ac47a` passed the complete standard local gate: workspace format,
-  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
-  workspace Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The final reviewer confirmed all three finding closures and no P0-P3
-  findings. The parent task passed all ten thickness integration tests, the
-  module allocation-failure regression, the benchmark smoke with checksum
-  `8304`, the example, registry check, and complete PR diff whitespace check.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state tree passed the complete local standard gate:
-  workspace format, warning-denying all-target/all-feature Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and
-  `git diff --check`.
-- Local `actionlint` and the later unavailable tools listed below remain
-  unavailable and are not claimed as passed.
+- Focused integration and module tests pass for fitted analytic parallel
+  levels, independently evaluated curved levels, no intersection, quantiles,
+  invalid inputs, deterministic reports, proposals, extreme gradient scales,
+  and supported-dimension type bounds.
+- Warning-denying all-target/all-feature Clippy passes for the crate.
+- The optimized 32-location benchmark measured 2588.35 microseconds per
+  validation with checksums `16000` and `1000.0`; its smoke workload passed
+  at 1951.10 microseconds with checksums `32` and `2.0`.
+- The stable implementation source head passed the complete local standard
+  gate: workspace format, warning-denying all-target/all-feature Clippy,
+  all-feature workspace tests, workspace Rustdoc, all 58 requirement checks,
+  and `git diff --check`.
 
 ## Next task
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start another requirement in this
-task.
+Open a fresh read-only Review task for REQ-THICK-002 and the Draft PR. Supply
+only the requirement summary, dependency closure, Issue #96 criteria and
+exclusions, M5 plan, relevant thickness/model contracts and ADRs, complete PR
+diff, test and benchmark evidence, registry/handoff state, and exact validation
+results. Mathematical review must cover normal orientation, bracketing and
+bisection behavior, dimensions and coordinate units, curved/tangential cases,
+quantile convention, hard-constraint separation, proposal/refit boundaries,
+finite arithmetic, allocations, determinism, diagnostics, interface
+disposition, and requirement truthfulness. Do not repair production code in
+that Review task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #93
-- Merged implementation and repair: GitHub PR #94
-- Integration-state pull request: GitHub PR #95
-- Independent review: `docs/reviews/PR-94-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-THICK-001.md`
-- Focused tests: `crates/georbf/tests/thickness.rs`
+- Acceptance criteria and exclusions: GitHub Issue #96
+- Requirement summary: `changes/REQ-THICK-002.md`
+- Independent truth/error tests: `crates/georbf/tests/thickness_validation.rs`
 - Normative behavior: `docs/math/THICKNESS.md`
-- Benchmark: `docs/benchmarks/REQ-THICK-001.md`
+- Benchmark: `docs/benchmarks/REQ-THICK-002.md`
 
 ## Checks not yet available
 

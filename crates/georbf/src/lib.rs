@@ -32,7 +32,10 @@
 //! while tangent observations lower to scalar directional equalities and a
 //! derivative-only tangent problem requires one recorded hard value gauge.
 //! Sampled local normal-thickness constraints remain distinct from scalar level
-//! gaps and lower to hard first-order Lorentz cones over explicit level values.
+//! gaps and lower to hard first-order Lorentz cones over explicit level values;
+//! post-fit sampled geometric validation separately brackets and refines
+//! adjacent level intersections along selected fitted-field normals, reports
+//! deterministic distance evidence, and never refits implicitly.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -60,6 +63,7 @@ pub mod problem_ir;
 pub mod solver;
 pub mod tangent_observations;
 pub mod thickness;
+pub mod thickness_validation;
 pub mod transform;
 pub mod units;
 
@@ -172,6 +176,13 @@ pub use tangent_observations::{
 pub use thickness::{
     LocalNormalThickness, LocalNormalThicknessError, ThicknessCanonicalizationError,
     ThicknessDiagnosticKind, ThicknessDiagnostics, ThicknessGuarantee,
+};
+pub use thickness_validation::{
+    SampledThicknessFailure, SampledThicknessFailureReason, SampledThicknessLocation,
+    SampledThicknessMeasurement, SampledThicknessQuantile, SampledThicknessReport,
+    SampledThicknessRequest, SampledThicknessSettings, SampledThicknessSettingsError,
+    SampledThicknessStorage, SampledThicknessValidationError, SampledThicknessViolation,
+    ThicknessIntersectionFailure,
 };
 pub use transform::{AffineNormalization, TransformError, TransformOperation};
 pub use units::{AngleUnit, LengthUnit, UnitError};
