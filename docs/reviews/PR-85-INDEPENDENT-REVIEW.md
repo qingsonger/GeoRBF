@@ -138,3 +138,33 @@ fresh Repair task limited to R85-001 and R85-002, add the required independent
 regressions, run focused checks and the final stable-head standard gate, update
 this review evidence and the bounded handoff, push, and stop for a fresh
 independent re-review. Do not begin another requirement.
+
+## Repair evidence pending fresh re-review
+
+Repair commit `680d497d424fe3a611376b6bc415173ff9d2f6e2` addresses only
+R85-001 and R85-002. Exact proportionality now compares the exact binary
+coefficient products for every corresponding determinant. Exact interval
+ordering uses the same product representation and does not materialize a row
+quotient or transformed endpoint; any finite `f64` projection is created only
+after the exact conflict decision for structured endpoint evidence.
+
+Three independent public-canonicalization regressions reproduce all four
+review counterexamples. `[1, 1]` and `[3, next_up(3)]` canonicalize and remain
+warning-only near duplicates. `[1, 7, 13]` and `[49, 343, 637]` are exact
+duplicates, and inconsistent right-hand sides return both sources in an exact
+conflict. The `1e308` overflow and `1e-308` underflow interval cases both
+return source-complete exact-conflict errors with strictly ordered evidence.
+
+Focused validation passed all eight infeasibility tests, all 11 problem-IR
+tests, all eight linear-constraint tests, and the `georbf` all-targets,
+all-features Clippy gate. After the last code and normative-document change,
+the stable repair head passed all five standard checks: format, workspace
+all-targets/all-features Clippy with warnings denied, workspace
+all-features tests, workspace doctests, and all 58 requirement checks.
+`git diff --check` also passed. The unavailable later-tool dispositions remain
+unchanged from the original review evidence.
+
+This section records Repair evidence only. It does not independently re-review
+or close R85-001 or R85-002. PR #85 remains Draft and REQ-INFEAS-001 remains
+`implemented`; the next task must be a fresh independent re-review of the exact
+repaired head and must not begin another requirement.

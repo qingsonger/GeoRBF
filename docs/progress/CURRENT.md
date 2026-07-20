@@ -6,48 +6,49 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete / repair required
+- Mode: Repair complete / fresh independent re-review required
 - Requirement: REQ-INFEAS-001, Issue #84
 - Branch: `codex/req-infeas-001-diagnostics`
 - Pull request: #85 (Draft)
-- Reviewed head: `1833b7ea8e8a414fdcb012c399dd1e35e54e6f2a`
+- Repair code/test head: `680d497d424fe3a611376b6bc415173ff9d2f6e2`
 - Registry state: `implemented`
 - Dependencies: REQ-CONVEX-001 and REQ-DIAG-001 are `integrated`
 
-## Independent review result
+## Repair result
 
-- P0 R85-001: `exact_row_scale` uses rounded division followed by rounded
-  multiplication as an exact proportionality predicate. It can falsely reject
-  a feasible one-ULP nonparallel equality system and can miss the exactly
-  proportional integer rows `[1, 7, 13]` and `[49, 343, 637]`.
-- P1 R85-002: interval endpoint multiplication silently skips a proportional
-  conflict on overflow and collapses distinct endpoints on underflow.
-- No other P0-P3 finding was reported. The exact counterexamples, independent
-  derivations, file/line evidence, and required regressions are recorded in
-  `docs/reviews/PR-85-INDEPENDENT-REVIEW.md`.
+- R85-001: exact row proportionality now uses exact binary cross-products, so
+  the one-ULP nonparallel pair remains warning-only while the integer 49x pair
+  is classified and conflict-checked exactly.
+- R85-002: proportional interval ordering uses exact binary products without
+  materializing a quotient or transformed endpoint, so finite overflow and
+  underflow inputs cannot skip or collapse a conflict.
+- Three new public-canonicalization regressions cover all four reviewed
+  counterexamples with complete source evidence and strictly ordered conflict
+  diagnostics. Canonical rows and solver policy remain unchanged.
 
 ## Validation state
 
-- Draft CI run 29714495028 passed the Ubuntu correctness job on exact reviewed
-  head `1833b7e`; the Ready-only three-platform and benchmark-smoke matrix was
-  correctly skipped.
-- Both the independent reviewer and parent task passed all five focused
-  infeasibility tests. The parent task also passed all 58 requirement checks
-  and `git diff --check`.
-- The existing tests do not cover either reviewed counterexample. Their green
-  result does not close R85-001 or R85-002.
-- Exact implementation commit `63f34ed` retains its recorded complete standard
-  gate. The reviewed head changes only registry/handoff evidence after it.
+- All eight infeasibility tests, all 11 problem-IR tests, and all eight
+  linear-constraint tests passed; focused `georbf` all-targets/all-features
+  Clippy passed with warnings denied.
+- Stable repair head `680d497` passed the complete standard gate: format,
+  workspace all-targets/all-features Clippy, workspace all-features tests,
+  workspace doctests, and all 58 requirement checks. `git diff --check` passed.
+- The prior Draft CI evidence remains historical only. Fresh Draft CI for the
+  pushed repair head may run, but this Repair task does not mark the PR Ready
+  or perform the mandatory ready-head integration sequence.
 
 ## Next task
 
-Open a fresh Repair task limited to R85-001 and R85-002. Reproduce both defects
-through public canonicalization behavior, add the independent regressions
-required by the review, implement the smallest exact and representability-safe
-repair, run focused checks during development and the complete standard gate on
-the final stable head, update the review evidence and this bounded handoff,
-commit, push, and stop for a fresh independent re-review. Do not mark PR #85
-Ready and do not begin another requirement.
+Open a fresh Review/re-review task for PR #85. Give the independent
+`math_reviewer` only the bounded requirement/dependency summary, normative
+documents, original findings, exact repaired diff, regressions, and validation
+evidence; do not pass Repair reasoning. Independently verify that R85-001 and
+R85-002 are closed and check for new P0-P3 findings. If any finding remains,
+record it and stop. Only after a clean re-review and confirmed complete local
+gate may that fresh task mark the PR Ready, wait for exact ready-head Windows,
+Ubuntu, macOS, and benchmark-smoke CI, merge once when green, and record
+integration state. Do not begin another requirement.
 
 ## Durable evidence
 
