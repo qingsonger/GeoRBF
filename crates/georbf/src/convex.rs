@@ -34,6 +34,7 @@ const DIRECT_SOLVER: &str = "qdldl";
 const MAX_STEP_FRACTION: f64 = 0.99;
 const EQUILIBRATION_MIN_SCALING: f64 = 1.0e-4;
 const EQUILIBRATION_MAX_SCALING: f64 = 1.0e4;
+const ZERO_OBJECTIVE_REFERENCE: f64 = 1.0;
 const LINESEARCH_BACKTRACK_STEP: f64 = 0.8;
 const MIN_SWITCH_STEP_LENGTH: f64 = 1.0e-1;
 const MIN_TERMINATE_STEP_LENGTH: f64 = 1.0e-4;
@@ -357,6 +358,10 @@ pub struct ConvexKktDiagnostics {
     pub normalized_complementarity: f64,
     /// Homogeneous normalized semantic primal-dual gap.
     pub normalized_duality_gap: f64,
+    /// Explicit dimensionless objective-unit reference for hard-only feasibility.
+    pub zero_objective_reference: Option<f64>,
+    /// Largest data-derived objective-gradient reference used for stationarity.
+    pub zero_objective_gradient_reference_infinity: f64,
 }
 
 /// Evidence for an independently accepted primal-infeasibility certificate.
@@ -389,6 +394,8 @@ pub struct ConvexInfeasibilityCertificate {
     pub diagnostics: ConvexCertificateDiagnostics,
     /// Backend iteration count.
     pub iterations: u32,
+    /// Positive adapter scaling applied to each backend row in canonical order.
+    pub backend_row_scaling: Vec<f64>,
 }
 
 /// Complete accepted-solve evidence.
@@ -419,6 +426,8 @@ pub struct ConvexSolveDiagnostics {
     pub coefficient_count: usize,
     /// Ordered product-cone block count.
     pub cone_count: usize,
+    /// Positive adapter scaling applied to each backend row in canonical order.
+    pub backend_row_scaling: Vec<f64>,
     /// Backend iteration count.
     pub iterations: u32,
     /// Backend solve duration in seconds.
@@ -961,7 +970,7 @@ pub fn try_solve_canonical_with_control(
         &matrices.quadratic,
         &compiled.q,
         &matrices.constraints,
-        &matrices.rhs,
+        &matrices.backend_rhs,
         &matrices.cones,
         settings,
     )
@@ -972,6 +981,7 @@ pub fn try_solve_canonical_with_control(
     progress.advance(ExecutionStage::BackendSolve)?;
     let status = map_status(solver.solution.status);
     if status == ConvexBackendStatus::PrimalInfeasible {
+        unscale_backend_dual(&matrices.row_scaling, &mut solver.solution.z)?;
         let certificate = review_certificate(
             &compiled,
             &matrices,
@@ -983,6 +993,8 @@ pub fn try_solve_canonical_with_control(
         return Err(ConvexSolveError::PrimalInfeasible { certificate });
     }
     require_solved_status(status, solver.solution.iterations)?;
+    unscale_backend_dual(&matrices.row_scaling, &mut solver.solution.z)?;
+    unscale_backend_slack(&matrices.row_scaling, &mut solver.solution.s)?;
     let review = review_solution(
         problem,
         &compiled,
@@ -1012,6 +1024,7 @@ pub fn try_solve_canonical_with_control(
         row_count: compiled.row_count(),
         coefficient_count: compiled.coefficient_count(),
         cone_count: compiled.blocks.len(),
+        backend_row_scaling: try_copy(&matrices.row_scaling, "solution row scaling")?,
         iterations: solver.solution.iterations,
         solve_time_seconds: solver.solution.solve_time,
         kkt: review.kkt,
@@ -1028,6 +1041,8 @@ struct Matrices {
     quadratic: CscMatrix<f64>,
     constraints: CscMatrix<f64>,
     rhs: Vec<f64>,
+    backend_rhs: Vec<f64>,
+    row_scaling: Vec<f64>,
     cones: Vec<SupportedConeT<f64>>,
 }
 
@@ -1052,6 +1067,7 @@ fn build_matrices(compiled: &CompiledProblem) -> Result<Matrices, ConvexSolveErr
         p_colptr.push(p_rowval.len());
     }
     let row_count = compiled.row_count();
+    let row_scaling = backend_row_scaling(compiled)?;
     let constraint_nonzeros = compiled
         .coefficient_count()
         .checked_sub(quadratic_nonzeros)
@@ -1084,6 +1100,12 @@ fn build_matrices(compiled: &CompiledProblem) -> Result<Matrices, ConvexSolveErr
     let mut cursor = try_copy(&a_colptr[..compiled.variables], "A column assembly cursors")?;
     let mut rhs = Vec::new();
     try_reserve(&mut rhs, row_count, "constraint right-hand side")?;
+    let mut backend_rhs = Vec::new();
+    try_reserve(
+        &mut backend_rhs,
+        row_count,
+        "scaled constraint right-hand side",
+    )?;
     for (row_index, row) in compiled.rows().enumerate() {
         if !row.constant.is_finite() {
             return Err(ConvexSolveError::NonFiniteCompilation {
@@ -1091,22 +1113,21 @@ fn build_matrices(compiled: &CompiledProblem) -> Result<Matrices, ConvexSolveErr
             });
         }
         rhs.push(row.constant);
+        backend_rhs.push(finite_value(
+            row.constant * row_scaling[row_index],
+            "scaled constraint right-hand side",
+        )?);
         for &(column, coefficient) in &row.terms {
             let position = cursor[column];
             a_rowval[position] = row_index;
-            a_values[position] = -coefficient;
+            a_values[position] = finite_value(
+                -coefficient * row_scaling[row_index],
+                "scaled constraint coefficient",
+            )?;
             cursor[column] += 1;
         }
     }
-    let mut cones = Vec::new();
-    try_reserve(&mut cones, compiled.blocks.len(), "cone descriptors")?;
-    for block in &compiled.blocks {
-        cones.push(match block.kind {
-            ConeKind::Zero => ZeroConeT(block.rows.len()),
-            ConeKind::Nonnegative => NonnegativeConeT(block.rows.len()),
-            ConeKind::SecondOrder => SecondOrderConeT(block.rows.len()),
-        });
-    }
+    let cones = backend_cones(compiled)?;
     Ok(Matrices {
         quadratic: CscMatrix::new(
             compiled.variables,
@@ -1117,8 +1138,89 @@ fn build_matrices(compiled: &CompiledProblem) -> Result<Matrices, ConvexSolveErr
         ),
         constraints: CscMatrix::new(row_count, compiled.variables, a_colptr, a_rowval, a_values),
         rhs,
+        backend_rhs,
+        row_scaling,
         cones,
     })
+}
+
+fn backend_cones(compiled: &CompiledProblem) -> Result<Vec<SupportedConeT<f64>>, ConvexSolveError> {
+    let mut cones = Vec::new();
+    try_reserve(&mut cones, compiled.blocks.len(), "cone descriptors")?;
+    for block in &compiled.blocks {
+        cones.push(match block.kind {
+            ConeKind::Zero => ZeroConeT(block.rows.len()),
+            ConeKind::Nonnegative => NonnegativeConeT(block.rows.len()),
+            ConeKind::SecondOrder => SecondOrderConeT(block.rows.len()),
+        });
+    }
+    Ok(cones)
+}
+
+fn backend_row_scaling(compiled: &CompiledProblem) -> Result<Vec<f64>, ConvexSolveError> {
+    let mut scaling = Vec::new();
+    try_reserve(&mut scaling, compiled.row_count(), "backend row scaling")?;
+    for block in &compiled.blocks {
+        if block.kind == ConeKind::SecondOrder {
+            let magnitude = block
+                .rows
+                .iter()
+                .map(row_data_magnitude)
+                .fold(0.0_f64, f64::max);
+            let factor = reciprocal_row_magnitude(magnitude)?;
+            scaling.resize(scaling.len() + block.rows.len(), factor);
+        } else {
+            for row in &block.rows {
+                scaling.push(reciprocal_row_magnitude(row_data_magnitude(row))?);
+            }
+        }
+    }
+    Ok(scaling)
+}
+
+fn row_data_magnitude(row: &SlackExpression) -> f64 {
+    row.terms
+        .iter()
+        .map(|(_, coefficient)| coefficient.abs())
+        .fold(row.constant.abs(), f64::max)
+}
+
+fn reciprocal_row_magnitude(magnitude: f64) -> Result<f64, ConvexSolveError> {
+    if magnitude == 0.0 {
+        return Ok(1.0);
+    }
+    let factor = magnitude.recip();
+    if factor.is_finite() && factor > 0.0 {
+        Ok(factor)
+    } else {
+        Err(ConvexSolveError::NonFiniteCompilation {
+            field: "backend row scaling",
+        })
+    }
+}
+
+fn unscale_backend_dual(scaling: &[f64], dual: &mut [f64]) -> Result<(), ConvexSolveError> {
+    if scaling.len() != dual.len() {
+        return Err(ConvexSolveError::NonFiniteCompilation {
+            field: "backend dual scaling dimensions",
+        });
+    }
+    for (value, factor) in dual.iter_mut().zip(scaling) {
+        *value = finite_value(*value * factor, "unscaled backend dual")?;
+    }
+    Ok(())
+}
+
+fn unscale_backend_slack(scaling: &[f64], slack: &mut [f64]) -> Result<(), ConvexSolveError> {
+    if scaling.len() != slack.len() {
+        return Err(ConvexSolveError::NonFiniteCompilation {
+            field: "backend slack scaling dimensions",
+        });
+    }
+    for (value, factor) in slack.iter_mut().zip(scaling) {
+        *value = finite_value(*value / factor, "unscaled backend slack")?;
+    }
+    Ok(())
 }
 
 fn settings(options: ConvexSolveOptions) -> Result<DefaultSettings<f64>, ConvexSolveError> {
@@ -1249,15 +1351,27 @@ fn review_solution(
     let (original_objective, semantic_objective_scale) = semantic_objective(problem, original_x)?;
     let (compiled_objective, compiled_objective_scale) =
         objective_value_and_scale(&compiled.p_diagonal, &compiled.q, x)?;
-    // Every canonical soft loss is dimensionless and has unit weight.  Its
+    // Every canonical soft loss is dimensionless and has unit weight. Its
     // count is therefore a homogeneous objective-unit reference, including
-    // at an exact zero-residual optimum; it is not a row-unit absolute floor.
+    // at an exact zero-residual optimum. A hard-only feasibility problem has
+    // the explicit unit objective reference below. It is converted to each
+    // variable's gradient units only through original row data, never used as
+    // a raw dimensioned stationarity floor.
     let objective_count = u32::try_from(problem.soft_objectives().len())
         .map_err(|_| ConvexSolveError::MemoryEstimateOverflow)?;
     let natural_objective_scale = f64::from(objective_count);
+    let zero_objective_reference = if natural_objective_scale == 0.0
+        && compiled.p_diagonal.iter().all(|value| *value == 0.0)
+        && compiled.q.iter().all(|value| *value == 0.0)
+    {
+        Some(ZERO_OBJECTIVE_REFERENCE)
+    } else {
+        None
+    };
     let objective_scale = semantic_objective_scale
         .max(compiled_objective_scale)
-        .max(natural_objective_scale);
+        .max(natural_objective_scale)
+        .max(zero_objective_reference.unwrap_or(0.0));
     let tolerance = options.tolerance();
     check_review(
         "semantic/compiled objective reconstruction",
@@ -1311,8 +1425,25 @@ fn review_solution(
         dual_scales[index] =
             checked_sum(dual_scales[index], contribution.abs(), "dual review scale")?;
     }
+    let mut zero_objective_gradient_reference_infinity = 0.0_f64;
     for (row_index, row) in compiled.rows().enumerate() {
+        let row_reference = row
+            .terms
+            .iter()
+            .map(|(column, coefficient)| (coefficient * x[*column]).abs())
+            .fold(row.constant.abs().max(s[row_index].abs()), f64::max);
         for &(column, coefficient) in &row.terms {
+            if let Some(reference) = zero_objective_reference
+                && row_reference > 0.0
+            {
+                let gradient_reference = finite_value(
+                    reference * coefficient.abs() / row_reference,
+                    "zero-objective gradient reference",
+                )?;
+                dual_scales[column] = dual_scales[column].max(gradient_reference);
+                zero_objective_gradient_reference_infinity =
+                    zero_objective_gradient_reference_infinity.max(gradient_reference);
+            }
             let contribution = -coefficient * z[row_index];
             stationarity[column] = finite_value(
                 stationarity[column] + contribution,
@@ -1373,6 +1504,8 @@ fn review_solution(
             duality_gap,
             normalized_complementarity: complementarity_normalized,
             normalized_duality_gap: normalized_gap,
+            zero_objective_reference,
+            zero_objective_gradient_reference_infinity,
         },
         constraints,
     })
@@ -1534,6 +1667,7 @@ fn review_certificate(
             separator_scale,
         },
         iterations,
+        backend_row_scaling: try_copy(&matrices.row_scaling, "certificate row scaling")?,
     })
 }
 
@@ -2511,6 +2645,41 @@ mod tests {
                 })
             ));
         }
+        Ok(())
+    }
+
+    #[test]
+    fn zero_objective_review_rejects_a_nonstationary_dual() -> TestResult {
+        let problem = CanonicalProblem::try_from_linear_parts_and_objectives(
+            [one_variable_block(1)?],
+            Vec::new(),
+            vec![CanonicalLinearBound::from_parts(
+                row(1.0)?,
+                Some(1.0),
+                None,
+                test_provenance(7, 1)?,
+            )],
+            Vec::new(),
+        )?;
+        let compiled = Compiler::new(&problem)?.compile(&problem)?;
+        let matrices = build_matrices(&compiled)?;
+        assert!(matches!(
+            review_solution(
+                &problem,
+                &compiled,
+                &matrices,
+                &[2.0],
+                &[1.0],
+                &[1.0],
+                0.0,
+                1.0,
+                test_options()?,
+            ),
+            Err(ConvexSolveError::SolutionReviewFailed {
+                reason: "dual stationarity review",
+                ..
+            })
+        ));
         Ok(())
     }
 

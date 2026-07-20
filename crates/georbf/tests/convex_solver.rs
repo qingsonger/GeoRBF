@@ -174,6 +174,48 @@ fn qp_truth_recovers_independent_analytic_solution() -> TestResult {
 }
 
 #[test]
+fn hard_only_feasibility_is_invariant_to_nonzero_row_scaling() -> TestResult {
+    let tolerance = options()?.tolerance();
+    for (offset, scale) in [1.0e-12, 1.0, 1.0e12].into_iter().enumerate() {
+        let identifier = 80 + u64::try_from(offset)?;
+        let semantic = SemanticProblemIr::try_new(
+            [constraint(
+                identifier,
+                SemanticRelation::LinearBound {
+                    expression: expression(identifier)?,
+                    lower: Some(scale),
+                    upper: None,
+                },
+                Enforcement::Hard,
+            )?],
+            ExecutionOptions::default(),
+        )?;
+        let canonical = semantic.try_compile([block(1)?], |_, _| affine(&[(0, scale)], 0.0))?;
+        let solution = try_solve_canonical(&canonical, options()?)?;
+        let diagnostics = solution.diagnostics();
+
+        assert!(solution.values()[0] >= 1.0 - tolerance);
+        assert!(diagnostics.kkt.normalized_primal_residual <= tolerance);
+        assert!(diagnostics.kkt.normalized_dual_residual <= tolerance);
+        assert!(diagnostics.kkt.primal_cone_violation <= tolerance);
+        assert!(diagnostics.kkt.dual_cone_violation <= tolerance);
+        assert!(diagnostics.kkt.normalized_complementarity <= tolerance);
+        assert!(diagnostics.kkt.normalized_duality_gap <= tolerance);
+        assert_eq!(diagnostics.kkt.zero_objective_reference, Some(1.0));
+        assert!(diagnostics.kkt.zero_objective_gradient_reference_infinity > 0.0);
+        assert_eq!(diagnostics.backend_row_scaling.len(), 1);
+        assert_eq!(diagnostics.backend_row_scaling[0], scale.recip());
+        assert!(
+            diagnostics
+                .constraints
+                .iter()
+                .all(|entry| entry.normalized_residual <= tolerance)
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn socp_truth_recovers_three_four_five_solution() -> TestResult {
     let semantic = SemanticProblemIr::try_new(
         [
