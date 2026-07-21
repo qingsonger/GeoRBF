@@ -165,6 +165,20 @@ rejected when metadata declares only away-from-center support. The layer
 performs no finite differences, hidden coefficient repair, persistence I/O,
 schema migration, contouring, or adapter-side evaluation.
 
+The project layer owns one or more independently fitted `FittedField<D>` values
+behind stable caller-controlled `FieldId` values. `GeoProject<D>` preserves
+insertion order, rejects duplicate identifiers, and performs deterministic
+borrowed lookup without creating a second field core or a joint numerical
+problem. Each retained field keeps its own coordinate metadata, normalization,
+kernel, coefficients, capabilities, and diagnostics; project construction does
+not reconcile coordinate systems or couple fitting and evaluation. A validated
+`ReferenceFieldInput` resolves only an existing identifier and delegates
+value, gradient, or Hessian evaluation to that immutable field in its own
+original-coordinate convention. It reserves a typed input boundary for the
+accepted future SPD local-mixture design but defines no weight function, local
+anisotropy, cross-field constraint, topology, persistence schema, or adapter
+mathematics.
+
 The diagnostics layer owns source-aware orchestration and adapter-boundary
 failures. A `DiagnosticPath` can retain an input path and one-based line,
 semantic field path, stable observation identifier, stable level identifier,

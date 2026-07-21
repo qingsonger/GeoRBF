@@ -570,7 +570,7 @@ requirements:
     dependencies: [REQ-MODEL-001, REQ-LEVEL-001]
     milestone: M5-v0.5.0
     priority: P1
-    issue: null
+    issue: 99
     pull_request: null
     tests: [multi-field-independence, identifiers, reference-input]
     docs: [docs/architecture/ARCHITECTURE.md, rustdoc]

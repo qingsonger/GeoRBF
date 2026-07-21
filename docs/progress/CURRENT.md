@@ -6,72 +6,49 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-THICK-002 complete
-- Requirement: REQ-THICK-002, Issue #96 (closed)
-- Implementation pull request: #97, squash-merged as `0de6140`
-- Integration-state branch: `codex/req-thick-002-integration-state`
-- Integration-state pull request: #98 (Draft until exact Ready CI is green)
-- Review record: `docs/reviews/PR-97-INDEPENDENT-REVIEW.md`
-- Registry state in this change: `integrated`
-- Next eligible requirement: select with `cargo xtask requirements next`
+- Mode: Implement
+- Requirement: REQ-PROJECT-001, Issue #99
+- Branch: `codex/req-project-001-independent-multi-field-projects`
+- Draft pull request: pending creation
+- Registry state: `planned` until the Draft PR exists; implementation is present
+- Dependencies: REQ-MODEL-001 and REQ-LEVEL-001 are integrated
 
-## Integration result
+## Implemented scope
 
-- A fresh read-only project `math_reviewer` independently re-reviewed the exact
-  complete PR and repair using only bounded requirement, dependency, normative,
-  diff, test, benchmark, registry, handoff, CI, and validation evidence.
-- THICK002-REV-001 through THICK002-REV-005 are closed. No P0, P1, P2, or P3
-  finding remained before integration; the independent review requirement is
-  complete.
-- Exact implementation Ready head `8ecf212` passed Windows, Ubuntu, and macOS
-  with every configured backend and benchmark-smoke workload, including
-  `sampled_thickness_validation`, in CI run 29793530667.
-- PR #97 squash-merged exactly once as `0de6140`; Issue #96 closed as completed.
-- Post-merge `main` run 29794149484 passed the same complete three-platform
-  correctness, backend, benchmark-smoke, and requirement-registry gate on
-  `0de6140`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, normative contract, numerical
-  behavior, dependency, tag, or release.
+- `GeoProject<D>` owns one or more immutable `ProjectField<D>` entries for
+  exactly D=1, D=2, and D=3 while preserving caller insertion order.
+- Stable caller-controlled `FieldId` values support deterministic entry and
+  fitted-field lookup. Construction returns structured empty, duplicate, and
+  allocation failures without partial success.
+- Every entry owns an existing `FittedField<D>` produced by the same
+  `FieldProblem<D>` core. The project layer adds no assembly, solver, kernel,
+  evaluation, or cross-field coupling implementation.
+- `ReferenceFieldInput` resolves only an existing field identifier and
+  delegates value, gradient, and Hessian evaluation in that retained field's
+  own original-coordinate convention. It defines no local-mixture weighting,
+  coordinate reprojection, topology, persistence, or adapter behavior.
 
 ## Validation state
 
-- Exact repair code/test head `438937b` and final Ready evidence head `8ecf212`
-  retain the complete recorded local gate: workspace format, warning-denying
-  all-target/all-feature Clippy, all-feature workspace tests, workspace
-  Rustdoc, all 58 requirement checks, and `git diff --check`.
-- The final reviewer confirmed all five finding closures and no P0-P3 findings.
-  The parent task passed all seven public sampled-validation tests, all eight
-  execution-control tests, both Rustdoc tests, the registry check, and complete
-  PR diff whitespace validation. The benchmark smoke retained checksums `32`
-  and `2.0`.
-- Exact implementation Ready-head and post-merge `main` three-platform gates
-  are green as recorded above.
-- The isolated integration-state tree passed the complete local standard gate:
-  workspace format, warning-denying all-target/all-feature Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and
-  `git diff --check`.
-- Local `actionlint` and the later unavailable tools listed below remain
-  unavailable and are not claimed as passed.
+- Focused project integration tests passed before the documentation update.
+- The project Rustdoc compile-fail dimension bound passed.
+- Formatting, Clippy, the complete standard gate, and the final diff review
+  remain to be run on the stable implementation tree.
 
-## Next task
+## Next task boundary
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start another requirement in this
-task.
+After the complete standard local gate is green and the Draft PR is updated,
+stop. A fresh Review task must inspect only REQ-PROJECT-001 and its PR, create
+an independent reviewer, record findings, and must not repair production code
+or begin another requirement in the same task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #96
-- Merged implementation and repair: GitHub PR #97
-- Integration-state pull request: GitHub PR #98
-- Independent review: `docs/reviews/PR-97-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-THICK-002.md`
-- Independent truth/error tests: `crates/georbf/tests/thickness_validation.rs`
-- Normative behavior: `docs/math/THICKNESS.md`
-- Benchmark: `docs/benchmarks/REQ-THICK-002.md`
+- Acceptance criteria and exclusions: GitHub Issue #99
+- Requirement summary: `changes/REQ-PROJECT-001.md`
+- Independent property/error tests: `crates/georbf/tests/project.rs`
+- Public implementation and Rustdoc: `crates/georbf/src/project.rs`
+- Architecture boundary: `docs/architecture/ARCHITECTURE.md`
 
 ## Checks not yet available
 
