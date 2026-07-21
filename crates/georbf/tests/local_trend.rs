@@ -325,6 +325,36 @@ fn gaussian_hessian_retains_mixed_scaled_coordinate_product() -> Result<(), Box<
 }
 
 #[test]
+fn gaussian_hessian_retains_diagonal_cancellation_result() -> Result<(), Box<dyn Error>> {
+    let kernel = KernelDefinition::from(Gaussian::try_new(1.0e100)?);
+    let background = LocalTrendComponent::new(
+        kernel,
+        GlobalAnisotropy::try_isotropic(1.0)?,
+        SmoothSpatialWeight::try_constant(0.5)?,
+    );
+    let local = LocalTrendComponent::new(
+        kernel,
+        GlobalAnisotropy::try_isotropic(1.0)?,
+        SmoothSpatialWeight::try_gaussian(Point::try_new([0.0])?, 1.0, 3.0)?,
+    );
+    let mixture = LocalTrendMixture::try_new(vec![background, local], 0, domain(4.0)?, 0.25)?;
+    let point = Point::try_new([f64::from_bits(0x4008_0000_0000_0001)])?;
+
+    let evaluation = mixture.try_evaluate(point, point, KernelDerivativeOrder::Second)?;
+    let hessian = evaluation
+        .hessian()
+        .ok_or_else(|| std::io::Error::other("Hessian demand was not retained"))?;
+    let expected = 1.210_157_706_295_617_6e-17;
+    assert!(hessian[0][0] > 0.0);
+    assert!(
+        (hessian[0][0] - expected).abs() <= expected * 2.0e-13,
+        "diagonal Hessian entry {:e} differs from truth {expected:e}",
+        hessian[0][0]
+    );
+    Ok(())
+}
+
+#[test]
 fn coverage_and_value_skip_irrelevant_weight_hessian_overflow() -> Result<(), Box<dyn Error>> {
     let local = LocalTrendComponent::new(
         KernelDefinition::from(Gaussian::try_new(1.0)?),

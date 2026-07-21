@@ -230,13 +230,14 @@ where
             SmoothSpatialWeightKind::Gaussian {
                 center,
                 amplitude,
+                radius,
                 inverse_radius,
                 inverse_radius_squared,
-                ..
             } => gaussian_weight_jet(
                 point,
                 center,
                 amplitude,
+                radius,
                 inverse_radius,
                 inverse_radius_squared,
                 demanded,
@@ -1100,6 +1101,7 @@ fn gaussian_weight_jet<const D: usize>(
     point: Point<D>,
     center: Point<D>,
     amplitude: f64,
+    radius: f64,
     inverse_radius: f64,
     inverse_radius_squared: f64,
     demanded: KernelDerivativeOrder,
@@ -1176,9 +1178,9 @@ where
         value,
         amplitude,
         exponent,
+        radius,
         inverse_radius_squared,
         displacements,
-        scaled,
     )?;
     Ok(WeightJet {
         value,
@@ -1191,23 +1193,27 @@ fn gaussian_weight_hessian<const D: usize>(
     value: f64,
     amplitude: f64,
     exponent: f64,
+    radius: f64,
     inverse_radius_squared: f64,
     displacements: [f64; D],
-    scaled: [f64; D],
 ) -> Result<[[f64; D]; D], LocalTrendEvaluationError<D>>
 where
     Dim<D>: SupportedDimension,
 {
     let mut hessian = [[0.0; D]; D];
-    for row in 0..D {
-        for column in 0..D {
-            hessian[row][column] = if row == column {
-                let coefficient = scaled[row] * scaled[column] - 1.0;
+    for (row, hessian_row) in hessian.iter_mut().enumerate() {
+        for (column, entry) in hessian_row.iter_mut().enumerate() {
+            *entry = if row == column {
                 stable_gaussian_product(
                     value,
                     amplitude,
                     exponent,
-                    &[inverse_radius_squared, coefficient],
+                    &[
+                        inverse_radius_squared,
+                        inverse_radius_squared,
+                        displacements[row] - radius,
+                        displacements[row] + radius,
+                    ],
                 )
             } else {
                 let first_axis = row.min(column);
