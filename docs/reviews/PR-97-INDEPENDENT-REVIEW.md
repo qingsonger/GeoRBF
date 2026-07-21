@@ -298,3 +298,55 @@ PR #97 remains Draft and REQ-THICK-002 remains `implemented`, not `integrated`.
 A fresh independent re-review must close THICK002-REV-005 before any Ready
 transition, complete Ready-only CI, merge, or integration-state change. Do not
 begin REQ-PROJECT-001.
+
+## Final independent re-review
+
+A fresh read-only project `math_reviewer` independently reviewed exact PR head
+`10744e8bd8131cb9619b830812043bb98efc75f9` against base
+`13b40816e03c10db42dc1e51a9e9be4ed3242870`. It received only the bounded
+requirement and dependency summaries, Issue #96 criteria and exclusions, M5
+scope, relevant thickness, fitted-model, architecture, and directly applicable
+ADR contracts, the complete exact PR and focused repair diffs, prior findings
+and repair evidence, tests, benchmark, registry, handoff, CI workflow, and
+validation evidence. It inherited no Implement or Repair reasoning and made no
+repository or remote change.
+
+- THICK002-REV-005 is closed. The public controlled entry point accepts
+  explicit `ExecutionOptions` and passes them unchanged through
+  `validation_progress` into the shared `ProgressTracker`.
+- `ProgressTracker::try_new` rejects an explicit two-thread request with typed
+  `UnsupportedThreadCount` before any progress event. Propagation with `?`
+  makes this precede evaluation scratch, report storage, and every fitted-field
+  evaluation. The public regression requires that error and an empty event
+  sequence.
+- An explicit one-thread request with false determinism succeeds with the same
+  report as convenience validation. Its public regression requires every
+  event, including `Completed`, to retain false determinism, one effective
+  worker, and the sampled-validation operation label.
+- The fitted-gradient normal orientation, sign-changing bracketing and
+  bisection, original-coordinate gradient transformation and units, returned-
+  point Euclidean distance, caller-ordered type-7 quantiles, capability and
+  center-limit checks, reusable CPD polynomial scratch, provenance, failures,
+  violations, and explicit proposal-only boundary remain correct.
+- No Hessian capability is claimed or requested. No problem mutation, solver,
+  refit, softening, hidden regularization, kernel-classification change, or
+  later-requirement behavior is introduced. Interface dispositions, registry
+  state, benchmark evidence, and Ready-only three-platform smoke wiring remain
+  truthful.
+
+No P0, P1, P2, or P3 finding remains. On exact reviewed head `10744e8`, the
+parent Review task passed all seven public sampled-validation integration
+tests, all eight execution-control tests, both sampled-validation Rustdoc
+tests, all 58 requirement checks, and the complete PR diff whitespace check.
+The independent reviewer also passed six mathematical/module tests and the
+complete diff whitespace check. Draft CI run 29792829608 passed its configured
+Ubuntu correctness gate on the same exact head; the Ready-only matrix correctly
+did not run.
+
+This evidence-only change updates only this review record and
+`docs/progress/CURRENT.md`; it changes no production, test, manifest, schema,
+CI, build, API, numerical, registry, or dependency input. PR #97 may proceed to
+Ready CI. REQ-THICK-002 remains `implemented`, not `integrated`, until the
+exact Ready evidence head passes the complete Windows, Ubuntu, and macOS
+correctness and benchmark-smoke matrix, PR #97 merges exactly once, and the
+isolated integration-state change completes.
