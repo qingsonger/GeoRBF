@@ -6,18 +6,19 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Clean final re-review complete; Ready CI and integration required
+- Mode: Integration state / REQ-TREND-001 complete
 - Requirement: REQ-TREND-001, Issue #102
-- Branch: `codex/req-trend-001-positive-definite-local-trends`
-- Pull request: #103 (Draft until clean re-review evidence is pushed)
-- Latest independently re-reviewed head:
-  `85d22a529b807c7b1f324ab116dd591b34279577`
+- Implementation pull request: #103, squash-merged as `2300ccc`
+- Integration-state branch: `codex/req-trend-001-integration-state`
+- Integration-state pull request: #104 (Draft until exact Ready CI is green)
+- Independently reviewed implementation head: `85d22a5`
+- Clean re-review evidence / exact Ready head: `37da1f3`
 - F7-F8 repair code/test head: `2b5189d624045c16f2ca7a55b73ee6f24960e999`
 - F9 repair code/test head: `4753abf248132c8745a99b493b24dc58738b4f02`
 - Dependencies: REQ-KERNEL-003, REQ-ANISO-001, and REQ-MODEL-001 are integrated
-- Registry state: `implemented`; Ready CI and integration remain
+- Registry state in this change: `integrated`
 
-## Independent re-review result
+## Integration result
 
 - A fresh isolated read-only `math_reviewer` independently inspected F9 and
   the complete repaired PR diff on exact head `85d22a5`. It inherited no
@@ -25,37 +26,45 @@ records, benchmark reports, Git, and GitHub.
 - F9 is closed. Independent 140-digit arithmetic gives
   `1.2101577062956176141327308452609e-17`; it rounds to the public D=1
   regression truth `1.2101577062956176e-17` and the regression passes.
-- F1-F9 are closed and no P0-P3 finding remains. The SPD/CPD proof,
-  product-rule signs and units, represented-arithmetic policies, capability
-  intersection, symmetry, allocation behavior, diagnostics, interface
-  dispositions, and lack of hidden regularization are otherwise sound.
+- F1-F9 are closed and no P0-P3 finding remains.
+- Exact Ready head `37da1f3` passed complete Windows, Ubuntu, and macOS CI run
+  29824723492, including every backend combination, benchmark smoke, and
+  requirement validation.
+- PR #103 squash-merged exactly once as `2300ccc`; Issue #102 closed as
+  completed. Post-merge `main` CI run 29825582554 passed the same complete
+  three-platform gate on exact merge commit `2300ccc`.
+- This isolated integration-state change updates only the registry, review
+  evidence, history index, and bounded handoff. It changes no production code,
+  test, manifest, schema, CI, build input, API, numerical behavior, dependency,
+  tag, or release.
 
 ## Validation state
 
-- The reviewer passed all 15 focused local-trend tests, selected Rustdoc, the
-  runnable example, D=1/D=2/D=3 release benchmark smoke, the independent F9
-  oracle, and complete diff whitespace validation on exact head `85d22a5`.
-- The parent task passed the complete standard gate on the same exact head:
+- Exact reviewed implementation head `85d22a5` passed the complete local
+  standard gate:
   workspace format, warning-denying workspace all-target/all-feature Clippy,
   all workspace tests with all features, workspace Rustdoc, all 58 requirement
   checks, and complete diff whitespace validation.
-- Draft CI run 29822306204 passed Ubuntu correctness on exact head `85d22a5`.
-  The evidence-only review/handoff update changes no production, test,
-  manifest, schema, CI, build, API, or numerical input.
-- Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI have not run on the
-  final Ready evidence head and are not claimed as passed.
+- Both exact Ready-head run 29824723492 and post-merge `main` run 29825582554
+  are green on Windows, Ubuntu, and macOS, including every configured benchmark
+  smoke.
+- The isolated integration-state tree must pass the complete local standard
+  gate and exact Ready-head CI before it merges.
+- Local `actionlint` and the unavailable later tools listed below remain
+  unexecuted and are not claimed as passed.
 
 ## Next task boundary
 
-Commit and push this clean re-review evidence, synchronize PR #103, and mark it
-Ready. Wait for the complete Windows, Ubuntu, macOS, and benchmark-smoke CI on
-that exact Ready head. Merge exactly once only if every required check is
-green, then record truthful integration state in an isolated change. Do not
-begin another requirement.
+After the isolated integration-state pull request is green and merged, open a
+fresh task and perform the mandatory preflight. Use
+`cargo xtask requirements next`; do not start another requirement in this
+task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #102
+- Acceptance criteria and exclusions: closed GitHub Issue #102
+- Merged implementation: GitHub PR #103
+- Integration-state pull request: #104
 - Independent findings and required regressions:
   `docs/reviews/PR-103-INDEPENDENT-REVIEW.md`
 - Requirement summary and benchmark baseline: `changes/REQ-TREND-001.md`
