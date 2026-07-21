@@ -38,13 +38,15 @@ use crate::problem_ir::{
     SemanticProvenance,
 };
 
-/// Stable diagnostic label for the two currently implemented thickness-related relations.
+/// Stable diagnostic label for the implemented thickness-related relations and evidence.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ThicknessDiagnosticKind {
     /// A scalar level-value gap with no geometric-distance guarantee.
     ScalarLevelGap,
     /// A sampled local first-order normal-thickness Lorentz cone.
     SampledLocalNormalCone,
+    /// Post-fit sampled geometric intersection evidence.
+    SampledGeometricValidation,
 }
 
 /// Explicit extent of the geometric claim made by a diagnostic label.
@@ -54,6 +56,8 @@ pub enum ThicknessGuarantee {
     ScalarOnly,
     /// The condition is sufficient only at the supplied sample point to first order.
     SampledLocalFirstOrder,
+    /// Measured separation along selected fitted-field normals, without a global guarantee.
+    SampledGeometricEvidence,
 }
 
 /// Compact diagnostic classification that prevents scalar and local constraints
@@ -73,6 +77,10 @@ impl ThicknessDiagnostics {
     const LOCAL_CONE: Self = Self {
         kind: ThicknessDiagnosticKind::SampledLocalNormalCone,
         guarantee: ThicknessGuarantee::SampledLocalFirstOrder,
+    };
+    pub(crate) const SAMPLED_GEOMETRIC: Self = Self {
+        kind: ThicknessDiagnosticKind::SampledGeometricValidation,
+        guarantee: ThicknessGuarantee::SampledGeometricEvidence,
     };
 
     /// Returns the stable relation label.

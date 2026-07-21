@@ -203,5 +203,7 @@ jobs:
         run: cargo bench -p georbf --bench tangent_observation_compilation -- --smoke
       - name: Smoke-test local-thickness compilation benchmark
         run: cargo bench -p georbf --bench local_thickness_compilation -- --smoke
+      - name: Smoke-test sampled-thickness validation benchmark
+        run: cargo bench -p georbf --bench sampled_thickness_validation -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check

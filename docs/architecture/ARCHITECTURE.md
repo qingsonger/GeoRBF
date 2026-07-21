@@ -201,15 +201,17 @@ Field assembly checks cancellation after every evaluated upper-triangle kernel
 entry and polynomial row, and around CPD construction, canonicalization,
 symmetry review, and projected-energy construction. Dense solving checks around
 memory review, rank reviews, factorization, every attempted refinement, and
-residual review. A backend SVD or factorization call is indivisible, so a request
-made during that call is observed immediately afterward. Fallible work is
-retained until this post-call checkpoint: cancellation observable there takes
-priority over the concurrent numerical failure, and a failed stage publishes no
-successful progress event. Cancellation returns a typed
-`ExecutionError::Cancelled` through the owning assembly or solver error and
-never returns a partial system, solution, or fitted model. `FittedField`
-propagates one borrowed control through both assembly and solving without
-retaining it.
+residual review. Sampled geometric thickness validation checks before and after
+every fitted-field evaluation in its caller-bounded location, bracketing, and
+refinement loops. A backend SVD or factorization call is indivisible, so a
+request made during that call is observed immediately afterward. Fallible work
+is retained until this post-call checkpoint: cancellation observable there
+takes priority over the concurrent numerical failure, and a failed stage
+publishes no successful progress event. Cancellation returns a typed
+`ExecutionError::Cancelled` through the owning operation error and never
+returns a partial system, solution, fitted model, or sampled-thickness report.
+`FittedField` propagates one borrowed control through fitting or validation
+without retaining it.
 
 Progress totals are checked maximum work budgets. Completed counts report only
 work actually performed, so early refinement termination can complete with a
