@@ -39,6 +39,7 @@ available in Git history through commit `a2be099`.
 | REQ-TANGENT-001 | #90 | #91 | #92 | `docs/reviews/PR-91-INDEPENDENT-REVIEW.md` |
 | REQ-THICK-001 | #93 | #94 | #95 | `docs/reviews/PR-94-INDEPENDENT-REVIEW.md` |
 | REQ-THICK-002 | #96 | #97 | #98 | `docs/reviews/PR-97-INDEPENDENT-REVIEW.md` |
+| REQ-PROJECT-001 | #99 | #100 | #101 | `docs/reviews/PR-100-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
@@ -57,5 +58,6 @@ M0, M1, M2, and M3 are complete. The isolated Issue #31 workflow-efficiency
 repair, REQ-LEVEL-001, REQ-SOFT-001, REQ-LINEQ-001, REQ-SPIKE-004,
 REQ-CONVEX-001, and REQ-INFEAS-001 are integrated. M4 is complete.
 REQ-NORMAL-001, REQ-TANGENT-001, REQ-THICK-001, and REQ-THICK-002 are
-integrated M5 requirements; the next eligible atomic requirement must be
+integrated M5 requirements. This integration-state change adds
+REQ-PROJECT-001, completing M5; the next eligible atomic requirement must be
 selected by the registry in a fresh task.
