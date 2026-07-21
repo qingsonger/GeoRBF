@@ -140,6 +140,11 @@ normalized eigenvalue gaps are no greater than `64 D epsilon`. A resolved
 axis is therefore a singleton group and retains the componentwise loss. An
 unresolved repeated eigenspace is scored only through its total projection,
 which is invariant under any orthonormal basis change inside that subspace.
+At represented precision, the final group receives the probability mass left
+after all preceding groups for both observed and expected shares. The grouped
+shares therefore retain total mass exactly; in particular, a single group
+spanning every axis has observed and expected mass one and contributes exactly
+zero loss for every candidate.
 This dimension-scaled machine-precision rule affects candidate scoring only;
 it is not a rank decision and does not alter or regularize the tensor or its
 reported eigendecomposition.

@@ -286,6 +286,35 @@ fn cross_validation_scores_repeated_fold_eigenspaces_rotation_invariantly() -> T
 }
 
 #[test]
+fn cross_validation_preserves_total_mass_for_fully_unresolved_folds() -> TestResult {
+    let smaller = PrincipalAxisRatios::try_new([3.0, 2.0, 1.0])?;
+    let larger = PrincipalAxisRatios::try_new([4.0, 2.0, 1.0])?;
+    let estimate =
+        OrientationTensorEstimator::try_cross_validated(vec![smaller, larger], 4.0, 0.0)?
+            .try_estimate(&[
+                sample([1.0, 2.0, 2.0], f64::MAX)?,
+                sample([1.0, 0.0, 0.0], 1.0)?,
+                sample([0.0, 1.0, 0.0], 1.0)?,
+                sample([0.0, 0.0, 1.0], 1.0)?,
+            ])?;
+
+    let scores = estimate.candidate_scores();
+    assert_eq!(scores.len(), 2);
+    assert_eq!(scores[0].ratios(), smaller);
+    assert_eq!(scores[1].ratios(), larger);
+    assert!(
+        scores[0].score() < scores[1].score(),
+        "expected [3,2,1] score {:.17e} below [4,2,1] score {:.17e}",
+        scores[0].score(),
+        scores[1].score()
+    );
+    assert_eq!(estimate.axis_ratios(), smaller);
+    assert_close(scores[0].score() * f64::MAX, 1913.0 / 2646.0, 2.0e-14);
+    assert_close(scores[1].score() * f64::MAX, 1654.0 / 1323.0, 2.0e-14);
+    Ok(())
+}
+
+#[test]
 fn extreme_finite_weights_keep_every_influence_inside_the_public_range() -> TestResult {
     let estimator =
         OrientationTensorEstimator::try_fixed(PrincipalAxisRatios::try_new([1.0, 1.0, 1.0])?, 0.0)?;

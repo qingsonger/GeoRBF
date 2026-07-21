@@ -1072,12 +1072,25 @@ where
     let resolution = EIGENSPACE_RESOLUTION_FACTOR * dimension_as_f64::<D>() * f64::EPSILON;
     let mut loss = 0.0;
     let mut group_start = 0;
+    let mut accumulated_observed_share = 0.0;
+    let mut accumulated_expected_share = 0.0;
     for axis in 0..D {
         let group_ends = axis == D - 1
             || normalized_eigenvalues[axis] - normalized_eigenvalues[axis + 1] > resolution;
         if group_ends {
-            let observed_share = observed[group_start..=axis].iter().sum::<f64>();
-            let expected_share = expected[group_start..=axis].iter().sum::<f64>();
+            let final_group = axis == D - 1;
+            let (observed_share, expected_share) = if final_group {
+                (
+                    1.0 - accumulated_observed_share,
+                    1.0 - accumulated_expected_share,
+                )
+            } else {
+                let observed_share = observed[group_start..=axis].iter().sum::<f64>();
+                let expected_share = expected[group_start..=axis].iter().sum::<f64>();
+                accumulated_observed_share += observed_share;
+                accumulated_expected_share += expected_share;
+                (observed_share, expected_share)
+            };
             let residual = observed_share - expected_share;
             loss += residual * residual;
             group_start = axis + 1;

@@ -58,7 +58,12 @@ candidate scores and the selected ratios. The Repair also enforces the public
 influence range through an explicit `64 D^2 epsilon` upper roundoff band:
 values inside the band are recorded as one and larger overshoots are structured
 errors. An extreme finite-weight regression checks every per-sample influence
-and the aggregate maximum.
+and the aggregate maximum. A subsequent Repair preserves exact total mass in
+the represented grouped loss by assigning both observed and expected residual
+mass to the final eigenspace group. A public D=3 regression with one
+`f64::MAX`-weighted direction and three unit-weight coordinate axes verifies
+the independently derived candidate-score ordering and selection when the
+dominant leave-one-out fold is fully unresolved.
 
 The initial optimized Windows smoke measured approximately 7.39 us per
 four-sample, three-candidate D=3 estimate over 2,000 estimates, with checksum
