@@ -6,9 +6,11 @@
 - Branch: `codex/req-trend-001-positive-definite-local-trends`
 - Reviewed head: `48c9d516721928f98dd06242a2304b8d4c9f94e3`
 - Repair code/test head: `643535f4ef181764baa6a5b45605711ee2a91f7d`
+- F5-F6 repair code/test head: `147cc4f6a4cec226c752127f94076c0d954e2dfc`
+- Latest re-reviewed head: `8396ec9957f9ea4ab6c6e252adbb218d5c18fbd4`
 - Base head: `7487cfafd0739c1f63028d4b46d7505b4ca6c1b3`
 - Review date: 2026-07-21
-- Result: three P1 findings and one P2 finding; repair required
+- Latest result: F1-F6 closed; two new P1 findings F7-F8 require repair
 
 ## Scope and independence
 
@@ -333,3 +335,109 @@ F5-F6. PR #103 remains Draft and REQ-TREND-001 remains `implemented`; a fresh
 independent mathematical and numerical re-review of the complete repaired diff
 is required next. This Repair does not mark the PR ready, merge it, or begin
 another requirement.
+
+## Fresh independent re-review after F5-F6 repair
+
+- Re-reviewed base: `7487cfafd0739c1f63028d4b46d7505b4ca6c1b3`
+- Re-reviewed F5-F6 repair code/test head:
+  `147cc4f6a4cec226c752127f94076c0d954e2dfc`
+- Re-reviewed final head: `8396ec9957f9ea4ab6c6e252adbb218d5c18fbd4`
+- Re-review date: 2026-07-21
+- Result: F1-F6 closed; two new P1 findings F7-F8 require repair
+
+An isolated read-only project `math_reviewer` received only the bounded
+requirement summary and integrated dependency closure, Issue #102 acceptance
+criteria, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008 contracts, the complete
+PR diff, directly relevant implementation and validation evidence, and the
+preceding findings and repairs. It inherited no Implement or Repair reasoning
+and made no repository or remote change. Final head `8396ec9` differs from
+repair code/test head `147cc4f` only in this review record and the bounded
+handoff.
+
+### Re-review disposition of F1-F6
+
+- F1-F4 remain closed for their required regressions.
+- F5 is closed: combined-logarithm Value evaluation retains the repaired
+  representable result, and its public regression passes.
+- F6 is closed: construction rejects zero reciprocal or reciprocal-square
+  scales, and its public regression passes.
+
+### F7 - P1: scaled-displacement underflow erases a representable gradient
+
+`gaussian_weight_jet` computes `displacement * inverse_radius` at
+`crates/georbf/src/local_trend.rs:1120`. A nonzero result may round to zero;
+the zero is then used as an exact derivative factor at lines 1154-1160 and is
+short-circuited at lines 1223-1225.
+
+For `b(x) = a exp(-x^2/(2r^2))`, a unit Gaussian kernel evaluated at its
+center has zero query gradient, so independent 120-digit arithmetic gives
+
+```text
+d/dx [b(x)b(y)k(x,y)] at x=y=delta
+  = -a^2 exp(-delta^2/r^2) delta/r^2.
+```
+
+With `a=1e154`, `r=3`, and `delta=f64::from_bits(1)`, the scaled displacement
+rounds to zero but the complete mixture-gradient contribution is the normal,
+representable `-5.489618287124962e-17`. The implementation returns zero. This
+violates the complete-gradient contract and the documented promise that an
+intermediate rounded zero does not erase a representable derivative.
+
+Required regression: construct a public D=1 mixture with those parameters,
+`query == kernel_center == [f64::from_bits(1)]`, a unit Gaussian kernel,
+isotropic anisotropy, and a constant strict background. Demand `First` and
+require the gradient to approximate `-5.489618287124962e-17`, not zero.
+
+### F8 - P1: mixed scaled-coordinate underflow erases a Hessian entry
+
+At `crates/georbf/src/local_trend.rs:1171`, the implementation forms
+`scaled[row] * scaled[column]` before entering the logarithmically stable
+helper. Two nonzero scaled coordinates can therefore produce a zero
+coefficient, which lines 1223-1225 return as exact zero.
+
+In D=2 with amplitude `1`, radius `1e-154`, weight center `[0,0]`, and
+`x=y=[delta,delta]` for `delta=f64::from_bits(1)`, each scaled coordinate is
+`4.9406564584124656e-170`, but their binary64 product is zero. At a unit
+Gaussian kernel center, independent 120-digit arithmetic gives the analytic
+mixed mixture Hessian
+
+```text
+b(x)^2 delta^2/r^4 = 2.4410086240052807e-31,
+```
+
+while the implementation returns zero.
+
+Required regression: construct that public D=2 mixture, demand `Second`, and
+require both symmetric off-diagonal entries to approximate
+`2.4410086240052807e-31`.
+
+### Re-review validation and disposition
+
+- The reviewer passed all 12 focused local-trend tests and diff whitespace
+  validation. Those tests do not cover F7-F8. Independent 120-digit
+  calculations reproduced both findings.
+- The parent Review task passed the same 12 focused tests, all georbf Rustdoc,
+  the runnable example, all 58 requirement checks, complete diff whitespace
+  validation, and the complete exact-head standard gate: workspace format,
+  warning-denying workspace all-target/all-feature Clippy, all workspace tests
+  with all features, workspace Rustdoc, and requirement validation.
+- Draft CI run 29807655190 passed its configured Ubuntu correctness gate on
+  exact re-reviewed head `8396ec9`. Ready-only Windows, Ubuntu, macOS, and
+  benchmark-smoke CI did not run and is not claimed as passed.
+- The SPD proof, CPD rejection, product-rule signs and dimensions, capability
+  intersection, center handling, ordinary-scale rotation behavior,
+  allocation-free point evaluation, interface dispositions, diagnostics,
+  benchmark wiring, and lack of hidden regularization are otherwise sound.
+  Polynomial spaces, rank decisions, hard constraints, and infeasibility are
+  not applicable to this no-solve primitive.
+- No P0, P2, or P3 finding was identified. The unavailable nextest, deny,
+  audit, semver, Miri, sanitizer, fuzzing, mutation, allocation-
+  instrumentation, API/ABI/schema, and actionlint checks remain unexecuted and
+  are not claimed as passed.
+
+PR #103 remains Draft and REQ-TREND-001 remains `implemented`, not
+`integrated`. A fresh Repair task must address only F7-F8, add both public
+regressions, rerun focused checks and the complete stable-head standard gate,
+update this evidence and the bounded handoff, push, and stop for another fresh
+independent re-review. This Review task does not repair production code, mark
+the PR ready, merge it, or begin another requirement.
