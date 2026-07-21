@@ -152,8 +152,9 @@ Post-merge `main` run 29800853201 passed the same complete three-platform gate
 on that exact merge commit.
 
 The isolated integration-state change records only the registry, review
-evidence, history index, and bounded handoff. It changes no production code,
-test, manifest, schema, CI, build input, API, normative contract, numerical
-behavior, dependency, tag, or release. After its own complete local and exact
-Ready-head CI gates are green and its pull request is merged, stop. A fresh
-task must select the next requirement; this task must not begin it.
+evidence, history index, and bounded handoff in pull request #101. It changes
+no production code, test, manifest, schema, CI, build input, API, normative
+contract, numerical behavior, dependency, tag, or release. After its own
+complete local and exact Ready-head CI gates are green and that pull request is
+merged, stop. A fresh task must select the next requirement; this task must not
+begin it.

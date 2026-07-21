@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-PROJECT-001, Issue #99
 - Implementation pull request: #100, squash-merged as `09ffc07`
 - Integration-state branch: `codex/req-project-001-integration-state`
-- Integration-state pull request: pending publication
+- Integration-state pull request: #101 (Draft until exact Ready CI is green)
 - Independently reviewed implementation head: `16c8001`
 - Cleanly re-reviewed evidence head: `417eb6e`
 - Independent review record: `docs/reviews/PR-100-INDEPENDENT-REVIEW.md`
@@ -58,7 +58,7 @@ task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #99
 - Merged implementation: GitHub PR #100
-- Integration-state pull request: pending publication
+- Integration-state pull request: GitHub PR #101
 - Independent review: `docs/reviews/PR-100-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-PROJECT-001.md`
 - Independent property/error tests: `crates/georbf/tests/project.rs`

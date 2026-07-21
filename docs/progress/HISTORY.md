@@ -39,6 +39,7 @@ available in Git history through commit `a2be099`.
 | REQ-TANGENT-001 | #90 | #91 | #92 | `docs/reviews/PR-91-INDEPENDENT-REVIEW.md` |
 | REQ-THICK-001 | #93 | #94 | #95 | `docs/reviews/PR-94-INDEPENDENT-REVIEW.md` |
 | REQ-THICK-002 | #96 | #97 | #98 | `docs/reviews/PR-97-INDEPENDENT-REVIEW.md` |
+| REQ-PROJECT-001 | #99 | #100 | #101 | `docs/reviews/PR-100-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
