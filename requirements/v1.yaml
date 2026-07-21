@@ -606,17 +606,17 @@ requirements:
     dependencies: [REQ-KERNEL-003, REQ-ANISO-001, REQ-MODEL-001]
     milestone: M6-v0.6.0
     priority: P0
-    issue: null
+    issue: 102
     pull_request: null
     tests: [random-spd, strict-background, derivative-product-rule, hessian-capability, coverage, cpd-rejection]
     docs: [docs/architecture/ANISOTROPY.md, docs/adr/ADR-0005-positive-definite-local-trends.md, docs/adr/ADR-0008-strict-local-mixture-background.md]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
-    status: planned
+    rust_api: implemented
+    cli: "N/A: versioned schemas and the complete data CLI arrive in M8"
+    c_api: "N/A: bindings follow Rust API and schema freeze in M9"
+    cpp_api: "N/A: bindings follow Rust API and schema freeze in M9"
+    python_api: "N/A: bindings follow Rust API and schema freeze in M9"
+    benchmark: implemented
+    status: in_progress
 
   - id: REQ-TREND-002
     title: Region and reference-field trend controls

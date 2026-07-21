@@ -6,64 +6,57 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-PROJECT-001 complete
-- Requirement: REQ-PROJECT-001, Issue #99
-- Implementation pull request: #100, squash-merged as `09ffc07`
-- Integration-state branch: `codex/req-project-001-integration-state`
-- Integration-state pull request: #101 (Draft until exact Ready CI is green)
-- Independently reviewed implementation head: `16c8001`
-- Cleanly re-reviewed evidence head: `417eb6e`
-- Independent review record: `docs/reviews/PR-100-INDEPENDENT-REVIEW.md`
-- Final re-review result: no P0-P3 finding; no Repair required
-- Registry state in this change: `integrated`
-- Dependencies: REQ-MODEL-001 and REQ-LEVEL-001 are integrated
+- Mode: Implement
+- Requirement: REQ-TREND-001, Issue #102
+- Branch: `codex/req-trend-001-positive-definite-local-trends`
+- Draft pull request: pending first push
+- Dependencies: REQ-KERNEL-003, REQ-ANISO-001, and REQ-MODEL-001 are integrated
+- Registry state: `in_progress` until the Draft PR is linked
 
-## Integration result
+## Implemented scope
 
-- A fresh isolated read-only `math_reviewer` re-reviewed exact evidence head
-  `417eb6e` and found no P0-P3 issue. No Repair was required.
-- Exact Ready evidence head `c9d5d9c` passed the complete Windows, Ubuntu, and
-  macOS correctness, backend, benchmark-smoke, and registry gate in CI run
-  29800195227.
-- PR #100 squash-merged exactly once as `09ffc07`; Issue #99 closed as
-  completed.
-- Post-merge `main` run 29800853201 passed the same complete three-platform
-  correctness, backend, benchmark-smoke, and registry gate on `09ffc07`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, normative contract, numerical
-  behavior, dependency, tag, or release.
+- Added an immutable D=1/D=2/D=3 local mixture of fixed anisotropic kernels and
+  analytic spatial-basis products.
+- Enforced strict-positive-definite kernel metadata, explicit CPD rejection,
+  one finite nonzero constant background, a declared operational domain, and a
+  positive explicit lower-bound policy.
+- Added complete query value, gradient, and Hessian product rules with
+  component-intersection capability checks and structured finite-arithmetic
+  errors.
+- Added immutable construction diagnostics and allocation-free point coverage,
+  plus Rustdoc, a runnable example, and a deterministic Hessian benchmark.
+- CLI is N/A until M8 schemas and the complete data CLI. C, C++, and Python are
+  N/A until M9 API/schema freeze and bindings.
 
 ## Validation state
 
-- Exact implementation Ready head `c9d5d9c` retained the complete local
-  standard gate: workspace format, warning-denying all-target/all-feature
-  Clippy, all-feature workspace tests, workspace Rustdoc, all 58 requirement
+- Focused local-trend tests: 8 passed, including deterministic random Gram SPD,
+  independent finite differences, strict background policy, Hessian capability,
+  coverage, CPD rejection, dimensions, and input errors.
+- The runnable example completed and the release-mode benchmark smoke passed in
+  D=1, D=2, and D=3.
+- Warning-denying georbf all-target/all-feature Clippy passed during development.
+- The complete stable-head standard gate passed: workspace format,
+  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
+  workspace Rustdoc (including D=4 compile rejection), all 58 requirement
   checks, and complete diff whitespace validation.
-- Both the exact Ready-head and post-merge `main` three-platform gates are
-  green as recorded above, including every configured benchmark smoke.
-- The isolated integration-state tree must pass the complete local standard
-  gate and exact Ready-head CI before it merges.
-- Local `actionlint` and the later unavailable tools listed below remain
-  unavailable and are not claimed as passed.
 
 ## Next task boundary
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start another requirement in this
-task.
+After this implementation task pushes its stable head and opens the Draft PR,
+stop. A fresh Review task must inspect only REQ-TREND-001 and that PR, use an
+isolated read-only `math_reviewer`, and must not repair production code or begin
+another requirement.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #99
-- Merged implementation: GitHub PR #100
-- Integration-state pull request: GitHub PR #101
-- Independent review: `docs/reviews/PR-100-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-PROJECT-001.md`
-- Independent property/error tests: `crates/georbf/tests/project.rs`
-- Public implementation and Rustdoc: `crates/georbf/src/project.rs`
-- Architecture boundary: `docs/architecture/ARCHITECTURE.md`
+- Acceptance criteria and exclusions: GitHub Issue #102
+- Requirement summary and benchmark baseline: `changes/REQ-TREND-001.md`
+- Independent property/error tests: `crates/georbf/tests/local_trend.rs`
+- Public implementation and Rustdoc: `crates/georbf/src/local_trend.rs`
+- Runnable example: `crates/georbf/examples/local_trend_mixture.rs`
+- Focused benchmark: `crates/georbf/benches/local_trend_mixture.rs`
+- Mathematical contract: `docs/architecture/ANISOTROPY.md`, ADR-0005, ADR-0008
 
 ## Checks not yet available
 

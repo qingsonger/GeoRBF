@@ -124,3 +124,51 @@ strength, and region. A normalized gradient from another already fitted field
 may generate a control direction. Diagnostics export axes, lengths, weights,
 background, condition number, coverage, direction jumps, and low-confidence
 areas. CPD kernels produce an explicit incompatibility error in this path.
+
+### V1 positive-definite mixture primitive
+
+`REQ-TREND-001` implements the mathematical mixture primitive independently of
+the later control compiler. `LocalTrendMixture<D>` retains a finite ordered set
+of `LocalTrendComponent<D>` values. Every component combines one existing
+`KernelDefinition<D>`, one fixed validated `GlobalAnisotropy<D>`, and one
+analytic `SmoothSpatialWeight<D>`. Construction accepts only kernels whose
+metadata declares strict positive definiteness and identifies the rejected
+component and CPD order otherwise. It does not attach a polynomial side space
+or reinterpret a CPD kernel as SPD.
+
+The v1 strict background policy is deliberately concrete: the selected
+background weight is a finite nonzero constant. This is stronger than merely
+sampling a spatially varying function and proves that its diagonal congruence
+is invertible everywhere. A caller declares a finite closed axis-aligned
+operational domain and a positive finite minimum absolute background weight;
+construction rejects a background below that policy. Because the background
+is constant, the proved lower bound holds on the entire coordinate space and
+therefore on the declared domain. Other components may use signed constant or
+Gaussian weights. A Gaussian weight may underflow to represented zero far from
+its center without weakening strict positive definiteness, because it supplies
+only an additional positive-semidefinite congruence term.
+
+For query derivatives through Hessian order, the implementation evaluates
+
+```text
+grad_x (b_x b_y k) = b_y (grad(b_x) k + b_x grad_x(k)),
+
+H_x (b_x b_y k) = b_y (
+    H(b_x) k
+    + grad(b_x) grad_x(k)^T
+    + grad_x(k) grad(b_x)^T
+    + b_x H_x(k)).
+```
+
+Every term is included and checked for finite representability. Aggregate
+capability is the intersection of every fixed kernel's metadata: a center
+Hessian is rejected if any member provides it only away from centers. The
+primitive exposes component/background identity, maximum fixed-anisotropy
+condition number, lower-bound policy margin, and allocation-free pointwise
+`sum_r b_r(x)^2` coverage. It applies no jitter, regularization, clipping,
+pseudoinverse, automatic component selection, or implicit refit.
+
+Local geological controls, regions, reference-field gradients, direction-jump
+and confidence policy, and fitted-field integration belong to subsequent
+requirements. Versioned schemas and the complete CLI remain M8 work; C, C++,
+and Python adapters remain M9 work.

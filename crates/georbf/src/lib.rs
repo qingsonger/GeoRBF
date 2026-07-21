@@ -40,6 +40,10 @@
 //! Immutable multi-field projects retain independently fitted scalar fields in
 //! stable identifier order and expose validated reference-field inputs that
 //! delegate evaluation without adding topology or cross-field mathematics.
+//! Positive-definite local trends use finite smooth-weight products of fixed
+//! SPD anisotropic kernels, with an everywhere-nonzero policy-bounded constant
+//! background, complete query gradient/Hessian product rules, explicit CPD
+//! rejection, and allocation-free pointwise coverage diagnostics.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -59,6 +63,7 @@ pub mod kernel;
 pub mod kernel_calculus;
 pub mod levels;
 pub mod linear_constraints;
+pub mod local_trend;
 pub mod model;
 pub mod normal_observations;
 pub mod orientation;
@@ -142,6 +147,11 @@ pub use levels::{
 };
 pub use linear_constraints::{
     InsideOrientation, LinearConstraint, LinearConstraintError, MonotonicitySense, RegionSide,
+};
+pub use local_trend::{
+    LocalTrendComponent, LocalTrendConstructionError, LocalTrendCoverage, LocalTrendDiagnostics,
+    LocalTrendEvaluation, LocalTrendEvaluationError, LocalTrendMixture, LocalTrendQuantity,
+    OperationalDomain, SmoothSpatialWeight,
 };
 pub use model::{
     FittedField, FittedFieldCapabilities, FittedFieldComponent, FittedFieldDiagnostics,

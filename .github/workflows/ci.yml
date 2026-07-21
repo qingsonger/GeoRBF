@@ -177,6 +177,8 @@ jobs:
         run: cargo bench -p georbf --bench wendland_kernels -- --smoke
       - name: Smoke-test global anisotropy benchmark
         run: cargo bench -p georbf --bench global_anisotropy -- --smoke
+      - name: Smoke-test local trend mixture benchmark
+        run: cargo bench -p georbf --bench local_trend_mixture -- --smoke
       - name: Smoke-test polynomial spaces benchmark
         run: cargo bench -p georbf --bench polynomial_spaces -- --smoke
       - name: Smoke-test atomic functionals benchmark
