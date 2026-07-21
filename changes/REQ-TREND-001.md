@@ -41,6 +41,14 @@ derivative order. Regressions cover the external construction barrier,
 strict-background square underflow, a representable extreme-scale Hessian, and
 Value/Coverage success when an unused Hessian would overflow.
 
+Fresh re-review repair also evaluates the Gaussian weight value through the
+combined amplitude/exponent logarithmic scale whenever the direct exponential
+product is not normal, retaining a representable mixture contribution even if
+the exponential alone underflows. Gaussian construction now rejects radii
+whose reciprocal or reciprocal square rounds to zero, preserving the public
+inverse-derivative contract. Public regressions cover both extreme-scale
+boundaries.
+
 Rust is implemented. CLI is N/A because versioned schemas and the complete
 data CLI arrive in M8. C, C++, and Python are N/A because bindings follow API
 and schema freeze in M9. Trend-control compilation, region semantics,

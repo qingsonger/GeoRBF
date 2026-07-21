@@ -175,7 +175,11 @@ where
         }
         let inverse_radius = radius.recip();
         let inverse_radius_squared = inverse_radius * inverse_radius;
-        if !inverse_radius.is_finite() || !inverse_radius_squared.is_finite() {
+        if !inverse_radius.is_finite()
+            || inverse_radius == 0.0
+            || !inverse_radius_squared.is_finite()
+            || inverse_radius_squared == 0.0
+        {
             return Err(LocalTrendConstructionError::NonRepresentableWeightRadius { radius });
         }
         Ok(Self {
@@ -1132,13 +1136,12 @@ where
         }
     }
     let exponent = -0.5 * squared_radius;
-    let value = amplitude * exponent.exp();
-    if !value.is_finite() {
-        return Err(LocalTrendEvaluationError::NonFiniteWeightDerivative {
+    let value = stable_gaussian_value(amplitude, exponent).ok_or(
+        LocalTrendEvaluationError::NonFiniteWeightDerivative {
             component: usize::MAX,
             quantity: LocalTrendQuantity::Value,
-        });
-    }
+        },
+    )?;
     let mut gradient = [0.0; D];
     let mut hessian = [[0.0; D]; D];
     if demanded == KernelDerivativeOrder::Value {
@@ -1184,6 +1187,29 @@ where
         gradient,
         hessian,
     })
+}
+
+#[inline]
+fn stable_gaussian_value(amplitude: f64, exponent: f64) -> Option<f64> {
+    if amplitude == 0.0 {
+        return Some(0.0);
+    }
+    if !amplitude.is_finite() || !exponent.is_finite() {
+        return None;
+    }
+    let value = amplitude * exponent.exp();
+    if value.is_normal() {
+        return Some(value);
+    }
+
+    let logarithm = amplitude.abs().ln() + exponent;
+    let magnitude = logarithm.exp();
+    let value = if amplitude.is_sign_negative() {
+        -magnitude
+    } else {
+        magnitude
+    };
+    value.is_finite().then_some(value)
 }
 
 #[inline]

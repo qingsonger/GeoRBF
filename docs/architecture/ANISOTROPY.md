@@ -146,13 +146,14 @@ is constant, the proved lower bound holds on the entire coordinate space and
 therefore on the declared domain. Other components may use signed constant or
 Gaussian weights. Every accepted nonzero weight amplitude must have a nonzero
 finite represented square; this prevents floating-point underflow from erasing
-the strict background diagonal contribution. A Gaussian value may still
-underflow to represented zero far from its center without weakening strict
-positive definiteness, because it supplies only an additional positive-
-semidefinite congruence term. Its demanded derivatives are evaluated with a
-scaled exponential product when direct multiplication would underflow or
-overflow, so a rounded-zero or subnormal value does not erase a representable
-gradient or Hessian.
+the strict background diagonal contribution. Every accepted Gaussian radius
+must retain nonzero finite represented reciprocal and reciprocal-square
+derivative scales. A Gaussian value may still underflow to represented zero
+far from its center without weakening strict positive definiteness, because it
+supplies only an additional positive-semidefinite congruence term. Its value
+and demanded derivatives are evaluated with combined logarithmic scaling when
+direct exponential products would underflow or overflow, so an intermediate
+rounded zero does not erase a representable final value, gradient, or Hessian.
 
 For query derivatives through Hessian order, the implementation evaluates
 

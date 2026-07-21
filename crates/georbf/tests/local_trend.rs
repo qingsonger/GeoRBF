@@ -236,6 +236,43 @@ fn extreme_gaussian_hessian_retains_representable_derivative() -> Result<(), Box
 }
 
 #[test]
+fn extreme_gaussian_value_survives_exponential_underflow() -> Result<(), Box<dyn Error>> {
+    let radius = 1.0e-150;
+    let local = LocalTrendComponent::new(
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        GlobalAnisotropy::try_isotropic(1.0)?,
+        SmoothSpatialWeight::try_gaussian(Point::try_new([0.0])?, 1.0e150, radius)?,
+    );
+    let mixture = LocalTrendMixture::try_new(
+        vec![background::<1>(1.0e-160)?, local],
+        0,
+        domain(1.0)?,
+        1.0e-160,
+    )?;
+
+    let value = mixture
+        .try_evaluate(
+            Point::try_new([40.0 * radius])?,
+            Point::try_new([0.0])?,
+            KernelDerivativeOrder::Value,
+        )?
+        .value();
+    let expected = 3.667_874_584_177_687e-48;
+    assert!(value != 0.0);
+    assert!((value - expected).abs() <= expected * 2.0e-13);
+    Ok(())
+}
+
+#[test]
+fn gaussian_radius_must_preserve_inverse_square() -> Result<(), Box<dyn Error>> {
+    assert!(matches!(
+        SmoothSpatialWeight::<1>::try_gaussian(Point::try_new([0.0])?, 1.0e154, 1.0e200),
+        Err(LocalTrendConstructionError::NonRepresentableWeightRadius { radius: 1.0e200 })
+    ));
+    Ok(())
+}
+
+#[test]
 fn coverage_and_value_skip_irrelevant_weight_hessian_overflow() -> Result<(), Box<dyn Error>> {
     let local = LocalTrendComponent::new(
         KernelDefinition::from(Gaussian::try_new(1.0)?),
