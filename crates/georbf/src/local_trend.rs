@@ -87,13 +87,31 @@ where
 
 /// A concrete smooth scalar basis used on both arguments of one mixture component.
 ///
-/// Both variants are analytic through Hessian order. Gaussian weights may
+/// Both supported forms are analytic through Hessian order. Gaussian weights may
 /// underflow to exact zero far from their centers and therefore cannot serve
 /// as the strict background; they remain valid positive-semidefinite diagonal
 /// congruence factors for non-background components.
+///
+/// The representation is intentionally private so every instance preserves
+/// the validation and cached-parameter invariants established by
+/// [`Self::try_constant`] and [`Self::try_gaussian`].
+///
+/// ```compile_fail
+/// use georbf::SmoothSpatialWeight;
+///
+/// let _ = SmoothSpatialWeight::<1>::Constant { value: 1.0 };
+/// ```
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[must_use]
-pub enum SmoothSpatialWeight<const D: usize>
+pub struct SmoothSpatialWeight<const D: usize>
+where
+    Dim<D>: SupportedDimension,
+{
+    kind: SmoothSpatialWeightKind<D>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum SmoothSpatialWeightKind<const D: usize>
 where
     Dim<D>: SupportedDimension,
 {
@@ -128,10 +146,13 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a structured error when the value or its square is not finitely representable.
+    /// Returns a structured error when the value is non-finite or the square
+    /// of a nonzero value is zero or non-finite.
     pub fn try_constant(value: f64) -> Result<Self, LocalTrendConstructionError<D>> {
         validate_amplitude(value)?;
-        Ok(Self::Constant { value })
+        Ok(Self {
+            kind: SmoothSpatialWeightKind::Constant { value },
+        })
     }
 
     /// Constructs an analytic Gaussian spatial weight.
@@ -157,30 +178,32 @@ where
         if !inverse_radius.is_finite() || !inverse_radius_squared.is_finite() {
             return Err(LocalTrendConstructionError::NonRepresentableWeightRadius { radius });
         }
-        Ok(Self::Gaussian {
-            center,
-            amplitude,
-            radius,
-            inverse_radius,
-            inverse_radius_squared,
+        Ok(Self {
+            kind: SmoothSpatialWeightKind::Gaussian {
+                center,
+                amplitude,
+                radius,
+                inverse_radius,
+                inverse_radius_squared,
+            },
         })
     }
 
     /// Returns the constant value, or `None` for a spatially varying basis.
     #[must_use]
     pub const fn constant_value(self) -> Option<f64> {
-        match self {
-            Self::Constant { value } => Some(value),
-            Self::Gaussian { .. } => None,
+        match self.kind {
+            SmoothSpatialWeightKind::Constant { value } => Some(value),
+            SmoothSpatialWeightKind::Gaussian { .. } => None,
         }
     }
 
     /// Returns the Gaussian center, amplitude, and radius when applicable.
     #[must_use]
     pub const fn gaussian_parameters(self) -> Option<(Point<D>, f64, f64)> {
-        match self {
-            Self::Constant { .. } => None,
-            Self::Gaussian {
+        match self.kind {
+            SmoothSpatialWeightKind::Constant { .. } => None,
+            SmoothSpatialWeightKind::Gaussian {
                 center,
                 amplitude,
                 radius,
@@ -189,14 +212,18 @@ where
         }
     }
 
-    fn try_jet(self, point: Point<D>) -> Result<WeightJet<D>, LocalTrendEvaluationError<D>> {
-        match self {
-            Self::Constant { value } => Ok(WeightJet {
+    fn try_jet(
+        self,
+        point: Point<D>,
+        demanded: KernelDerivativeOrder,
+    ) -> Result<WeightJet<D>, LocalTrendEvaluationError<D>> {
+        match self.kind {
+            SmoothSpatialWeightKind::Constant { value } => Ok(WeightJet {
                 value,
                 gradient: [0.0; D],
                 hessian: [[0.0; D]; D],
             }),
-            Self::Gaussian {
+            SmoothSpatialWeightKind::Gaussian {
                 center,
                 amplitude,
                 inverse_radius,
@@ -208,6 +235,7 @@ where
                 amplitude,
                 inverse_radius,
                 inverse_radius_squared,
+                demanded,
             ),
         }
     }
@@ -577,7 +605,7 @@ where
         for (index, component) in self.components.iter().enumerate() {
             let value = component
                 .weight
-                .try_jet(point)
+                .try_jet(point, KernelDerivativeOrder::Value)
                 .map_err(|source| source.with_component(index))?
                 .value;
             if value != 0.0 {
@@ -635,11 +663,11 @@ where
         for (component_index, component) in self.components.iter().enumerate() {
             let query_weight = component
                 .weight
-                .try_jet(query)
+                .try_jet(query, demanded)
                 .map_err(|source| source.with_component(component_index))?;
             let center_weight = component
                 .weight
-                .try_jet(center)
+                .try_jet(center, KernelDerivativeOrder::Value)
                 .map_err(|source| source.with_component(component_index))?
                 .value;
             let kernel = component
@@ -733,7 +761,7 @@ where
         /// Rejected amplitude.
         amplitude: f64,
     },
-    /// Squaring a finite amplitude is not representable.
+    /// Squaring a finite nonzero amplitude produces zero or a non-finite value.
     NonRepresentableWeightAmplitudeSquare {
         /// Rejected amplitude.
         amplitude: f64,
@@ -824,7 +852,7 @@ where
             }
             Self::NonRepresentableWeightAmplitudeSquare { amplitude } => write!(
                 formatter,
-                "spatial-weight amplitude {amplitude} has a non-representable square"
+                "spatial-weight amplitude {amplitude} has a zero or non-finite represented square"
             ),
             Self::NonFiniteWeightRadius { radius } => {
                 write!(
@@ -1055,7 +1083,8 @@ where
     if !amplitude.is_finite() {
         return Err(LocalTrendConstructionError::NonFiniteWeightAmplitude { amplitude });
     }
-    if !(amplitude * amplitude).is_finite() {
+    let squared = amplitude * amplitude;
+    if !squared.is_finite() || (amplitude != 0.0 && squared == 0.0) {
         return Err(
             LocalTrendConstructionError::NonRepresentableWeightAmplitudeSquare { amplitude },
         );
@@ -1069,6 +1098,7 @@ fn gaussian_weight_jet<const D: usize>(
     amplitude: f64,
     inverse_radius: f64,
     inverse_radius_squared: f64,
+    demanded: KernelDerivativeOrder,
 ) -> Result<WeightJet<D>, LocalTrendEvaluationError<D>>
 where
     Dim<D>: SupportedDimension,
@@ -1101,7 +1131,8 @@ where
             });
         }
     }
-    let value = amplitude * (-0.5 * squared_radius).exp();
+    let exponent = -0.5 * squared_radius;
+    let value = amplitude * exponent.exp();
     if !value.is_finite() {
         return Err(LocalTrendEvaluationError::NonFiniteWeightDerivative {
             component: usize::MAX,
@@ -1109,27 +1140,43 @@ where
         });
     }
     let mut gradient = [0.0; D];
-    for axis in 0..D {
-        gradient[axis] = -(value * inverse_radius) * scaled[axis];
-        if !gradient[axis].is_finite() {
-            return Err(LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                component: usize::MAX,
-                quantity: LocalTrendQuantity::Gradient { axis },
-            });
-        }
-    }
     let mut hessian = [[0.0; D]; D];
-    let scaled_curvature = value * inverse_radius_squared;
+    if demanded == KernelDerivativeOrder::Value {
+        return Ok(WeightJet {
+            value,
+            gradient,
+            hessian,
+        });
+    }
+    for axis in 0..D {
+        gradient[axis] =
+            stable_gaussian_product(value, amplitude, exponent, -inverse_radius, scaled[axis])
+                .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                    component: usize::MAX,
+                    quantity: LocalTrendQuantity::Gradient { axis },
+                })?;
+    }
+    if demanded == KernelDerivativeOrder::First {
+        return Ok(WeightJet {
+            value,
+            gradient,
+            hessian,
+        });
+    }
     for row in 0..D {
         for column in 0..D {
             let coefficient = scaled[row] * scaled[column] - if row == column { 1.0 } else { 0.0 };
-            hessian[row][column] = scaled_curvature * coefficient;
-            if !hessian[row][column].is_finite() {
-                return Err(LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                    component: usize::MAX,
-                    quantity: LocalTrendQuantity::Hessian { row, column },
-                });
-            }
+            hessian[row][column] = stable_gaussian_product(
+                value,
+                amplitude,
+                exponent,
+                inverse_radius_squared,
+                coefficient,
+            )
+            .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                component: usize::MAX,
+                quantity: LocalTrendQuantity::Hessian { row, column },
+            })?;
         }
     }
     Ok(WeightJet {
@@ -1137,6 +1184,40 @@ where
         gradient,
         hessian,
     })
+}
+
+#[inline]
+fn stable_gaussian_product(
+    value: f64,
+    amplitude: f64,
+    exponent: f64,
+    first_factor: f64,
+    second_factor: f64,
+) -> Option<f64> {
+    if amplitude == 0.0 || first_factor == 0.0 || second_factor == 0.0 {
+        return Some(0.0);
+    }
+    if !amplitude.is_finite()
+        || !exponent.is_finite()
+        || !first_factor.is_finite()
+        || !second_factor.is_finite()
+    {
+        return None;
+    }
+    let first_product = value * first_factor;
+    let product = first_product * second_factor;
+    if value.is_normal() && first_product.is_normal() && product.is_normal() {
+        return Some(product);
+    }
+
+    let negative = amplitude.is_sign_negative()
+        ^ first_factor.is_sign_negative()
+        ^ second_factor.is_sign_negative();
+    let logarithm =
+        amplitude.abs().ln() + exponent + first_factor.abs().ln() + second_factor.abs().ln();
+    let magnitude = logarithm.exp();
+    let value = if negative { -magnitude } else { magnitude };
+    value.is_finite().then_some(value)
 }
 
 fn finite_product(left: f64, right: f64) -> Option<f64> {

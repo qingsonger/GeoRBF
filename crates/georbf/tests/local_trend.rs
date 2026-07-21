@@ -196,6 +196,67 @@ fn strict_background_and_policy_failures_are_structured() -> Result<(), Box<dyn 
             minimum: 0.25,
         })
     ));
+    assert!(matches!(
+        SmoothSpatialWeight::<1>::try_constant(1.0e-200),
+        Err(
+            LocalTrendConstructionError::NonRepresentableWeightAmplitudeSquare {
+                amplitude: 1.0e-200,
+            }
+        )
+    ));
+    Ok(())
+}
+
+#[test]
+fn extreme_gaussian_hessian_retains_representable_derivative() -> Result<(), Box<dyn Error>> {
+    let radius = 1.0e-150;
+    let local = LocalTrendComponent::new(
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        GlobalAnisotropy::try_isotropic(1.0)?,
+        SmoothSpatialWeight::try_gaussian(Point::try_new([0.0])?, 1.0, radius)?,
+    );
+    let mixture = LocalTrendMixture::try_new(
+        vec![background::<1>(1.0e-160)?, local],
+        0,
+        domain(1.0)?,
+        1.0e-160,
+    )?;
+    let evaluation = mixture.try_evaluate(
+        Point::try_new([40.0 * radius])?,
+        Point::try_new([0.0])?,
+        KernelDerivativeOrder::Second,
+    )?;
+    let hessian = evaluation
+        .hessian()
+        .ok_or_else(|| std::io::Error::other("Hessian demand was not retained"))?;
+    let expected = 5.864_931_460_100_122e-45;
+    assert!(hessian[0][0] != 0.0);
+    assert!((hessian[0][0] - expected).abs() <= expected * 2.0e-13);
+    Ok(())
+}
+
+#[test]
+fn coverage_and_value_skip_irrelevant_weight_hessian_overflow() -> Result<(), Box<dyn Error>> {
+    let local = LocalTrendComponent::new(
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        GlobalAnisotropy::try_isotropic(1.0)?,
+        SmoothSpatialWeight::try_gaussian(Point::try_new([0.0])?, 1.0e150, 1.0e-80)?,
+    );
+    let mixture =
+        LocalTrendMixture::try_new(vec![background::<1>(0.5)?, local], 0, domain(1.0)?, 0.25)?;
+    let point = Point::try_new([0.0])?;
+
+    let coverage = mixture.try_coverage(point)?;
+    assert!(coverage.squared_weight_sum().is_finite());
+    let value = mixture.try_evaluate(point, point, KernelDerivativeOrder::Value)?;
+    assert!(value.value().is_finite());
+    assert!(matches!(
+        mixture.try_evaluate(point, point, KernelDerivativeOrder::Second),
+        Err(LocalTrendEvaluationError::NonFiniteWeightDerivative {
+            component: 1,
+            quantity: georbf::LocalTrendQuantity::Hessian { row: 0, column: 0 },
+        })
+    ));
     Ok(())
 }
 

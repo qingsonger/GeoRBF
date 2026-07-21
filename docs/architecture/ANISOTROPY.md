@@ -144,9 +144,15 @@ operational domain and a positive finite minimum absolute background weight;
 construction rejects a background below that policy. Because the background
 is constant, the proved lower bound holds on the entire coordinate space and
 therefore on the declared domain. Other components may use signed constant or
-Gaussian weights. A Gaussian weight may underflow to represented zero far from
-its center without weakening strict positive definiteness, because it supplies
-only an additional positive-semidefinite congruence term.
+Gaussian weights. Every accepted nonzero weight amplitude must have a nonzero
+finite represented square; this prevents floating-point underflow from erasing
+the strict background diagonal contribution. A Gaussian value may still
+underflow to represented zero far from its center without weakening strict
+positive definiteness, because it supplies only an additional positive-
+semidefinite congruence term. Its demanded derivatives are evaluated with a
+scaled exponential product when direct multiplication would underflow or
+overflow, so a rounded-zero or subnormal value does not erase a representable
+gradient or Hessian.
 
 For query derivatives through Hessian order, the implementation evaluates
 
@@ -165,7 +171,9 @@ capability is the intersection of every fixed kernel's metadata: a center
 Hessian is rejected if any member provides it only away from centers. The
 primitive exposes component/background identity, maximum fixed-anisotropy
 condition number, lower-bound policy margin, and allocation-free pointwise
-`sum_r b_r(x)^2` coverage. It applies no jitter, regularization, clipping,
+`sum_r b_r(x)^2` coverage. Weight evaluation is demand-bounded: coverage and
+center factors compute values only, and query weights compute no derivative
+above the caller's request. It applies no jitter, regularization, clipping,
 pseudoinverse, automatic component selection, or implicit refit.
 
 Local geological controls, regions, reference-field gradients, direction-jump

@@ -32,6 +32,15 @@ underflow, CPD rejection, input boundaries, D=1/D=2/D=3, compile-time D=4
 rejection, and `Send + Sync`. A runnable example and deterministic focused
 Hessian benchmark cover the public workflow and hot path.
 
+Post-review repair makes the public weight representation opaque so external
+callers cannot forge variants or cached Gaussian parameters. It rejects every
+nonzero amplitude whose represented square is zero, evaluates Gaussian
+derivatives with a stable scaled exponential product when the value or an
+intermediate product underflows, and bounds weight arithmetic to the requested
+derivative order. Regressions cover the external construction barrier,
+strict-background square underflow, a representable extreme-scale Hessian, and
+Value/Coverage success when an unused Hessian would overflow.
+
 Rust is implemented. CLI is N/A because versioned schemas and the complete
 data CLI arrive in M8. C, C++, and Python are N/A because bindings follow API
 and schema freeze in M9. Trend-control compilation, region semantics,
@@ -46,3 +55,10 @@ approximately 230 ns/evaluation for D=1, 490 ns/evaluation for D=2, and
 1.16 us/evaluation for D=3 over 10,000 two-component Hessian evaluations per
 dimension. The benchmark prints a deterministic checksum and is a regression
 signal rather than a cross-machine performance promise.
+
+The post-review repair smoke on the same development machine reported
+approximately 305 ns/evaluation for D=1, 519 ns/evaluation for D=2, and
+1.17 us/evaluation for D=3 over 500,000 evaluations per dimension, with the
+same deterministic checksums. This records the stable-derivative checks rather
+than setting a cross-machine threshold; Value and Coverage now avoid all unused
+gradient and Hessian arithmetic.
