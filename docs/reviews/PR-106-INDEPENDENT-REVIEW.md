@@ -393,3 +393,54 @@ PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
 `integrated`. Open a fresh bounded Repair task for ANISO002-REV-004 only. Do
 not repair production code, mark the PR Ready, merge it, or begin another
 requirement in this Review task.
+
+## ANISO002-REV-004 Repair evidence pending fresh independent re-review
+
+- Repair code, test, normative-document, and complete-gate head:
+  `b591a419095cd4e69043f01773c43b14fd9fc914`
+- Pre-repair branch head: `e7a1ec171ffd0b7d256df19e4db1a64d9410d8dc`
+- Repair date: 2026-07-22
+
+The required public D=2 regression first reproduced the exact reviewed failure:
+the valid unit direction proportional to `[1,30]`, unit weight, and fixed
+ratios `[1,1]` returned `NegativeEigenvalue` with value
+`-1.1089908126111444e-16` before the repair.
+
+The repair keeps the normalized outer-product construction and closes only its
+represented-arithmetic PSD boundary. After compensated accumulation, the
+tensor is trace-normalized. Exact floating expansions certify every D=2/D=3
+principal minor. If independently rounded off-diagonal entries cross the PSD
+boundary, 64 bounded deterministic bisection steps retain the greatest
+certified uniform off-diagonal factor while leaving all diagonal entries
+unchanged. The result diagnostics record that factor, with one meaning no
+correlation adjustment. This path adds no diagonal jitter, eigenvalue clipping,
+pseudoinverse, input-invalidity fallback, or hidden regularization.
+
+The primary bounded symmetric eigendecomposition remains the normal spectral
+path. If it returns a negative roundoff value for an exact-sign-certified PSD
+matrix, a bounded SVD of that same matrix supplies right singular vectors and
+nonnegative singular values, which equal the PSD eigenvalues. Diagnostics
+record which path ran. The regression now succeeds, verifies represented trace
+one and a nonnegative represented determinant, confirms all spectral values
+are nonnegative, observes a sub-unit correlation scale, and confirms the
+explicit PSD-SVD path. All 15 public orientation-tensor tests pass, including
+the closed ANISO002-REV-001/002/003 regressions.
+
+Focused validation on the exact repair head passed warning-denying georbf
+all-target/all-feature Clippy, georbf Rustdoc including the D=4 compile-fail
+contract, the runnable example, optimized benchmark smoke, all 58 requirement
+checks, and diff whitespace. The benchmark checksum remains
+`1.00428812046557887e4` at approximately 9.20 us per estimate locally.
+
+The same exact repair head passed the complete standard workspace gate:
+format; warning-denying workspace all-target/all-feature Clippy; all-feature
+workspace tests; workspace Rustdoc; all 58 requirement checks; and complete
+diff whitespace validation. Ready-only Windows, Ubuntu, macOS, and benchmark-
+smoke CI has not run and is not claimed as passed. The unavailable/deferred
+check list remains unchanged.
+
+This section records Repair evidence only and does not independently close
+ANISO002-REV-004. PR #106 remains Draft and REQ-ANISO-002 remains
+`implemented`. A fresh isolated mathematical and numerical re-review of the
+complete PR diff and this exact repair head is required next. This Repair does
+not mark the PR ready, merge it, or begin another requirement.

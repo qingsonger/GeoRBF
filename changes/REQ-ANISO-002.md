@@ -92,7 +92,7 @@ The initial optimized Windows smoke measured approximately 7.39 us per
 four-sample, three-candidate D=3 estimate over 2,000 estimates, with checksum
 `1.00428812046557887e4`. This is a local regression signal, not a cross-machine
 performance promise. The ANISO002-REV-004 exact-sign certification and explicit
-spectral fallback policy retained that checksum at approximately 10.04 us per
+spectral fallback policy retained that checksum at approximately 9.20 us per
 estimate locally.
 
 Rust and the focused benchmark are implemented. CLI is N/A until the M8

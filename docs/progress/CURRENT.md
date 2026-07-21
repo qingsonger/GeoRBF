@@ -6,12 +6,14 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete / fresh Repair required for PR #106
+- Mode: Repair complete / fresh independent re-review required for PR #106
 - Requirement: REQ-ANISO-002, Issue #105
 - Branch: `codex/req-aniso-002-orientation-tensor`
 - Implementation pull request: #106 (Draft)
-- Stable ANISO002-REV-003 repair and complete-gate head: `7d38a45`
-- Latest independently re-reviewed head: `8e467c8`
+- ANISO002-REV-004 repair and complete-gate head:
+  `b591a419095cd4e69043f01773c43b14fd9fc914`
+- Latest independently re-reviewed head:
+  `8e467c86f01bdfcb3eabe7bcc4b9a89147cfa4c1`
 - Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
 - Registry state in this change: `implemented`
 
@@ -20,14 +22,20 @@ records, benchmark reports, Git, and GitHub.
 - Added sign-invariant normalized weighted orientation tensors for exactly
   D=1, D=2, and D=3, with stable relative-weight normalization and compensated
   symmetric accumulation.
-- Added private bounded symmetric eigendecomposition, deterministic
-  canonical-sign principal axes, ordered eigenvalues and normalized shares,
-  explicit isotropy thresholding, adjacent eigengaps, and per-axis confidence.
+- Added represented trace normalization, exact-expansion D=2/D=3 principal-
+  minor certification, and a bounded maximum uniform off-diagonal retention
+  policy that preserves PSD without diagonal jitter or eigenvalue clipping.
+- Added a primary bounded symmetric eigendecomposition and an explicit bounded
+  PSD-SVD path when eigensolver roundoff is negative for a certified matrix;
+  diagnostics record both the spectral path and correlation-retention scale.
+- Added deterministic canonical-sign principal axes, ordered eigenvalues and
+  normalized shares, explicit isotropy thresholding, adjacent eigengaps, and
+  per-axis confidence.
 - Added validated scale-free principal-axis ratios with fixed selection or a
   finite explicitly bounded candidate set and deterministic leave-one-out
   squared-share cross-validation.
 - Added complete candidate-score and per-sample tensor-influence evidence,
-  maximum outlier influence, weight concentration, selection-kind, and sample
+  maximum outlier influence, weight concentration, selection kind, and sample
   count diagnostics.
 - Added independent public property/error tests, compile-fail dimension
   coverage, synchronized Rustdoc and architecture mathematics, a runnable
@@ -37,55 +45,52 @@ records, benchmark reports, Git, and GitHub.
 
 ## Validation state
 
-- A fresh isolated read-only `math_reviewer` inspected exact PR head `8e467c8`.
-  It independently closed ANISO002-REV-001, ANISO002-REV-002, and
-  ANISO002-REV-003, but identified P2 ANISO002-REV-004.
-- ANISO002-REV-004 shows that a valid D=2 direction proportional to `[1,30]`
-  forms an exact PSD rank-one outer product but a slightly indefinite
-  componentwise-rounded tensor. Nalgebra returns a minimum eigenvalue near
-  `-1.1089908126111444e-16`, and the estimator rejects the valid sample as
-  `NegativeEigenvalue`.
-- The parent Review task independently reproduced that public-API failure with
-  unit weight and fixed ratios `[1,1]`; the temporary regression was removed
-  and the clean worktree restored.
-- The ANISO002-REV-003 regression still selects `[3,2,1]` and checks the
-  independently derived scaled scores `1913/2646 < 1654/1323`. All 14 focused
-  public orientation-tensor tests pass, including the earlier rotation and
-  influence regressions.
-- Warning-denying georbf all-target/all-feature Clippy, the D=4 compile-fail
-  Rustdoc contract, example execution, and optimized benchmark smoke pass. The
-  smoke retained checksum `1.00428812046557887e4` at approximately 5.41 us per
-  estimate locally.
-- Exact repair head `7d38a45` passed the complete standard workspace gate:
+- The required public D=2 regression first reproduced ANISO002-REV-004 on the
+  pre-repair code: direction `[1,30]`, unit weight, and fixed ratios `[1,1]`
+  returned `NegativeEigenvalue(-1.1089908126111444e-16)`.
+- On exact repair head `b591a41`, that regression succeeds and verifies trace
+  one, a nonnegative represented determinant, nonnegative spectral values, a
+  recorded sub-unit correlation scale, and the explicit PSD-SVD path.
+- All 15 public orientation-tensor tests pass, including the closed rotation,
+  influence, and grouped-mass regressions. Warning-denying georbf all-target/
+  all-feature Clippy, the D=4 compile-fail Rustdoc contract, example, optimized
+  benchmark smoke, all 58 requirement checks, and diff whitespace pass.
+- The optimized smoke retained checksum `1.00428812046557887e4` at
+  approximately 9.20 us per estimate locally.
+- Exact repair head `b591a41` passed the complete standard workspace gate:
   format, warning-denying all-target/all-feature Clippy, all workspace tests
   with all features, workspace Rustdoc, all 58 requirement checks, and
   complete diff whitespace validation.
-- The subsequent review-evidence and bounded-handoff changes are Markdown
-  only. They change no production, test, manifest, schema, CI, build, API,
-  numerical, registry, or dependency input and do not invalidate the stable-
-  head gate.
-- Local `actionlint` and the unavailable later tools listed below remain
-  unexecuted and are not claimed as passed.
+- This bounded-handoff and review-evidence update is Markdown only. It changes
+  no production, test, manifest, schema, CI, build, API, numerical, registry,
+  or dependency input and does not invalidate the exact-head gate.
+- Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run and is
+  not claimed as passed. Local `actionlint` and the unavailable later tools
+  listed below remain unexecuted and are not claimed as passed.
 
 ## Next task boundary
 
-Open a fresh bounded Repair task for only PR #106, REQ-ANISO-002, and
-ANISO002-REV-004. First add the public D=2 one-sample regression recorded in
-the review evidence and prove the current `NegativeEigenvalue` failure for
-direction `[1,30]`, unit weight, and fixed ratios `[1,1]`. Then make valid
-orientation-tensor construction/eigendecomposition preserve the documented
-PSD and normalization policy without eigenvalue clipping, jitter, hidden
-regularization, or invalid-input fallback. Run focused checks during repair
-and one complete standard workspace gate after the final code change. Update
-the review evidence and this bounded handoff, commit, push, and stop for a
-fresh independent re-review. Do not revisit the closed ANISO002-REV-001/002/003
-repairs or begin another requirement.
+Open a fresh bounded Review/re-review task for only PR #106 and
+REQ-ANISO-002. Supply an isolated read-only project `math_reviewer` only the
+requirement summary and integrated dependency closure, Issue #105 criteria and
+exclusions, M6 plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, complete exact
+PR diff, ANISO002-REV-004 finding and repair evidence, directly relevant
+source/Rustdoc/tests/example/benchmark/CI wiring, scoped registry entry,
+handoff, and validation evidence. It must independently verify
+ANISO002-REV-004 closure and inspect the complete PR for new P0-P3 findings.
+
+If any finding remains, record evidence and stop without repairing production
+code. Only after a clean re-review and a complete stable-head local gate may
+that fresh Review task mark PR #106 ready, wait for exact-ready-head Windows,
+Ubuntu, macOS, and benchmark-smoke CI, merge once when all are green, and then
+record truthful integration state. Do not begin another requirement here.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #105
 - Draft implementation: GitHub PR #106
-- Independent findings: `docs/reviews/PR-106-INDEPENDENT-REVIEW.md`
+- Independent findings and Repair evidence:
+  `docs/reviews/PR-106-INDEPENDENT-REVIEW.md`
 - Requirement summary and benchmark baseline: `changes/REQ-ANISO-002.md`
 - Public implementation and Rustdoc: `crates/georbf/src/orientation_tensor.rs`
 - Independent property/error tests: `crates/georbf/tests/orientation_tensor.rs`
@@ -93,7 +98,7 @@ repairs or begin another requirement.
 - Focused benchmark: `crates/georbf/benches/orientation_tensor.rs`
 - Mathematical contract: `docs/architecture/ANISOTROPY.md`
 - Numerical dependency decisions: ADR-0009 and ADR-0010; no dependency or
-  feature change is introduced by this requirement
+  feature change is introduced by this repair
 
 ## Checks not yet available
 
