@@ -287,3 +287,109 @@ This is Repair evidence, not independent closure. PR #106 remains Draft and
 REQ-ANISO-002 remains `implemented`. A fresh independent mathematical and
 numerical re-review must verify ANISO002-REV-003 and the complete PR diff
 before any Ready or integration action.
+
+## Final independent re-review after ANISO002-REV-003 repair
+
+- Re-reviewed base: `d34458f6c29d1b56f2832ddac9356d28a87a3f8f`
+- Re-reviewed repair code/test/normative-document head:
+  `7d38a45424cd3d9919f3e7532701d78a6554280f`
+- Re-reviewed final Repair handoff head:
+  `8e467c86f01bdfcb3eabe7bcc4b9a89147cfa4c1`
+- Re-review date: 2026-07-22
+- Result: ANISO002-REV-001 through ANISO002-REV-003 are closed; P2
+  ANISO002-REV-004 requires Repair
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-ANISO-002 summary and integrated dependency closure, Issue #105 criteria
+and exclusions, the M6 plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, the
+complete exact PR and ANISO002-REV-003 Repair diffs, directly relevant source,
+Rustdoc, tests, example, benchmark, CI wiring, registry entry, handoff, and
+validation evidence. It inherited no Implement or Repair reasoning and made
+no repository, Git, or GitHub change.
+
+The reviewer verified that local and remote PR head are exact `8e467c8`, the
+merge base is exact `d34458f`, the scoped worktree is clean, and
+`7d38a45..8e467c8` changes only this review record and the bounded handoff.
+
+### Prior-finding closure
+
+- ANISO002-REV-001 is closed. Summed squared projections inside a grouped
+  orthonormal eigenspace equal projection through its basis-independent
+  projector. The explicit `64 D epsilon` grouping and public rotation
+  regression preserve that invariant.
+- ANISO002-REV-002 is closed. The exact normalized Frobenius distance between
+  PSD trace-one tensors is at most one. The explicit `64 D^2 epsilon` upper
+  roundoff band and structured larger-overshoot error implement the documented
+  represented-arithmetic policy, and the extreme-weight regression passes.
+- ANISO002-REV-003 is closed. Every non-final eigenspace group retains its
+  directly summed observed and expected mass, while the final group receives
+  one minus the preceding mass on both sides. A fully unresolved fold therefore
+  has exactly represented unit mass and zero loss for every candidate. The
+  public regression verifies `1913/2646 < 1654/1323` and selects `[3,2,1]`.
+
+### ANISO002-REV-004 - P2: represented outer product can reject valid PSD input
+
+Affected code and contract:
+
+- `docs/architecture/ANISOTROPY.md:84-97`
+- `crates/georbf/src/orientation_tensor.rs:312-315`
+- `crates/georbf/src/orientation_tensor.rs:872-904`
+- `crates/georbf/src/orientation_tensor.rs:916-959`, especially `:944-945`
+
+A valid D=2 sample with direction proportional to `[1,30]` and unit weight
+passes every public input condition. The repository normalization produces
+
+```text
+u = [0.03331483023263848, 0.9994449069791544]
+
+C = [[0.001109877913429523, 0.03329633740288569],
+     [0.03329633740288569,  0.9988901220865707]]
+trace(C) = 1.0000000000000002
+det(C)   = -2.168404344971009e-19
+```
+
+The exact outer product is PSD and rank one, but independently rounded matrix
+entries make the represented tensor slightly indefinite. Nalgebra's symmetric
+eigendecomposition returns a minimum eigenvalue of approximately
+`-1.1089908126111444e-16`, and the estimator maps it to `NegativeEigenvalue`.
+The parent Review task independently reproduced the same public-API failure
+with fixed ratios `[1,1]` in a temporary regression and restored the clean
+worktree afterward.
+
+Impact: ordinary valid fixed estimation can fail solely because componentwise
+tensor formation did not preserve the mathematical PSD invariant. A
+cross-validation training fold containing one generic direction can fail for
+the same reason. The represented trace also contradicts the exact trace-one
+Rustdoc statement.
+
+A fresh Repair must first add a public D=2 one-sample regression using
+direction `[1,30]`, unit weight, and fixed ratios `[1,1]`; it must prove the
+current failure and then succeed with a tensor/eigendecomposition satisfying
+the documented PSD and normalization policy. The Repair must not use
+eigenvalue clipping, jitter, hidden regularization, or an input-invalidity
+fallback. A two-positive-sample leave-one-out regression is useful follow-on
+coverage but is not the smallest required proof.
+
+No P0, P1, P3, or additional P2 finding was identified.
+
+### Final re-review validation and disposition
+
+- The reviewer passed all 14 public orientation-tensor tests, the selected D=4
+  compile-fail Rustdoc contract, formatting, all 58 requirement checks, and
+  complete exact-PR whitespace validation. Dependency-free IEEE-754 probes
+  verified ANISO002-REV-003 and reproduced ANISO002-REV-004.
+- The parent Review task passed the same 14 public tests, warning-denying
+  georbf all-target/all-feature Clippy, complete georbf Rustdoc, the runnable
+  example, benchmark smoke, all 58 requirement checks, and exact-PR whitespace
+  validation. The benchmark retained checksum `1.00428812046557887e4`.
+- Exact Repair head `7d38a45` retains its complete standard workspace gate.
+  Later commits through the reviewed head and this evidence change modify only
+  Markdown review/handoff evidence and do not invalidate that gate.
+- Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run and is
+  not claimed as passed. The recorded unavailable/deferred check list remains
+  unchanged.
+
+PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
+`integrated`. Open a fresh bounded Repair task for ANISO002-REV-004 only. Do
+not repair production code, mark the PR Ready, merge it, or begin another
+requirement in this Review task.
