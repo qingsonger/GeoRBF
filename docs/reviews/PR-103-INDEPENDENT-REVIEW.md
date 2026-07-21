@@ -703,7 +703,7 @@ Ubuntu, macOS, and benchmark-smoke CI to pass before one merge.
 - Squash merge: `2300ccc8d61c43d320e98f7efb50ea177d404962`
 - Post-merge `main` CI run: 29825582554
 - Integration-state branch: `codex/req-trend-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #104
 
 Ready CI run 29824723492 passed the complete Windows, Ubuntu, and macOS
 workspace gate on exact Ready head `37da1f3`, including every configured
