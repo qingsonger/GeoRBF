@@ -261,3 +261,40 @@ Draft and REQ-THICK-002 must remain `implemented`. Open a fresh Repair task
 scoped only to THICK002-REV-005, add the independent regressions, implement the
 smallest repair, rerun focused and final standard checks, push, and stop for a
 fresh independent re-review. Do not begin REQ-PROJECT-001.
+
+## THICK002-REV-005 repair evidence pending fresh independent re-review
+
+The Repair task changed the controlled public sampled-validation entry point
+to accept explicit `ExecutionOptions` and pass them unchanged into the shared
+serial `ProgressTracker`. The convenience entry point continues to use default
+execution metadata. Sampled-thickness search, refinement, distance, quantile,
+violation, and proposal mathematics are unchanged.
+
+- The two-thread public regression requires the typed
+  `ExecutionError::UnsupportedThreadCount` for sampled validation and an empty
+  progress event sequence. Because every fitted-field evaluation is guarded by
+  a progress boundary, the empty sequence proves rejection occurs before
+  evaluation storage or fitted-field evaluation.
+- The one-thread, false-determinism public regression requires the same report
+  as convenience validation and checks every event, including the terminal
+  event, for exactly one effective worker, false determinism, and the sampled-
+  validation operation label.
+
+Focused validation passed all seven public sampled-thickness integration
+tests, all eight execution-control integration tests, both sampled-validation
+Rustdoc tests, warning-denying all-target/all-feature `georbf` Clippy, and the
+complete diff whitespace check. The one-iteration optimized smoke benchmark
+retained checksums `32` and `2.0` and measured 2471.60 microseconds.
+
+After the last production/test change, the exact repair code/test head
+`438937bd2b2ed715de23e1444a2cf41d71bf44c1` passed the complete standard local
+gate: workspace format, warning-denying all-target/all-feature Clippy,
+all-feature workspace tests, workspace Rustdoc, all 58 requirement checks, and
+the complete diff whitespace check. This following evidence update changes
+only this review record and the bounded handoff, so it does not invalidate that
+immutable production/test/build-input gate.
+
+PR #97 remains Draft and REQ-THICK-002 remains `implemented`, not `integrated`.
+A fresh independent re-review must close THICK002-REV-005 before any Ready
+transition, complete Ready-only CI, merge, or integration-state change. Do not
+begin REQ-PROJECT-001.
