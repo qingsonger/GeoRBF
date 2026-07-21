@@ -9,9 +9,9 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement
 - Requirement: REQ-TREND-001, Issue #102
 - Branch: `codex/req-trend-001-positive-definite-local-trends`
-- Draft pull request: pending first push
+- Draft pull request: #103
 - Dependencies: REQ-KERNEL-003, REQ-ANISO-001, and REQ-MODEL-001 are integrated
-- Registry state: `in_progress` until the Draft PR is linked
+- Registry state: `implemented`; independent Review and integration remain
 
 ## Implemented scope
 
@@ -43,8 +43,8 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-After this implementation task pushes its stable head and opens the Draft PR,
-stop. A fresh Review task must inspect only REQ-TREND-001 and that PR, use an
+This implementation task has pushed its stable head and opened Draft PR #103.
+Stop. A fresh Review task must inspect only REQ-TREND-001 and that PR, use an
 isolated read-only `math_reviewer`, and must not repair production code or begin
 another requirement.
 
