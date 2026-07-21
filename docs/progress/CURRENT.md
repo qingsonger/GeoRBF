@@ -6,12 +6,12 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete / fresh Repair required for PR #106
+- Mode: Repair complete / fresh independent re-review required for PR #106
 - Requirement: REQ-ANISO-002, Issue #105
 - Branch: `codex/req-aniso-002-orientation-tensor`
 - Implementation pull request: #106 (Draft)
-- Stable repair and complete-gate head: `1f1fdc6`
-- Independently re-reviewed head: `627d360`
+- Stable ANISO002-REV-003 repair and complete-gate head: `7d38a45`
+- Last independently re-reviewed head: `627d360`
 - Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
 - Registry state in this change: `implemented`
 
@@ -37,47 +37,44 @@ records, benchmark reports, Git, and GitHub.
 
 ## Validation state
 
-- A fresh isolated read-only `math_reviewer` re-reviewed exact head `627d360`.
-  ANISO002-REV-001 and ANISO002-REV-002 are closed, but new P2
-  ANISO002-REV-003 prevents Ready/integration.
-- ANISO002-REV-003 shows that independently rounded expected shares need not
-  sum to exactly one. For an all-axis unresolved fold this creates
-  candidate-dependent artificial loss; with a `[1,2,2]` direction weighted
-  by `f64::MAX`, unit-weight coordinate axes, and candidates `[3,2,1]` and
-  `[4,2,1]`, it overwhelms the real approximately `1e-309` minor-fold evidence
-  and reverses the exact selection from `[3,2,1]` to `[4,2,1]`.
-- Repair head `1f1fdc6` groups unresolved training-fold eigenspaces at
-  `64 D epsilon` for basis-independent candidate loss and applies the explicit
-  `64 D^2 epsilon` influence upper roundoff policy.
-- The new global-rotation and extreme-weight regressions failed against the
-  pre-repair implementation and pass at the repair head. All 13 focused public
-  orientation-tensor tests pass.
-- Warning-denying georbf all-target/all-feature Clippy, georbf Rustdoc
-  including the D=4 compile-fail contract, example execution, and the optimized
-  benchmark smoke pass. The smoke retained checksum
-  `1.00428812046557887e4` at approximately 4.58 us per estimate locally.
-- Exact repair head `1f1fdc6` passed the complete standard workspace gate:
+- The fresh isolated read-only re-review of head `627d360` closed
+  ANISO002-REV-001 and ANISO002-REV-002 and identified P2
+  ANISO002-REV-003 in grouped expected-share normalization.
+- The required public four-sample extreme-weight regression failed against
+  pre-repair head `d5cd66c`: artificial loss `1.232595164407831e-32` reversed
+  the exact candidate ordering and selected `[4,2,1]`.
+- Repair head `7d38a45` assigns both observed and expected residual probability
+  mass to the final eigenspace group. A group spanning every axis therefore
+  has exact represented mass one on both sides and zero candidate loss.
+- The repaired regression selects `[3,2,1]` and checks independently derived
+  scaled scores `1913/2646 < 1654/1323`. All 14 focused public orientation-
+  tensor tests pass, including the earlier rotation and influence regressions.
+- Warning-denying georbf all-target/all-feature Clippy, the D=4 compile-fail
+  Rustdoc contract, example execution, and optimized benchmark smoke pass. The
+  smoke retained checksum `1.00428812046557887e4` at approximately 5.41 us per
+  estimate locally.
+- Exact repair head `7d38a45` passed the complete standard workspace gate:
   format, warning-denying all-target/all-feature Clippy, all workspace tests
   with all features, workspace Rustdoc, all 58 requirement checks, and
   complete diff whitespace validation.
-- The commits after repair head `1f1fdc6`, including this re-review evidence,
-  change only these Markdown records. They change no production, test,
-  manifest, schema, CI, build, API, numerical, registry, or dependency input
-  and do not invalidate the stable-head gate.
+- The subsequent review-evidence and bounded-handoff changes are Markdown
+  only. They change no production, test, manifest, schema, CI, build, API,
+  numerical, registry, or dependency input and do not invalidate the stable-
+  head gate.
 - Local `actionlint` and the unavailable later tools listed below remain
   unexecuted and are not claimed as passed.
 
 ## Next task boundary
 
-Open a fresh bounded Repair task for only PR #106, REQ-ANISO-002, and
-ANISO002-REV-003. First add the public four-sample D=3 extreme-weight
-regression recorded in the review evidence and prove that `[3,2,1]` wins over
-`[4,2,1]`; then make grouped expected mass honor the normalized-share
-invariant, especially for an all-axis unresolved group. Run focused checks
-during repair and one complete standard workspace gate after the final code
-change. Update the review evidence and this bounded handoff, commit, push, and
-stop for a fresh independent re-review. Do not revisit the closed
-ANISO002-REV-001/002 repairs or begin another requirement.
+Open a fresh bounded Review/re-review task for only PR #106 and
+REQ-ANISO-002. Use a fresh isolated read-only project `math_reviewer` to verify
+ANISO002-REV-003 against exact repair head `7d38a45` and inspect the complete
+PR diff for new P0-P3 findings. If any finding remains, record it and stop
+without repairing production code. If the re-review is clean and the final
+head retains a complete local gate, follow the mandatory sequence: mark the
+PR Ready, wait for complete Windows/Ubuntu/macOS and every benchmark-smoke CI
+on that exact Ready head, merge only when green, and record truthful isolated
+integration state. Do not begin another requirement.
 
 ## Durable evidence
 

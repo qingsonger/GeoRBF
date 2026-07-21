@@ -248,3 +248,42 @@ PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
 `integrated`. Open a fresh bounded Repair task for ANISO002-REV-003 only; do
 not repair production code, mark the PR ready, merge it, or begin another
 requirement in this Review task.
+
+## ANISO002-REV-003 Repair evidence pending fresh independent re-review
+
+- Repair code, test, and normative-document head:
+  `7d38a45424cd3d9919f3e7532701d78a6554280f`
+- Pre-repair head: `d5cd66c6345a1d82b0c5807f23a9b596faf82b0d`
+
+The public four-sample D=3 regression from ANISO002-REV-003 was added first.
+Against the pre-repair implementation it selected `[4,2,1]`: the `[3,2,1]`
+candidate received artificial loss `1.232595164407831e-32`, while the
+`[4,2,1]` candidate retained only its real approximately `6.9544e-309` score.
+
+The Repair changes only grouped cross-validation loss. Every non-final
+eigenspace group retains its directly summed observed and expected share; the
+final group receives one minus the mass assigned to preceding groups for both
+distributions. The represented groups therefore sum exactly to one. In the
+all-axis unresolved fold, both masses are exactly one and its candidate loss
+is exactly zero, so normalization roundoff cannot overwhelm the minor folds.
+No tensor, eigendecomposition, grouping threshold, candidate, regularization,
+or rank policy changes.
+
+The regression now selects `[3,2,1]` and independently checks the scaled
+candidate scores against `1913/2646` and `1654/1323`. All 14 focused public
+orientation-tensor tests, warning-denying georbf all-target/all-feature
+Clippy, the D=4 compile-fail Rustdoc contract, the runnable example, and the
+optimized benchmark smoke passed. The smoke retained checksum
+`1.00428812046557887e4` at approximately 5.41 us per estimate locally.
+
+After the final production change, exact head `7d38a45` passed the complete
+standard workspace gate: format, warning-denying all-target/all-feature
+Clippy, all workspace tests with all features, workspace Rustdoc, all 58
+requirement checks, and complete diff whitespace validation. The subsequent
+review-record and bounded-handoff commit changes Markdown evidence only and
+does not invalidate that stable-head gate.
+
+This is Repair evidence, not independent closure. PR #106 remains Draft and
+REQ-ANISO-002 remains `implemented`. A fresh independent mathematical and
+numerical re-review must verify ANISO002-REV-003 and the complete PR diff
+before any Ready or integration action.
