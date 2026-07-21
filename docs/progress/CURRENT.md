@@ -6,29 +6,28 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / REQ-THICK-002 repair complete; fresh re-review required
+- Mode: Review / REQ-THICK-002 re-review found one P2; Repair required
 - Requirement: REQ-THICK-002, Issue #96
 - Branch: `codex/req-thick-002-sampled-validation`
 - Draft pull request: #97
-- Reviewed head: `5878055d7ccbc7250aad3e6837f00375161e0052`
+- Original reviewed head: `5878055d7ccbc7250aad3e6837f00375161e0052`
 - Repair code/test head: `6bc6c1dc53bdd093110858cbf5d0787e97c702e9`
+- Independently re-reviewed head: `aa6c134d68ddabd6750220dcca1c158ea81e3bc4`
 - Registry state: `implemented`, not `integrated`
 - Dependencies: REQ-THICK-001 and REQ-MODEL-001 are integrated
 
-## Repair result pending independent re-review
+## Independent re-review result
 
-- THICK002-REV-001: reports now use the Euclidean separation of the returned
-  intersections. The `x=1e16` analytic regression proves stored distance four
-  and no false violation/proposal at threshold 3.5.
-- THICK002-REV-002: the new controlled public entry point uses a checked maximum
-  evaluation budget and pre/post-evaluation cancellation checkpoints. A typed
-  cancellation after evaluation three returns no report or later event.
-- THICK002-REV-003: integration tests compare every provenance field on each
-  measurement, violation, and proposed constraint with its input location.
-- THICK002-REV-004: the analytic `x=0.5` curved-field tangent on an off-root grid
-  is required to return lower-side `NotFound` while the upper side succeeds.
-- These are Repair claims only. No finding is independently closed until a
-  fresh read-only re-review examines the repaired head.
+- A fresh read-only `math_reviewer` independently closed THICK002-REV-001
+  through THICK002-REV-004 on exact head `aa6c134`.
+- P2 THICK002-REV-005 remains open: the public controlled sampled-validation
+  entry point fixes `ExecutionOptions` to its default instead of accepting the
+  caller's explicit thread count and determinism choice.
+- Required regressions must prove that thread count two returns typed
+  `UnsupportedThreadCount` before any fitted-field evaluation and that one
+  thread with determinism false succeeds while every progress event reports
+  those exact options.
+- No other P0-P3 finding was reported. The PR must remain Draft.
 
 ## Validation state
 
@@ -42,24 +41,21 @@ records, benchmark reports, Git, and GitHub.
 - The repaired optimized benchmark measured 2299.12 microseconds per validation
   with unchanged checksums `16000` and `1000.0`; smoke measured 1793.80
   microseconds with unchanged checksums `32` and `2.0`.
-- Prior Draft CI run 29784308094 passed Ubuntu correctness on pre-repair evidence
-  head `473ac29`. CI on the pushed Repair evidence head is not yet claimed; the
-  Ready-only three-platform and benchmark-smoke matrix remains unexecuted.
+- Draft CI run 29787331468 passed Ubuntu correctness on exact independently
+  re-reviewed head `aa6c134`. The Ready-only three-platform and benchmark-smoke
+  matrix remains unexecuted.
 - The evidence commit following `6bc6c1d` changes only this handoff and the
   independent review record and therefore does not invalidate the stable
   code/test-head standard gate.
 
 ## Next task
 
-Open a fresh Review/re-review task for only Draft PR #97. Supply the independent
-reviewer the bounded requirement/dependency summary, normative documents, exact
-diff through the Repair evidence head, and validation evidence without this
-Repair reasoning. Independently confirm THICK002-REV-001 through
-THICK002-REV-004 and check for new P0-P3 findings. If any finding remains,
-record it and stop without repair. Only if re-review is clean may that fresh
-task mark the PR ready, wait for exact ready-head Windows/Ubuntu/macOS and all
-benchmark-smoke CI, merge once when green, and record isolated truthful
-integration state. Do not begin REQ-PROJECT-001.
+Open a fresh Repair task for only Draft PR #97 and THICK002-REV-005. Add the two
+independent execution-options regressions, implement the smallest public API
+repair without changing sampled-thickness mathematics, run focused checks and
+the complete final standard gate after the last code change, update the review
+evidence and bounded handoff, commit, push, and stop for another fresh
+independent re-review. Do not begin REQ-PROJECT-001.
 
 ## Durable evidence
 

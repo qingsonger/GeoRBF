@@ -195,3 +195,69 @@ PR #97 remains Draft and REQ-THICK-002 remains `implemented`, not `integrated`.
 A fresh Review task must independently re-review the repaired head before any
 Ready transition, complete three-platform/benchmark-smoke CI, merge, or
 integration-state change. Do not begin REQ-PROJECT-001.
+
+## Independent re-review
+
+A fresh read-only project `math_reviewer` independently reviewed exact PR head
+`aa6c134d68ddabd6750220dcca1c158ea81e3bc4` against base
+`13b40816e03c10db42dc1e51a9e9be4ed3242870`. It received only the bounded
+requirement and dependency summaries, Issue #96 criteria and exclusions,
+relevant thickness and architecture contracts, the exact PR and repair diffs,
+prior findings and repair evidence, focused tests, benchmark, registry,
+handoff, CI, and validation evidence. It inherited no Implement or Repair
+reasoning and made no repository or remote change.
+
+- THICK002-REV-001 is closed. Complete measurements use the scale-safe
+  Euclidean separation of the two returned original-coordinate intersections.
+  The analytic `f(x)=x` regression at `x=1e16` requires stored distance four
+  and proves threshold 3.5 creates neither a violation nor a proposal.
+- THICK002-REV-002 is closed. The public controlled entry point has a checked
+  maximum evaluation budget and pre/post-evaluation cancellation checkpoints.
+  Its regression cancels after exactly three evaluations and requires a typed
+  cancellation error without a report, later evaluation event, or `Completed`
+  event.
+- THICK002-REV-003 is closed. The public integration regression compares every
+  provenance field on each measurement, violation, and proposed constraint
+  with the corresponding input location.
+- THICK002-REV-004 is closed. The analytic curved-field regression exercises an
+  off-grid discriminant-zero lower tangency and requires `NotFound`, while the
+  upper intersection succeeds.
+
+### P2 THICK002-REV-005: sampled validation cannot accept explicit execution options
+
+The public controlled entry point at
+`crates/georbf/src/thickness_validation.rs:618` accepts only the request and an
+`ExecutionControl`. `validation_progress` then passes
+`ExecutionOptions::default()` unconditionally at line 730. A caller therefore
+cannot explicitly request one thread, cannot request more than one thread and
+receive the required `UnsupportedThreadCount`, and cannot select the
+determinism value that progress events must report. The algorithm is currently
+serial and deterministic, but its public long-operation interface cannot
+express the caller choices required by `docs/architecture/ARCHITECTURE.md`,
+lines 185-186 and 216-224.
+
+Required regressions: pass an explicit thread count of two through the public
+sampled-validation API and require
+`SampledThicknessValidationError::Execution(ExecutionError::UnsupportedThreadCount)`
+before any fitted-field evaluation; then pass one thread with determinism false
+and require successful unchanged validation whose progress events all report
+that exact thread count and determinism selection.
+
+No other P0, P1, P2, or P3 finding was reported.
+
+The parent Review task passed all five public thickness-validation integration
+tests, all six module truth/numerical tests, all eight execution-control tests,
+both sampled-validation Rustdoc tests, all 58 requirement checks, and the
+complete PR diff whitespace check. Draft CI run 29787331468 passed its
+configured Ubuntu correctness gate on exact reviewed head `aa6c134`; the
+Ready-only Windows, Ubuntu, macOS, and benchmark-smoke matrix correctly did not
+run. Exact repair code/test head `6bc6c1d` retains its recorded complete
+standard local gate. No unexecuted check is claimed as passed.
+
+This evidence-only Review change updates only this review record and
+`docs/progress/CURRENT.md`; it changes no production, test, manifest, schema,
+CI, build, API, numerical, registry, or dependency input. PR #97 must remain
+Draft and REQ-THICK-002 must remain `implemented`. Open a fresh Repair task
+scoped only to THICK002-REV-005, add the independent regressions, implement the
+smallest repair, rerun focused and final standard checks, push, and stop for a
+fresh independent re-review. Do not begin REQ-PROJECT-001.
