@@ -5,6 +5,7 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/103
 - Branch: `codex/req-trend-001-positive-definite-local-trends`
 - Reviewed head: `48c9d516721928f98dd06242a2304b8d4c9f94e3`
+- Repair code/test head: `643535f4ef181764baa6a5b45605711ee2a91f7d`
 - Base head: `7487cfafd0739c1f63028d4b46d7505b4ca6c1b3`
 - Review date: 2026-07-21
 - Result: three P1 findings and one P2 finding; repair required
@@ -157,9 +158,44 @@ return a structured representability error.
   API/ABI/schema snapshots, and local `actionlint` remain unavailable or
   deferred. No unexecuted check is claimed as passed.
 
-PR #103 remains Draft and REQ-TREND-001 remains `implemented`, not
-`integrated`. A fresh Repair task must address only F1-F4, add the specified
-regressions, run focused checks while iterating, run the complete standard gate
-after the final code change, update this evidence and the bounded handoff,
-commit, push, and stop for a fresh independent re-review. This Review task must
-not repair production code or begin another requirement.
+At Review completion, PR #103 remained Draft and REQ-TREND-001 remained
+`implemented`, not `integrated`. The Review task stopped without changing
+production code and required a fresh Repair task to address only F1-F4 before
+another independent review. The following section records that later repair.
+
+## Repair evidence pending fresh re-review
+
+Repair code/test head `643535f4ef181764baa6a5b45605711ee2a91f7d`
+addresses only F1-F4:
+
+- F1: `SmoothSpatialWeight` is now an opaque public value over a private
+  representation. Its public constructors are the only safe construction
+  path, and an external Rustdoc compile-fail regression proves that callers
+  cannot name or forge the former variants and cached Gaussian fields.
+- F2: every nonzero amplitude whose represented square is zero now returns
+  `NonRepresentableWeightAmplitudeSquare`; the `1e-200` regression cannot
+  reach mixture construction or produce a zero strict-background diagonal.
+- F3: Gaussian gradient and Hessian factors use direct normal arithmetic on
+  the ordinary path and a combined logarithmic scale when the value or an
+  intermediate product is zero, subnormal, or non-finite. The independent
+  extreme-scale regression retains the representable
+  `5.864931460100122e-45` Hessian at forty radii.
+- F4: coverage and center weights request Value only, while query weights stop
+  at the caller's demand. The `amplitude=1e150`, `radius=1e-80` regression
+  proves Coverage and Value succeed although Second correctly returns a
+  structured Hessian representability error.
+
+The repaired tree passed all ten focused local-trend tests, all georbf
+Rustdoc including both compile-fail contracts, the runnable example, and the
+D=1/D=2/D=3 release benchmark smoke with unchanged deterministic checksums.
+After the final production change, the complete stable-head standard gate
+passed: workspace formatting, warning-denying all-target/all-feature Clippy,
+all workspace tests with all features, all workspace Rustdoc, all 58
+requirement checks, and diff whitespace validation. The subsequent review
+record and bounded-handoff commit changes documentation only and does not
+invalidate that gate.
+
+This Repair task does not close its own findings. PR #103 remains Draft and
+REQ-TREND-001 remains `implemented`; a fresh independent mathematical and
+numerical re-review of the complete repaired PR diff is required next. No
+other requirement work begins here.
