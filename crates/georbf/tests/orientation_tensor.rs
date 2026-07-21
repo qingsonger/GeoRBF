@@ -252,6 +252,62 @@ fn bounded_cross_validation_prefers_concentrated_candidate_deterministically() -
 }
 
 #[test]
+fn cross_validation_scores_repeated_fold_eigenspaces_rotation_invariantly() -> TestResult {
+    let candidates = vec![
+        PrincipalAxisRatios::try_new([1.0, 1.0, 1.0])?,
+        PrincipalAxisRatios::try_new([2.0, 1.5, 1.0])?,
+        PrincipalAxisRatios::try_new([4.0, 2.0, 1.0])?,
+    ];
+    let base = [
+        sample([1.0, 0.0, 0.0], 3.0)?,
+        sample([1.0, 0.0, 0.0], 2.0)?,
+        sample([0.0, 1.0, 0.0], 1.0)?,
+    ];
+    let rotated = [
+        sample([1.0, 0.0, 0.0], 3.0)?,
+        sample([1.0, 0.0, 0.0], 2.0)?,
+        sample([0.0, 0.0, 1.0], 1.0)?,
+    ];
+    let estimator = OrientationTensorEstimator::try_cross_validated(candidates, 4.0, 0.0)?;
+    let base_estimate = estimator.try_estimate(&base)?;
+    let rotated_estimate = estimator.try_estimate(&rotated)?;
+
+    assert_eq!(base_estimate.axis_ratios(), rotated_estimate.axis_ratios());
+    assert_eq!(base_estimate.candidate_scores().len(), 3);
+    for (base_score, rotated_score) in base_estimate
+        .candidate_scores()
+        .iter()
+        .zip(rotated_estimate.candidate_scores())
+    {
+        assert_eq!(base_score.ratios(), rotated_score.ratios());
+        assert_close(base_score.score(), rotated_score.score(), 2.0e-15);
+    }
+    Ok(())
+}
+
+#[test]
+fn extreme_finite_weights_keep_every_influence_inside_the_public_range() -> TestResult {
+    let estimator =
+        OrientationTensorEstimator::try_fixed(PrincipalAxisRatios::try_new([1.0, 1.0, 1.0])?, 0.0)?;
+    let estimate = estimator.try_estimate(&[
+        sample([1.0, 0.0, 0.0], f64::MAX)?,
+        sample([0.0, -200.0, -166.0], 1.0)?,
+    ])?;
+
+    for influence in estimate.influences() {
+        assert!(
+            (0.0..=1.0).contains(&influence.normalized_tensor_change()),
+            "sample {} influence is {:.17e}",
+            influence.sample_index(),
+            influence.normalized_tensor_change()
+        );
+    }
+    assert!((0.0..=1.0).contains(&estimate.diagnostics().maximum_outlier_influence()));
+    assert_eq!(estimate.influences()[0].normalized_tensor_change(), 1.0);
+    Ok(())
+}
+
+#[test]
 fn exact_cross_validation_ties_choose_lexicographically_smaller_ratios() -> TestResult {
     let smaller = PrincipalAxisRatios::try_new([1.0e100, 1.0])?;
     let larger = PrincipalAxisRatios::try_new([2.0e100, 1.0])?;

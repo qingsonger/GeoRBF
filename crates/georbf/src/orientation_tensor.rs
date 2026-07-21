@@ -20,6 +20,9 @@ use nalgebra::{DMatrix, linalg::SymmetricEigen};
 use crate::dimension::{Dim, SupportedDimension};
 use crate::geometry::UnitDirection;
 
+const EIGENSPACE_RESOLUTION_FACTOR: f64 = 64.0;
+const INFLUENCE_ROUNDOFF_FACTOR: f64 = 64.0;
+
 /// One validated axial direction and its nonnegative estimation weight.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[must_use]
@@ -187,7 +190,8 @@ impl OrientationTensorInfluence {
         self.sample_index
     }
 
-    /// Returns `||C-C_-i||_F/sqrt(2)` in `[0,1]`.
+    /// Returns `||C-C_-i||_F/sqrt(2)` in `[0,1]` after the documented
+    /// dimension-scaled roundoff-bound policy.
     ///
     /// Removing the sole positive-weight sample is defined to have influence
     /// one because no leave-one-out estimate exists.
@@ -366,8 +370,11 @@ where
 /// Cross-validation fits principal axes without each held-out positive sample.
 /// For candidate ratios `r_j`, expected squared direction shares are
 /// `p_j=r_j^2/sum_k(r_k^2)`. The score is the held-out-weighted mean of
-/// `sum_j(((n dot q_j)^2-p_j)^2)`. Lowest score wins; exact score ties choose
-/// the lexicographically smaller ratio array, independent of candidate order.
+/// squared share residuals. Within a training fold's numerically unresolved
+/// repeated eigenspace, observed and expected shares are summed before the
+/// residual is formed, so the score is independent of the arbitrary basis in
+/// that subspace. Lowest score wins; exact score ties choose the
+/// lexicographically smaller ratio array, independent of candidate order.
 #[derive(Clone, Debug, PartialEq)]
 #[must_use]
 pub struct OrientationTensorEstimator<const D: usize>
@@ -671,6 +678,16 @@ pub enum OrientationTensorError {
         /// Rejected value.
         value: f64,
     },
+    /// A finite computed influence exceeded one by more than the documented
+    /// floating-point roundoff tolerance.
+    InfluenceOutsideRoundoffTolerance {
+        /// Original sample index.
+        sample_index: usize,
+        /// Rejected computed influence.
+        value: f64,
+        /// Explicit dimension-scaled tolerance above one.
+        tolerance: f64,
+    },
 }
 
 impl fmt::Display for OrientationTensorError {
@@ -753,6 +770,14 @@ impl fmt::Display for OrientationTensorError {
             Self::NegativeEigenvalue { axis, value } => write!(
                 formatter,
                 "orientation tensor eigenvalue {axis} is negative ({value}); no clipping applied"
+            ),
+            Self::InfluenceOutsideRoundoffTolerance {
+                sample_index,
+                value,
+                tolerance,
+            } => write!(
+                formatter,
+                "sample {sample_index} influence {value} exceeds one beyond roundoff tolerance {tolerance}"
             ),
         }
     }
@@ -1015,14 +1040,11 @@ where
             dot * dot
         });
         for (candidate, total) in totals.iter_mut().enumerate() {
-            let loss = observed
-                .iter()
-                .zip(expected[candidate])
-                .map(|(actual, predicted)| {
-                    let residual = actual - predicted;
-                    residual * residual
-                })
-                .sum::<f64>();
+            let loss = grouped_share_loss(
+                &observed,
+                &expected[candidate],
+                &decomposition.normalized_eigenvalues,
+            );
             *total += normalized_weights[held_out] * loss;
             if !total.is_finite() {
                 return Err(OrientationTensorError::NonFiniteNumericalResult {
@@ -1037,6 +1059,44 @@ where
         .zip(totals)
         .map(|(ratios, score)| AxisRatioCandidateScore { ratios, score })
         .collect())
+}
+
+fn grouped_share_loss<const D: usize>(
+    observed: &[f64; D],
+    expected: &[f64; D],
+    normalized_eigenvalues: &[f64; D],
+) -> f64
+where
+    Dim<D>: SupportedDimension,
+{
+    let resolution = EIGENSPACE_RESOLUTION_FACTOR * dimension_as_f64::<D>() * f64::EPSILON;
+    let mut loss = 0.0;
+    let mut group_start = 0;
+    for axis in 0..D {
+        let group_ends = axis == D - 1
+            || normalized_eigenvalues[axis] - normalized_eigenvalues[axis + 1] > resolution;
+        if group_ends {
+            let observed_share = observed[group_start..=axis].iter().sum::<f64>();
+            let expected_share = expected[group_start..=axis].iter().sum::<f64>();
+            let residual = observed_share - expected_share;
+            loss += residual * residual;
+            group_start = axis + 1;
+        }
+    }
+    loss
+}
+
+fn dimension_as_f64<const D: usize>() -> f64
+where
+    Dim<D>: SupportedDimension,
+{
+    if D == 1 {
+        1.0
+    } else if D == 2 {
+        2.0
+    } else {
+        3.0
+    }
 }
 
 fn compare_candidate_scores<const D: usize>(
@@ -1067,7 +1127,7 @@ where
 {
     let mut influences = Vec::with_capacity(samples.len());
     for (sample_index, sample) in samples.iter().enumerate() {
-        let normalized_tensor_change = if sample.weight == 0.0 {
+        let computed_change = if sample.weight == 0.0 {
             0.0
         } else if positive_sample_count == 1 {
             1.0
@@ -1084,11 +1144,24 @@ where
                 .sum::<f64>();
             (squared_difference / 2.0).sqrt()
         };
-        if !normalized_tensor_change.is_finite() {
+        if !computed_change.is_finite() {
             return Err(OrientationTensorError::NonFiniteNumericalResult {
                 operation: "leave-one-out influence",
             });
         }
+        let dimension = dimension_as_f64::<D>();
+        let tolerance = INFLUENCE_ROUNDOFF_FACTOR * dimension * dimension * f64::EPSILON;
+        let normalized_tensor_change = if computed_change <= 1.0 {
+            computed_change
+        } else if computed_change <= 1.0 + tolerance {
+            1.0
+        } else {
+            return Err(OrientationTensorError::InfluenceOutsideRoundoffTolerance {
+                sample_index,
+                value: computed_change,
+                tolerance,
+            });
+        };
         influences.push(OrientationTensorInfluence {
             sample_index,
             normalized_tensor_change,

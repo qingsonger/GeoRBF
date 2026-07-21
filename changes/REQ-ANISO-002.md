@@ -49,6 +49,17 @@ selection, exact tie-breaking, insufficient leave-one-out data, compile-time
 D=4 rejection, and `Send + Sync`. A runnable example and deterministic D=3
 cross-validation benchmark cover the public workflow.
 
+The PR #106 Repair makes leave-one-out selection invariant when a training
+fold contains a repeated or numerically unresolved eigenspace: candidate loss
+compares the total observed and expected share within each maximal adjacent
+eigenvalue group resolved at `64 D epsilon`, rather than projections onto an
+arbitrary basis inside that group. A global-rotation regression checks all
+candidate scores and the selected ratios. The Repair also enforces the public
+influence range through an explicit `64 D^2 epsilon` upper roundoff band:
+values inside the band are recorded as one and larger overshoots are structured
+errors. An extreme finite-weight regression checks every per-sample influence
+and the aggregate maximum.
+
 The initial optimized Windows smoke measured approximately 7.39 us per
 four-sample, three-candidate D=3 estimate over 2,000 estimates, with checksum
 `1.00428812046557887e4`. This is a local regression signal, not a cross-machine

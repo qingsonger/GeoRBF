@@ -130,9 +130,19 @@ expected squared directional shares
 
 ```text
 p_j = r_j^2 / sum_k r_k^2,
-loss_i(r) = sum_j (((n_i dot q_-i,j)^2 - p_j)^2),
+o_j = (n_i dot q_-i,j)^2,
+loss_i(r) = sum_G ((sum_(j in G) o_j - sum_(j in G) p_j)^2),
 score(r) = sum_i normalized_weight_i loss_i(r).
 ```
+
+Each `G` is a maximal consecutive training-fold eigenspace whose adjacent
+normalized eigenvalue gaps are no greater than `64 D epsilon`. A resolved
+axis is therefore a singleton group and retains the componentwise loss. An
+unresolved repeated eigenspace is scored only through its total projection,
+which is invariant under any orthonormal basis change inside that subspace.
+This dimension-scaled machine-precision rule affects candidate scoring only;
+it is not a rank decision and does not alter or regularize the tensor or its
+reported eigendecomposition.
 
 The lowest score wins. An exact score tie selects the lexicographically smaller
 ratio vector, independent of candidate order. At least two positive-weight
@@ -142,10 +152,13 @@ or implicit ratio inference occurs.
 Per-sample outlier influence is the rotation-invariant normalized Frobenius
 change `||C-C_-i||_F/sqrt(2)`. A zero-weight sample has zero influence; removing
 the sole positive sample is explicitly assigned influence one because no
-leave-one-out estimate exists. Diagnostics retain every candidate score and
-sample influence, the largest influence and first corresponding sample,
-positive sample count, maximum normalized weight, eigengaps, axis confidence,
-isotropy decision and threshold, selection kind, and selected maximum ratio.
+leave-one-out estimate exists. The exact PSD trace-one expression lies in
+`[0,1]`. A finite computed value in `(1, 1 + 64 D^2 epsilon]` is recorded as
+one; a larger overshoot is a structured numerical error rather than a hidden
+clamp. Diagnostics retain every candidate score and sample influence, the
+largest influence and first corresponding sample, positive sample count,
+maximum normalized weight, eigengaps, axis confidence, isotropy decision and
+threshold, selection kind, and selected maximum ratio.
 
 The estimator does not build a `GlobalAnisotropy`, infer absolute lengths,
 modify local trends, compile geological controls, or refit a field. Those
