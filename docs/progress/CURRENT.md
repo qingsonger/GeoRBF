@@ -6,51 +6,50 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; Repair required
+- Mode: Repair complete; fresh re-review required
 - Requirement: REQ-TREND-001, Issue #102
 - Branch: `codex/req-trend-001-positive-definite-local-trends`
 - Draft pull request: #103
 - Latest independently re-reviewed head:
   `8396ec9957f9ea4ab6c6e252adbb218d5c18fbd4`
-- F5-F6 repair code/test head: `147cc4f6a4cec226c752127f94076c0d954e2dfc`
+- F7-F8 repair code/test head: `2b5189d624045c16f2ca7a55b73ee6f24960e999`
 - Dependencies: REQ-KERNEL-003, REQ-ANISO-001, and REQ-MODEL-001 are integrated
-- Registry state: `implemented`; F7-F8 repair, re-review, and integration remain
+- Registry state: `implemented`; fresh re-review and integration remain
 
 ## Review result
 
-- F1-F6 are independently closed for their required regressions.
-- F7 (P1): `displacement * inverse_radius` can round a nonzero Gaussian
-  derivative factor to zero. A D=1 public mixture returns zero gradient where
-  independent 120-digit truth is `-5.489618287124962e-17`.
-- F8 (P1): multiplying two nonzero scaled coordinates can round a mixed
-  Gaussian Hessian coefficient to zero. A D=2 public mixture returns zero
-  off-diagonal Hessian where independent truth is
-  `2.4410086240052807e-31`.
-- No P0, P2, or P3 finding was identified. PR #103 remains Draft.
+- F1-F6 remain independently closed for their required regressions.
+- Repair head `2b5189d` addresses F7 by combining unscaled displacement with
+  inverse-radius square in one stable Gaussian derivative product.
+- The same repair addresses F8 by stably combining both unscaled displacements
+  and both inverse-radius-square factors; canonical axis order retains bitwise
+  Hessian symmetry.
+- F7-F8 remain open pending fresh independent re-review. PR #103 remains Draft.
 
 ## Review validation state
 
-- The isolated `math_reviewer` reviewed the complete PR diff, passed all 12
-  focused tests and diff whitespace validation, and reproduced F7-F8 with
-  independent 120-digit calculations.
-- The parent Review task passed all 12 focused tests, all georbf Rustdoc, the
-  runnable example, all 58 requirement checks, complete diff whitespace
-  validation, and the full exact-head standard gate: workspace format,
-  warning-denying workspace all-target/all-feature Clippy, all workspace tests
-  with all features, workspace Rustdoc, and requirement validation.
-- Draft CI run 29807655190 passed the Ubuntu correctness gate on exact reviewed
-  head `8396ec9`. Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI did not
-  run and is not claimed as passed.
+- Both new public regressions failed with exact zero against the pre-repair
+  implementation and pass on repair code/test head `2b5189d`.
+- All 14 focused local-trend tests, all georbf Rustdoc, the runnable example,
+  D=1/D=2/D=3 release benchmark smoke, and complete diff whitespace validation
+  pass on the repaired implementation.
+- After the final code change, exact repair head `2b5189d` passed the full
+  standard gate: workspace format, warning-denying workspace all-target/all-
+  feature Clippy, all workspace tests with all features, workspace Rustdoc,
+  and all 58 requirement checks.
+- Draft CI has not yet run on `2b5189d` and is not claimed as passed. Ready-only
+  Windows/Ubuntu/macOS and benchmark-smoke CI did not run and is not claimed as
+  passed.
 
 ## Next task boundary
 
-A fresh Repair task must address only F7-F8. First add the two public
-regressions recorded in `docs/reviews/PR-103-INDEPENDENT-REVIEW.md` and prove
-that they fail on the reviewed implementation; then implement the smallest
-complete stable-scaling repair. Run focused checks during development and the
-complete standard gate after the final code change. Update the review evidence
-and this bounded handoff, commit, push, keep PR #103 Draft, and stop for a fresh
-independent re-review. Do not begin another requirement.
+A fresh Review task must independently re-review the complete PR diff and
+confirm whether F7-F8 are closed without inheriting this Repair reasoning. If
+any P0-P3 finding remains, record it and stop without repair. If clean, follow
+the required ready-head sequence: synchronize evidence, mark PR #103 ready,
+wait for complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact
+head, merge only when green, then record truthful integration state. Do not
+begin another requirement.
 
 ## Durable evidence
 

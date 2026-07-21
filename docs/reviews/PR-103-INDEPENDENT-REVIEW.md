@@ -441,3 +441,40 @@ regressions, rerun focused checks and the complete stable-head standard gate,
 update this evidence and the bounded handoff, push, and stop for another fresh
 independent re-review. This Review task does not repair production code, mark
 the PR ready, merge it, or begin another requirement.
+
+## Repair evidence pending fresh re-review: F7-F8
+
+Repair code/test head `2b5189d624045c16f2ca7a55b73ee6f24960e999`
+addresses only F7-F8:
+
+- F7: Gaussian gradients now combine the unscaled displacement directly with
+  the cached inverse-radius square and the amplitude/exponent scale. The public
+  D=1 regression retains the independent 120-digit truth
+  `-5.489618287124962e-17` when `delta * inverse_radius` would round to zero.
+- F8: mixed Gaussian Hessian entries now combine both inverse-radius-square
+  factors and both unscaled displacements in one stable product. Canonical axis
+  order preserves bitwise symmetry. The public D=2 regression retains both
+  symmetric entries at the independent truth `2.4410086240052807e-31` when the
+  product of scaled coordinates would round to zero.
+
+Both regressions failed with exact zero against the pre-repair implementation
+based on reviewed branch head `2dd51227ffc8b908835df07d779d450480a4d137`,
+then passed after the bounded repair. All 14 focused local-trend tests, all
+georbf Rustdoc, the runnable example, and the D=1/D=2/D=3 release benchmark
+smoke passed. The smoke reported approximately 225 ns, 465 ns, and 1.11 us per
+Hessian evaluation, respectively, with the established deterministic
+checksums.
+
+After the final code change, exact repair head `2b5189d` passed the complete
+standard gate: workspace format, warning-denying workspace all-target/all-
+feature Clippy, all workspace tests with all features, workspace Rustdoc, all
+58 requirement checks, and diff whitespace validation. The unavailable
+nextest, deny, audit, semver, Miri, sanitizer, fuzzing, mutation, allocation-
+instrumentation, API/ABI/schema, and actionlint checks remain unexecuted and
+are not claimed as passed.
+
+This section records Repair evidence only and does not independently close
+F7-F8. PR #103 remains Draft and REQ-TREND-001 remains `implemented`; a fresh
+independent mathematical and numerical re-review of the complete repaired diff
+is required next. This Repair does not mark the PR ready, merge it, or begin
+another requirement.

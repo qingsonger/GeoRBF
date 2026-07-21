@@ -49,6 +49,14 @@ whose reciprocal or reciprocal square rounds to zero, preserving the public
 inverse-derivative contract. Public regressions cover both extreme-scale
 boundaries.
 
+The subsequent F7-F8 repair no longer forms a scaled displacement or a mixed
+scaled-coordinate product before stable derivative combination. Gradients use
+the equivalent `b (-r^-2) delta` factorization, while mixed Hessian entries use
+`b r^-2 r^-2 delta_i delta_j`; the stable product combines every nonzero
+factor before rounding the final result. Canonical axis ordering preserves
+bitwise Hessian symmetry. Public regressions retain the independent 120-digit
+gradient and mixed-Hessian truths at both underflow boundaries.
+
 Rust is implemented. CLI is N/A because versioned schemas and the complete
 data CLI arrive in M8. C, C++, and Python are N/A because bindings follow API
 and schema freeze in M9. Trend-control compilation, region semantics,
@@ -70,3 +78,8 @@ approximately 305 ns/evaluation for D=1, 519 ns/evaluation for D=2, and
 same deterministic checksums. This records the stable-derivative checks rather
 than setting a cross-machine threshold; Value and Coverage now avoid all unused
 gradient and Hessian arithmetic.
+
+The F7-F8 repair smoke reported approximately 225 ns/evaluation for D=1,
+465 ns/evaluation for D=2, and 1.11 us/evaluation for D=3 over 10,000
+evaluations per dimension, with the established deterministic checksums. The
+smoke remains a regression signal rather than a cross-machine threshold.
