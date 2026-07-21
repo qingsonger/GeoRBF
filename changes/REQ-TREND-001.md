@@ -57,6 +57,12 @@ factor before rounding the final result. Canonical axis ordering preserves
 bitwise Hessian symmetry. Public regressions retain the independent 120-digit
 gradient and mixed-Hessian truths at both underflow boundaries.
 
+The F9 repair avoids diagonal-Hessian cancellation at a Gaussian radius. It
+uses the equivalent `b r^-4 (delta-r)(delta+r)` factorization instead of
+forming `(delta/r)^2 - 1` from an already rounded scaled displacement. The
+public D=1 regression at the successor of radius three retains the independent
+mixture-Hessian truth `1.2101577062956176e-17`.
+
 Rust is implemented. CLI is N/A because versioned schemas and the complete
 data CLI arrive in M8. C, C++, and Python are N/A because bindings follow API
 and schema freeze in M9. Trend-control compilation, region semantics,
@@ -83,3 +89,8 @@ The F7-F8 repair smoke reported approximately 225 ns/evaluation for D=1,
 465 ns/evaluation for D=2, and 1.11 us/evaluation for D=3 over 10,000
 evaluations per dimension, with the established deterministic checksums. The
 smoke remains a regression signal rather than a cross-machine threshold.
+
+The F9 repair smoke reported approximately 211 ns/evaluation for D=1,
+458 ns/evaluation for D=2, and 1.12 us/evaluation for D=3 over 500,000
+evaluations per dimension, with the established deterministic checksums. It
+likewise records a local regression signal rather than a performance promise.

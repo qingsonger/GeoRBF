@@ -574,3 +574,43 @@ regression, rerun focused checks and the complete stable-head standard gate,
 update this evidence and the bounded handoff, push, and stop for another fresh
 independent re-review. This Review task does not repair production code, mark
 the PR ready, merge it, or begin another requirement.
+
+## Repair evidence pending fresh re-review: F9
+
+Repair code/test head `4753abf248132c8745a99b493b24dc58738b4f02`
+addresses only F9. The required public D=1 regression failed its positive-
+Hessian assertion against the pre-repair implementation at branch head
+`bbf0f34875c814f52282b450717f54669ccd201f`, then passed after the bounded
+repair with the independent truth `1.2101577062956176e-17` and a tight relative
+tolerance.
+
+The diagonal Gaussian weight Hessian no longer subtracts one from an already
+rounded squared scaled coordinate. It uses the mathematically equivalent
+factorization
+
+```text
+b(x) (delta^2 / radius^4 - 1 / radius^2)
+  = b(x) (delta - radius) (delta + radius) / radius^4,
+```
+
+and combines all four nonzero factors through the existing stable Gaussian
+product. The successor distance from the radius therefore remains explicit
+instead of being rounded away before the final result. No public API,
+capability, dependency, or regularization policy changes.
+
+All 15 focused local-trend tests, all georbf Rustdoc including compile-fail
+contracts, the runnable example, and the D=1/D=2/D=3 release benchmark smoke
+passed. The smoke reported approximately 211 ns, 458 ns, and 1.12 us per
+Hessian evaluation, respectively, with the established deterministic
+checksums. After the final code change, exact repair head `4753abf` passed the
+complete standard gate: workspace format, warning-denying workspace all-
+target/all-feature Clippy, all workspace tests with all features, workspace
+Rustdoc, all 58 requirement checks, and diff whitespace validation.
+
+The unavailable nextest, deny, audit, semver, Miri, sanitizer, fuzzing,
+mutation, allocation-instrumentation, API/ABI/schema, and actionlint checks
+remain unexecuted and are not claimed as passed. This section records Repair
+evidence only and does not independently close F9. PR #103 remains Draft and
+REQ-TREND-001 remains `implemented`; a fresh independent mathematical and
+numerical re-review of the complete repaired diff is required next. This
+Repair does not mark the PR ready, merge it, or begin another requirement.
