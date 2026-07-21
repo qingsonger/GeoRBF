@@ -37,6 +37,9 @@
 //! adjacent level intersections along selected fitted-field normals, reports
 //! deterministic returned-point Euclidean distance evidence, supports
 //! caller-owned cancellation and progress, and never refits implicitly.
+//! Immutable multi-field projects retain independently fitted scalar fields in
+//! stable identifier order and expose validated reference-field inputs that
+//! delegate evaluation without adding topology or cross-field mathematics.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -61,6 +64,7 @@ pub mod normal_observations;
 pub mod orientation;
 pub mod polynomial;
 pub mod problem_ir;
+pub mod project;
 pub mod solver;
 pub mod tangent_observations;
 pub mod thickness;
@@ -162,6 +166,9 @@ pub use problem_ir::{
     ProblemIrStorage, SemanticConstraint, SemanticExpression, SemanticMetadataField,
     SemanticProblemIr, SemanticProvenance, SemanticRelation, SoftLoss, SourceLocation,
     VariableBlock,
+};
+pub use project::{
+    FieldId, GeoProject, GeoProjectError, GeoProjectStorage, ProjectField, ReferenceFieldInput,
 };
 pub use solver::{
     ConditionPolicy, DenseEqualitySystem, DenseEqualitySystemError, DenseFactorization,

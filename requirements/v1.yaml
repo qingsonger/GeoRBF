@@ -570,17 +570,17 @@ requirements:
     dependencies: [REQ-MODEL-001, REQ-LEVEL-001]
     milestone: M5-v0.5.0
     priority: P1
-    issue: null
-    pull_request: null
+    issue: 99
+    pull_request: 100
     tests: [multi-field-independence, identifiers, reference-input]
     docs: [docs/architecture/ARCHITECTURE.md, rustdoc]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
+    rust_api: implemented
+    cli: "N/A: versioned project schemas and the complete data CLI arrive in M8"
+    c_api: "N/A: stable project handles follow Rust API and schema freeze in M9"
+    cpp_api: "N/A: C++ project wrappers follow the stable C ABI in M9"
+    python_api: "N/A: Python project bindings follow Rust API and schema freeze in M9"
     benchmark: "N/A: projects delegate fitting and evaluation to individual fields"
-    status: planned
+    status: implemented
 
   - id: REQ-ANISO-002
     title: Robust orientation tensor estimation
