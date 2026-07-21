@@ -1,11 +1,11 @@
 # REQ-PROJECT-001
 
 Issue #99 defines the acceptance criteria and exclusions for independent
-multi-field projects. The Rust core now exposes a stable caller-controlled
-`FieldId`, an owned `ProjectField<D>`, and an immutable `GeoProject<D>` for
-exactly D=1, D=2, and D=3. Project construction preserves caller insertion
-order and returns structured errors for zero fields, duplicate identifiers,
-and checked allocation failure without returning partial state.
+multi-field projects, implemented in Draft PR #100. The Rust core now exposes a
+stable caller-controlled `FieldId`, an owned `ProjectField<D>`, and an immutable
+`GeoProject<D>` for exactly D=1, D=2, and D=3. Project construction preserves
+caller insertion order and returns structured errors for zero fields, duplicate
+identifiers, and checked allocation failure without returning partial state.
 
 Every project entry consumes and owns an already independent `FittedField<D>`.
 Those fields continue to be produced solely through the existing

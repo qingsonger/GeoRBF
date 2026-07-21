@@ -9,8 +9,9 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement
 - Requirement: REQ-PROJECT-001, Issue #99
 - Branch: `codex/req-project-001-independent-multi-field-projects`
-- Draft pull request: pending creation
-- Registry state: `planned` until the Draft PR exists; implementation is present
+- Draft pull request: #100
+- Implementation head before final evidence: `30c31ad`
+- Registry state in this change: `implemented`, not `integrated`
 - Dependencies: REQ-MODEL-001 and REQ-LEVEL-001 are integrated
 
 ## Implemented scope
@@ -30,10 +31,13 @@ records, benchmark reports, Git, and GitHub.
 
 ## Validation state
 
-- Focused project integration tests passed before the documentation update.
-- The project Rustdoc compile-fail dimension bound passed.
-- Formatting, Clippy, the complete standard gate, and the final diff review
-  remain to be run on the stable implementation tree.
+- All six focused project tests pass, including two-field independence,
+  identifier/error behavior, reference delegation, source ownership, public
+  `Send + Sync`, and actual D=1/D=2/D=3 construction.
+- All 31 crate Rustdoc tests pass, including the D=4 project compile-fail bound.
+- The final implementation tree passes workspace formatting, warning-denying
+  all-target/all-feature Clippy, all-feature workspace tests, workspace
+  Rustdoc, all 58 requirement checks, and `git diff --check`.
 
 ## Next task boundary
 
@@ -45,6 +49,7 @@ or begin another requirement in the same task.
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #99
+- Draft implementation pull request: GitHub PR #100
 - Requirement summary: `changes/REQ-PROJECT-001.md`
 - Independent property/error tests: `crates/georbf/tests/project.rs`
 - Public implementation and Rustdoc: `crates/georbf/src/project.rs`
