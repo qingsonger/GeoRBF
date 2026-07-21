@@ -6,51 +6,59 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement
+- Mode: Review complete; Repair required
 - Requirement: REQ-TREND-001, Issue #102
 - Branch: `codex/req-trend-001-positive-definite-local-trends`
 - Draft pull request: #103
+- Reviewed implementation head: `48c9d516721928f98dd06242a2304b8d4c9f94e3`
 - Dependencies: REQ-KERNEL-003, REQ-ANISO-001, and REQ-MODEL-001 are integrated
-- Registry state: `implemented`; independent Review and integration remain
+- Registry state: `implemented`; repair, fresh re-review, and integration remain
 
-## Implemented scope
+## Confirmed review findings
 
-- Added an immutable D=1/D=2/D=3 local mixture of fixed anisotropic kernels and
-  analytic spatial-basis products.
-- Enforced strict-positive-definite kernel metadata, explicit CPD rejection,
-  one finite nonzero constant background, a declared operational domain, and a
-  positive explicit lower-bound policy.
-- Added complete query value, gradient, and Hessian product rules with
-  component-intersection capability checks and structured finite-arithmetic
-  errors.
-- Added immutable construction diagnostics and allocation-free point coverage,
-  plus Rustdoc, a runnable example, and a deterministic Hessian benchmark.
-- CLI is N/A until M8 schemas and the complete data CLI. C, C++, and Python are
-  N/A until M9 API/schema freeze and bindings.
+- F1 (P1): public `SmoothSpatialWeight` variants and cached Gaussian fields
+  bypass constructor invariants; make construction private or revalidate every
+  invariant at mixture construction, with an external-API regression.
+- F2 (P1): a constant background such as `1e-200` is accepted although its
+  represented square is zero, destroying the strict-PD diagonal contribution;
+  reject square underflow with a structured construction error.
+- F3 (P1): forming Gaussian derivatives from an already underflowed value loses
+  representable gradient/Hessian results at extreme radii; use stable scaled or
+  log-domain evaluation and an independent analytic regression.
+- F4 (P2): coverage, center-value, and lower derivative demands compute unused
+  full Hessians and can fail on irrelevant overflow; make weight evaluation
+  demand-bounded and test Value/Coverage success separately from Second demand.
 
 ## Validation state
 
-- Focused local-trend tests: 8 passed, including deterministic random Gram SPD,
-  independent finite differences, strict background policy, Hessian capability,
-  coverage, CPD rejection, dimensions, and input errors.
-- The runnable example completed and the release-mode benchmark smoke passed in
-  D=1, D=2, and D=3.
-- Warning-denying georbf all-target/all-feature Clippy passed during development.
-- The complete stable-head standard gate passed: workspace format,
-  warning-denying all-target/all-feature Clippy, all-feature workspace tests,
-  workspace Rustdoc (including D=4 compile rejection), all 58 requirement
-  checks, and complete diff whitespace validation.
+- Exact implementation head `48c9d51` retains the complete stable-head standard
+  gate recorded by Implement; Draft CI run 29803650524 passed Ubuntu correctness
+  on that exact head.
+- The isolated read-only `math_reviewer` passed all eight focused tests, D=4
+  Rustdoc rejection, the example, benchmark smoke in D=1/D=2/D=3, formatting,
+  warning-denying georbf Clippy, all 58 requirement checks, and diff whitespace.
+- The reviewer independently reproduced F1 with an external-crate compile probe,
+  F2 with background-square underflow, and F3 with high-precision arithmetic.
+- The parent Review task passed all eight focused tests, all georbf Rustdoc, all
+  58 requirement checks, and complete diff whitespace validation.
+- This Review evidence changes no production, test, manifest, schema, CI, build,
+  API, numerical, registry, or dependency input and does not invalidate the
+  exact-implementation-head standard gate.
 
 ## Next task boundary
 
-This implementation task has pushed its stable head and opened Draft PR #103.
-Stop. A fresh Review task must inspect only REQ-TREND-001 and that PR, use an
-isolated read-only `math_reviewer`, and must not repair production code or begin
-another requirement.
+This Review task records findings F1-F4 and stops without repairing production
+code. A fresh Repair task must address only those findings, add their specified
+regressions, run focused checks while iterating, run the complete standard gate
+after the last code change, update the review evidence and this bounded handoff,
+commit, push, and stop for a fresh independent re-review. Do not begin another
+requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #102
+- Independent findings and required regressions:
+  `docs/reviews/PR-103-INDEPENDENT-REVIEW.md`
 - Requirement summary and benchmark baseline: `changes/REQ-TREND-001.md`
 - Independent property/error tests: `crates/georbf/tests/local_trend.rs`
 - Public implementation and Rustdoc: `crates/georbf/src/local_trend.rs`
