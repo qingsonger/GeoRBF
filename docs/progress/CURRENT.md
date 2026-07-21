@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-THICK-002, Issue #96 (closed)
 - Implementation pull request: #97, squash-merged as `0de6140`
 - Integration-state branch: `codex/req-thick-002-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #98 (Draft until exact Ready CI is green)
 - Review record: `docs/reviews/PR-97-INDEPENDENT-REVIEW.md`
 - Registry state in this change: `integrated`
 - Next eligible requirement: select with `cargo xtask requirements next`
@@ -66,7 +66,7 @@ task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #96
 - Merged implementation and repair: GitHub PR #97
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #98
 - Independent review: `docs/reviews/PR-97-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-THICK-002.md`
 - Independent truth/error tests: `crates/georbf/tests/thickness_validation.rs`
