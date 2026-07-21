@@ -79,7 +79,7 @@ radial families because an invertible change of coordinates preserves the
 family classification; later CPD assembly still owns polynomial side
 conditions.
 
-## Deferred orientation estimation
+## Global orientation-tensor estimation
 
 An orientation tensor
 
@@ -88,10 +88,68 @@ C = sum_i weight_i n_i n_i^T
 ```
 
 uses unit directions, finite nonnegative weights, and at least one strictly
-positive weight. It is sign-invariant and positive semidefinite and estimates
-axes, not correlation lengths. Axis ratios are user-provided or selected by
-bounded deterministic candidates and cross-validation. Diagnostics include
-eigenvalue gaps, isotropy, maximum ratio, confidence, and outlier influence.
+positive weight. `REQ-ANISO-002` normalizes the weights by their maximum before
+their sum, so a common finite rescaling, including weights near `f64::MAX`,
+does not overflow merely while forming relative weights. Compensated sums form
+the upper triangle and copy it to the lower triangle, preserving represented
+symmetry. Because `(-n_i)(-n_i)^T = n_i n_i^T`, polarity is immaterial. The
+normalized tensor is positive semidefinite and estimates axes, not absolute
+correlation lengths.
+
+Principal axes are ordered by nonincreasing eigenvalue and their otherwise
+arbitrary signs are canonicalized by making the largest-magnitude component
+positive, with the lowest component index breaking magnitude ties. Exact or
+near repeated eigenvalues make individual axes unidentifiable; callers must
+use the reported normalized adjacent eigenvalue gaps and per-axis minimum
+adjacent gap as confidence evidence instead of interpreting a low-gap basis as
+geologically unique. The isotropy decision is explicit:
+
+```text
+(lambda_max - lambda_min) / sum_j lambda_j <= caller_threshold,
+caller_threshold in [0, 1].
+```
+
+The existing pinned nalgebra backend performs only the private symmetric
+eigendecomposition. It receives the already finite D-by-D tensor, uses
+`f64::EPSILON` as its convergence resolution, and is bounded to 64 iterations.
+Non-convergence, non-finite results, or a negative returned eigenvalue are
+structured errors. No eigenvalue is clipped, no eigengap becomes a hidden rank
+decision, and no nalgebra type crosses the public API.
+
+Principal-axis ratios are relative lengths in eigenvalue order. The public
+representation requires finite nonincreasing values at least one and an
+exactly-one final value, so no arbitrary common scale remains. Construction
+does not sort or rescale input. A caller either supplies one such ratio vector
+or a finite candidate list and an explicit finite maximum ratio. Empty,
+duplicate, unrepresentable, or out-of-bound candidates are rejected.
+
+Candidate selection is deterministic leave-one-out cross-validation over
+strictly positive-weight samples. For each held-out direction, axes are fitted
+from all remaining positive-weight directions. A candidate `r` defines the
+expected squared directional shares
+
+```text
+p_j = r_j^2 / sum_k r_k^2,
+loss_i(r) = sum_j (((n_i dot q_-i,j)^2 - p_j)^2),
+score(r) = sum_i normalized_weight_i loss_i(r).
+```
+
+The lowest score wins. An exact score tie selects the lexicographically smaller
+ratio vector, independent of candidate order. At least two positive-weight
+samples are required; no random search, candidate generation, regularization,
+or implicit ratio inference occurs.
+
+Per-sample outlier influence is the rotation-invariant normalized Frobenius
+change `||C-C_-i||_F/sqrt(2)`. A zero-weight sample has zero influence; removing
+the sole positive sample is explicitly assigned influence one because no
+leave-one-out estimate exists. Diagnostics retain every candidate score and
+sample influence, the largest influence and first corresponding sample,
+positive sample count, maximum normalized weight, eigengaps, axis confidence,
+isotropy decision and threshold, selection kind, and selected maximum ratio.
+
+The estimator does not build a `GlobalAnisotropy`, infer absolute lengths,
+modify local trends, compile geological controls, or refit a field. Those
+operations require later caller policy or requirements.
 
 ## Local positive-definite trends
 

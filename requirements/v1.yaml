@@ -588,7 +588,7 @@ requirements:
     dependencies: [REQ-ORIENT-001, REQ-ANISO-001]
     milestone: M6-v0.6.0
     priority: P1
-    issue: null
+    issue: 105
     pull_request: null
     tests: [sign-invariance, rotations, weight-validation, isotropy, outliers, bounded-search]
     docs: [docs/architecture/ANISOTROPY.md, rustdoc]

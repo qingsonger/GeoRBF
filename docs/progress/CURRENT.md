@@ -6,73 +6,64 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-TREND-001 complete
-- Requirement: REQ-TREND-001, Issue #102
-- Implementation pull request: #103, squash-merged as `2300ccc`
-- Integration-state branch: `codex/req-trend-001-integration-state`
-- Integration-state pull request: #104 (Draft until exact Ready CI is green)
-- Independently reviewed implementation head: `85d22a5`
-- Clean re-review evidence / exact Ready head: `37da1f3`
-- F7-F8 repair code/test head: `2b5189d624045c16f2ca7a55b73ee6f24960e999`
-- F9 repair code/test head: `4753abf248132c8745a99b493b24dc58738b4f02`
-- Dependencies: REQ-KERNEL-003, REQ-ANISO-001, and REQ-MODEL-001 are integrated
-- Registry state in this change: `integrated`
+- Mode: Implement / REQ-ANISO-002 complete pending independent Review
+- Requirement: REQ-ANISO-002, Issue #105
+- Branch: `codex/req-aniso-002-orientation-tensor`
+- Implementation pull request: pending Draft creation
+- Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
+- Registry state in this pre-PR change: `planned`; it advances to `implemented`
+  only after the required Draft PR exists and is linked
 
-## Integration result
+## Implemented scope
 
-- A fresh isolated read-only `math_reviewer` independently inspected F9 and
-  the complete repaired PR diff on exact head `85d22a5`. It inherited no
-  Implement or Repair reasoning and changed no repository or remote state.
-- F9 is closed. Independent 140-digit arithmetic gives
-  `1.2101577062956176141327308452609e-17`; it rounds to the public D=1
-  regression truth `1.2101577062956176e-17` and the regression passes.
-- F1-F9 are closed and no P0-P3 finding remains.
-- Exact Ready head `37da1f3` passed complete Windows, Ubuntu, and macOS CI run
-  29824723492, including every backend combination, benchmark smoke, and
-  requirement validation.
-- PR #103 squash-merged exactly once as `2300ccc`; Issue #102 closed as
-  completed. Post-merge `main` CI run 29825582554 passed the same complete
-  three-platform gate on exact merge commit `2300ccc`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, numerical behavior, dependency,
-  tag, or release.
+- Added sign-invariant normalized weighted orientation tensors for exactly
+  D=1, D=2, and D=3, with stable relative-weight normalization and compensated
+  symmetric accumulation.
+- Added private bounded symmetric eigendecomposition, deterministic
+  canonical-sign principal axes, ordered eigenvalues and normalized shares,
+  explicit isotropy thresholding, adjacent eigengaps, and per-axis confidence.
+- Added validated scale-free principal-axis ratios with fixed selection or a
+  finite explicitly bounded candidate set and deterministic leave-one-out
+  squared-share cross-validation.
+- Added complete candidate-score and per-sample tensor-influence evidence,
+  maximum outlier influence, weight concentration, selection-kind, and sample
+  count diagnostics.
+- Added independent public property/error tests, compile-fail dimension
+  coverage, synchronized Rustdoc and architecture mathematics, a runnable
+  example, changelog fragment, and deterministic CI smoke benchmark.
+- Rust: implemented. CLI: N/A until M8 schemas/complete CLI. C/C++/Python: N/A
+  until M9 API freeze and adapters. Persistence/model integration: excluded.
 
 ## Validation state
 
-- Exact reviewed implementation head `85d22a5` passed the complete local
-  standard gate:
-  workspace format, warning-denying workspace all-target/all-feature Clippy,
-  all workspace tests with all features, workspace Rustdoc, all 58 requirement
-  checks, and complete diff whitespace validation.
-- Both exact Ready-head run 29824723492 and post-merge `main` run 29825582554
-  are green on Windows, Ubuntu, and macOS, including every configured benchmark
-  smoke.
-- The isolated integration-state tree must pass the complete local standard
-  gate and exact Ready-head CI before it merges.
+- Focused orientation-tensor tests pass (11 tests).
+- Warning-denying georbf all-target Clippy, georbf Rustdoc, example execution,
+  and the optimized benchmark smoke pass.
+- The complete standard workspace gate will run once on the stable
+  implementation head before the Draft PR is handed off.
 - Local `actionlint` and the unavailable later tools listed below remain
   unexecuted and are not claimed as passed.
 
 ## Next task boundary
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start another requirement in this
-task.
+Open a fresh Review task for only the implementation PR and REQ-ANISO-002.
+Supply the requirement/dependency summaries, `docs/architecture/ANISOTROPY.md`,
+ADR-0009, ADR-0010, the PR diff, and exact validation/benchmark evidence to an
+isolated read-only `math_reviewer`. Record P0-P3 findings and required
+regressions without repairing production code in the same Review task. Do not
+start another requirement.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #102
-- Merged implementation: GitHub PR #103
-- Integration-state pull request: #104
-- Independent findings and required regressions:
-  `docs/reviews/PR-103-INDEPENDENT-REVIEW.md`
-- Requirement summary and benchmark baseline: `changes/REQ-TREND-001.md`
-- Independent property/error tests: `crates/georbf/tests/local_trend.rs`
-- Public implementation and Rustdoc: `crates/georbf/src/local_trend.rs`
-- Runnable example: `crates/georbf/examples/local_trend_mixture.rs`
-- Focused benchmark: `crates/georbf/benches/local_trend_mixture.rs`
-- Mathematical contract: `docs/architecture/ANISOTROPY.md`, ADR-0005, ADR-0008
+- Acceptance criteria and exclusions: GitHub Issue #105
+- Requirement summary and benchmark baseline: `changes/REQ-ANISO-002.md`
+- Public implementation and Rustdoc: `crates/georbf/src/orientation_tensor.rs`
+- Independent property/error tests: `crates/georbf/tests/orientation_tensor.rs`
+- Runnable example: `crates/georbf/examples/orientation_tensor.rs`
+- Focused benchmark: `crates/georbf/benches/orientation_tensor.rs`
+- Mathematical contract: `docs/architecture/ANISOTROPY.md`
+- Numerical dependency decisions: ADR-0009 and ADR-0010; no dependency or
+  feature change is introduced by this requirement
 
 ## Checks not yet available
 

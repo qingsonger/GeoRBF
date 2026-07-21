@@ -37,6 +37,10 @@ name = "global_anisotropy"
 harness = false
 
 [[bench]]
+name = "orientation_tensor"
+harness = false
+
+[[bench]]
 name = "local_trend_mixture"
 harness = false
 
