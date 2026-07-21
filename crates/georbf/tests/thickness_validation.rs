@@ -159,6 +159,29 @@ impl ProgressSink for CancelAfterEvaluations {
     }
 }
 
+#[derive(Default)]
+struct RecordingProgress {
+    events: Mutex<Vec<ProgressEvent>>,
+}
+
+impl RecordingProgress {
+    fn events(&self) -> Vec<ProgressEvent> {
+        self.events
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+    }
+}
+
+impl ProgressSink for RecordingProgress {
+    fn on_progress(&self, event: ProgressEvent) {
+        self.events
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .push(event);
+    }
+}
+
 #[test]
 fn fitted_parallel_levels_measure_quantiles_violations_and_proposals_deterministically()
 -> Result<(), Box<dyn Error>> {
@@ -239,6 +262,7 @@ fn controlled_validation_cancels_at_an_exact_evaluation_boundary_without_a_repor
 
     let result = model.try_validate_sampled_thickness_with_control(
         &request,
+        ExecutionOptions::default(),
         ExecutionControl::new(Some(&token), Some(&sink)),
     );
     assert!(matches!(
@@ -262,6 +286,86 @@ fn controlled_validation_cancels_at_an_exact_evaluation_boundary_without_a_repor
             .iter()
             .any(|event| event.stage() == ExecutionStage::Completed)
     );
+    Ok(())
+}
+
+#[test]
+fn controlled_validation_rejects_two_threads_before_fitted_field_evaluation()
+-> Result<(), Box<dyn Error>> {
+    let model = linear_model()?;
+    let request = SampledThicknessRequest::try_new(
+        LevelId::new(1),
+        -1.0,
+        LevelId::new(2),
+        1.0,
+        2.5,
+        locations()?,
+        vec![0.5],
+        false,
+        settings(2.0)?,
+    )?;
+    let sink = RecordingProgress::default();
+    let requested = NonZeroUsize::new(2).ok_or("thread count")?;
+
+    let result = model.try_validate_sampled_thickness_with_control(
+        &request,
+        ExecutionOptions::new(false, Some(requested), None),
+        ExecutionControl::with_progress(&sink),
+    );
+
+    assert!(matches!(
+        result,
+        Err(SampledThicknessValidationError::Execution(
+            ExecutionError::UnsupportedThreadCount {
+                operation: ExecutionOperation::SampledThicknessValidation,
+                requested: actual,
+                maximum,
+            }
+        )) if actual == requested && maximum == NonZeroUsize::MIN
+    ));
+    assert!(
+        sink.events().is_empty(),
+        "no progress boundary, including a fitted-field evaluation, may run"
+    );
+    Ok(())
+}
+
+#[test]
+fn controlled_validation_preserves_one_thread_and_false_determinism_in_all_progress()
+-> Result<(), Box<dyn Error>> {
+    let model = linear_model()?;
+    let request = SampledThicknessRequest::try_new(
+        LevelId::new(1),
+        -1.0,
+        LevelId::new(2),
+        1.0,
+        2.5,
+        locations()?,
+        vec![0.5],
+        false,
+        settings(2.0)?,
+    )?;
+    let sink = RecordingProgress::default();
+    let requested = NonZeroUsize::MIN;
+
+    let report = model.try_validate_sampled_thickness_with_control(
+        &request,
+        ExecutionOptions::new(false, Some(requested), None),
+        ExecutionControl::with_progress(&sink),
+    )?;
+
+    assert_eq!(report, model.try_validate_sampled_thickness(&request)?);
+    let events = sink.events();
+    assert!(!events.is_empty());
+    assert_eq!(
+        events.last().map(|event| event.stage()),
+        Some(ExecutionStage::Completed)
+    );
+    assert!(events.iter().all(|event| {
+        event.thread_count() == requested
+            && !event.deterministic()
+            && event.operation() == ExecutionOperation::SampledThicknessValidation
+    }));
     Ok(())
 }
 

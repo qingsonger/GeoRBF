@@ -27,3 +27,8 @@ returned intersections directly. On the same machine, the repaired optimized
 run measured 2299.12 microseconds per validation with unchanged checksums
 `16000` and `1000.0`; the repaired smoke measured 1793.80 microseconds with
 unchanged checksums `32` and `2.0`.
+
+The THICK002-REV-005 repair passes caller execution metadata through the
+controlled entry point without changing the default convenience benchmark
+path or sampled-thickness mathematics. Its one-iteration smoke run measured
+2471.60 microseconds with unchanged checksums `32` and `2.0`.

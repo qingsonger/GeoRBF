@@ -602,10 +602,19 @@ where
         &self,
         request: &SampledThicknessRequest<D>,
     ) -> Result<SampledThicknessReport<D>, SampledThicknessValidationError<D>> {
-        self.try_validate_sampled_thickness_with_control(request, ExecutionControl::default())
+        self.try_validate_sampled_thickness_with_control(
+            request,
+            ExecutionOptions::default(),
+            ExecutionControl::default(),
+        )
     }
 
-    /// Validates sampled separation with caller-owned cancellation and progress controls.
+    /// Validates sampled separation with explicit execution metadata and caller controls.
+    ///
+    /// The current validation implementation is serial and rejects an explicit
+    /// thread count greater than one before preparing evaluation storage or
+    /// evaluating the fitted field. Progress events preserve the caller's
+    /// determinism choice and report one effective worker.
     ///
     /// Cancellation is checked before work, after reusable evaluation storage is
     /// prepared, and after every fitted-field evaluation. A cancellation returns
@@ -618,9 +627,10 @@ where
     pub fn try_validate_sampled_thickness_with_control(
         &self,
         request: &SampledThicknessRequest<D>,
+        execution: ExecutionOptions,
         control: ExecutionControl<'_>,
     ) -> Result<SampledThicknessReport<D>, SampledThicknessValidationError<D>> {
-        let mut progress = validation_progress(request, control)?;
+        let mut progress = validation_progress(request, execution, control)?;
         let scratch_result = self
             .try_evaluation_scratch(FittedFieldOutput::Gradient)
             .map_err(|source| SampledThicknessValidationError::Preparation {
@@ -685,7 +695,11 @@ where
         EvaluationDemand,
     ) -> Result<FieldEvaluation<D>, FittedFieldEvaluationError<D>>,
 {
-    let mut progress = validation_progress(request, ExecutionControl::default())?;
+    let mut progress = validation_progress(
+        request,
+        ExecutionOptions::default(),
+        ExecutionControl::default(),
+    )?;
     let report = try_validate_with_progress(request, &mut progress, evaluate)?;
     progress.complete()?;
     Ok(report)
@@ -693,6 +707,7 @@ where
 
 fn validation_progress<'a, const D: usize>(
     request: &SampledThicknessRequest<D>,
+    execution: ExecutionOptions,
     control: ExecutionControl<'a>,
 ) -> Result<ProgressTracker<'a>, SampledThicknessValidationError<D>>
 where
@@ -730,7 +745,7 @@ where
     Ok(ProgressTracker::try_new(
         control,
         ExecutionOperation::SampledThicknessValidation,
-        ExecutionOptions::default(),
+        execution,
         total,
     )?)
 }

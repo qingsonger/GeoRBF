@@ -79,14 +79,19 @@ limit explicit. The request is available for exactly D=1, D=2, and D=3. A
 selected location owns complete provenance; it need not be a fitting center or
 an earlier observation.
 
-`try_validate_sampled_thickness_with_control` accepts one borrowed
-`ExecutionControl`. It checks cancellation before work, after reusable fitted-
-field evaluation storage is prepared, and before and after every field
+`try_validate_sampled_thickness_with_control` accepts explicit
+`ExecutionOptions` and one borrowed `ExecutionControl`. The current serial
+implementation accepts an absent thread count or an explicit count of one and
+rejects any larger count before fitted-field evaluation storage is prepared or
+the field is evaluated. Progress reports the caller's determinism selection and
+one effective worker. It checks cancellation before work, after reusable
+fitted-field evaluation storage is prepared, and before and after every field
 evaluation in the location, bracketing, and refinement loops. Progress uses a
 checked maximum evaluation budget and deterministic input/search order. A
 cancelled call returns a typed execution error and no partial report; neither
-the control nor its token or sink is retained by the fitted field. The
-uncontrolled convenience method uses an empty control.
+the execution metadata, control, token, nor sink is retained by the fitted
+field. The convenience method uses default execution metadata and an empty
+control.
 
 For each selected location `x`, the validator evaluates the immutable fitted
 field once for `(f(x), grad f(x))`. A scale-safe gradient norm below the

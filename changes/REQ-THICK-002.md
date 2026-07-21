@@ -26,11 +26,14 @@ The validator prepares fitted-field polynomial scratch once per complete
 validation and reuses it for every selected point, bracket step, and bisection
 step. The sampled batch therefore performs no polynomial scratch allocation
 per evaluation; report and sorting storage use checked bounded reservations.
-The controlled public entry point reports deterministic progress against a
-checked maximum evaluation budget and checks cancellation before and after
-each fitted-field evaluation. Cancellation is a typed execution error and
-returns no partial report; the convenience entry point retains its original
-empty-control behavior.
+The controlled public entry point accepts explicit execution metadata, reports
+progress against a checked maximum evaluation budget, and checks cancellation
+before and after each fitted-field evaluation. The serial validator rejects an
+explicit thread count above one before evaluation storage or fitted-field work;
+an explicit count of one and the caller's determinism selection are preserved
+in every progress event. Cancellation is a typed execution error and returns no
+partial report; the convenience entry point uses default execution metadata
+and an empty control.
 
 Reports expose the minimum, caller-ordered deterministic type-7 quantiles,
 violation locations, and optional proposed `LocalNormalThickness<D>` values.
@@ -46,10 +49,12 @@ analytic curved level sets with independently solved normal-line roots,
 an off-grid tangential contact reported as `NotFound`, no-intersection
 reporting, minimum and quantile aggregation, invalid input, exact measurement,
 violation, and proposal provenance, deterministic cancellation after an exact
-evaluation count with no partial report, large-coordinate returned-point
-distance semantics without a false proposal, repeat determinism, and
-D=1/D=2/D=3 `Send + Sync`. Module tests also cover scale-safe extreme gradient
-norms. A
+evaluation count with no partial report, rejection of two requested threads
+before any fitted-field evaluation, propagation of one requested thread with
+false determinism through every successful progress event, large-coordinate
+returned-point distance semantics without a false proposal, repeat
+determinism, and D=1/D=2/D=3 `Send + Sync`. Module tests also cover scale-safe
+extreme gradient norms. A
 documented Rust example and a deterministic 32-location fitted-field benchmark
 are included, with Ready/main three-platform benchmark-smoke wiring.
 
