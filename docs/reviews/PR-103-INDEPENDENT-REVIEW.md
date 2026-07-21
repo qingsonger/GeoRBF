@@ -298,3 +298,38 @@ regressions, rerun the stable-head standard gate, update this evidence and the
 bounded handoff, push, and stop for another independent re-review. This Review
 task does not repair production code, mark the PR ready, merge, or begin
 another requirement.
+
+## Repair evidence pending fresh re-review: F5-F6
+
+Repair code/test head `147cc4f6a4cec226c752127f94076c0d954e2dfc`
+addresses only F5-F6:
+
+- F5: Gaussian Value evaluation now falls back from a non-normal direct
+  `amplitude * exp(exponent)` result to the combined logarithmic scale. The
+  public one-dimensional regression retains the independently calculated
+  `3.667874584177687e-48` local mixture contribution when `exp(-800)` alone
+  rounds to zero.
+- F6: Gaussian construction now rejects a radius if either its reciprocal or
+  reciprocal square rounds to zero. The public `radius=1e200`,
+  `amplitude=1e154` regression returns
+  `NonRepresentableWeightRadius` instead of caching a false zero derivative
+  scale.
+
+Both regressions failed against the pre-repair implementation and passed after
+the bounded fix. All 12 focused local-trend tests, all georbf Rustdoc, the
+runnable example, and D=1/D=2/D=3 release benchmark smoke passed. The smoke
+reported approximately 242 ns, 424 ns, and 1.21 us per Hessian evaluation,
+respectively, with the established deterministic checksums.
+
+After the final production change, the exact repair head passed the complete
+standard gate: workspace format, warning-denying workspace all-target/all-
+feature Clippy, all workspace tests with all features, workspace Rustdoc, all
+58 requirement checks, and diff whitespace validation. The unavailable-check
+list recorded above remains unchanged and no unavailable check is claimed as
+passed.
+
+This section records Repair evidence only and does not independently close
+F5-F6. PR #103 remains Draft and REQ-TREND-001 remains `implemented`; a fresh
+independent mathematical and numerical re-review of the complete repaired diff
+is required next. This Repair does not mark the PR ready, merge it, or begin
+another requirement.

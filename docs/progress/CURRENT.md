@@ -6,7 +6,7 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; fresh Repair required
+- Mode: Repair complete; fresh independent re-review required
 - Requirement: REQ-TREND-001, Issue #102
 - Branch: `codex/req-trend-001-positive-definite-local-trends`
 - Draft pull request: #103
@@ -14,43 +14,43 @@ records, benchmark reports, Git, and GitHub.
 - Repair code/test head: `643535f4ef181764baa6a5b45605711ee2a91f7d`
 - Dependencies: REQ-KERNEL-003, REQ-ANISO-001, and REQ-MODEL-001 are integrated
 - Re-reviewed final head: `1fcd80c998ae0b83a48aef7bae965d12f1a37889`
-- Registry state: `implemented`; F5-F6 repair, re-review, and integration remain
+- F5-F6 repair code/test head: `147cc4f6a4cec226c752127f94076c0d954e2dfc`
+- Registry state: `implemented`; F5-F6 re-review and integration remain
 
-## Fresh re-review result
+## Repair result
 
-- F1-F4 are independently closed by their required regressions and mathematical
-  checks.
-- F5 (P1): Value evaluation forms `amplitude * exp(exponent)`, so the
-  exponential can underflow before a large amplitude restores a representable
-  Gaussian weight and mixture value.
-- F6 (P1): a very large Gaussian radius can cache a zero reciprocal square,
-  causing a false zero Hessian although the amplitude-scaled derivative is
-  representable.
-- No new P0, P2, or P3 finding was found. PR #103 remains Draft.
+- F1-F4 remain independently closed by the preceding re-review.
+- F5 is addressed by combined-logarithm Gaussian Value evaluation when the
+  direct exponential product is not normal. Its public regression retains the
+  independently calculated `3.667874584177687e-48` mixture contribution.
+- F6 is addressed by rejecting a Gaussian radius whose reciprocal or
+  reciprocal square rounds to zero. The public `radius=1e200` regression
+  returns `NonRepresentableWeightRadius`.
+- This Repair does not independently close F5-F6. PR #103 remains Draft.
 
-## Re-review validation state
+## Repair validation state
 
-- The independent read-only reviewer checked base `7487cfa`, repair code/test
-  head `643535f`, and final head `1fcd80c`; the latter differs from the repair
-  head only in review and handoff documentation.
-- It passed all ten focused tests, georbf Rustdoc, the runnable example,
-  D=1/D=2/D=3 release benchmark smoke, workspace format, warning-denying
-  georbf all-target/all-feature Clippy, all 58 requirement checks, diff
-  whitespace validation, and independent 100-digit F5-F6 calculations.
-- Stable repair head `643535f` retains its complete standard gate because all
-  later changes are documentation-only. Exact final head `1fcd80c` also passed
-  Draft CI run 29806055584's configured Ubuntu correctness gate.
-- Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI did not run and is not
+- Both new regressions failed against the pre-repair implementation and passed
+  after the bounded fix; all 12 focused local-trend tests then passed.
+- Georbf Rustdoc, the runnable example, and D=1/D=2/D=3 release benchmark smoke
+  passed. The smoke retained its deterministic checksums and reported about
+  242 ns, 424 ns, and 1.21 us per Hessian evaluation.
+- Exact repair head `147cc4f` passed the complete stable-head standard gate:
+  workspace format, warning-denying workspace all-target/all-feature Clippy,
+  all workspace tests with all features, workspace Rustdoc, all 58 requirement
+  checks, and diff whitespace validation.
+- The exact repair head has not yet received remote Draft CI at this handoff.
+  Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI did not run and is not
   claimed as passed. The full unavailable-check list below remains truthful.
 
 ## Next task boundary
 
-A fresh Repair task must address only F5-F6 in PR #103. It must add the public
-regressions specified in `docs/reviews/PR-103-INDEPENDENT-REVIEW.md`, implement
-the smallest complete fixes, run focused checks during development and the
-complete standard gate after the last production change, update review evidence
-and this bounded handoff, commit, push, and stop for a fresh independent
-re-review. Do not mark the PR ready, merge, or begin another requirement.
+A fresh Review task must independently re-review F5-F6 and the complete PR #103
+diff, using the project `math_reviewer` without inheriting this Repair's
+reasoning. If any P0-P3 finding remains, record it and stop without repairing
+production code. Only a clean re-review may proceed through the mandatory
+Ready -> exact-head Windows/Ubuntu/macOS plus benchmark-smoke CI -> single merge
+sequence. Do not begin another requirement in the same task.
 
 ## Durable evidence
 
