@@ -9,10 +9,10 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement / REQ-ANISO-002 complete pending independent Review
 - Requirement: REQ-ANISO-002, Issue #105
 - Branch: `codex/req-aniso-002-orientation-tensor`
-- Implementation pull request: pending Draft creation
+- Implementation pull request: #106 (Draft)
+- Stable implementation and complete-gate head: `2d65666`
 - Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
-- Registry state in this pre-PR change: `planned`; it advances to `implemented`
-  only after the required Draft PR exists and is linked
+- Registry state in this change: `implemented`
 
 ## Implemented scope
 
@@ -39,8 +39,14 @@ records, benchmark reports, Git, and GitHub.
 - Focused orientation-tensor tests pass (11 tests).
 - Warning-denying georbf all-target Clippy, georbf Rustdoc, example execution,
   and the optimized benchmark smoke pass.
-- The complete standard workspace gate will run once on the stable
-  implementation head before the Draft PR is handed off.
+- Exact implementation head `2d65666` passed the complete standard workspace
+  gate: format, warning-denying all-target/all-feature Clippy, all workspace
+  tests with all features, workspace Rustdoc, all 58 requirement checks, and
+  complete diff whitespace validation.
+- The post-PR follow-up changes only `requirements/v1.yaml` and this bounded
+  handoff. It changes no production code, test, manifest, schema, CI, build
+  input, API, numerical behavior, dependency, tag, or release; requirement and
+  diff validation are rerun on the final head.
 - Local `actionlint` and the unavailable later tools listed below remain
   unexecuted and are not claimed as passed.
 
@@ -56,6 +62,7 @@ start another requirement.
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #105
+- Draft implementation: GitHub PR #106
 - Requirement summary and benchmark baseline: `changes/REQ-ANISO-002.md`
 - Public implementation and Rustdoc: `crates/georbf/src/orientation_tensor.rs`
 - Independent property/error tests: `crates/georbf/tests/orientation_tensor.rs`
