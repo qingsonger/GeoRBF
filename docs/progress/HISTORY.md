@@ -57,5 +57,6 @@ M0, M1, M2, and M3 are complete. The isolated Issue #31 workflow-efficiency
 repair, REQ-LEVEL-001, REQ-SOFT-001, REQ-LINEQ-001, REQ-SPIKE-004,
 REQ-CONVEX-001, and REQ-INFEAS-001 are integrated. M4 is complete.
 REQ-NORMAL-001, REQ-TANGENT-001, REQ-THICK-001, and REQ-THICK-002 are
-integrated M5 requirements; the next eligible atomic requirement must be
+integrated M5 requirements. This integration-state change adds
+REQ-PROJECT-001, completing M5; the next eligible atomic requirement must be
 selected by the registry in a fresh task.

@@ -139,3 +139,21 @@ REQ-PROJECT-001 remains `implemented`, not `integrated`, until the exact Ready
 evidence head passes the complete Windows, Ubuntu, and macOS correctness and
 benchmark-smoke matrix, PR #100 merges exactly once, and the isolated
 integration-state change completes.
+
+## Integration evidence
+
+The implementation integration sequence is complete. Exact Ready evidence head
+`c9d5d9c7573723c59f2703a5fd29ba986e348b1e` passed the complete Windows,
+Ubuntu, and macOS correctness matrix, every configured backend path, all
+benchmark-smoke workloads, and the requirement-registry gate in CI run
+29800195227. PR #100 then squash-merged exactly once as
+`09ffc074465ccddc5d479a17eaa59a2325089fcc`, and Issue #99 closed as completed.
+Post-merge `main` run 29800853201 passed the same complete three-platform gate
+on that exact merge commit.
+
+The isolated integration-state change records only the registry, review
+evidence, history index, and bounded handoff. It changes no production code,
+test, manifest, schema, CI, build input, API, normative contract, numerical
+behavior, dependency, tag, or release. After its own complete local and exact
+Ready-head CI gates are green and its pull request is merged, stop. A fresh
+task must select the next requirement; this task must not begin it.
