@@ -175,7 +175,8 @@ pub use orientation::{
 pub use orientation_tensor::{
     AxisRatioCandidateScore, AxisRatioSelectionKind, OrientationTensorDiagnostics,
     OrientationTensorError, OrientationTensorEstimate, OrientationTensorEstimator,
-    OrientationTensorInfluence, OrientationTensorSample, PrincipalAxisRatios,
+    OrientationTensorInfluence, OrientationTensorSample, OrientationTensorSpectralBackend,
+    PrincipalAxisRatios,
 };
 pub use polynomial::{MultiIndex, PolynomialOutput, PolynomialSpace, PolynomialSpaceError};
 pub use problem_ir::{

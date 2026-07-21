@@ -92,8 +92,19 @@ positive weight. `REQ-ANISO-002` normalizes the weights by their maximum before
 their sum, so a common finite rescaling, including weights near `f64::MAX`,
 does not overflow merely while forming relative weights. Compensated sums form
 the upper triangle and copy it to the lower triangle, preserving represented
-symmetry. Because `(-n_i)(-n_i)^T = n_i n_i^T`, polarity is immaterial. The
-normalized tensor is positive semidefinite and estimates axes, not absolute
+symmetry. A final trace division is retained when it already sums to represented
+one; otherwise the last diagonal receives the explicit represented residual,
+with at most bounded one-ulp diagonal corrections if division crossed the
+trace boundary. Exact floating expansions then certify every D=2/D=3 principal
+minor. If independently rounded off-diagonal entries alone cross the PSD
+boundary, 64 deterministic bisection steps retain the greatest certified
+uniform factor on all off-diagonal entries while leaving every diagonal
+unchanged. This is a represented-arithmetic closure of the outer-product
+invariant, not eigenvalue clipping, diagonal jitter, or hidden regularization.
+Diagnostics record the applied uniform factor, with one meaning no correlation
+adjustment was required.
+Because `(-n_i)(-n_i)^T = n_i n_i^T`, polarity is immaterial. The normalized
+tensor is trace one and positive semidefinite and estimates axes, not absolute
 correlation lengths.
 
 Principal axes are ordered by nonincreasing eigenvalue and their otherwise
@@ -109,10 +120,14 @@ geologically unique. The isotropy decision is explicit:
 caller_threshold in [0, 1].
 ```
 
-The existing pinned nalgebra backend performs only the private symmetric
-eigendecomposition. It receives the already finite D-by-D tensor, uses
-`f64::EPSILON` as its convergence resolution, and is bounded to 64 iterations.
-Non-convergence, non-finite results, or a negative returned eigenvalue are
+The existing pinned nalgebra backend first performs the private symmetric
+eigendecomposition of the already finite, symmetric, exact-sign-certified PSD
+D-by-D tensor. If backend roundoff nevertheless returns a negative value, a
+bounded SVD of that same certified matrix supplies right singular vectors as
+principal axes and nonnegative singular values equal to the PSD eigenvalues.
+Diagnostics record which spectral path was used. Both paths use `f64::EPSILON`
+as their convergence resolution and are bounded to 64 iterations. Non-convergence,
+non-finite results, or an impossible negative fallback spectral value are
 structured errors. No eigenvalue is clipped, no eigengap becomes a hidden rank
 decision, and no nalgebra type crosses the public API.
 
@@ -162,8 +177,9 @@ leave-one-out estimate exists. The exact PSD trace-one expression lies in
 one; a larger overshoot is a structured numerical error rather than a hidden
 clamp. Diagnostics retain every candidate score and sample influence, the
 largest influence and first corresponding sample, positive sample count,
-maximum normalized weight, eigengaps, axis confidence, isotropy decision and
-threshold, selection kind, and selected maximum ratio.
+maximum normalized weight, tensor correlation scale, spectral path, eigengaps,
+axis confidence, isotropy decision and threshold, selection kind, and selected
+maximum ratio.
 
 The estimator does not build a `GlobalAnisotropy`, infer absolute lengths,
 modify local trends, compile geological controls, or refit a field. Those

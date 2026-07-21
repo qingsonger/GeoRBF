@@ -6,16 +6,24 @@ weighted `UnitDirection<D>` samples for exactly D=1, D=2, and D=3, requires at
 least one strictly positive weight, and forms the normalized symmetric tensor
 from axial outer products. Stable maximum-relative weight normalization and
 compensated tensor sums accept common finite rescaling through extreme weights
-without attaching meaning to direction sign.
+without attaching meaning to direction sign. Represented trace normalization,
+exact-sign principal-minor certification, and bounded maximum uniform
+off-diagonal retention preserve trace one and PSD when independent component
+rounding would otherwise cross the semidefinite boundary.
 
 The immutable result exposes the finite tensor, nonincreasing eigenvalues,
 normalized eigenvalue shares, canonical-sign principal axes, normalized
 adjacent eigengaps, per-axis confidence, and an explicit caller-thresholded
-isotropy decision. The private symmetric eigendecomposition reuses the already
-pinned nalgebra 0.35.0 dependency with machine-epsilon convergence resolution
-and a recorded 64-iteration limit. Non-convergence, non-finite results, and
-negative returned eigenvalues are errors; no clipping, jitter, pseudoinverse,
-or hidden rank decision is applied. No nalgebra type crosses the public API.
+isotropy decision. The private symmetric eigendecomposition of the certified
+PSD tensor reuses the already pinned nalgebra 0.35.0 dependency. If that
+backend returns a negative roundoff value, a bounded SVD of the same certified
+matrix supplies right singular vectors and nonnegative singular values equal
+to the PSD eigenvalues; diagnostics record the selected path and uniform
+off-diagonal retention scale. Both use machine-epsilon convergence resolution
+and a recorded 64-iteration limit.
+Non-convergence, non-finite results, and impossible negative fallback spectral
+values are errors; no eigenvalue clipping, diagonal jitter, pseudoinverse, or
+hidden rank decision is applied. No nalgebra type crosses the public API.
 This adds no dependency, feature, lockfile, license, MSRV, binary-graph, or
 unsafe-audit surface beyond the accepted ADR-0009/ADR-0010 production pin.
 
@@ -35,8 +43,9 @@ order. At least two positive samples are required. Every candidate score is
 retained.
 
 Diagnostics also retain positive sample count, maximum normalized weight,
-selection kind, selected maximum ratio, and every sample's rotation-invariant
-leave-one-out tensor influence. Zero-weight samples have zero influence;
+tensor correlation scale, spectral path, selection kind, selected maximum
+ratio, and every sample's rotation-invariant leave-one-out tensor influence.
+Zero-weight samples have zero influence;
 removing the only positive sample is explicitly assigned influence one because
 no reduced estimate exists. The maximum influence and first matching sample
 are reported for outlier review.
@@ -65,10 +74,26 @@ mass to the final eigenspace group. A public D=3 regression with one
 the independently derived candidate-score ordering and selection when the
 dominant leave-one-out fold is fully unresolved.
 
+The ANISO002-REV-004 Repair adds a public single-sample D=2 regression for the
+valid direction proportional to `[1,30]`. Before repair, independently rounded
+outer-product entries had determinant `-2.168404344971009e-19`, and the former
+symmetric eigendecomposition rejected the valid sample with eigenvalue
+`-1.1089908126111444e-16`. The repaired construction restores represented
+trace one, uses exact floating expansions to certify every principal minor,
+and only when required retains the maximum bounded uniform off-diagonal
+correlation factor. When symmetric-eigensolver roundoff remains negative for
+that certified matrix, the bounded PSD SVD obtains nonnegative eigenvalues
+without clipping or jitter and the diagnostic records the fallback. The
+regression checks successful estimation, represented trace one, a nonnegative
+D=2 determinant, nonnegative spectral values, a sub-unit correlation scale,
+and the explicit fallback path.
+
 The initial optimized Windows smoke measured approximately 7.39 us per
 four-sample, three-candidate D=3 estimate over 2,000 estimates, with checksum
 `1.00428812046557887e4`. This is a local regression signal, not a cross-machine
-performance promise.
+performance promise. The ANISO002-REV-004 exact-sign certification and explicit
+spectral fallback policy retained that checksum at approximately 10.04 us per
+estimate locally.
 
 Rust and the focused benchmark are implemented. CLI is N/A until the M8
 versioned schema and complete CLI requirements define persisted estimator

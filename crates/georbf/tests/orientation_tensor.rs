@@ -6,7 +6,7 @@ use std::error::Error;
 
 use georbf::{
     AxisRatioSelectionKind, OrientationTensorError, OrientationTensorEstimator,
-    OrientationTensorSample, PrincipalAxisRatios, UnitDirection,
+    OrientationTensorSample, OrientationTensorSpectralBackend, PrincipalAxisRatios, UnitDirection,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -83,6 +83,29 @@ fn outer_products_are_sign_invariant_with_independent_d2_truth() -> TestResult {
         2.0e-16,
     );
     assert!(!first.diagnostics().is_isotropic());
+    Ok(())
+}
+
+#[test]
+fn generic_single_d2_direction_preserves_psd_and_trace_normalization() -> TestResult {
+    let direction = UnitDirection::try_new([1.0, 30.0])?;
+    let estimator =
+        OrientationTensorEstimator::try_fixed(PrincipalAxisRatios::try_new([1.0, 1.0])?, 0.0)?;
+    let estimate = estimator.try_estimate(&[OrientationTensorSample::try_new(direction, 1.0)?])?;
+
+    let tensor = estimate.tensor();
+    assert_eq!(tensor[0][0] + tensor[1][1], 1.0);
+    assert!(
+        tensor[0][0].mul_add(tensor[1][1], -tensor[0][1] * tensor[1][0]) >= 0.0,
+        "represented tensor must remain positive semidefinite: {tensor:?}"
+    );
+    assert!(estimate.eigenvalues().iter().all(|value| *value >= 0.0));
+    assert_eq!(
+        estimate.diagnostics().spectral_backend(),
+        OrientationTensorSpectralBackend::PositiveSemidefiniteSvd
+    );
+    assert!((0.0..1.0).contains(&estimate.diagnostics().tensor_correlation_scale()));
+    assert_eq!(estimate.influences()[0].normalized_tensor_change(), 1.0);
     Ok(())
 }
 

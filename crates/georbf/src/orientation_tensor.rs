@@ -4,6 +4,11 @@
 //! principal axes and relative axis ratios, never an absolute correlation
 //! length. Axial observations contribute normalized outer products, so
 //! reversing any input direction leaves every result unchanged.
+//! Represented trace normalization and exact-sign principal-minor review keep
+//! independently rounded D-by-D entries positive semidefinite. If roundoff
+//! alone crosses that boundary, a bounded uniform off-diagonal retention step
+//! preserves the maximum certified represented correlation without changing
+//! any diagonal, clipping an eigenvalue, or adding jitter.
 //!
 //! ```compile_fail
 //! use georbf::OrientationTensorEstimator;
@@ -15,7 +20,10 @@ use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt;
 
-use nalgebra::{DMatrix, linalg::SymmetricEigen};
+use nalgebra::{
+    DMatrix,
+    linalg::{SVD, SymmetricEigen},
+};
 
 use crate::dimension::{Dim, SupportedDimension};
 use crate::geometry::UnitDirection;
@@ -148,6 +156,15 @@ pub enum AxisRatioSelectionKind {
     LeaveOneOut,
 }
 
+/// Spectral path used internally for the returned tensor decomposition.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum OrientationTensorSpectralBackend {
+    /// The primary bounded symmetric eigendecomposition returned nonnegative values.
+    SymmetricEigen,
+    /// Exact-sign PSD certification allowed a bounded SVD after eigensolver roundoff.
+    PositiveSemidefiniteSvd,
+}
+
 /// One deterministic cross-validation score.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[must_use]
@@ -218,6 +235,8 @@ where
     maximum_outlier_influence: f64,
     most_influential_sample: Option<usize>,
     selection_kind: AxisRatioSelectionKind,
+    spectral_backend: OrientationTensorSpectralBackend,
+    tensor_correlation_scale: f64,
 }
 
 impl<const D: usize> OrientationTensorDiagnostics<D>
@@ -286,6 +305,22 @@ where
     pub const fn selection_kind(&self) -> AxisRatioSelectionKind {
         self.selection_kind
     }
+
+    /// Returns the private spectral path used for this represented tensor.
+    #[must_use]
+    pub const fn spectral_backend(&self) -> OrientationTensorSpectralBackend {
+        self.spectral_backend
+    }
+
+    /// Returns the uniform off-diagonal retention scale used to preserve PSD.
+    ///
+    /// One means the independently rounded tensor already passed exact-sign
+    /// certification; a smaller positive value records the bounded roundoff
+    /// closure applied to all off-diagonal entries.
+    #[must_use]
+    pub const fn tensor_correlation_scale(&self) -> f64 {
+        self.tensor_correlation_scale
+    }
 }
 
 /// Immutable orientation-tensor result.
@@ -320,7 +355,11 @@ where
         &self.principal_axes
     }
 
-    /// Borrows the ordered raw eigensolver values of the normalized tensor.
+    /// Borrows the ordered spectral values of the normalized PSD tensor.
+    ///
+    /// The primary symmetric backend returns eigenvalues directly. When its
+    /// roundoff produces a negative value for an exact-sign-certified PSD
+    /// tensor, the bounded SVD returns equal nonnegative singular values.
     #[must_use]
     pub const fn eigenvalues(&self) -> &[f64; D] {
         &self.eigenvalues
@@ -459,13 +498,16 @@ where
     /// Rejects empty or all-zero-weight samples, invalid sample weights (even
     /// if a future representation source bypasses construction), insufficient
     /// positive samples for leave-one-out selection, or non-finite numerical
-    /// results. No eigenvalue clipping or hidden regularization is applied.
+    /// results. Represented PSD is certified before the bounded spectral
+    /// decomposition. No eigenvalue clipping, diagonal jitter, or hidden
+    /// regularization is applied.
     pub fn try_estimate(
         &self,
         samples: &[OrientationTensorSample<D>],
     ) -> Result<OrientationTensorEstimate<D>, OrientationTensorError> {
         validate_samples(samples)?;
-        let tensor = normalized_tensor(samples, None)?;
+        let represented_tensor = normalized_tensor(samples, None)?;
+        let tensor = represented_tensor.values;
         let decomposition = decompose_tensor(tensor)?;
         let positive_sample_count = samples.iter().filter(|sample| sample.weight > 0.0).count();
         let normalized_weights = normalized_weights(samples, None)?;
@@ -531,6 +573,8 @@ where
             maximum_outlier_influence,
             most_influential_sample,
             selection_kind,
+            spectral_backend: decomposition.spectral_backend,
+            tensor_correlation_scale: represented_tensor.correlation_scale,
         };
 
         Ok(OrientationTensorEstimate {
@@ -660,18 +704,18 @@ pub enum OrientationTensorError {
         /// Available strictly positive weights.
         positive: usize,
     },
-    /// A finite-input arithmetic or eigendecomposition result was not finite.
+    /// A finite-input arithmetic or spectral-decomposition result was not finite.
     NonFiniteNumericalResult {
         /// Stable operation label.
         operation: &'static str,
     },
-    /// The bounded symmetric eigendecomposition did not converge.
+    /// The bounded symmetric spectral decomposition did not converge.
     EigendecompositionDidNotConverge {
         /// Fixed recorded backend iteration limit.
         maximum_iterations: usize,
     },
-    /// The symmetric eigensolver returned a negative eigenvalue; no clipping
-    /// was applied.
+    /// The private spectral backend returned a negative PSD spectral value;
+    /// no clipping was applied.
     NegativeEigenvalue {
         /// Eigenvalue index after descending sort.
         axis: usize,
@@ -765,7 +809,7 @@ impl fmt::Display for OrientationTensorError {
             }
             Self::EigendecompositionDidNotConverge { maximum_iterations } => write!(
                 formatter,
-                "orientation-tensor eigendecomposition exceeded {maximum_iterations} iterations"
+                "orientation-tensor spectral decomposition exceeded {maximum_iterations} iterations"
             ),
             Self::NegativeEigenvalue { axis, value } => write!(
                 formatter,
@@ -869,10 +913,18 @@ where
         .collect())
 }
 
+struct RepresentedTensor<const D: usize>
+where
+    Dim<D>: SupportedDimension,
+{
+    values: [[f64; D]; D],
+    correlation_scale: f64,
+}
+
 fn normalized_tensor<const D: usize>(
     samples: &[OrientationTensorSample<D>],
     excluded: Option<usize>,
-) -> Result<[[f64; D]; D], OrientationTensorError>
+) -> Result<RepresentedTensor<D>, OrientationTensorError>
 where
     Dim<D>: SupportedDimension,
 {
@@ -901,7 +953,249 @@ where
             }
         }
     }
-    Ok(tensor)
+    normalize_tensor_trace(&mut tensor)?;
+    let correlation_scale = preserve_represented_positive_semidefiniteness(&mut tensor)?;
+    Ok(RepresentedTensor {
+        values: tensor,
+        correlation_scale,
+    })
+}
+
+fn normalize_tensor_trace<const D: usize>(
+    tensor: &mut [[f64; D]; D],
+) -> Result<(), OrientationTensorError>
+where
+    Dim<D>: SupportedDimension,
+{
+    let trace = (0..D).map(|axis| tensor[axis][axis]).sum::<f64>();
+    if !trace.is_finite() || trace <= 0.0 {
+        return Err(OrientationTensorError::NonFiniteNumericalResult {
+            operation: "tensor trace normalization",
+        });
+    }
+    let mut normalized = [[0.0; D]; D];
+    for (row, input_row) in tensor.iter().enumerate() {
+        for (column, input) in input_row.iter().copied().enumerate().skip(row) {
+            let value = input / trace;
+            if !value.is_finite() {
+                return Err(OrientationTensorError::NonFiniteNumericalResult {
+                    operation: "tensor trace normalization",
+                });
+            }
+            normalized[row][column] = value;
+            normalized[column][row] = value;
+        }
+    }
+    *tensor = normalized;
+    if D == 1 {
+        tensor[0][0] = 1.0;
+        return Ok(());
+    }
+    if (0..D)
+        .map(|axis| tensor[axis][axis])
+        .sum::<f64>()
+        .total_cmp(&1.0)
+        == std::cmp::Ordering::Equal
+    {
+        return Ok(());
+    }
+
+    let mut leading_trace = (0..D - 1).map(|axis| tensor[axis][axis]).sum::<f64>();
+    for _ in 0..8 {
+        if leading_trace <= 1.0 {
+            break;
+        }
+        let axis = (0..D - 1)
+            .max_by(|left, right| tensor[*left][*left].total_cmp(&tensor[*right][*right]))
+            .unwrap_or(0);
+        tensor[axis][axis] = next_toward_zero(tensor[axis][axis]);
+        leading_trace = (0..D - 1).map(|index| tensor[index][index]).sum::<f64>();
+    }
+    if leading_trace > 1.0 {
+        return Err(OrientationTensorError::NonFiniteNumericalResult {
+            operation: "tensor trace residual",
+        });
+    }
+    tensor[D - 1][D - 1] = 1.0 - leading_trace;
+    for _ in 0..8 {
+        let represented_trace = (0..D).map(|axis| tensor[axis][axis]).sum::<f64>();
+        match represented_trace.total_cmp(&1.0) {
+            std::cmp::Ordering::Equal => return Ok(()),
+            std::cmp::Ordering::Less => {
+                tensor[D - 1][D - 1] = next_up_nonnegative(tensor[D - 1][D - 1]);
+            }
+            std::cmp::Ordering::Greater => {
+                tensor[D - 1][D - 1] = next_toward_zero(tensor[D - 1][D - 1]);
+            }
+        }
+    }
+    Err(OrientationTensorError::NonFiniteNumericalResult {
+        operation: "tensor trace residual",
+    })
+}
+
+fn preserve_represented_positive_semidefiniteness<const D: usize>(
+    tensor: &mut [[f64; D]; D],
+) -> Result<f64, OrientationTensorError>
+where
+    Dim<D>: SupportedDimension,
+{
+    if represented_tensor_is_positive_semidefinite(tensor) {
+        return Ok(1.0);
+    }
+
+    let original = *tensor;
+    let mut accepted_scale = 0.0;
+    let mut rejected_scale = 1.0;
+    for _ in 0..64 {
+        let scale = accepted_scale + (rejected_scale - accepted_scale) / 2.0;
+        let mut candidate = original;
+        for row in 0..D {
+            for column in row + 1..D {
+                let value = original[row][column] * scale;
+                candidate[row][column] = value;
+                candidate[column][row] = value;
+            }
+        }
+        if represented_tensor_is_positive_semidefinite(&candidate) {
+            accepted_scale = scale;
+            *tensor = candidate;
+        } else {
+            rejected_scale = scale;
+        }
+    }
+    if represented_tensor_is_positive_semidefinite(tensor) {
+        Ok(accepted_scale)
+    } else {
+        Err(OrientationTensorError::NonFiniteNumericalResult {
+            operation: "positive-semidefinite tensor representation",
+        })
+    }
+}
+
+fn represented_tensor_is_positive_semidefinite<const D: usize>(tensor: &[[f64; D]; D]) -> bool
+where
+    Dim<D>: SupportedDimension,
+{
+    if (0..D).any(|axis| !tensor[axis][axis].is_finite() || tensor[axis][axis] < 0.0) {
+        return false;
+    }
+    for first in 0..D {
+        for second in first + 1..D {
+            let mut minor = ExactExpansion::zero();
+            minor.add_product(tensor[first][first], tensor[second][second], 1.0);
+            minor.add_product(tensor[first][second], tensor[second][first], -1.0);
+            if minor.sign() == std::cmp::Ordering::Less {
+                return false;
+            }
+        }
+    }
+    if D == 3 {
+        let mut determinant = ExactExpansion::zero();
+        for (first, second, third, sign) in [
+            (0, 1, 2, 1.0),
+            (1, 2, 0, 1.0),
+            (2, 0, 1, 1.0),
+            (2, 1, 0, -1.0),
+            (1, 0, 2, -1.0),
+            (0, 2, 1, -1.0),
+        ] {
+            determinant.add_triple_product(
+                tensor[0][first],
+                tensor[1][second],
+                tensor[2][third],
+                sign,
+            );
+        }
+        if determinant.sign() == std::cmp::Ordering::Less {
+            return false;
+        }
+    }
+    true
+}
+
+#[derive(Clone, Copy)]
+struct ExactExpansion {
+    components: [f64; 64],
+    length: usize,
+}
+
+impl ExactExpansion {
+    const fn zero() -> Self {
+        Self {
+            components: [0.0; 64],
+            length: 0,
+        }
+    }
+
+    fn add_component(&mut self, component: f64) {
+        let mut output = [0.0; 64];
+        let mut output_length = 0;
+        let mut accumulator = component;
+        for value in self.components.iter().copied().take(self.length) {
+            let (sum, error) = exact_two_sum(accumulator, value);
+            if error != 0.0 {
+                output[output_length] = error;
+                output_length += 1;
+            }
+            accumulator = sum;
+        }
+        if accumulator != 0.0 || output_length == 0 {
+            output[output_length] = accumulator;
+            output_length += 1;
+        }
+        self.components = output;
+        self.length = output_length;
+    }
+
+    fn add_product(&mut self, left: f64, right: f64, sign: f64) {
+        let product = left * right;
+        let error = left.mul_add(right, -product);
+        self.add_component(sign * error);
+        self.add_component(sign * product);
+    }
+
+    fn add_triple_product(&mut self, first: f64, second: f64, third: f64, sign: f64) {
+        let product = first * second;
+        let product_error = first.mul_add(second, -product);
+        for partial in [product_error, product] {
+            let scaled = partial * third;
+            let scaled_error = partial.mul_add(third, -scaled);
+            self.add_component(sign * scaled_error);
+            self.add_component(sign * scaled);
+        }
+    }
+
+    fn sign(&self) -> std::cmp::Ordering {
+        self.components
+            .iter()
+            .copied()
+            .take(self.length)
+            .rev()
+            .find(|value| *value != 0.0)
+            .map_or(std::cmp::Ordering::Equal, |value| value.total_cmp(&0.0))
+    }
+}
+
+fn exact_two_sum(left: f64, right: f64) -> (f64, f64) {
+    let sum = left + right;
+    let right_virtual = sum - left;
+    let left_virtual = sum - right_virtual;
+    let right_roundoff = right - right_virtual;
+    let left_roundoff = left - left_virtual;
+    (sum, left_roundoff + right_roundoff)
+}
+
+fn next_toward_zero(value: f64) -> f64 {
+    if value == 0.0 {
+        0.0
+    } else {
+        f64::from_bits(value.to_bits() - 1)
+    }
+}
+
+fn next_up_nonnegative(value: f64) -> f64 {
+    f64::from_bits(value.to_bits() + 1)
 }
 
 struct TensorDecomposition<const D: usize>
@@ -911,6 +1205,7 @@ where
     axes: [UnitDirection<D>; D],
     eigenvalues: [f64; D],
     normalized_eigenvalues: [f64; D],
+    spectral_backend: OrientationTensorSpectralBackend,
 }
 
 fn decompose_tensor<const D: usize>(
@@ -925,20 +1220,62 @@ where
         .ok_or(OrientationTensorError::EigendecompositionDidNotConverge {
             maximum_iterations: MAXIMUM_EIGEN_ITERATIONS,
         })?;
+    if decomposition
+        .eigenvalues
+        .iter()
+        .any(|value| !value.is_finite())
+    {
+        return Err(OrientationTensorError::NonFiniteNumericalResult {
+            operation: "symmetric eigendecomposition",
+        });
+    }
+    if decomposition.eigenvalues.iter().all(|value| *value >= 0.0) {
+        return finish_decomposition(
+            decomposition.eigenvalues.as_slice(),
+            |source, component| decomposition.eigenvectors[(component, source)],
+            OrientationTensorSpectralBackend::SymmetricEigen,
+        );
+    }
+
+    let matrix = DMatrix::from_fn(D, D, |row, column| tensor[row][column]);
+    let decomposition = SVD::try_new(matrix, false, true, f64::EPSILON, MAXIMUM_EIGEN_ITERATIONS)
+        .ok_or(OrientationTensorError::EigendecompositionDidNotConverge {
+        maximum_iterations: MAXIMUM_EIGEN_ITERATIONS,
+    })?;
+    let right_axes = decomposition
+        .v_t
+        .ok_or(OrientationTensorError::NonFiniteNumericalResult {
+            operation: "positive-semidefinite spectral axes",
+        })?;
+    finish_decomposition(
+        decomposition.singular_values.as_slice(),
+        |source, component| right_axes[(source, component)],
+        OrientationTensorSpectralBackend::PositiveSemidefiniteSvd,
+    )
+}
+
+fn finish_decomposition<const D: usize>(
+    spectral_values: &[f64],
+    axis_component: impl Fn(usize, usize) -> f64,
+    spectral_backend: OrientationTensorSpectralBackend,
+) -> Result<TensorDecomposition<D>, OrientationTensorError>
+where
+    Dim<D>: SupportedDimension,
+{
     let mut order: Vec<usize> = (0..D).collect();
     order.sort_by(|left, right| {
-        decomposition.eigenvalues[*right]
-            .total_cmp(&decomposition.eigenvalues[*left])
+        spectral_values[*right]
+            .total_cmp(&spectral_values[*left])
             .then_with(|| left.cmp(right))
     });
 
     let mut eigenvalues = [0.0; D];
     let mut axis_components = [[0.0; D]; D];
     for (axis, source) in order.iter().copied().enumerate() {
-        let value = decomposition.eigenvalues[source];
+        let value = spectral_values[source];
         if !value.is_finite() {
             return Err(OrientationTensorError::NonFiniteNumericalResult {
-                operation: "symmetric eigendecomposition",
+                operation: "symmetric spectral decomposition",
             });
         }
         if value < 0.0 {
@@ -946,7 +1283,7 @@ where
         }
         eigenvalues[axis] = value;
         for (component, output) in axis_components[axis].iter_mut().enumerate() {
-            *output = decomposition.eigenvectors[(component, source)];
+            *output = axis_component(source, component);
         }
         canonicalize_axis(&mut axis_components[axis]);
     }
@@ -974,6 +1311,7 @@ where
         axes,
         eigenvalues,
         normalized_eigenvalues,
+        spectral_backend,
     })
 }
 
@@ -1027,7 +1365,7 @@ where
         if sample.weight == 0.0 {
             continue;
         }
-        let training = normalized_tensor(samples, Some(held_out))?;
+        let training = normalized_tensor(samples, Some(held_out))?.values;
         let decomposition = decompose_tensor(training)?;
         let observed: [f64; D] = std::array::from_fn(|axis| {
             let dot = sample
@@ -1145,7 +1483,7 @@ where
         } else if positive_sample_count == 1 {
             1.0
         } else {
-            let reduced = normalized_tensor(samples, Some(sample_index))?;
+            let reduced = normalized_tensor(samples, Some(sample_index))?.values;
             let squared_difference = full
                 .iter()
                 .zip(reduced)
