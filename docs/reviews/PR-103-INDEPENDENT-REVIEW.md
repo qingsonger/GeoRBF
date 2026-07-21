@@ -199,3 +199,102 @@ This Repair task does not close its own findings. PR #103 remains Draft and
 REQ-TREND-001 remains `implemented`; a fresh independent mathematical and
 numerical re-review of the complete repaired PR diff is required next. No
 other requirement work begins here.
+
+## Fresh independent re-review
+
+- Re-reviewed base: `7487cfafd0739c1f63028d4b46d7505b4ca6c1b3`
+- Re-reviewed repair code/test head:
+  `643535f4ef181764baa6a5b45605711ee2a91f7d`
+- Re-reviewed final head: `1fcd80c998ae0b83a48aef7bae965d12f1a37889`
+- Re-review date: 2026-07-21
+- Result: F1-F4 closed; two new P1 findings require repair
+
+An isolated read-only project `math_reviewer` received only the bounded
+requirement summary and integrated dependency closure, Issue #102 acceptance
+criteria, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008 contracts, the complete
+PR diff, directly relevant implementation and validation evidence, and the
+original F1-F4 findings. It inherited no Implement or Repair reasoning and
+made no repository or remote change. Final head `1fcd80c` differs from repair
+head `643535f` only in this review record and the bounded handoff.
+
+### Re-review disposition of F1-F4
+
+- F1 is closed: the public weight is opaque over a private representation,
+  and the external compile-fail construction barrier passes.
+- F2 is closed: a nonzero amplitude whose represented square is zero returns
+  `NonRepresentableWeightAmplitudeSquare`; the `1e-200` regression passes.
+- F3 is closed for its required extreme derivative case: the independently
+  derived `5.864931460100122e-45` Hessian at forty radii is retained. F5 below
+  is a distinct Value-path evaluation-order defect.
+- F4 is closed: Coverage and center factors request Value only, query weights
+  stop at caller demand, and the extreme amplitude/radius regression passes.
+
+### F5 - P1: representable Gaussian values are erased by exponential underflow
+
+`gaussian_weight_jet` forms `amplitude * exponent.exp()` at
+`crates/georbf/src/local_trend.rs:1134`. The Value path returns that result at
+line 1144 before the log-scaled derivative recovery can apply. With accepted
+`amplitude=1e150`, `radius=1e-150`, and displacement `40 * radius`, binary64
+`exp(-800)` is zero, but independent 100-digit evaluation gives the
+representable full weight `3.667874584177687e-198`. With the center weight at
+its amplitude, the local component value is approximately
+`3.667874584177687e-48`, also representable. The implementation instead
+silently discards that positive-semidefinite component and returns only the
+background contribution.
+
+Required regression: construct a public one-dimensional mixture with those
+parameters, the Gaussian-weight center as the kernel center, a query at forty
+radii, a unit-scale Gaussian kernel, and a small strict background. Value must
+retain approximately `3.667874584177687e-48` rather than returning the
+background-only result.
+
+### F6 - P1: large Gaussian radii cache a false zero reciprocal square
+
+`try_gaussian` accepts `inverse_radius_squared` whenever it is finite at
+`crates/georbf/src/local_trend.rs:176-178`. For `radius=1e200` that cached value
+rounds to zero. Hessian evaluation passes the zero at line 1173, and the
+scaled helper explicitly returns zero at line 1197. With accepted
+`amplitude=1e154`, the true center weight Hessian is the representable
+`-1e-246`. A public mixture using a unit-scale Gaussian kernel at its
+one-dimensional inflection separation consequently loses a representable
+component Hessian of approximately `-6.065306597126334e-93`.
+
+Required regression: `try_gaussian(center, 1e154, 1e200)` must return
+`NonRepresentableWeightRadius`, consistent with its documented inverse-
+derivative contract. If the radius remains accepted, a public inflection-point
+mixture regression must instead retain the component Hessian above.
+
+### Re-review mathematical and validation evidence
+
+- In exact arithmetic the SPD proof remains sound: each diagonal congruence is
+  positive semidefinite and the finite nonzero constant-background congruence
+  is strictly positive definite. CPD rejection remains exhaustive.
+- Product-rule terms, signs, Hessian symmetry, units, rotation behavior,
+  fixed-anisotropy transformation, and center-capability intersection are
+  correct apart from F5-F6. No hidden jitter, regularization, clipping,
+  pseudoinverse, unsafe code, or pointwise heap allocation was found.
+- Polynomial spaces, rank policy, hard constraints, and infeasibility are not
+  applicable to this no-solve path. Interface N/A dispositions, diagnostics,
+  benchmark wiring, and the registry's `implemented` state remain truthful.
+- The reviewer passed all ten focused local-trend tests, all georbf Rustdoc,
+  the runnable example, D=1/D=2/D=3 release benchmark smoke, workspace format,
+  warning-denying georbf all-target/all-feature Clippy, all 58 requirement
+  checks, complete diff whitespace validation, and independent 100-digit
+  calculations for F5-F6.
+- Draft CI run 29806055584 passed the exact final head's configured Ubuntu
+  correctness gate. The Ready-only Windows/Ubuntu/macOS and benchmark-smoke
+  matrix did not run and is not claimed as passed.
+- The complete stable-head standard gate remains the exact repair-head result
+  recorded above; subsequent commits through this re-review evidence change
+  only review and handoff documentation. The reviewer did not rerun the full
+  workspace all-feature test/Clippy/Rustdoc gate and does not claim otherwise.
+- The unavailable nextest, deny, audit, semver, Miri, sanitizer, fuzzing,
+  mutation, allocation-instrumentation, API/ABI/schema, and actionlint checks
+  remain unexecuted and are not claimed as passed.
+
+PR #103 remains Draft and REQ-TREND-001 remains `implemented`, not
+`integrated`. A fresh Repair task must address only F5-F6, add the required
+regressions, rerun the stable-head standard gate, update this evidence and the
+bounded handoff, push, and stop for another independent re-review. This Review
+task does not repair production code, mark the PR ready, merge, or begin
+another requirement.

@@ -6,50 +6,51 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required
+- Mode: Review complete; fresh Repair required
 - Requirement: REQ-TREND-001, Issue #102
 - Branch: `codex/req-trend-001-positive-definite-local-trends`
 - Draft pull request: #103
 - Reviewed implementation head: `48c9d516721928f98dd06242a2304b8d4c9f94e3`
 - Repair code/test head: `643535f4ef181764baa6a5b45605711ee2a91f7d`
 - Dependencies: REQ-KERNEL-003, REQ-ANISO-001, and REQ-MODEL-001 are integrated
-- Registry state: `implemented`; fresh re-review and integration remain
+- Re-reviewed final head: `1fcd80c998ae0b83a48aef7bae965d12f1a37889`
+- Registry state: `implemented`; F5-F6 repair, re-review, and integration remain
 
-## Repaired review findings pending independent verification
+## Fresh re-review result
 
-- F1 (P1): the public weight is now opaque over a private representation; an
-  external compile-fail regression prevents direct variant/cache construction.
-- F2 (P1): a nonzero amplitude with a zero represented square now returns the
-  structured `NonRepresentableWeightAmplitudeSquare` error.
-- F3 (P1): Gaussian derivatives recover representable results through a stable
-  combined logarithmic scale when direct arithmetic underflows or overflows.
-- F4 (P2): coverage and center factors compute Value only, and query weights
-  stop at Value, First, or Second according to the caller's demand.
+- F1-F4 are independently closed by their required regressions and mathematical
+  checks.
+- F5 (P1): Value evaluation forms `amplitude * exp(exponent)`, so the
+  exponential can underflow before a large amplitude restores a representable
+  Gaussian weight and mixture value.
+- F6 (P1): a very large Gaussian radius can cache a zero reciprocal square,
+  causing a false zero Hessian although the amplitude-scaled derivative is
+  representable.
+- No new P0, P2, or P3 finding was found. PR #103 remains Draft.
 
-## Repair validation state
+## Re-review validation state
 
-- Stable repair head `643535f` passed all ten focused local-trend tests, all
-  georbf Rustdoc and compile-fail tests, the runnable example, and D=1/D=2/D=3
-  release benchmark smoke with unchanged deterministic checksums.
-- After the final production change, `643535f` passed the complete standard
-  gate: workspace formatting, warning-denying all-target/all-feature Clippy,
-  all workspace tests with all features, all workspace Rustdoc, all 58
-  requirement checks, and diff whitespace validation.
-- The follow-up review-record and handoff commit is documentation-only; it
-  changes no production, test, manifest, schema, CI, build, API, numerical,
-  registry, or dependency input and retains the stable repair gate.
-- Draft CI for the pushed repair head is not claimed as passed in this Repair
-  task. Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI remain deferred
-  until a clean fresh re-review permits the PR to be marked ready.
+- The independent read-only reviewer checked base `7487cfa`, repair code/test
+  head `643535f`, and final head `1fcd80c`; the latter differs from the repair
+  head only in review and handoff documentation.
+- It passed all ten focused tests, georbf Rustdoc, the runnable example,
+  D=1/D=2/D=3 release benchmark smoke, workspace format, warning-denying
+  georbf all-target/all-feature Clippy, all 58 requirement checks, diff
+  whitespace validation, and independent 100-digit F5-F6 calculations.
+- Stable repair head `643535f` retains its complete standard gate because all
+  later changes are documentation-only. Exact final head `1fcd80c` also passed
+  Draft CI run 29806055584's configured Ubuntu correctness gate.
+- Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI did not run and is not
+  claimed as passed. The full unavailable-check list below remains truthful.
 
 ## Next task boundary
 
-A fresh Review task must give an independent read-only mathematical/numerical
-reviewer only the bounded REQ-TREND-001 summary, dependency closure, normative
-documents, Issue #102 criteria, complete PR #103 diff, repair regressions, and
-validation evidence. It must verify F1-F4 and inspect for new findings without
-inheriting this Repair reasoning. Do not mark the PR ready, merge, or begin
-another requirement in this task boundary.
+A fresh Repair task must address only F5-F6 in PR #103. It must add the public
+regressions specified in `docs/reviews/PR-103-INDEPENDENT-REVIEW.md`, implement
+the smallest complete fixes, run focused checks during development and the
+complete standard gate after the last production change, update review evidence
+and this bounded handoff, commit, push, and stop for a fresh independent
+re-review. Do not mark the PR ready, merge, or begin another requirement.
 
 ## Durable evidence
 
