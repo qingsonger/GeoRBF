@@ -273,6 +273,58 @@ fn gaussian_radius_must_preserve_inverse_square() -> Result<(), Box<dyn Error>> 
 }
 
 #[test]
+fn gaussian_gradient_retains_subnormal_displacement_scale() -> Result<(), Box<dyn Error>> {
+    let local = LocalTrendComponent::new(
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        GlobalAnisotropy::try_isotropic(1.0)?,
+        SmoothSpatialWeight::try_gaussian(Point::try_new([0.0])?, 1.0e154, 3.0)?,
+    );
+    let mixture =
+        LocalTrendMixture::try_new(vec![background::<1>(0.5)?, local], 0, domain(1.0)?, 0.25)?;
+    let point = Point::try_new([f64::from_bits(1)])?;
+
+    let evaluation = mixture.try_evaluate(point, point, KernelDerivativeOrder::First)?;
+    let gradient = evaluation
+        .gradient()
+        .ok_or_else(|| std::io::Error::other("gradient demand was not retained"))?[0];
+    let expected = -5.489_618_287_124_962e-17;
+    assert!(gradient != 0.0);
+    assert!(
+        (gradient - expected).abs() <= expected.abs() * 2.0e-15,
+        "gradient {gradient:e} differs from truth {expected:e}"
+    );
+    Ok(())
+}
+
+#[test]
+fn gaussian_hessian_retains_mixed_scaled_coordinate_product() -> Result<(), Box<dyn Error>> {
+    let local = LocalTrendComponent::new(
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        GlobalAnisotropy::try_isotropic(1.0)?,
+        SmoothSpatialWeight::try_gaussian(Point::try_new([0.0, 0.0])?, 1.0, 1.0e-154)?,
+    );
+    let mixture =
+        LocalTrendMixture::try_new(vec![background::<2>(0.5)?, local], 0, domain(1.0)?, 0.25)?;
+    let delta = f64::from_bits(1);
+    let point = Point::try_new([delta, delta])?;
+
+    let evaluation = mixture.try_evaluate(point, point, KernelDerivativeOrder::Second)?;
+    let hessian = evaluation
+        .hessian()
+        .ok_or_else(|| std::io::Error::other("Hessian demand was not retained"))?;
+    let expected = 2.441_008_624_005_280_7e-31;
+    assert_eq!(hessian[0][1].to_bits(), hessian[1][0].to_bits());
+    for entry in [hessian[0][1], hessian[1][0]] {
+        assert!(entry != 0.0);
+        assert!(
+            (entry - expected).abs() <= expected * 2.0e-13,
+            "mixed Hessian entry {entry:e} differs from truth {expected:e}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn coverage_and_value_skip_irrelevant_weight_hessian_overflow() -> Result<(), Box<dyn Error>> {
     let local = LocalTrendComponent::new(
         KernelDefinition::from(Gaussian::try_new(1.0)?),

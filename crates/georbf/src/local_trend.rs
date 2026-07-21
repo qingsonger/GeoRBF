@@ -1107,6 +1107,7 @@ fn gaussian_weight_jet<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
+    let mut displacements = [0.0; D];
     let mut scaled = [0.0; D];
     let mut squared_radius = 0.0;
     for (axis, output) in scaled.iter_mut().enumerate() {
@@ -1117,6 +1118,7 @@ where
                 axis,
             });
         }
+        displacements[axis] = displacement;
         *output = displacement * inverse_radius;
         let square = *output * *output;
         if !output.is_finite() || !square.is_finite() {
@@ -1143,7 +1145,7 @@ where
         },
     )?;
     let mut gradient = [0.0; D];
-    let mut hessian = [[0.0; D]; D];
+    let hessian = [[0.0; D]; D];
     if demanded == KernelDerivativeOrder::Value {
         return Ok(WeightJet {
             value,
@@ -1152,12 +1154,16 @@ where
         });
     }
     for axis in 0..D {
-        gradient[axis] =
-            stable_gaussian_product(value, amplitude, exponent, -inverse_radius, scaled[axis])
-                .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                    component: usize::MAX,
-                    quantity: LocalTrendQuantity::Gradient { axis },
-                })?;
+        gradient[axis] = stable_gaussian_product(
+            value,
+            amplitude,
+            exponent,
+            &[-inverse_radius_squared, displacements[axis]],
+        )
+        .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
+            component: usize::MAX,
+            quantity: LocalTrendQuantity::Gradient { axis },
+        })?;
     }
     if demanded == KernelDerivativeOrder::First {
         return Ok(WeightJet {
@@ -1166,27 +1172,65 @@ where
             hessian,
         });
     }
+    let hessian = gaussian_weight_hessian(
+        value,
+        amplitude,
+        exponent,
+        inverse_radius_squared,
+        displacements,
+        scaled,
+    )?;
+    Ok(WeightJet {
+        value,
+        gradient,
+        hessian,
+    })
+}
+
+fn gaussian_weight_hessian<const D: usize>(
+    value: f64,
+    amplitude: f64,
+    exponent: f64,
+    inverse_radius_squared: f64,
+    displacements: [f64; D],
+    scaled: [f64; D],
+) -> Result<[[f64; D]; D], LocalTrendEvaluationError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let mut hessian = [[0.0; D]; D];
     for row in 0..D {
         for column in 0..D {
-            let coefficient = scaled[row] * scaled[column] - if row == column { 1.0 } else { 0.0 };
-            hessian[row][column] = stable_gaussian_product(
-                value,
-                amplitude,
-                exponent,
-                inverse_radius_squared,
-                coefficient,
-            )
+            hessian[row][column] = if row == column {
+                let coefficient = scaled[row] * scaled[column] - 1.0;
+                stable_gaussian_product(
+                    value,
+                    amplitude,
+                    exponent,
+                    &[inverse_radius_squared, coefficient],
+                )
+            } else {
+                let first_axis = row.min(column);
+                let second_axis = row.max(column);
+                stable_gaussian_product(
+                    value,
+                    amplitude,
+                    exponent,
+                    &[
+                        inverse_radius_squared,
+                        inverse_radius_squared,
+                        displacements[first_axis],
+                        displacements[second_axis],
+                    ],
+                )
+            }
             .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
                 component: usize::MAX,
                 quantity: LocalTrendQuantity::Hessian { row, column },
             })?;
         }
     }
-    Ok(WeightJet {
-        value,
-        gradient,
-        hessian,
-    })
+    Ok(hessian)
 }
 
 #[inline]
@@ -1217,30 +1261,38 @@ fn stable_gaussian_product(
     value: f64,
     amplitude: f64,
     exponent: f64,
-    first_factor: f64,
-    second_factor: f64,
+    factors: &[f64],
 ) -> Option<f64> {
-    if amplitude == 0.0 || first_factor == 0.0 || second_factor == 0.0 {
+    if amplitude == 0.0 || factors.contains(&0.0) {
         return Some(0.0);
     }
     if !amplitude.is_finite()
         || !exponent.is_finite()
-        || !first_factor.is_finite()
-        || !second_factor.is_finite()
+        || factors.iter().any(|factor| !factor.is_finite())
     {
         return None;
     }
-    let first_product = value * first_factor;
-    let product = first_product * second_factor;
-    if value.is_normal() && first_product.is_normal() && product.is_normal() {
+    let (product, direct_is_normal) = factors.iter().fold(
+        (value, value.is_normal()),
+        |(product, all_normal), factor| {
+            let product = product * factor;
+            (product, all_normal && product.is_normal())
+        },
+    );
+    if direct_is_normal {
         return Some(product);
     }
 
-    let negative = amplitude.is_sign_negative()
-        ^ first_factor.is_sign_negative()
-        ^ second_factor.is_sign_negative();
-    let logarithm =
-        amplitude.abs().ln() + exponent + first_factor.abs().ln() + second_factor.abs().ln();
+    let negative = factors
+        .iter()
+        .fold(amplitude.is_sign_negative(), |negative, factor| {
+            negative ^ factor.is_sign_negative()
+        });
+    let logarithm = factors
+        .iter()
+        .fold(amplitude.abs().ln() + exponent, |logarithm, factor| {
+            logarithm + factor.abs().ln()
+        });
     let magnitude = logarithm.exp();
     let value = if negative { -magnitude } else { magnitude };
     value.is_finite().then_some(value)
