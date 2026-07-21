@@ -136,7 +136,7 @@ where
         }
     }
 
-    fn try_spatial_jet(
+    pub(crate) fn try_spatial_jet(
         self,
         query: Point<D>,
         center: Point<D>,
