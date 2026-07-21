@@ -6,68 +6,67 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review clean; Ready CI pending
-- Requirement: REQ-THICK-002, Issue #96
-- Branch: `codex/req-thick-002-sampled-validation`
-- Draft pull request: #97
-- Original reviewed head: `5878055d7ccbc7250aad3e6837f00375161e0052`
-- First repair code/test head: `6bc6c1dc53bdd093110858cbf5d0787e97c702e9`
-- First independently re-reviewed head: `aa6c134d68ddabd6750220dcca1c158ea81e3bc4`
-- THICK002-REV-005 repair code/test head: `438937bd2b2ed715de23e1444a2cf41d71bf44c1`
-- Final independently re-reviewed head: `10744e8bd8131cb9619b830812043bb98efc75f9`
-- Review result: THICK002-REV-001 through THICK002-REV-005 closed; no P0-P3 findings remain
-- Registry state: `implemented`, not `integrated`
-- Dependencies: REQ-THICK-001 and REQ-MODEL-001 are integrated
+- Mode: Integration state / REQ-THICK-002 complete
+- Requirement: REQ-THICK-002, Issue #96 (closed)
+- Implementation pull request: #97, squash-merged as `0de6140`
+- Integration-state branch: `codex/req-thick-002-integration-state`
+- Integration-state pull request: #98 (Draft until exact Ready CI is green)
+- Review record: `docs/reviews/PR-97-INDEPENDENT-REVIEW.md`
+- Registry state in this change: `integrated`
+- Next eligible requirement: select with `cargo xtask requirements next`
 
-## Independent re-review result
+## Integration result
 
-- A fresh read-only project `math_reviewer` independently confirmed that the
-  public controlled entry point accepts explicit `ExecutionOptions` and passes
-  them unchanged into the shared serial progress tracker.
-- The two-thread regression proves typed rejection precedes progress,
-  evaluation scratch, report storage, and fitted-field evaluation. The one-
-  thread false-determinism regression proves every successful event preserves
-  the caller policy and reports one effective worker.
-- Normal orientation, bracketing and refinement, original-coordinate units and
-  Euclidean distance, deterministic type-7 quantiles, gradient capability and
-  center limits, scratch reuse, provenance, failure and proposal semantics,
-  interface dispositions, benchmark wiring, and registry truth are clean.
-- THICK002-REV-005 is closed. No P0, P1, P2, or P3 finding remains; no repair or
-  additional regression is required.
+- A fresh read-only project `math_reviewer` independently re-reviewed the exact
+  complete PR and repair using only bounded requirement, dependency, normative,
+  diff, test, benchmark, registry, handoff, CI, and validation evidence.
+- THICK002-REV-001 through THICK002-REV-005 are closed. No P0, P1, P2, or P3
+  finding remained before integration; the independent review requirement is
+  complete.
+- Exact implementation Ready head `8ecf212` passed Windows, Ubuntu, and macOS
+  with every configured backend and benchmark-smoke workload, including
+  `sampled_thickness_validation`, in CI run 29793530667.
+- PR #97 squash-merged exactly once as `0de6140`; Issue #96 closed as completed.
+- Post-merge `main` run 29794149484 passed the same complete three-platform
+  correctness, backend, benchmark-smoke, and requirement-registry gate on
+  `0de6140`.
+- This isolated integration-state change updates only the registry, review
+  evidence, history index, and bounded handoff. It changes no production code,
+  test, manifest, schema, CI, build input, API, normative contract, numerical
+  behavior, dependency, tag, or release.
 
 ## Validation state
 
-- Exact repair code/test head `438937b` passed the complete standard local gate:
+- Exact repair code/test head `438937b` and final Ready evidence head `8ecf212`
+  retain the complete recorded local gate: workspace format, warning-denying
+  all-target/all-feature Clippy, all-feature workspace tests, workspace
+  Rustdoc, all 58 requirement checks, and `git diff --check`.
+- The final reviewer confirmed all five finding closures and no P0-P3 findings.
+  The parent task passed all seven public sampled-validation tests, all eight
+  execution-control tests, both Rustdoc tests, the registry check, and complete
+  PR diff whitespace validation. The benchmark smoke retained checksums `32`
+  and `2.0`.
+- Exact implementation Ready-head and post-merge `main` three-platform gates
+  are green as recorded above.
+- The isolated integration-state tree passed the complete local standard gate:
   workspace format, warning-denying all-target/all-feature Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and the
-  complete diff whitespace check.
-- On exact independently reviewed evidence head `10744e8`, the parent Review
-  task passed all seven public sampled-validation integration tests, all eight
-  execution-control tests, both relevant Rustdoc tests, all 58 requirement
-  checks, and the complete PR diff whitespace check. The independent reviewer
-  also passed six mathematical/module tests.
-- The one-iteration optimized benchmark smoke measured 2471.60 microseconds
-  with unchanged checksums `32` and `2.0`.
-- Draft CI run 29792829608 passed its configured Ubuntu correctness gate on
-  exact reviewed head `10744e8`; the Ready-only Windows/Ubuntu/macOS and
-  benchmark-smoke matrix correctly did not run.
-- This final clean-review evidence change updates only this handoff and the
-  independent review record. It changes no production, test, manifest, schema,
-  CI, build, API, numerical, registry, or dependency input and therefore does
-  not invalidate the stable gate on `438937b`.
+  workspace tests, workspace Rustdoc, all 58 requirement checks, and
+  `git diff --check`.
+- Local `actionlint` and the later unavailable tools listed below remain
+  unavailable and are not claimed as passed.
 
-## Next task boundary
+## Next task
 
-Commit and push this clean re-review evidence, mark PR #97 ready, and wait for
-the complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact Ready
-head. Merge exactly once only when it is green, then record truthful registry
-and handoff state through an isolated integration-state change. Do not begin
-REQ-PROJECT-001 or any other requirement.
+After the isolated integration-state pull request is green and merged, open a
+fresh task and perform the mandatory preflight. Use
+`cargo xtask requirements next`; do not start another requirement in this
+task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #96
-- Implementation pull request: GitHub PR #97
+- Acceptance criteria and exclusions: closed GitHub Issue #96
+- Merged implementation and repair: GitHub PR #97
+- Integration-state pull request: GitHub PR #98
 - Independent review: `docs/reviews/PR-97-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-THICK-002.md`
 - Independent truth/error tests: `crates/georbf/tests/thickness_validation.rs`
