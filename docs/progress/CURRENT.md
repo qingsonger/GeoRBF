@@ -6,11 +6,13 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement
+- Mode: Review completed; fresh re-review and integration required
 - Requirement: REQ-PROJECT-001, Issue #99
 - Branch: `codex/req-project-001-independent-multi-field-projects`
 - Draft pull request: #100
-- Implementation head before final evidence: `30c31ad`
+- Independently reviewed implementation head: `16c8001`
+- Independent review record: `docs/reviews/PR-100-INDEPENDENT-REVIEW.md`
+- Review result: no P0-P3 finding; no Repair required
 - Registry state in this change: `implemented`, not `integrated`
 - Dependencies: REQ-MODEL-001 and REQ-LEVEL-001 are integrated
 
@@ -29,27 +31,38 @@ records, benchmark reports, Git, and GitHub.
   own original-coordinate convention. It defines no local-mixture weighting,
   coordinate reprojection, topology, persistence, or adapter behavior.
 
-## Validation state
+## Independent review and validation
 
-- All six focused project tests pass, including two-field independence,
-  identifier/error behavior, reference delegation, source ownership, public
-  `Send + Sync`, and actual D=1/D=2/D=3 construction.
-- All 31 crate Rustdoc tests pass, including the D=4 project compile-fail bound.
-- The final implementation tree passes workspace formatting, warning-denying
-  all-target/all-feature Clippy, all-feature workspace tests, workspace
-  Rustdoc, all 58 requirement checks, and `git diff --check`.
+- A fresh isolated `math_reviewer` independently inspected the exact seven-file
+  PR diff and found no P0-P3 issue. It changed no repository or remote state.
+- Both reviewer and parent passed all six focused project tests and the D=4
+  compile-fail Rustdoc test; complete diff whitespace checks are green.
+- Exact reviewed implementation head `16c8001` retains the complete standard
+  local gate: workspace formatting, warning-denying all-target/all-feature
+  Clippy, all-feature workspace tests, workspace Rustdoc, all 58 requirement
+  checks, and `git diff --check`.
+- Draft CI run 29796378377 passed Ubuntu correctness on `16c8001`. The Ready-
+  only three-platform and benchmark-smoke matrix was skipped as designed and
+  is not claimed as passed.
+- This Review adds only the independent review record and this bounded handoff;
+  production, tests, manifests, schemas, CI, build inputs, API behavior,
+  numerical behavior, registry state, and dependency inputs are unchanged.
 
 ## Next task boundary
 
-After the complete standard local gate is green and the Draft PR is updated,
-stop. A fresh Review task must inspect only REQ-PROJECT-001 and its PR, create
-an independent reviewer, record findings, and must not repair production code
-or begin another requirement in the same task.
+A fresh Review/re-review task must inspect only REQ-PROJECT-001 and the final
+evidence head of PR #100 with a new isolated `math_reviewer`. If no P0-P3
+finding appears, synchronize PR evidence and mark the PR ready, wait for the
+complete Windows, Ubuntu, macOS, and benchmark-smoke CI on that exact ready
+head, merge exactly once only when every required check is green, and record
+truthful integration state. If a finding appears, record it and stop for a
+fresh Repair task. Do not begin another requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #99
 - Draft implementation pull request: GitHub PR #100
+- Independent review: `docs/reviews/PR-100-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-PROJECT-001.md`
 - Independent property/error tests: `crates/georbf/tests/project.rs`
 - Public implementation and Rustdoc: `crates/georbf/src/project.rs`
