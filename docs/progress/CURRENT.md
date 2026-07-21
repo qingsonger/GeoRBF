@@ -6,11 +6,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete / Repair required for PR #106
+- Mode: Repair complete / fresh independent re-review required for PR #106
 - Requirement: REQ-ANISO-002, Issue #105
 - Branch: `codex/req-aniso-002-orientation-tensor`
 - Implementation pull request: #106 (Draft)
-- Stable implementation and complete-gate head: `2d65666`
+- Stable repair and complete-gate head: `1f1fdc6`
 - Independently reviewed head: `2c33c3f`
 - Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
 - Registry state in this change: `implemented`
@@ -37,35 +37,40 @@ records, benchmark reports, Git, and GitHub.
 
 ## Validation state
 
-- Focused orientation-tensor tests pass (11 tests).
-- Warning-denying georbf all-target Clippy, georbf Rustdoc, example execution,
-  and the optimized benchmark smoke pass.
-- Exact implementation head `2d65666` passed the complete standard workspace
-  gate: format, warning-denying all-target/all-feature Clippy, all workspace
-  tests with all features, workspace Rustdoc, all 58 requirement checks, and
+- Repair head `1f1fdc6` groups unresolved training-fold eigenspaces at
+  `64 D epsilon` for basis-independent candidate loss and applies the explicit
+  `64 D^2 epsilon` influence upper roundoff policy.
+- The new global-rotation and extreme-weight regressions failed against the
+  pre-repair implementation and pass at the repair head. All 13 focused public
+  orientation-tensor tests pass.
+- Warning-denying georbf all-target/all-feature Clippy, georbf Rustdoc
+  including the D=4 compile-fail contract, example execution, and the optimized
+  benchmark smoke pass. The smoke retained checksum
+  `1.00428812046557887e4` at approximately 4.58 us per estimate locally.
+- Exact repair head `1f1fdc6` passed the complete standard workspace gate:
+  format, warning-denying all-target/all-feature Clippy, all workspace tests
+  with all features, workspace Rustdoc, all 58 requirement checks, and
   complete diff whitespace validation.
-- Independent Review reproduced P1 ANISO002-REV-001: leave-one-out candidate
-  scores and selected ratios can change under a global rotation when a
-  training fold has a repeated eigenspace, even when the full tensor has
-  positive reported eigengaps.
-- Independent Review reproduced P3 ANISO002-REV-002: valid extreme finite
-  weights can produce an influence of `1.0000000000000002`, violating the
-  documented `[0,1]` public range.
-- The Review evidence change adds only `docs/reviews/PR-106-INDEPENDENT-REVIEW.md`
-  and updates this bounded handoff. It changes no production, test, manifest,
-  schema, CI, build, API, numerical, registry, or dependency input.
+- The subsequent repair-evidence and bounded-handoff commit changes only these
+  Markdown records. It changes no production, test, manifest, schema, CI,
+  build, API, numerical, registry, or dependency input and does not invalidate
+  the stable-head gate.
 - Local `actionlint` and the unavailable later tools listed below remain
   unexecuted and are not claimed as passed.
 
 ## Next task boundary
 
-Open a fresh Repair task for only PR #106 findings ANISO002-REV-001 and
-ANISO002-REV-002. First add the recorded global-rotation cross-validation and
-extreme-weight influence regressions, then implement the smallest explicit and
-documented fixes. Run focused checks during repair and the complete standard
-workspace gate once after the final code change on the stable head. Update the
-review evidence and this handoff, push, and stop for a fresh independent
-re-review. Keep PR #106 Draft and do not start another requirement.
+Open a fresh independent Review/re-review task for only PR #106 and
+REQ-ANISO-002. Supply the project `math_reviewer` only the bounded requirement
+summary and dependency closure, normative ANISOTROPY and ADR-0009/ADR-0010
+contracts, Issue #105 criteria, complete PR diff, tests, benchmark, repair
+evidence, and validation state; do not inherit this Repair reasoning. Verify
+ANISO002-REV-001 and ANISO002-REV-002 are closed and check for new P0-P3
+findings. If any finding remains, record it and stop without repair. If clean,
+follow the mandatory ready-head sequence: mark PR #106 ready, wait for the
+complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact head, merge
+only when green, record truthful integration state, and stop. Do not begin
+another requirement.
 
 ## Durable evidence
 

@@ -115,3 +115,46 @@ ANISO002-REV-002, add the required regressions, run focused checks and one
 complete stable-head standard gate after the final code change, update this
 record and the bounded handoff, push, and stop for a fresh independent
 re-review. Do not begin another requirement.
+
+## Repair evidence pending fresh independent re-review
+
+Repair code/test head `1f1fdc6dbbe6b69bf7872f9d6a7eae0ca5e51c67`
+addresses only ANISO002-REV-001 and ANISO002-REV-002:
+
+- ANISO002-REV-001: leave-one-out loss now groups every maximal consecutive
+  training-fold eigenspace whose adjacent normalized gaps are at most
+  `64 D epsilon`. It compares the total observed and expected share inside
+  each unresolved group, so an arbitrary orthonormal basis change within a
+  repeated eigenspace cannot change the score. A public three-sample D=3
+  global-rotation regression checks all candidate scores and the selected
+  ratios.
+- ANISO002-REV-002: the exact PSD trace-one influence remains bounded by one.
+  A finite computed value no greater than `1 + 64 D^2 epsilon` is explicitly
+  recorded as one; a larger overshoot is a structured
+  `InfluenceOutsideRoundoffTolerance` error. A public D=3 regression with
+  `f64::MAX` and unit weights reproduces the former one-ulp overshoot and
+  checks every influence and the aggregate maximum against `[0,1]`.
+
+Both regressions failed against the pre-repair implementation. The repeated-
+eigenspace case changed a candidate score from approximately `0.39675` to
+`0.45422` under a global rotation, and the extreme-weight case produced
+`1.0000000000000002`. Both pass at the repair head. All 13 focused public
+orientation-tensor tests, the D=4 compile-fail Rustdoc contract, warning-
+denying georbf all-target/all-feature Clippy, the runnable example, and the
+optimized benchmark smoke passed. The smoke reported approximately 4.58 us
+per four-sample, three-candidate D=3 estimate over 2,000 estimates with the
+unchanged checksum `1.00428812046557887e4`.
+
+After the final production change, exact repair head `1f1fdc6` passed the
+complete standard workspace gate: format, warning-denying all-target/all-
+feature Clippy, all workspace tests with all features, workspace Rustdoc, all
+58 requirement checks, and complete diff whitespace validation. The
+subsequent review-record and bounded-handoff commit changes documentation only
+and does not invalidate that gate. The unavailable-check list recorded above
+is unchanged, and no unavailable check is claimed as passed.
+
+This section records Repair evidence only and does not independently close the
+findings. PR #106 remains Draft and REQ-ANISO-002 remains `implemented`. A
+fresh independent mathematical and numerical re-review of the complete
+repaired PR diff is required next. This Repair does not mark the PR ready,
+merge it, or begin another requirement.
