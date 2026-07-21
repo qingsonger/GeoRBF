@@ -478,3 +478,99 @@ F7-F8. PR #103 remains Draft and REQ-TREND-001 remains `implemented`; a fresh
 independent mathematical and numerical re-review of the complete repaired diff
 is required next. This Repair does not mark the PR ready, merge it, or begin
 another requirement.
+
+## Fresh independent re-review after F7-F8 repair
+
+- Re-reviewed base: `7487cfafd0739c1f63028d4b46d7505b4ca6c1b3`
+- Re-reviewed F7-F8 repair code/test head:
+  `2b5189d624045c16f2ca7a55b73ee6f24960e999`
+- Re-reviewed final head: `ff2f4812e09a7334418ba13232fa7af8f3d607ed`
+- Re-review date: 2026-07-21
+- Result: F1-F8 closed; one new P1 finding F9 requires repair
+
+An isolated read-only project `math_reviewer` received only the bounded
+requirement summary and integrated dependency closure, Issue #102 acceptance
+criteria, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008 contracts, the complete
+PR diff, directly relevant implementation and validation evidence, and the
+preceding findings and repairs. It inherited no Implement or Repair reasoning
+and made no repository or remote change.
+
+### Re-review disposition of F7-F8
+
+- F7 is closed. The repair combines the unscaled displacement, negative
+  inverse-radius square, amplitude, and exponent in one stable product.
+  Independent 140-digit arithmetic reproduces
+  `-5.489618287124962e-17`, and the public regression passes.
+- F8 is closed. Mixed entries combine both unscaled displacements and both
+  inverse-radius-square factors without first multiplying vulnerable scaled
+  coordinates. Canonical axis ordering retains bitwise symmetry. Independent
+  arithmetic reproduces `2.4410086240052807e-31` in both entries, and the
+  public regression passes.
+
+### F9 - P1: diagonal Gaussian Hessian cancellation erases a representable result
+
+`gaussian_weight_hessian` forms the diagonal coefficient as
+`scaled[row] * scaled[column] - 1.0` at
+`crates/georbf/src/local_trend.rs:1205`. Because `scaled` is already rounded,
+a nonzero analytic coefficient can become exact zero. The stable helper then
+treats it as mathematically zero at lines 1266-1267.
+
+For a one-dimensional Gaussian weight with amplitude `1`, radius `3`, center
+zero, and
+`delta = f64::from_bits(0x4008_0000_0000_0001)` (the successor of `3.0`),
+binary64 rounds `delta * (1/3)` to exactly `1.0`. The implementation therefore
+returns zero for the weight's diagonal Hessian even though independently
+
+```text
+b''(delta) = b(delta) (delta^2 / 3^4 - 1 / 3^2) != 0.
+```
+
+A public D=1 mixture exposes the loss without masking: use a constant
+background weight `0.5`, the local Gaussian weight above, Gaussian kernels of
+length `1e100` with unit isotropy, and evaluate at
+`query == kernel_center == delta`. The independent mixture Hessian is
+
+```text
+exp(-delta^2 / 9)
+    * (delta^2 / 81 - 1 / 9 - 1 / 1e200)
+    - 0.25 / 1e200
+  ~= 1.2101577062956176e-17.
+```
+
+The current path instead returns approximately `-6.17879441171442e-201`
+after discarding the positive weight-Hessian term. This violates the complete
+Hessian and stable representable-result contract.
+
+Required regression: construct that public D=1 mixture, demand `Second`, and
+require its Hessian to be positive and to approximate
+`1.2101577062956176e-17` within a tight relative tolerance.
+
+### Re-review validation and disposition
+
+- The reviewer and parent task passed all 14 focused local-trend tests, all
+  relevant Rustdoc, all 58 requirement checks, and complete PR diff whitespace
+  validation. The reviewer also passed the runnable example and D=1/D=2/D=3
+  release benchmark smoke. Existing tests do not cover F9.
+- Exact repair code/test head `2b5189d` retains the complete stable-head
+  standard gate recorded above. Final head `ff2f481` differs only in the
+  requirement change fragment, this review record, and the bounded handoff.
+- Draft CI run 29818450635 passed its configured Ubuntu correctness gate on
+  exact final head `ff2f481`. Ready-only Windows, Ubuntu, macOS, and benchmark-
+  smoke CI did not run and is not claimed as passed.
+- The exact-arithmetic SPD proof, CPD rejection, product-rule signs and units,
+  center-capability intersection, D=1/D=2/D=3 restriction, Hessian symmetry,
+  fixed-anisotropy behavior, diagnostics, allocation-free point paths,
+  interface dispositions, registry state, and lack of hidden regularization
+  are otherwise sound. Polynomial spaces, rank decisions, hard constraints,
+  and infeasibility are not applicable to this no-solve primitive.
+- No P0, P2, or P3 finding was identified. The unavailable nextest, deny,
+  audit, semver, Miri, sanitizer, fuzzing, mutation, allocation-
+  instrumentation, API/ABI/schema, and actionlint checks remain unexecuted and
+  are not claimed as passed.
+
+PR #103 remains Draft and REQ-TREND-001 remains `implemented`, not
+`integrated`. A fresh Repair task must address only F9, add the required public
+regression, rerun focused checks and the complete stable-head standard gate,
+update this evidence and the bounded handoff, push, and stop for another fresh
+independent re-review. This Review task does not repair production code, mark
+the PR ready, merge it, or begin another requirement.
