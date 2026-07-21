@@ -158,3 +158,93 @@ findings. PR #106 remains Draft and REQ-ANISO-002 remains `implemented`. A
 fresh independent mathematical and numerical re-review of the complete
 repaired PR diff is required next. This Repair does not mark the PR ready,
 merge it, or begin another requirement.
+
+## Independent re-review of the Repair
+
+- Re-reviewed head: `627d360c21ed6f06e437c8c7d83de4d751ac777f`
+- Repair code/test head: `1f1fdc6dbbe6b69bf7872f9d6a7eae0ca5e51c67`
+- Base head: `d34458f6c29d1b56f2832ddac9356d28a87a3f8f`
+- Result: ANISO002-REV-001 and ANISO002-REV-002 are closed; P2
+  ANISO002-REV-003 requires Repair
+
+A fresh read-only project `math_reviewer` received only the bounded
+REQ-ANISO-002 summary and dependency closure, Issue #105 criteria, the M6
+plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, the complete PR and Repair
+diffs, tests, example, benchmark, CI wiring, scoped registry entry, handoff,
+and validation evidence. It inherited no Repair reasoning and changed no
+repository or remote state.
+
+### Original-finding closure
+
+- ANISO002-REV-001 is closed. For an unresolved group `G`, the sum of squared
+  projections equals projection onto the eigenspace and is invariant under an
+  orthonormal basis change inside it. The explicit `64 D epsilon` grouping
+  implements that structural repair, and the global-rotation regression
+  passes.
+- ANISO002-REV-002 is closed. The exact normalized Frobenius influence of two
+  PSD trace-one tensors is at most one. The explicit `64 D^2 epsilon`
+  overshoot band records one only inside the documented band and otherwise
+  returns a structured error; the extreme-weight regression passes.
+
+### ANISO002-REV-003 - P2: grouped loss can select the wrong candidate from normalization roundoff
+
+Affected code and contract:
+
+- `crates/georbf/src/orientation_tensor.rs:1008-1013`
+- `crates/georbf/src/orientation_tensor.rs:1042-1049`
+- `crates/georbf/src/orientation_tensor.rs:1079-1082`
+- `docs/architecture/ANISOTROPY.md:126-145`
+- Missing interaction coverage in
+  `crates/georbf/tests/orientation_tensor.rs:255-307`
+
+`expected_shares` divides every component independently, so their represented
+sum need not be exactly one. When every axis belongs to one unresolved
+training-fold eigenspace, the exact grouped loss is zero for every candidate:
+both observed and expected total mass are one. The implementation can instead
+introduce a candidate-dependent loss solely from normalization roundoff.
+
+An independent counterexample uses a direction proportional to `[1,2,2]`
+with weight `f64::MAX`, plus `e1`, `e2`, and `e3` with unit weights, and
+candidates `[3,2,1]` and `[4,2,1]`. Holding out the dominant sample leaves the
+exactly isotropic tensor `I/3`; the all-axis grouped loss must therefore be
+zero for both candidates. Across the three minor folds, exact loss is
+`1913/2646` for `[3,2,1]` and `1654/1323` for `[4,2,1]`, a difference of
+`155/294`, so `[3,2,1]` must win.
+
+In binary64, however, the represented `[3,2,1]` shares sum to
+`0.9999999999999999`, injecting loss `1.232595164407831e-32` into the
+dominant fold, while the `[4,2,1]` shares sum to exactly one. The real
+minor-fold evidence is weighted by `1/f64::MAX`, approximately `5.56e-309`,
+so the artificial normalization loss dominates and reverses selection to
+`[4,2,1]`.
+
+Impact: valid explicitly supported extreme finite weights can publish the
+wrong cross-validated ratio because of candidate-specific probability-mass
+roundoff. A fresh Repair must add this four-sample D=3 regression, assert the
+independent score ordering and selection of `[3,2,1]`, and ensure grouped
+expected mass honors the normalized-share invariant, especially for a group
+spanning every axis.
+
+No P0, P1, or P3 finding and no additional P2 finding was identified.
+
+### Re-review validation and disposition
+
+- The reviewer passed all 13 focused orientation-tensor tests, formatting,
+  warning-denying georbf all-target/all-feature Clippy, the orientation-tensor
+  Rustdoc compile-fail contract, the runnable example, all 58 requirement
+  checks, and complete PR whitespace validation.
+- The optimized benchmark smoke retained checksum
+  `1.00428812046557887e4`. Independent exact-rational and IEEE-754 probes
+  verified both original repairs and reproduced ANISO002-REV-003.
+- The complete workspace test and Rustdoc gates were not rerun in re-review.
+  Exact Repair head `1f1fdc6` retains its complete standard local gate, and
+  the later commits through the re-reviewed head change only the review and
+  handoff Markdown.
+- Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run and is
+  not claimed as passed. The unavailable/deferred check list above is
+  unchanged.
+
+PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
+`integrated`. Open a fresh bounded Repair task for ANISO002-REV-003 only; do
+not repair production code, mark the PR ready, merge it, or begin another
+requirement in this Review task.

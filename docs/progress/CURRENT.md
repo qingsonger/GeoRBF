@@ -6,12 +6,12 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete / fresh independent re-review required for PR #106
+- Mode: Review complete / fresh Repair required for PR #106
 - Requirement: REQ-ANISO-002, Issue #105
 - Branch: `codex/req-aniso-002-orientation-tensor`
 - Implementation pull request: #106 (Draft)
 - Stable repair and complete-gate head: `1f1fdc6`
-- Independently reviewed head: `2c33c3f`
+- Independently re-reviewed head: `627d360`
 - Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
 - Registry state in this change: `implemented`
 
@@ -37,6 +37,15 @@ records, benchmark reports, Git, and GitHub.
 
 ## Validation state
 
+- A fresh isolated read-only `math_reviewer` re-reviewed exact head `627d360`.
+  ANISO002-REV-001 and ANISO002-REV-002 are closed, but new P2
+  ANISO002-REV-003 prevents Ready/integration.
+- ANISO002-REV-003 shows that independently rounded expected shares need not
+  sum to exactly one. For an all-axis unresolved fold this creates
+  candidate-dependent artificial loss; with a `[1,2,2]` direction weighted
+  by `f64::MAX`, unit-weight coordinate axes, and candidates `[3,2,1]` and
+  `[4,2,1]`, it overwhelms the real approximately `1e-309` minor-fold evidence
+  and reverses the exact selection from `[3,2,1]` to `[4,2,1]`.
 - Repair head `1f1fdc6` groups unresolved training-fold eigenspaces at
   `64 D epsilon` for basis-independent candidate loss and applies the explicit
   `64 D^2 epsilon` influence upper roundoff policy.
@@ -51,26 +60,24 @@ records, benchmark reports, Git, and GitHub.
   format, warning-denying all-target/all-feature Clippy, all workspace tests
   with all features, workspace Rustdoc, all 58 requirement checks, and
   complete diff whitespace validation.
-- The subsequent repair-evidence and bounded-handoff commit changes only these
-  Markdown records. It changes no production, test, manifest, schema, CI,
-  build, API, numerical, registry, or dependency input and does not invalidate
-  the stable-head gate.
+- The commits after repair head `1f1fdc6`, including this re-review evidence,
+  change only these Markdown records. They change no production, test,
+  manifest, schema, CI, build, API, numerical, registry, or dependency input
+  and do not invalidate the stable-head gate.
 - Local `actionlint` and the unavailable later tools listed below remain
   unexecuted and are not claimed as passed.
 
 ## Next task boundary
 
-Open a fresh independent Review/re-review task for only PR #106 and
-REQ-ANISO-002. Supply the project `math_reviewer` only the bounded requirement
-summary and dependency closure, normative ANISOTROPY and ADR-0009/ADR-0010
-contracts, Issue #105 criteria, complete PR diff, tests, benchmark, repair
-evidence, and validation state; do not inherit this Repair reasoning. Verify
-ANISO002-REV-001 and ANISO002-REV-002 are closed and check for new P0-P3
-findings. If any finding remains, record it and stop without repair. If clean,
-follow the mandatory ready-head sequence: mark PR #106 ready, wait for the
-complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact head, merge
-only when green, record truthful integration state, and stop. Do not begin
-another requirement.
+Open a fresh bounded Repair task for only PR #106, REQ-ANISO-002, and
+ANISO002-REV-003. First add the public four-sample D=3 extreme-weight
+regression recorded in the review evidence and prove that `[3,2,1]` wins over
+`[4,2,1]`; then make grouped expected mass honor the normalized-share
+invariant, especially for an all-axis unresolved group. Run focused checks
+during repair and one complete standard workspace gate after the final code
+change. Update the review evidence and this bounded handoff, commit, push, and
+stop for a fresh independent re-review. Do not revisit the closed
+ANISO002-REV-001/002 repairs or begin another requirement.
 
 ## Durable evidence
 
