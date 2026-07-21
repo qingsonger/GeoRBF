@@ -6,11 +6,12 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / REQ-ANISO-002 complete pending independent Review
+- Mode: Review complete / Repair required for PR #106
 - Requirement: REQ-ANISO-002, Issue #105
 - Branch: `codex/req-aniso-002-orientation-tensor`
 - Implementation pull request: #106 (Draft)
 - Stable implementation and complete-gate head: `2d65666`
+- Independently reviewed head: `2c33c3f`
 - Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
 - Registry state in this change: `implemented`
 
@@ -43,26 +44,34 @@ records, benchmark reports, Git, and GitHub.
   gate: format, warning-denying all-target/all-feature Clippy, all workspace
   tests with all features, workspace Rustdoc, all 58 requirement checks, and
   complete diff whitespace validation.
-- The post-PR follow-up changes only `requirements/v1.yaml` and this bounded
-  handoff. It changes no production code, test, manifest, schema, CI, build
-  input, API, numerical behavior, dependency, tag, or release; requirement and
-  diff validation are rerun on the final head.
+- Independent Review reproduced P1 ANISO002-REV-001: leave-one-out candidate
+  scores and selected ratios can change under a global rotation when a
+  training fold has a repeated eigenspace, even when the full tensor has
+  positive reported eigengaps.
+- Independent Review reproduced P3 ANISO002-REV-002: valid extreme finite
+  weights can produce an influence of `1.0000000000000002`, violating the
+  documented `[0,1]` public range.
+- The Review evidence change adds only `docs/reviews/PR-106-INDEPENDENT-REVIEW.md`
+  and updates this bounded handoff. It changes no production, test, manifest,
+  schema, CI, build, API, numerical, registry, or dependency input.
 - Local `actionlint` and the unavailable later tools listed below remain
   unexecuted and are not claimed as passed.
 
 ## Next task boundary
 
-Open a fresh Review task for only the implementation PR and REQ-ANISO-002.
-Supply the requirement/dependency summaries, `docs/architecture/ANISOTROPY.md`,
-ADR-0009, ADR-0010, the PR diff, and exact validation/benchmark evidence to an
-isolated read-only `math_reviewer`. Record P0-P3 findings and required
-regressions without repairing production code in the same Review task. Do not
-start another requirement.
+Open a fresh Repair task for only PR #106 findings ANISO002-REV-001 and
+ANISO002-REV-002. First add the recorded global-rotation cross-validation and
+extreme-weight influence regressions, then implement the smallest explicit and
+documented fixes. Run focused checks during repair and the complete standard
+workspace gate once after the final code change on the stable head. Update the
+review evidence and this handoff, push, and stop for a fresh independent
+re-review. Keep PR #106 Draft and do not start another requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #105
 - Draft implementation: GitHub PR #106
+- Independent findings: `docs/reviews/PR-106-INDEPENDENT-REVIEW.md`
 - Requirement summary and benchmark baseline: `changes/REQ-ANISO-002.md`
 - Public implementation and Rustdoc: `crates/georbf/src/orientation_tensor.rs`
 - Independent property/error tests: `crates/georbf/tests/orientation_tensor.rs`

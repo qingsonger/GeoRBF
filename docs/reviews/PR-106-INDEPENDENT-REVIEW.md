@@ -1,0 +1,117 @@
+# PR #106 Independent Review
+
+- Requirement: REQ-ANISO-002
+- Issue: https://github.com/qingsonger/GeoRBF/issues/105
+- Pull request: https://github.com/qingsonger/GeoRBF/pull/106
+- Branch: `codex/req-aniso-002-orientation-tensor`
+- Reviewed head: `2c33c3f0affbceed39659f07203982bbc9a0756e`
+- Base head: `d34458f6c29d1b56f2832ddac9356d28a87a3f8f`
+- Review date: 2026-07-21
+- Result: P1 ANISO002-REV-001 and P3 ANISO002-REV-002 require Repair
+
+## Scope and independence
+
+A fresh read-only project `math_reviewer` received only the bounded
+REQ-ANISO-002 summary and integrated dependency closure, Issue #105 acceptance
+criteria and exclusions, the M6 plan, ANISOTROPY and ADR-0009/ADR-0010
+contracts, the exact PR diff, tests, benchmark and CI wiring, registry,
+handoff, and validation evidence. It inherited no Implement reasoning and made
+no repository or remote change.
+
+The reviewer independently checked formulae, dimensions, PSD classification,
+repeated eigenspaces, finite and extreme arithmetic, bounded eigensolver
+semantics, deterministic ordering, cross-validation, weight normalization,
+influence bounds, rotation covariance, hidden numerical adjustments,
+allocations, public interfaces, tests, documentation, CI, and requirement
+truthfulness.
+
+## Findings
+
+### ANISO002-REV-001 — P1: leave-one-out ratio scores are not rotation invariant
+
+Affected code and contract:
+
+- `crates/georbf/src/orientation_tensor.rs:469-475`
+- `crates/georbf/src/orientation_tensor.rs:1005-1025`
+- `docs/architecture/ANISOTROPY.md:126-140`
+
+Each fold scores squared projections against individual training-tensor
+eigenvectors. When a training tensor has a repeated eigenspace, those
+projections depend on the arbitrary basis chosen inside that eigenspace; only
+their sum over the repeated space is invariant.
+
+This ambiguity is not diagnosed by the full-result eigengaps. For valid D=3
+samples `e1` with weight 3, `e1` with weight 2, and `e2` with weight 1, the
+full tensor has distinct eigenvalues `5/6`, `1/6`, and `0`. Holding out `e2`
+leaves the rank-one tensor `e1 e1^T`, whose null eigenspace is two-dimensional.
+For ratios `[2, 1.5, 1]`, the expected shares are `(16,9,4)/29`. Rotating the
+complete dataset by 45 degrees about `e1` changes that fold's observed shares
+from `(0,1,0)` to `(0,1/2,1/2)`. The fold loss changes by exactly `19/58` and
+the published weighted candidate score by `19/348`, despite identical
+geometry.
+
+The permitted two-positive-sample D=3 case can change the selected candidate.
+An exact-rational probe with `[1,1,1]` and `[10,10,1]` produced unrotated scores
+`2/3` and `6734/13467`, selecting `[10,10,1]`. After a global rotation the
+isotropic score was `5/12` and the `[10,10,1]` score was at least
+`26735/53868`, selecting `[1,1,1]`.
+
+Impact: physically equivalent rotated inputs can publish different candidate
+scores and select different principal-axis ratios. A fresh Repair must add a
+three-sample rotation regression asserting invariant scores and selection,
+then score repeated eigenspaces invariantly or explicitly reject and diagnose
+ambiguous folds through a documented policy.
+
+### ANISO002-REV-002 — P3: advertised influence range can be exceeded
+
+Affected code and contract:
+
+- `crates/georbf/src/orientation_tensor.rs:190-197`
+- `crates/georbf/src/orientation_tensor.rs:1060-1086`
+
+The public contract promises `normalized_tensor_change` in `[0,1]`, but the
+raw floating computation does not preserve that theoretical bound. A
+dependency-free IEEE-double probe using orthogonal directions proportional to
+`[-8,-8,-8]` and `[-8,1,7]`, with finite positive weights `f64::MAX` and `1.0`,
+reproduced `1.0000000000000002` when the dominant sample was removed. The
+normalized direction norms round slightly above one, so the Frobenius result
+exceeds the documented upper bound by one ulp.
+
+Impact: valid input can violate a public diagnostic invariant and downstream
+range validation. A fresh Repair must add this extreme-weight regression for
+every per-sample and maximum influence and apply an explicit, documented
+roundoff-bound policy.
+
+No additional P0, P1, P2, or P3 finding was identified.
+
+## Validation and disposition
+
+- The reviewer verified the exact base/head, merge base, complete eleven-file
+  PR diff, and clean scoped worktree. The tail from complete-gate head
+  `2d65666` to reviewed head `2c33c3f` changes only `requirements/v1.yaml` and
+  `docs/progress/CURRENT.md`.
+- The reviewer and parent Review task each passed all 11 public orientation-
+  tensor tests and all 58 requirement checks. The parent also passed the D=4
+  compile-fail Rustdoc test and complete PR whitespace check.
+- Dependency-free exact-rational and IEEE-double probes independently
+  reproduced ANISO002-REV-001 and ANISO002-REV-002. An initial NumPy probe was
+  unavailable because NumPy is not installed and was replaced by those
+  dependency-free probes.
+- Draft CI passed its configured Ubuntu correctness gate on exact reviewed
+  head `2c33c3f`. The Ready-only Windows, Ubuntu, macOS, and benchmark-smoke
+  matrix was skipped as designed and is not claimed as passed.
+- Exact implementation head `2d65666` retains the complete standard local gate
+  recorded by Implement: workspace format, warning-denying all-target/all-
+  feature Clippy, all-feature workspace tests, workspace Rustdoc, all 58
+  requirement checks, and complete diff whitespace validation.
+- The full workspace gate and benchmark were not rerun in this Review task.
+  `actionlint`, nextest, deny, audit, semver, Miri, sanitizers, fuzzing,
+  mutation testing, allocation instrumentation, and API/ABI/schema snapshots
+  remain unavailable or deferred. No unexecuted check is claimed as passed.
+
+PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
+`integrated`. A fresh Repair task must address only ANISO002-REV-001 and
+ANISO002-REV-002, add the required regressions, run focused checks and one
+complete stable-head standard gate after the final code change, update this
+record and the bounded handoff, push, and stop for a fresh independent
+re-review. Do not begin another requirement.
