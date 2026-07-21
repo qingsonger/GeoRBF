@@ -7,10 +7,10 @@
 - Reviewed head: `48c9d516721928f98dd06242a2304b8d4c9f94e3`
 - Repair code/test head: `643535f4ef181764baa6a5b45605711ee2a91f7d`
 - F5-F6 repair code/test head: `147cc4f6a4cec226c752127f94076c0d954e2dfc`
-- Latest re-reviewed head: `8396ec9957f9ea4ab6c6e252adbb218d5c18fbd4`
+- Latest re-reviewed head: `85d22a529b807c7b1f324ab116dd591b34279577`
 - Base head: `7487cfafd0739c1f63028d4b46d7505b4ca6c1b3`
 - Review date: 2026-07-21
-- Latest result: F1-F6 closed; two new P1 findings F7-F8 require repair
+- Latest result: F1-F9 closed; no P0-P3 finding remains
 
 ## Scope and independence
 
@@ -614,3 +614,83 @@ evidence only and does not independently close F9. PR #103 remains Draft and
 REQ-TREND-001 remains `implemented`; a fresh independent mathematical and
 numerical re-review of the complete repaired diff is required next. This
 Repair does not mark the PR ready, merge it, or begin another requirement.
+
+## Fresh independent re-review after F9 repair
+
+- Re-reviewed base: `7487cfafd0739c1f63028d4b46d7505b4ca6c1b3`
+- Re-reviewed F9 repair code/test head:
+  `4753abf248132c8745a99b493b24dc58738b4f02`
+- Re-reviewed final repair handoff head:
+  `85d22a529b807c7b1f324ab116dd591b34279577`
+- Re-review date: 2026-07-21
+- Result: F1-F9 closed; no P0-P3 finding remains
+
+An isolated read-only project `math_reviewer` received only the bounded
+requirement summary and integrated dependency closure, Issue #102 acceptance
+criteria and exclusions, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008
+contracts, the complete exact PR diff, directly relevant tests, example,
+benchmark, registry and validation evidence, and the preceding findings. It
+inherited no Implement or Repair reasoning and made no repository, Git, or
+GitHub change.
+
+### Re-review disposition of F9
+
+F9 is closed. The diagonal Gaussian weight Hessian evaluates the equivalent
+factored expression
+
+```text
+b r^-4 (delta - radius) (delta + radius)
+```
+
+without first forming the cancellation-prone rounded coefficient
+`(delta / radius)^2 - 1`. For the successor of radius three, the vulnerable
+scaled coefficient rounds to zero, while the repaired factors retain
+`delta - radius = 4.440892098500626e-16` and `delta + radius = 6`.
+Independent 140-digit arithmetic gives
+`1.2101577062956176141327308452609e-17` for the public mixture Hessian, which
+rounds to the regression truth `1.2101577062956176e-17`. The required public
+D=1 regression passes with a tight relative tolerance.
+
+### Complete re-review disposition
+
+- The nonzero constant background supplies an SPD diagonal congruence of its
+  strict-PD kernel; every other signed-weight congruence is PSD. CPD rejection
+  is exhaustive for the current definiteness classification.
+- Query gradient and Hessian product rules, signs, dimensions, units,
+  symmetry, fixed-anisotropy rotation behavior, center limits, and capability
+  intersection are sound. Unavailable center Hessians and unconditional third
+  derivatives remain structured errors.
+- Gaussian amplitude and radius representability checks, logarithmically
+  stable derivative products, and demand-bounded evaluation preserve the
+  documented represented-arithmetic policy at the reviewed boundaries.
+- Point evaluation and coverage allocate no heap memory. No jitter, clipping,
+  pseudoinverse, hidden regularization, unsafe code, implicit refit, or
+  geological control compilation was found.
+- Diagnostics, Rust/interface dispositions, benchmark wiring, and the
+  registry's `implemented` state are truthful. Polynomial spaces, rank
+  decisions, hard constraints, and infeasibility are not applicable to this
+  no-solve SPD primitive.
+
+### Final re-review validation
+
+- The reviewer passed all 15 focused local-trend tests, both selected
+  compile-fail Rustdoc contracts, the public example, D=1/D=2/D=3 release
+  benchmark smoke with the established checksums, complete PR diff whitespace
+  validation, and an independent 140-digit F9 oracle on exact head `85d22a5`.
+- The parent task passed the complete exact-head standard gate: workspace
+  format, warning-denying workspace all-target/all-feature Clippy, all
+  workspace tests with all features, workspace Rustdoc, all 58 requirement
+  checks, and complete diff whitespace validation.
+- Draft CI run 29822306204 passed its configured Ubuntu correctness gate on
+  exact head `85d22a5`. The Ready-only Windows, Ubuntu, macOS, and benchmark-
+  smoke matrix has not yet run and is not claimed as passed.
+- `cargo-nextest`, `cargo-deny`, `cargo-audit`, `cargo-semver-checks`, Miri,
+  sanitizers, executable fuzzing, mutation testing, general allocation
+  instrumentation, API/ABI/schema snapshots, and local `actionlint` remain
+  unavailable or deferred and are not claimed as passed.
+
+No P0-P3 finding remains. The evidence-only change recording this conclusion
+does not alter production code, tests, manifests, schemas, CI, build inputs,
+API or numerical behavior. PR #103 may be marked Ready only after this evidence
+is pushed. Integration still requires the complete exact-Ready-head Windows,
+Ubuntu, macOS, and benchmark-smoke CI to pass before one merge.

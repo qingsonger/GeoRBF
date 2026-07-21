@@ -6,52 +6,52 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh Review required
+- Mode: Clean final re-review complete; Ready CI and integration required
 - Requirement: REQ-TREND-001, Issue #102
 - Branch: `codex/req-trend-001-positive-definite-local-trends`
-- Draft pull request: #103
+- Pull request: #103 (Draft until clean re-review evidence is pushed)
 - Latest independently re-reviewed head:
-  `ff2f4812e09a7334418ba13232fa7af8f3d607ed`
+  `85d22a529b807c7b1f324ab116dd591b34279577`
 - F7-F8 repair code/test head: `2b5189d624045c16f2ca7a55b73ee6f24960e999`
 - F9 repair code/test head: `4753abf248132c8745a99b493b24dc58738b4f02`
 - Dependencies: REQ-KERNEL-003, REQ-ANISO-001, and REQ-MODEL-001 are integrated
-- Registry state: `implemented`; F9 re-review and integration remain
+- Registry state: `implemented`; Ready CI and integration remain
 
-## Repair result
+## Independent re-review result
 
-- A fresh isolated `math_reviewer` independently closed F7 and F8. Their
-  public regressions and independent high-precision truths pass on repair head
-  `2b5189d`.
-- F9's required public D=1 regression failed against the pre-repair
-  implementation, then passed on repair head `4753abf` at the independent
-  truth `1.2101577062956176e-17`.
-- The repair replaces cancellation-prone `scaled^2 - 1` with the equivalent
-  `(delta-radius)(delta+radius)/radius^2` coefficient before the existing
-  inverse-radius-square and stable Gaussian product are applied. The successor
-  distance from radius `3` therefore remains representable.
-- This Repair does not independently close F9. PR #103 remains Draft.
+- A fresh isolated read-only `math_reviewer` independently inspected F9 and
+  the complete repaired PR diff on exact head `85d22a5`. It inherited no
+  Implement or Repair reasoning and changed no repository or remote state.
+- F9 is closed. Independent 140-digit arithmetic gives
+  `1.2101577062956176141327308452609e-17`; it rounds to the public D=1
+  regression truth `1.2101577062956176e-17` and the regression passes.
+- F1-F9 are closed and no P0-P3 finding remains. The SPD/CPD proof,
+  product-rule signs and units, represented-arithmetic policies, capability
+  intersection, symmetry, allocation behavior, diagnostics, interface
+  dispositions, and lack of hidden regularization are otherwise sound.
 
-## Repair validation state
+## Validation state
 
-- All 15 focused local-trend tests, georbf Rustdoc, the runnable example, and
-  D=1/D=2/D=3 release benchmark smoke passed. The smoke retained the
-  established deterministic checksums at approximately 211 ns, 458 ns, and
-  1.12 us per Hessian evaluation.
-- Exact repair code/test head `4753abf` passed the complete stable-head
-  standard gate: workspace format, warning-denying workspace all-target/all-
-  feature Clippy, all workspace tests with all features, workspace Rustdoc,
-  all 58 requirement checks, and complete diff whitespace validation.
-- The previously reported Draft CI run is not evidence for the repaired head.
-  Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI have not run on the
-  repaired head and are not claimed as passed.
+- The reviewer passed all 15 focused local-trend tests, selected Rustdoc, the
+  runnable example, D=1/D=2/D=3 release benchmark smoke, the independent F9
+  oracle, and complete diff whitespace validation on exact head `85d22a5`.
+- The parent task passed the complete standard gate on the same exact head:
+  workspace format, warning-denying workspace all-target/all-feature Clippy,
+  all workspace tests with all features, workspace Rustdoc, all 58 requirement
+  checks, and complete diff whitespace validation.
+- Draft CI run 29822306204 passed Ubuntu correctness on exact head `85d22a5`.
+  The evidence-only review/handoff update changes no production, test,
+  manifest, schema, CI, build, API, or numerical input.
+- Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI have not run on the
+  final Ready evidence head and are not claimed as passed.
 
 ## Next task boundary
 
-A fresh Review task must independently re-review F9 and the complete repaired
-PR diff without inheriting this Repair reasoning. If any P0-P3 finding remains,
-record evidence and stop without repairing it. Only if the re-review is clean
-may that task follow the mandatory ready-head CI and integration sequence. Do
-not begin another requirement.
+Commit and push this clean re-review evidence, synchronize PR #103, and mark it
+Ready. Wait for the complete Windows, Ubuntu, macOS, and benchmark-smoke CI on
+that exact Ready head. Merge exactly once only if every required check is
+green, then record truthful integration state in an isolated change. Do not
+begin another requirement.
 
 ## Durable evidence
 
