@@ -41,7 +41,7 @@ available in Git history through commit `a2be099`.
 | REQ-THICK-002 | #96 | #97 | #98 | `docs/reviews/PR-97-INDEPENDENT-REVIEW.md` |
 | REQ-PROJECT-001 | #99 | #100 | #101 | `docs/reviews/PR-100-INDEPENDENT-REVIEW.md` |
 | REQ-TREND-001 | #102 | #103 | #104 | `docs/reviews/PR-103-INDEPENDENT-REVIEW.md` |
-| REQ-ANISO-002 | #105 | #106 | pending | `docs/reviews/PR-106-INDEPENDENT-REVIEW.md` |
+| REQ-ANISO-002 | #105 | #106 | #107 | `docs/reviews/PR-106-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,

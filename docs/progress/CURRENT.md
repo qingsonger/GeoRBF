@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-ANISO-002, Issue #105
 - Implementation pull request: #106, squash-merged as `bb099fe`
 - Integration-state branch: `codex/req-aniso-002-integration-state`
-- Integration-state pull request: pending (Draft until exact Ready CI is green)
+- Integration-state pull request: #107 (Draft until exact Ready CI is green)
 - Independently reviewed implementation head: `0b7f558`
 - Clean re-review evidence / exact Ready head: `03d30a5`
 - Final Repair code/test/normative-document head: `358199b`
@@ -63,7 +63,7 @@ task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #105
 - Merged implementation: GitHub PR #106
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #107
 - Independent findings and Repair evidence:
   `docs/reviews/PR-106-INDEPENDENT-REVIEW.md`
 - Requirement summary and benchmark baseline: `changes/REQ-ANISO-002.md`

@@ -1264,7 +1264,7 @@ pass before one merge.
 - Squash merge: `bb099feff9c0f4a6233ea6d17ec23cce011d5810`
 - Post-merge `main` CI run: 29889557309
 - Integration-state branch: `codex/req-aniso-002-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #107
 
 Ready CI run 29889050240 passed the complete Windows, Ubuntu, and macOS
 workspace gate on exact Ready head `03d30a5`, including every configured
