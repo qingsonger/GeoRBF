@@ -6,14 +6,16 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete / fresh independent re-review required for PR #106
+- Mode: Independent re-review complete / fresh Repair required for PR #106
 - Requirement: REQ-ANISO-002, Issue #105
 - Branch: `codex/req-aniso-002-orientation-tensor`
 - Implementation pull request: #106 (Draft)
 - ANISO002-REV-004 repair and complete-gate head:
   `b591a419095cd4e69043f01773c43b14fd9fc914`
 - Latest independently re-reviewed head:
-  `8e467c86f01bdfcb3eabe7bcc4b9a89147cfa4c1`
+  `cebaefff3bd940fc89c98aca0514c1340bf55c3b`
+- Re-review result: ANISO002-REV-001 through ANISO002-REV-004 are closed;
+  P2 ANISO002-REV-005 and P3 ANISO002-REV-006/007 require Repair
 - Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
 - Registry state in this change: `implemented`
 
@@ -22,9 +24,9 @@ records, benchmark reports, Git, and GitHub.
 - Added sign-invariant normalized weighted orientation tensors for exactly
   D=1, D=2, and D=3, with stable relative-weight normalization and compensated
   symmetric accumulation.
-- Added represented trace normalization, exact-expansion D=2/D=3 principal-
-  minor certification, and a bounded maximum uniform off-diagonal retention
-  policy that preserves PSD without diagonal jitter or eigenvalue clipping.
+- Added represented trace normalization, D=2/D=3 principal-minor review, and a
+  bounded maximum uniform off-diagonal retention policy. ANISO002-REV-005
+  identifies an underflow hole in the current exact-expansion certification.
 - Added a primary bounded symmetric eigendecomposition and an explicit bounded
   PSD-SVD path when eigensolver roundoff is negative for a certified matrix;
   diagnostics record both the spectral path and correlation-retention scale.
@@ -51,6 +53,17 @@ records, benchmark reports, Git, and GitHub.
 - On exact repair head `b591a41`, that regression succeeds and verifies trace
   one, a nonnegative represented determinant, nonnegative spectral values, a
   recorded sub-unit correlation scale, and the explicit PSD-SVD path.
+- Fresh isolated re-review confirms ANISO002-REV-004 closure for `[1,30]`, but
+  finds three new defects in the complete PR: exact-minor products below the
+  minimum subnormal are lost (ANISO002-REV-005, P2); a positive normalized
+  ratio share can underflow after construction validation (ANISO002-REV-006,
+  P3); and leave-one-out tensor/decomposition scratch allocation grows with
+  sample count inside per-sample loops (ANISO002-REV-007, P3).
+- The parent Review task temporarily added the two required public numerical
+  regressions. Both failed: `[1,f64::from_bits(1)]` returned tensor
+  `[[1,5e-324],[5e-324,0]]`, and `[2^537,2^537,1]` ratios were accepted. The
+  temporary tests were removed and the worktree restored before evidence
+  updates.
 - All 15 public orientation-tensor tests pass, including the closed rotation,
   influence, and grouped-mass regressions. Warning-denying georbf all-target/
   all-feature Clippy, the D=4 compile-fail Rustdoc contract, example, optimized
@@ -61,7 +74,7 @@ records, benchmark reports, Git, and GitHub.
   format, warning-denying all-target/all-feature Clippy, all workspace tests
   with all features, workspace Rustdoc, all 58 requirement checks, and
   complete diff whitespace validation.
-- This bounded-handoff and review-evidence update is Markdown only. It changes
+- This bounded-handoff and final re-review evidence update is Markdown only. It changes
   no production, test, manifest, schema, CI, build, API, numerical, registry,
   or dependency input and does not invalidate the exact-head gate.
 - Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run and is
@@ -70,20 +83,15 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-Open a fresh bounded Review/re-review task for only PR #106 and
-REQ-ANISO-002. Supply an isolated read-only project `math_reviewer` only the
-requirement summary and integrated dependency closure, Issue #105 criteria and
-exclusions, M6 plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, complete exact
-PR diff, ANISO002-REV-004 finding and repair evidence, directly relevant
-source/Rustdoc/tests/example/benchmark/CI wiring, scoped registry entry,
-handoff, and validation evidence. It must independently verify
-ANISO002-REV-004 closure and inspect the complete PR for new P0-P3 findings.
-
-If any finding remains, record evidence and stop without repairing production
-code. Only after a clean re-review and a complete stable-head local gate may
-that fresh Review task mark PR #106 ready, wait for exact-ready-head Windows,
-Ubuntu, macOS, and benchmark-smoke CI, merge once when all are green, and then
-record truthful integration state. Do not begin another requirement here.
+Open a fresh bounded Repair task for only PR #106, REQ-ANISO-002, and
+ANISO002-REV-005/006/007. First preserve permanent public regressions for the
+minimum-subnormal D=2 PSD boundary, normalized-share underflow, and sample-
+count-independent allocation behavior. Then implement the smallest complete
+repairs without changing the estimator's mathematical scope, hidden numerical
+adjustments, or interfaces. Run focused checks during repair and one complete
+standard workspace gate after the last code change; update review evidence and
+this bounded handoff, commit, push, and stop for a fresh independent re-review.
+Do not mark PR #106 Ready, integrate the requirement, or begin another task.
 
 ## Durable evidence
 

@@ -444,3 +444,162 @@ ANISO002-REV-004. PR #106 remains Draft and REQ-ANISO-002 remains
 `implemented`. A fresh isolated mathematical and numerical re-review of the
 complete PR diff and this exact repair head is required next. This Repair does
 not mark the PR ready, merge it, or begin another requirement.
+
+## Final independent re-review after ANISO002-REV-004 repair
+
+- Re-reviewed base: `d34458f6c29d1b56f2832ddac9356d28a87a3f8f`
+- Re-reviewed repair code/test/normative-document head:
+  `b591a419095cd4e69043f01773c43b14fd9fc914`
+- Re-reviewed final Repair handoff head:
+  `cebaefff3bd940fc89c98aca0514c1340bf55c3b`
+- Re-review date: 2026-07-22
+- Result: ANISO002-REV-001 through ANISO002-REV-004 are closed; P2
+  ANISO002-REV-005 and P3 ANISO002-REV-006/007 require Repair
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-ANISO-002 summary and integrated dependency closure, Issue #105 criteria
+and exclusions, the M6 plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, the
+complete exact PR and ANISO002-REV-004 Repair diffs, directly relevant source,
+Rustdoc, tests, example, benchmark, CI wiring, registry entry, handoff, and
+validation evidence. It inherited no Implement or Repair reasoning and made
+no repository, Git, or GitHub change.
+
+The reviewer verified the clean worktree, exact local and remote PR head,
+merge base, and Repair head. The tail `b591a41..cebaeff` changes only the
+requirement summary, review record, and bounded handoff Markdown.
+
+### Prior-finding closure
+
+- ANISO002-REV-001 remains closed. Grouped squared projections are invariant
+  under an orthonormal basis change inside an unresolved eigenspace, and the
+  public global-rotation regression passes.
+- ANISO002-REV-002 remains closed. The explicit `64 D^2 epsilon` overshoot
+  band implements the documented represented influence policy, and the
+  extreme-weight regression passes.
+- ANISO002-REV-003 remains closed. Assigning residual observed and expected
+  mass to the final group makes a fully unresolved fold exactly zero-loss; the
+  independent score-ordering regression passes.
+- ANISO002-REV-004 is closed for its recorded `[1,30]` regression. An
+  independent exact-dyadic probe found that the retained correlation scale is
+  `next_down(1)`, its determinant is positive, and the next represented scale
+  one is indefinite. The public regression confirms trace one, nonnegative
+  spectral output, and the explicit PSD-SVD path.
+
+### ANISO002-REV-005 - P2: exact PSD certification loses underflowed products
+
+Affected code and contract:
+
+- `crates/georbf/src/orientation_tensor.rs:940-942`
+- `crates/georbf/src/orientation_tensor.rs:1037-1073`
+- `crates/georbf/src/orientation_tensor.rs:1076-1115`
+- `crates/georbf/src/orientation_tensor.rs:1151-1165`
+- `docs/architecture/ANISOTROPY.md:98-107`
+- The existing determinant assertion at
+  `crates/georbf/tests/orientation_tensor.rs:99-123`
+
+`ExactExpansion::add_product` and `add_triple_product` form each binary64
+product and its FMA residual. Both round to zero when the exact product lies
+below the minimum binary64 subnormal, so these routines cannot certify exact
+minor signs over the complete accepted finite-input domain.
+
+Let `m = 2^-1074`, the smallest positive `f64`, and estimate one D=2 sample
+with direction `[1,m]`, unit weight, and fixed ratios `[1,1]`. Unit
+normalization returns represented components `[1,m]`; tensor formation
+returns
+
+```text
+C = [[1, m],
+     [m, 0]].
+```
+
+Its represented trace is one, but as a real matrix over the represented
+entries `det(C) = -m^2 = -2^-2148 < 0`. Both binary64 products in the 2-by-2
+minor round to zero, so the current certification accepts the indefinite
+matrix and records correlation scale one. The existing regression computes a
+binary64 determinant whose `m*m` term has already rounded away and therefore
+cannot detect this boundary.
+
+The parent Review task added a temporary public regression requiring
+`C[1][1] != 0 || C[0][1] == 0`; it failed with exactly
+`[[1.0, 5e-324], [5e-324, 0.0]]` and was then removed, restoring the clean
+worktree. Repair must add a permanent public regression using
+`f64::from_bits(1)` and preserve the exact dyadic PSD invariant without
+clipping, jitter, a pseudoinverse, hidden regularization, or an input-invalidity
+fallback.
+
+### ANISO002-REV-006 - P3: normalized positive ratio share can underflow
+
+Affected code and contract:
+
+- `crates/georbf/src/orientation_tensor.rs:96-134`
+- `crates/georbf/src/orientation_tensor.rs:1341-1352`
+- `changes/REQ-ANISO-002.md:29-35`
+- `docs/architecture/ANISOTROPY.md:132-136`
+
+The ratio constructor rejects a maximum-scaled square that is already zero,
+but does not check whether subsequent division by the represented square sum
+erases a positive share. For D=3 ratios `[2^537, 2^537, 1]`, the scaled
+squares are `[1,1,2^-1074]`, so construction succeeds. `expected_shares`
+then divides by represented sum two and returns `[0.5,0.5,0]`, although the
+exact third normalized share is positive. This contradicts the documented
+rejection of candidates unable to form represented normalized squared shares
+and silently removes one axis contribution from cross-validation.
+
+The parent Review task added a temporary public regression requiring
+`PrincipalAxisRatios::<3>::try_new([2^537,2^537,1])` to return
+`NonRepresentableRatioSquare`; it failed and was removed. Repair must add that
+regression unless it instead preserves every positive normalized share by a
+documented represented-arithmetic construction.
+
+### ANISO002-REV-007 - P3: leave-one-out loops allocate per sample
+
+Affected code and repository contract:
+
+- `crates/georbf/src/orientation_tensor.rs:870-914`
+- `crates/georbf/src/orientation_tensor.rs:924-931`
+- `crates/georbf/src/orientation_tensor.rs:1211-1241`
+- `crates/georbf/src/orientation_tensor.rs:1354-1399`
+- `crates/georbf/src/orientation_tensor.rs:1471-1487`
+- `AGENTS.md:130-131`
+
+Every `normalized_tensor` call allocates an N-element normalized-weight
+`Vec`. Influence evaluation invokes it once per positive sample; candidate
+cross-validation also invokes it once per held-out positive sample and creates
+a heap-backed `DMatrix` for every fold. Allocation count therefore grows with
+sample count inside the leave-one-out hot loops, beyond the owned result
+vectors, contrary to the repository rule that batch hot paths avoid
+per-element allocation.
+
+Repair must add a serial allocation-count regression comparing fixed-ratio
+estimates at small and larger sample counts, with a count bounded independently
+of sample count apart from a fixed number of owned result allocations. The
+implementation must reuse or avoid scratch allocation without changing the
+public mathematical result.
+
+No P0, P1, or additional P2/P3 finding was identified.
+
+### Final re-review validation and disposition
+
+- The isolated reviewer passed all 15 public orientation-tensor tests,
+  formatting, warning-denying georbf all-target/all-feature Clippy, the D=4
+  compile-fail Rustdoc contract, the runnable example, optimized benchmark
+  smoke, all 58 requirement checks, and complete PR whitespace validation.
+  The benchmark checksum remained `1.00428812046557887e4`.
+- Dependency-free exact-dyadic and IEEE-754 probes verified
+  ANISO002-REV-004 closure and established ANISO002-REV-005/006. Direct source
+  inspection established the per-sample allocation paths in
+  ANISO002-REV-007.
+- The parent Review task passed the complete standard workspace gate on exact
+  pre-evidence head `cebaeff`: format, warning-denying all-target/all-feature
+  Clippy, all-feature workspace tests, workspace Rustdoc, all 58 requirement
+  checks, and complete diff whitespace validation. Its two temporary public
+  numerical regressions both failed as described and were removed before this
+  evidence change.
+- Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run and is
+  not claimed as passed. The recorded unavailable/deferred check list remains
+  unchanged.
+
+PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
+`integrated`. Open a fresh bounded Repair task for ANISO002-REV-005,
+ANISO002-REV-006, and ANISO002-REV-007 only. Do not repair production code,
+mark the PR Ready, merge it, or begin another requirement in this Review task.
