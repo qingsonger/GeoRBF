@@ -1118,3 +1118,45 @@ PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
 `integrated`. Open a fresh bounded Repair task for ANISO002-REV-008 only. Do
 not repair production code, mark the PR Ready, merge it, or begin another
 requirement in this Review task.
+
+## ANISO002-REV-008 positive-cubic-coefficient Repair pending fresh independent re-review
+
+- Repair code, tests, change fragment, and normative-document head:
+  `358199bf07f949b604f76ef771dc645e65944907`
+- Repair date: 2026-07-22
+- Scope: ANISO002-REV-008 only
+
+The reviewed public and direct interval-bound regressions were added before
+production repair and both failed on pre-Repair head `e1b893c`. The public
+single-sample case returned scale bits `4606057618404802559` instead of the
+greatest certified `4607182418800017406`, or `1.0.to_bits() - 2`. The private
+exact-dyadic case confirmed that the interval from `1.0.to_bits() - 2` through
+`1.0.to_bits() - 1` was incorrectly pruned even though its lower endpoint is
+PSD; exact certification rejects the two larger scales and accepts that lower
+endpoint.
+
+The Repair accumulates the positive cubic triple product twice. This restores
+the determinant upper bound's exact `2xyz` coefficient because
+`ExactDyadicSum::add_triple_product` treats its final argument only as a sign.
+The high-scale-first search, monotone order-two bisection, fixed-capacity exact
+dyadic representation, and all public policies remain unchanged. No tolerance,
+clipping, jitter, pseudoinverse, hidden regularization, valid-input rejection,
+dependency, interface, schema, or registry-status change is introduced.
+
+After repair, all 19 public orientation-tensor tests, the actual-allocation
+regression, all three private exact-dyadic tests, the runnable example, and the
+optimized benchmark smoke passed. The benchmark checksum remained
+`1.00428812046557887e4` at approximately 5.22 us per estimate locally. The
+stable production/test tree committed at exact Repair head `358199b` passed
+the complete standard workspace gate after the final production and test
+change: format, warning-denying workspace
+all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
+all 58 requirement checks, and complete diff whitespace. Only this review
+evidence and the bounded handoff change afterward; production, tests,
+manifests, schemas, and build inputs are unchanged.
+
+This section records Repair evidence only and does not independently close
+ANISO002-REV-008. PR #106 remains Draft and REQ-ANISO-002 remains
+`implemented`, not `integrated`. A fresh isolated mathematical/numerical
+re-review of the complete PR and exact Repair head is required next. This
+Repair does not mark the PR Ready, merge it, or begin another requirement.

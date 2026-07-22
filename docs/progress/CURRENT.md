@@ -6,16 +6,17 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete / fresh bounded Repair required for PR #106
+- Mode: Repair complete / fresh isolated re-review required for PR #106
 - Requirement: REQ-ANISO-002, Issue #105
 - Branch: `codex/req-aniso-002-orientation-tensor`
 - Implementation pull request: #106 (Draft)
 - Latest independently reviewed head:
   `7a63864fa0fc26c436b56aecc2a5e00709ad12de`
-- ANISO002-REV-008 maximal-scale Repair code/test head: `682b55f`
+- Latest ANISO002-REV-008 Repair code, tests, change fragment, and normative
+  document head: `358199bf07f949b604f76ef771dc645e65944907`
 - Review state: ANISO002-REV-001 through ANISO002-REV-007 and
-  ANISO002-REV-009 are closed; ANISO002-REV-008 remains open because the latest
-  Repair's determinant interval bound omits half the positive cubic term
+  ANISO002-REV-009 are closed; ANISO002-REV-008 has Repair evidence but remains
+  open pending fresh isolated re-review
 - Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
 - Registry state in this change: `implemented`
 
@@ -61,15 +62,21 @@ records, benchmark reports, Git, and GitHub.
   at `1.0.to_bits() - 1`; an exact dyadic regression covers the final
   accepted--rejected--accepted--rejected determinant sequence and verifies the
   order-two minors at the greatest accepted scale.
+- The positive-cubic public counterexample failed before this Repair by
+  returning scale bits `4606057618404802559`. It now returns and exactly
+  matches the tensor at the greatest certified scale `1.0.to_bits() - 2`; a
+  direct exact-dyadic regression rejects both larger scales and keeps the
+  interval containing the accepted scale searchable.
 - The actual allocator regression measures only warmed `try_estimate` calls.
   Fixed ratios allocate twice for both four and sixteen samples;
   cross-validation allocates five times for both counts. Manual annotation
   counters were removed.
-- All 18 public orientation-tensor tests, the dedicated actual-allocation test,
-  both private exact-dyadic tests, georbf strict Clippy, the example, optimized
-  benchmark smoke, and diff whitespace passed. The smoke checksum remained
-  `1.00428812046557887e4` at approximately 6.11 us per estimate locally.
-- Exact Repair head `682b55f` passed the complete standard workspace gate:
+- All 19 public orientation-tensor tests, the dedicated actual-allocation test,
+  all three private exact-dyadic tests, georbf strict Clippy, the example,
+  optimized benchmark smoke, and diff whitespace passed. The smoke checksum
+  remained `1.00428812046557887e4` at approximately 5.22 us per estimate
+  locally.
+- Exact Repair head `358199b` passed the complete standard workspace gate:
   format, warning-denying all-target/all-feature Clippy, all workspace tests
   with all features, workspace Rustdoc, all 58 requirement checks, and complete
   diff whitespace. Only review evidence and this bounded Markdown handoff are
@@ -78,24 +85,24 @@ records, benchmark reports, Git, and GitHub.
   regression, both private exact-dyadic tests, strict georbf Clippy, the
   example, optimized benchmark smoke, all 58 requirement checks, and complete
   diff whitespace on exact reviewed head `7a63864`.
-- Draft Ubuntu CI run 29887093239 passed on exact reviewed head `7a63864`.
+- Draft Ubuntu CI run 29887805845 passed on pre-Repair review-evidence head
+  `e1b893c`. CI on the final Repair head has not yet run and is not claimed.
 - Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run and is
   not claimed as passed. Local `actionlint` and the unavailable later tools
   listed below remain unexecuted and are not claimed as passed.
 
 ## Next task boundary
 
-Open a fresh bounded Repair task for PR #106 and ANISO002-REV-008 only. First
-add the reviewed direct interval-bound regression and public end-to-end D=3
-regression. The public sample
-`[0.9249979276407545,0.37041918883416014,0.7371647282797207]` must return the
-greatest certified scale `1.0.to_bits() - 2`; both larger scales are exactly
-rejected. Repair the exact positive cubic coefficient without adding a
-tolerance, clipping, jitter, pseudoinverse, hidden regularization, or valid-
-input rejection. Run focused checks and the complete standard gate after the
-last production change, update bounded Repair evidence, push, and stop for a
-fresh isolated re-review. Do not mark Ready, merge, or begin another
-requirement.
+Open a fresh isolated Review task for PR #106. Supply the project
+`math_reviewer` only the bounded REQ-ANISO-002 summary and dependency closure,
+Issue #105 criteria, M6 plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, the
+complete PR and latest Repair diffs, directly relevant source/tests, and the
+recorded validation evidence. Independently verify ANISO002-REV-008 closure,
+the complete `2xyz` determinant interval upper bound, exact rejection of the
+two scales above `1.0.to_bits() - 2`, maximality of the returned scale, and the
+complete PR. If any finding remains, record evidence and stop; do not repair in
+Review. If clean, follow the repository's ready-CI-integration sequence on the
+exact reviewed head. Do not begin another requirement.
 
 ## Durable evidence
 
