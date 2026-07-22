@@ -330,7 +330,10 @@ infer cross-field reprojection.
 Every control has a finite location, a signed finite nonzero strength, a
 positive representable Gaussian influence radius, and an optional compact
 axis-aligned region. A region carries one positive transition width no greater
-than half any axis extent. For `0 < t < 1`, define the C2 smootherstep
+than half any axis extent. Construction validates representability against the
+attained derivative maxima `15 / (8 width)` and
+`10 / (sqrt(3) width^2)`, rather than a loose polynomial-coefficient bound.
+For `0 < t < 1`, define the C2 smootherstep
 
 ```text
 S(t) = 6 t^5 - 15 t^4 + 10 t^3,
@@ -350,7 +353,13 @@ It is exactly zero outside and on the closed region boundary, with zero first
 and second derivatives there. It is analytic away from the finite transition
 joins and C2 across every face, edge, corner, and plateau join. The existing
 mixture evaluator applies the complete value, gradient, and Hessian product
-rules to this compiled weight and the fixed anisotropic kernel.
+rules to this compiled weight and the fixed anisotropic kernel. Regional gate
+factors retain signed logarithmic scale until they are combined with strength
+and the Gaussian exponent, so an underflowed unscaled gate cannot erase a
+representable final weight or derivative. When the complete demanded query
+weight jet is provably zero, the component is skipped before fixed-kernel
+evaluation; compact support therefore remains exact even if an irrelevant
+transformed separation would overflow.
 
 Diagnostics retain the resolved axes, paired lengths, explicit/reference
 provenance, original reference-gradient norms and low-confidence flags,

@@ -777,3 +777,52 @@ fn validation_cpd_rejection_dimensions_and_auto_traits() -> Result<(), Box<dyn E
     assert_send_sync::<CompiledTrendControls<3>>();
     Ok(())
 }
+
+#[test]
+fn compact_control_skips_overflowing_fixed_kernel_when_query_factor_is_zero()
+-> Result<(), Box<dyn Error>> {
+    let region = SmoothRegion::try_new(point([-1.0])?, point([1.0])?, 0.25)?;
+    let control = LocalTrendControl::new(
+        point([0.0])?,
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0])?),
+            axial_length: 0.5,
+            transverse_length: 0.5,
+        },
+        1.0,
+        1.0,
+        Some(region),
+    );
+    let compiled = try_compile_local_trend_controls(
+        background()?,
+        &[control],
+        None,
+        domain(2.0)?,
+        0.25,
+        policy(1.0e-12, 1.0, 1.0)?,
+    )?;
+
+    let evaluation = compiled.mixture().try_evaluate(
+        point([f64::MAX])?,
+        point([0.0])?,
+        KernelDerivativeOrder::Second,
+    )?;
+
+    assert_eq!(evaluation.value().to_bits(), 0.0_f64.to_bits());
+    assert_eq!(
+        evaluation
+            .gradient()
+            .unwrap_or([f64::NAN])
+            .map(f64::to_bits),
+        [0.0_f64.to_bits()]
+    );
+    assert_eq!(
+        evaluation
+            .hessian()
+            .unwrap_or([[f64::NAN]])
+            .map(|row| row.map(f64::to_bits)),
+        [[0.0_f64.to_bits()]]
+    );
+    Ok(())
+}

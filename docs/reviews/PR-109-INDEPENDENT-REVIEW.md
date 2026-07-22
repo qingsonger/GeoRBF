@@ -322,3 +322,40 @@ TREND002-REV-005, and TREND002-REV-006, add the specified regressions, run
 focused checks and one complete stable-head standard gate after the last code
 change, update this record and the bounded handoff, push, and stop for another
 fresh independent re-review. Do not begin another requirement.
+
+## Second Repair evidence pending fresh independent re-review
+
+This Repair addresses only TREND002-REV-004, TREND002-REV-005, and
+TREND002-REV-006 and remains pending a fresh independent re-review:
+
+- TREND002-REV-004: regional smootherstep value and derivative factors now
+  retain signed logarithmic scale through their combination with the control
+  strength and Gaussian exponent. The reviewed D=1 inputs (`t = 1e-110`,
+  strength `1e154`, unit radius, equal query and control center) retain finite
+  nonzero value, first derivative, and second derivative against independently
+  amplitude-first analytic truth.
+- TREND002-REV-005: the mixture skips a component before center-weight and
+  fixed-kernel evaluation when its complete demanded query weight jet is
+  exactly zero. A public compiled-mixture Hessian regression uses the reviewed
+  compact D=1 control, `A = 2`, and query `f64::MAX`; evaluation succeeds with
+  exact zero value, gradient, and Hessian rather than reporting transformed-
+  separation overflow.
+- TREND002-REV-006: region construction now checks the attained smootherstep
+  curvature maximum `10 / sqrt(3) / width^2` instead of the unattained loose
+  `60 / width^2` bound. A D=1 regression accepts `width = 5e-154` and verifies
+  the finite approximately `2.3094e307` second derivative at the analytic
+  maximizer.
+
+Focused validation passes all ten public `trend_controls` tests, all five
+private local-trend regressions, warning-denying georbf all-target/all-feature
+Clippy, the runnable example, and the release-mode focused benchmark smoke
+(approximately 12.0 us for four controls and 49.7 us for sixteen controls on
+this development machine). After the final production and Rustdoc change, the
+complete stable-head standard gate passed: workspace format, warning-denying
+workspace all-target/all-feature Clippy, all-feature workspace tests, workspace
+Rustdoc, all 58 requirement checks, and complete diff whitespace validation.
+
+This Repair evidence does not close its own findings. PR #109 remains Draft
+and REQ-TREND-002 remains `implemented`, not `integrated`, until a fresh
+isolated read-only `math_reviewer` verifies the exact Repair head and checks for
+new P0-P3 findings.

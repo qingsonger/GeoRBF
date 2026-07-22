@@ -47,10 +47,14 @@ unrepresentable failures, CPD rejection, D=1/D=2/D=3, compile-time D=4
 rejection, and `Send + Sync`. Private numerical regressions verify that narrow
 region transitions retain representable physical first and second derivatives
 and that an exactly zero compact gate short-circuits an otherwise overflowing
-Gaussian displacement through Hessian order. A separate public regression
-retains a represented regional derivative whose ungated Gaussian value
-underflows. A runnable example demonstrates regional compilation and Hessian
-evaluation.
+Gaussian displacement through Hessian order. Further regressions retain an
+amplitude-scaled regional value, gradient, and Hessian after the corresponding
+unscaled gate underflows; accept a transition whose attained maximum C2
+curvature remains finite; and skip an irrelevant overflowing fixed anisotropic
+kernel when the demanded compact query jet is exactly zero. A separate public
+regression retains a represented regional derivative whose ungated Gaussian
+value underflows. A runnable example demonstrates regional compilation and
+Hessian evaluation.
 
 Rust is implemented. CLI and versioned schemas are N/A until M8 defines the
 persisted control representation and complete data CLI. C, C++, and Python are
