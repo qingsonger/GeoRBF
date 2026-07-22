@@ -6,10 +6,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / REQ-TREND-002 complete
+- Mode: Review / REQ-TREND-002 findings recorded
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
+- Reviewed head: `9781e8f`
 - Implementation code/test/documentation head: `1291c6d`
 - Stable PR-linked evidence head: `22760ef`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are integrated
@@ -37,6 +38,13 @@ records, benchmark reports, Git, and GitHub.
 
 ## Validation state
 
+- Independent read-only mathematical/numerical Review found one P1 and two P2
+  blockers; the durable evidence is
+  `docs/reviews/PR-109-INDEPENDENT-REVIEW.md`.
+- The parent Review task and independent reviewer each passed all six focused
+  `trend_controls` tests; the parent also ran the example successfully.
+- Draft CI passed its Ubuntu correctness gate on exact reviewed head `9781e8f`.
+  The Ready-only three-platform and benchmark-smoke matrix was not applicable.
 - Focused `trend_controls` integration tests pass.
 - The runnable `trend_controls` example passes.
 - The release-mode focused benchmark smoke passes at approximately 10.7 us for
@@ -52,16 +60,19 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-Independent mathematical/numerical Review of Draft PR #109 must start in a
-fresh task. The reviewer must receive only the requirement summary/dependency
-closure, Issue #108 criteria, ANISOTROPY and ADR-0005/ADR-0008 contracts, PR
-diff, and validation/benchmark evidence. Do not repair, mark ready, merge,
-integrate, or start another requirement in this Implement task.
+A fresh Repair task must address only TREND002-REV-001, TREND002-REV-002, and
+TREND002-REV-003 from `docs/reviews/PR-109-INDEPENDENT-REVIEW.md`. Reproduce the
+numerical and compact-support defects, add every required independent
+regression, implement the smallest repairs, run focused checks and one complete
+stable-head standard gate after the final code change, update review evidence
+and this bounded handoff, push, and stop for a fresh independent re-review. Do
+not mark ready, merge, integrate, or begin another requirement in that Repair.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #108
 - Draft implementation: GitHub PR #109
+- Independent review: `docs/reviews/PR-109-INDEPENDENT-REVIEW.md`
 - Requirement summary and benchmark baseline: `changes/REQ-TREND-002.md`
 - Public implementation and Rustdoc: `crates/georbf/src/trend_controls.rs`,
   `crates/georbf/src/local_trend.rs`
