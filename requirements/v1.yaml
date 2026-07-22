@@ -625,7 +625,7 @@ requirements:
     milestone: M6-v0.6.0
     priority: P1
     issue: 108
-    pull_request: null
+    pull_request: 109
     tests: [control-coverage, smooth-transition, region-boundary, reference-gradient]
     docs: [docs/architecture/ANISOTROPY.md, rustdoc]
     rust_api: implemented
@@ -634,7 +634,7 @@ requirements:
     cpp_api: "N/A: bindings follow Rust API and schema freeze in M9"
     python_api: "N/A: bindings follow Rust API and schema freeze in M9"
     benchmark: implemented
-    status: planned
+    status: implemented
 
   - id: REQ-ANISO-003
     title: Exportable anisotropy diagnostics

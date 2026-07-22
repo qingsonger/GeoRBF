@@ -9,10 +9,10 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement / REQ-TREND-002 complete
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
-- Draft pull request: pending creation after the stable-head gate
+- Draft pull request: #109
+- Implementation code/test/documentation head: `1291c6d`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are integrated
-- Registry state before Draft PR creation: `planned`; implementation evidence
-  is populated and will become `implemented` when the PR number is recorded
+- Registry state in this change: `implemented`
 
 ## Implemented scope
 
@@ -41,19 +41,20 @@ records, benchmark reports, Git, and GitHub.
 - The release-mode focused benchmark smoke passes at approximately 10.7 us for
   four controls and 38.7 us for sixteen controls on this development machine.
 - Warning-denying `georbf` all-target/all-feature Clippy passes.
-- The complete stable-head standard gate is pending after documentation is
-  finalized. No pending check is claimed as passed.
+- The complete standard gate is pending on the stable PR-linked evidence head.
+  No pending check is claimed as passed.
 
 ## Next task boundary
 
-Finish documentation, run the complete standard gate once on the stable head,
-commit and push, create or update the Draft PR, record its number here and in
-the registry, then stop. Independent mathematical/numerical Review must start
-in a fresh task; do not repair or integrate in this Implement task.
+Run the complete standard gate once on the stable PR-linked evidence head,
+record the exact successful head, push, and stop. Independent mathematical/
+numerical Review of Draft PR #109 must start in a fresh task; do not repair or
+integrate in this Implement task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #108
+- Draft implementation: GitHub PR #109
 - Requirement summary and benchmark baseline: `changes/REQ-TREND-002.md`
 - Public implementation and Rustdoc: `crates/georbf/src/trend_controls.rs`,
   `crates/georbf/src/local_trend.rs`
