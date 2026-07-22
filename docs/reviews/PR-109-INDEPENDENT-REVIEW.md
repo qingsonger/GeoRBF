@@ -152,4 +152,34 @@ independent re-review. Do not begin another requirement.
 
 ## Repair evidence pending fresh independent re-review
 
-No repair evidence exists in this Review task.
+Repair code/test/evidence head `5f357891de88f9d3f64ed671e2769d8f6ce84c66`
+addresses only the three findings above and remains pending a fresh independent
+re-review:
+
+- TREND002-REV-001: physical smootherstep derivatives are now formed with the
+  width scale already present and the second derivative uses the factored
+  `60 t (t - 1) (2 t - 1) / width^2` expression. Private D=1 regressions retain
+  finite nonzero first and second derivatives at both reviewed extreme points.
+- TREND002-REV-002: an exactly zero regional jet returns before Gaussian
+  displacement formation. A private Hessian-order regression uses region
+  `[-1, 1]`, center `-f64::MAX`, and query `f64::MAX` and requires an exact
+  zero jet without error.
+- TREND002-REV-003: public independent evidence now compares rotated
+  spheroidal and ellipsoidal metrics with hand-formed `B`, rejects a 100:1
+  length ratio under maximum condition 10, checks a mixed regional Hessian by
+  four-point finite differences, and tables structured unknown-field,
+  unavailable-at-center, zero-gradient, and unrepresentable-norm failures.
+
+Focused validation passed all nine public `trend_controls` tests, all three
+private repair regressions, the runnable example, and the release-mode focused
+benchmark smoke (approximately 11.4 us for four controls and 43.0 us for
+sixteen controls on this development machine). Exact repair head `5f35789`
+passed workspace format, warning-denying workspace all-target/all-feature
+Clippy, all-feature workspace tests, workspace Rustdoc, all 58 requirement
+checks, and complete diff whitespace validation. The first full-gate attempt
+stopped at Clippy on test-only lint violations; those tests were corrected and
+the complete gate was rerun from the beginning to green.
+
+This evidence does not close the independent findings by itself. PR #109
+remains Draft and REQ-TREND-002 remains `implemented`, not `integrated`, until
+a fresh read-only re-review confirms the repairs and checks for new findings.

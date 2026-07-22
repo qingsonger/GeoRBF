@@ -6,73 +6,67 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / REQ-TREND-002 findings recorded
+- Mode: Repair / REQ-TREND-002 findings addressed, pending fresh re-review
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
-- Reviewed head: `9781e8f`
-- Implementation code/test/documentation head: `1291c6d`
-- Stable PR-linked evidence head: `22760ef`
+- Original reviewed head: `9781e8f`
+- Repair code/test/evidence head: `5f35789`
+- Stable full-gate head: `5f35789`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are integrated
 - Registry state in this change: `implemented`
 
-## Implemented scope
+## Repair scope
 
-- Ordered explicit and reference-gradient controls compile into the existing
-  strict-background `LocalTrendMixture<D>` for exactly D=1, D=2, and D=3.
-- Spheroidal and ellipsoidal inputs use fixed `GlobalAnisotropy` metrics under
-  caller condition policy. No axis repair, length inference, or arbitrary
-  location-dependent metric is introduced.
-- Optional axis-aligned regions multiply Gaussian influence by a compact
-  quintic C2 gate that is exactly zero with zero gradient and Hessian at every
-  boundary.
-- Immutable fitted project gradients are sampled once in their original-
-  coordinate convention, normalized only above explicit policy, and retain
-  field identifier, original norm, confidence, evaluation failures, and no
-  fallback direction.
-- Diagnostics retain resolved axes/lengths, provenance, strengths, radii,
-  regions, condition numbers, sign-invariant direction jumps, low-confidence
-  counts, and the primitive background/coverage evidence.
-- Rust is implemented. CLI/schema work is N/A until M8; C/C++/Python are N/A
-  until M9. Field refit and persistence are outside this compiler requirement.
+- TREND002-REV-001: regional smootherstep derivatives are evaluated directly
+  in physical units with scale-safe first-derivative ordering and a factored
+  second derivative, preserving both reviewed extreme representable values.
+- TREND002-REV-002: an exactly zero compact regional jet short-circuits before
+  Gaussian displacement formation through Hessian demand.
+- TREND002-REV-003: independent tests now cover hand-formed rotated
+  spheroidal/ellipsoidal metrics, explicit excessive-condition rejection, a
+  mixed regional Hessian finite difference, and unknown, unavailable, zero,
+  and unrepresentable reference-gradient failures.
+- No dependency, public API, schema, adapter, solver, persistence, or registry
+  status change was introduced.
 
 ## Validation state
 
-- Independent read-only mathematical/numerical Review found one P1 and two P2
-  blockers; the durable evidence is
-  `docs/reviews/PR-109-INDEPENDENT-REVIEW.md`.
-- The parent Review task and independent reviewer each passed all six focused
-  `trend_controls` tests; the parent also ran the example successfully.
-- Draft CI passed its Ubuntu correctness gate on exact reviewed head `9781e8f`.
-  The Ready-only three-platform and benchmark-smoke matrix was not applicable.
-- Focused `trend_controls` integration tests pass.
+- All nine public `trend_controls` integration tests pass.
+- All three private extreme regional-jet regressions pass.
 - The runnable `trend_controls` example passes.
-- The release-mode focused benchmark smoke passes at approximately 10.7 us for
-  four controls and 38.7 us for sixteen controls on this development machine.
-- Warning-denying `georbf` all-target/all-feature Clippy passes.
-- Exact stable head `22760ef` passed the complete standard gate: workspace
-  format, warning-denying workspace all-target/all-feature Clippy, all workspace
-  tests with all features, workspace Rustdoc, all 58 requirement checks, and
-  complete diff whitespace validation.
-- This final handoff-only update changes no production code, test, manifest,
-  schema, CI, build input, API, numerical behavior, dependency, or benchmark,
-  so the immutable `22760ef` full gate is the applicable final evidence.
+- The release-mode focused benchmark smoke passes at approximately 11.4 us for
+  four controls and 43.0 us for sixteen controls on this development machine.
+- Exact repair head `5f35789` passed the complete standard gate: workspace
+  format, warning-denying workspace all-target/all-feature Clippy, all-feature
+  workspace tests, workspace Rustdoc, all 58 requirement checks, and complete
+  diff whitespace validation.
+- An earlier full-gate attempt stopped at Clippy on test-only lint violations;
+  after correcting them, the complete gate was rerun from the beginning and
+  passed.
+- The subsequent review-record and handoff commit changes documentation only;
+  it changes no production code, test, manifest, schema, CI, build input, API,
+  numerical behavior, dependency, or benchmark, so `5f35789` remains the
+  applicable immutable full-gate evidence.
 
 ## Next task boundary
 
-A fresh Repair task must address only TREND002-REV-001, TREND002-REV-002, and
-TREND002-REV-003 from `docs/reviews/PR-109-INDEPENDENT-REVIEW.md`. Reproduce the
-numerical and compact-support defects, add every required independent
-regression, implement the smallest repairs, run focused checks and one complete
-stable-head standard gate after the final code change, update review evidence
-and this bounded handoff, push, and stop for a fresh independent re-review. Do
-not mark ready, merge, integrate, or begin another requirement in that Repair.
+A fresh Review/re-review task must inspect only PR #109 and REQ-TREND-002. It
+must use an independent read-only `math_reviewer` to confirm closure of
+TREND002-REV-001, TREND002-REV-002, and TREND002-REV-003 and check for new
+P0-P3 findings. If findings remain, record them and stop without repairing. If
+the review is clean and the exact final head retains a complete green local
+gate, synchronize PR evidence, mark the PR ready, wait for the complete
+Windows/Ubuntu/macOS and benchmark-smoke CI on that exact ready head, merge
+only if all of it is green, and record truthful integration state. Do not begin
+another requirement in that task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #108
 - Draft implementation: GitHub PR #109
-- Independent review: `docs/reviews/PR-109-INDEPENDENT-REVIEW.md`
+- Independent review and repair evidence:
+  `docs/reviews/PR-109-INDEPENDENT-REVIEW.md`
 - Requirement summary and benchmark baseline: `changes/REQ-TREND-002.md`
 - Public implementation and Rustdoc: `crates/georbf/src/trend_controls.rs`,
   `crates/georbf/src/local_trend.rs`
