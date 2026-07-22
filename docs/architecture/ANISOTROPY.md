@@ -100,12 +100,15 @@ the represented binary64 signs, significands, and exponents, then certify every
 D=2/D=3 principal minor. Their exponent range includes products and triple
 products below the minimum binary64 subnormal, so no accepted finite component
 is erased before the exact sign decision. If independently rounded
-off-diagonal entries alone cross the PSD boundary, 64 deterministic bisection
-steps retain the greatest certified uniform factor on all off-diagonal entries
-while leaving every diagonal unchanged. This is a represented-arithmetic
-closure of the outer-product invariant, not eigenvalue clipping, diagonal
-jitter, or hidden regularization. Diagnostics record the applied uniform
-factor, with one meaning no correlation adjustment was required.
+off-diagonal entries alone cross the PSD boundary, deterministic bisection over
+the ordered positive binary64 scale bit patterns retains the greatest certified
+uniform factor on all off-diagonal entries while leaving every diagonal
+unchanged. The finite search covers the complete represented interval from
+zero through one, including scales below the normal range. This is a
+represented-arithmetic closure of the outer-product invariant, not eigenvalue
+clipping, diagonal jitter, or hidden regularization. Diagnostics record the
+applied uniform factor, with one meaning no correlation adjustment was
+required.
 Because `(-n_i)(-n_i)^T = n_i n_i^T`, polarity is immaterial. The normalized
 tensor is trace one and positive semidefinite and estimates axes, not absolute
 correlation lengths.
@@ -178,7 +181,10 @@ passes and no sample-sized scratch vector. D=1/D=2/D=3 decompositions use
 fixed-size nalgebra matrices, and leave-one-out folds use only stack-owned
 fixed-size tensor and spectral state. Heap allocations are limited to a fixed
 number of owned result and candidate-work vectors, independent of sample
-count; no allocation occurs per held-out sample.
+count; no allocation occurs per held-out sample. A dedicated serial integration
+test warms each policy, measures actual allocator calls around only
+`try_estimate`, and requires identical counts for four and sixteen samples under
+both fixed and cross-validated ratio policies.
 
 Per-sample outlier influence is the rotation-invariant normalized Frobenius
 change `||C-C_-i||_F/sqrt(2)`. A zero-weight sample has zero influence; removing

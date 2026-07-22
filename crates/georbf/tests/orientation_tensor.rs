@@ -127,6 +127,25 @@ fn minimum_subnormal_d2_direction_preserves_exact_dyadic_psd() -> TestResult {
 }
 
 #[test]
+fn extreme_d2_direction_reaches_the_greatest_represented_psd_scale() -> TestResult {
+    let estimator =
+        OrientationTensorEstimator::try_fixed(PrincipalAxisRatios::try_new([1.0, 1.0])?, 0.0)?;
+    let estimate = estimator.try_estimate(&[sample([1.0, 2.0_f64.powi(-538)], 1.0)?])?;
+
+    let tensor = estimate.tensor();
+    assert_eq!(tensor[0][0] + tensor[1][1], 1.0);
+    assert_eq!(tensor[1][1], 0.0);
+    assert_eq!(tensor[0][1], 0.0);
+    assert_eq!(tensor[1][0], 0.0);
+    assert!(estimate.eigenvalues().iter().all(|value| *value >= 0.0));
+    assert_eq!(
+        estimate.diagnostics().tensor_correlation_scale(),
+        2.0_f64.powi(-537)
+    );
+    Ok(())
+}
+
+#[test]
 fn d3_axes_and_tensor_are_rotation_covariant_away_from_degeneracy() -> TestResult {
     let angle = 0.47_f64;
     let (sine, cosine) = angle.sin_cos();

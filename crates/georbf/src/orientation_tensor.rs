@@ -21,9 +21,6 @@ use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt;
 
-#[cfg(test)]
-use std::cell::Cell;
-
 use nalgebra::{
     Matrix2, Matrix3,
     linalg::{SVD, SymmetricEigen},
@@ -34,16 +31,6 @@ use crate::geometry::UnitDirection;
 
 const EIGENSPACE_RESOLUTION_FACTOR: f64 = 64.0;
 const INFLUENCE_ROUNDOFF_FACTOR: f64 = 64.0;
-
-#[cfg(test)]
-std::thread_local! {
-    static EXPLICIT_ALLOCATION_ATTEMPTS: Cell<usize> = const { Cell::new(0) };
-}
-
-#[cfg(test)]
-fn record_allocation_attempt() {
-    EXPLICIT_ALLOCATION_ATTEMPTS.with(|count| count.set(count.get() + 1));
-}
 
 /// One validated axial direction and its nonnegative estimation weight.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -569,8 +556,6 @@ where
             })
             .map_or((None, 0.0), |(index, value)| (Some(index), value));
 
-        #[cfg(test)]
-        record_allocation_attempt();
         let mut normalized_eigenvalue_gaps = Vec::with_capacity(D.saturating_sub(1));
         for axis in 0..D.saturating_sub(1) {
             normalized_eigenvalue_gaps.push(
@@ -1080,32 +1065,47 @@ where
     }
 
     let original = *tensor;
-    let mut accepted_scale = 0.0;
-    let mut rejected_scale = 1.0;
-    for _ in 0..64 {
-        let scale = accepted_scale + (rejected_scale - accepted_scale) / 2.0;
-        let mut candidate = original;
-        for row in 0..D {
-            for column in row + 1..D {
-                let value = original[row][column] * scale;
-                candidate[row][column] = value;
-                candidate[column][row] = value;
-            }
-        }
+    let mut accepted_bits = 0_u64;
+    let mut rejected_bits = 1.0_f64.to_bits();
+    while accepted_bits + 1 < rejected_bits {
+        let scale_bits = accepted_bits + (rejected_bits - accepted_bits) / 2;
+        let scale = f64::from_bits(scale_bits);
+        let candidate = tensor_with_correlation_scale(original, scale);
         if represented_tensor_is_positive_semidefinite(&candidate)? {
-            accepted_scale = scale;
-            *tensor = candidate;
+            accepted_bits = scale_bits;
         } else {
-            rejected_scale = scale;
+            rejected_bits = scale_bits;
         }
     }
-    if represented_tensor_is_positive_semidefinite(tensor)? {
+
+    let accepted_scale = f64::from_bits(accepted_bits);
+    let candidate = tensor_with_correlation_scale(original, accepted_scale);
+    if represented_tensor_is_positive_semidefinite(&candidate)? {
+        *tensor = candidate;
         Ok(accepted_scale)
     } else {
         Err(OrientationTensorError::NonFiniteNumericalResult {
             operation: "positive-semidefinite tensor representation",
         })
     }
+}
+
+fn tensor_with_correlation_scale<const D: usize>(
+    original: [[f64; D]; D],
+    scale: f64,
+) -> [[f64; D]; D]
+where
+    Dim<D>: SupportedDimension,
+{
+    let mut candidate = original;
+    for row in 0..D {
+        for column in row + 1..D {
+            let value = original[row][column] * scale;
+            candidate[row][column] = value;
+            candidate[column][row] = value;
+        }
+    }
+    candidate
 }
 
 fn represented_tensor_is_positive_semidefinite<const D: usize>(
@@ -1517,11 +1517,7 @@ fn cross_validation_scores<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
-    #[cfg(test)]
-    record_allocation_attempt();
     let expected: Vec<[f64; D]> = candidates.iter().copied().map(expected_shares).collect();
-    #[cfg(test)]
-    record_allocation_attempt();
     let mut totals = vec![0.0; candidates.len()];
     for (held_out, sample) in samples.iter().enumerate() {
         if sample.weight == 0.0 {
@@ -1553,8 +1549,6 @@ where
             }
         }
     }
-    #[cfg(test)]
-    record_allocation_attempt();
     Ok(candidates
         .iter()
         .copied()
@@ -1640,8 +1634,6 @@ fn leave_one_out_influences<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
-    #[cfg(test)]
-    record_allocation_attempt();
     let mut influences = Vec::with_capacity(samples.len());
     for (sample_index, sample) in samples.iter().enumerate() {
         let computed_change = if sample.weight == 0.0 {
@@ -1692,44 +1684,6 @@ mod tests {
     use super::*;
 
     type TestResult = Result<(), Box<dyn Error>>;
-
-    fn scratch_allocation_count(
-        sample_count: usize,
-        cross_validated: bool,
-    ) -> Result<usize, Box<dyn Error>> {
-        let ratios = PrincipalAxisRatios::try_new([3.0, 2.0, 1.0])?;
-        let estimator = if cross_validated {
-            OrientationTensorEstimator::try_cross_validated(
-                vec![ratios, PrincipalAxisRatios::try_new([4.0, 2.0, 1.0])?],
-                4.0,
-                0.0,
-            )?
-        } else {
-            OrientationTensorEstimator::try_fixed(ratios, 0.0)?
-        };
-        let directions = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
-        let samples = (0..sample_count)
-            .map(|index| {
-                Ok(OrientationTensorSample::try_new(
-                    UnitDirection::try_new(directions[index % directions.len()])?,
-                    1.0,
-                )?)
-            })
-            .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
-
-        EXPLICIT_ALLOCATION_ATTEMPTS.with(|count| count.set(0));
-        let _estimate = estimator.try_estimate(&samples)?;
-        Ok(EXPLICIT_ALLOCATION_ATTEMPTS.with(Cell::get))
-    }
-
-    #[test]
-    fn leave_one_out_scratch_allocation_count_is_independent_of_sample_count() -> TestResult {
-        assert_eq!(scratch_allocation_count(4, false)?, 2);
-        assert_eq!(scratch_allocation_count(16, false)?, 2);
-        assert_eq!(scratch_allocation_count(4, true)?, 5);
-        assert_eq!(scratch_allocation_count(16, true)?, 5);
-        Ok(())
-    }
 
     #[test]
     fn exact_dyadic_sum_retains_underflowed_products_and_triples() -> TestResult {

@@ -104,9 +104,38 @@ instead of accepting determinant `-2^-2148`. Ratio validation rejects
 the positive final normalized share. Finally, weight normalization uses
 allocation-free two-pass scalar state, fixed D=1/D=2/D=3 nalgebra matrices
 replace heap-backed fold matrices, and fixed arrays replace spectral sorting
-and axis-collection vectors. A serial allocation audit verifies identical
-fixed-ratio and cross-validated allocation counts for four and sixteen samples;
-only a fixed number of owned result/candidate-work vectors remain.
+and axis-collection vectors. Only a fixed number of owned
+result/candidate-work vectors remain.
+
+The ANISO002-REV-008/009 Repair replaces fixed-count real-number correlation
+bisection with a finite search over the ordered positive binary64 scale bit
+patterns from zero through one. The public D=2 `[1,2^-538]` regression now
+reaches the greatest certified represented scale `2^-537`, rounds both
+off-diagonal entries to zero, retains trace one, and returns a nonnegative
+spectrum. It also removes every manual allocation annotation. A dedicated
+single-test integration binary constructs and warms the inputs outside the
+measured region, then observes actual allocator calls around only
+`try_estimate`: fixed-ratio estimation performs two allocations for both four
+and sixteen samples, while cross-validated estimation performs five for both.
+This supplies the remaining independent regression evidence for
+ANISO002-REV-007 without changing the production allocation path.
+
+Actual allocation observation adds the exactly pinned test-only
+`allocation-counter` 0.8.1 crate. It has no transitive dependencies, is dual
+MIT/Apache-2.0 licensed, is 29.58 kB of packaged source, uses Rust 2021, and
+builds on the pinned Rust 1.96.1 toolchain; it declares no lower MSRV. The
+repository is unarchived but low-maintenance (last pushed 2023-09-21, one open
+issue, no open pull request when reviewed) and the stable API is narrowly
+scoped to synchronous thread-local measurement. The unsafe audit found one
+private `GlobalAlloc` implementation that counts through thread-local fixed
+state and delegates allocation and deallocation directly to
+`std::alloc::System`; no unsafe code enters GeoRBF. Focused tests pass on
+Windows; Draft CI will exercise Ubuntu, while the later ready gate will cover
+macOS. The crate does not enter production artifacts or change their size.
+Handwritten allocator instrumentation was rejected because it would violate
+GeoRBF's unsafe policy; OS heap telemetry is not portable, and the removed
+manual annotations could not observe unmarked allocations. This non-numerical
+test helper needs no ADR.
 
 The initial optimized Windows smoke measured approximately 7.39 us per
 four-sample, three-candidate D=3 estimate over 2,000 estimates, with checksum
