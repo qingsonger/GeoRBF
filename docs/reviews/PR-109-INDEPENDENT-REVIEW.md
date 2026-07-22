@@ -183,3 +183,142 @@ the complete gate was rerun from the beginning to green.
 This evidence does not close the independent findings by itself. PR #109
 remains Draft and REQ-TREND-002 remains `implemented`, not `integrated`, until
 a fresh read-only re-review confirms the repairs and checks for new findings.
+
+## Fresh independent re-review after Repair
+
+- Exact reviewed head: `e8596df9172fad00c8049f8a8b92a30fe47da0b5`
+- Repair code/test/evidence head:
+  `5f357891de88f9d3f64ed671e2769d8f6ce84c66`
+- Base head: `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
+- Re-review date: 2026-07-22
+- Result: TREND002-REV-001 through TREND002-REV-003 are closed; P1
+  TREND002-REV-004 and P2 TREND002-REV-005/006 require Repair
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-TREND-002 summary and integrated dependency closure, Issue #108 acceptance
+criteria and exclusions, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008
+contracts, the complete PR and Repair diffs, directly relevant source, tests,
+example and benchmark, and the recorded validation evidence. It inherited no
+Implement or Repair reasoning transcript and made no repository, Git, or
+GitHub change.
+
+### Closure of TREND002-REV-001 through TREND002-REV-003
+
+- TREND002-REV-001 is closed. `scaled_smootherstep_jet` evaluates the physical
+  first derivative as `30 (t / width) t (t - 1)^2` and the physical second
+  derivative as `60 t (t - 1) (2 t - 1) / width^2`, with the correct units and
+  signs. The two reviewed extreme-value regressions retain finite nonzero
+  derivatives.
+- TREND002-REV-002 is closed as scoped. An all-zero regional jet returns before
+  Gaussian displacement formation, and the reviewed `f64::MAX/-f64::MAX`
+  Hessian regression passes without error.
+- TREND002-REV-003 is closed. Public evidence now includes hand-formed rotated
+  spheroidal and ellipsoidal metrics, a mixed regional Hessian finite
+  difference, explicit condition-policy rejection, and the complete required
+  reference-gradient error table.
+
+### TREND002-REV-004 - P1: gate underflow erases representable weight terms
+
+Affected code:
+
+- `crates/georbf/src/local_trend.rs:1455`
+- `crates/georbf/src/local_trend.rs:1518-1538`
+- `crates/georbf/src/local_trend.rs:1883-1891`
+
+For D=1, region `[0, 2]`, width one, control location, query and kernel center
+`t = 1e-110`, strength `1e154`, and radius one, every constructor invariant is
+satisfied, including the represented strength square `1e308`. The gate first
+forms
+
+```text
+S(t) = t^3 (6 t^2 - 15 t + 10),
+```
+
+which underflows to zero before the strength is applied. Independently ordered
+physical products remain finite and nonzero:
+
+```text
+strength S(t)   ~= 1e-175,
+strength S'(t)  ~= 3e-65,
+strength S''(t) ~= 6e45.
+```
+
+At equal query and center, the local Hessian term `b(y) b''(x)` is about
+`6e-130` and is also representable. Value-only center evaluation nevertheless
+short-circuits the underflowed gate to zero, erasing that Hessian contribution.
+This violates the represented value and complete product-rule contract.
+
+A Repair must first add a private D=1 `regional_gaussian_weight_jet` regression
+with those exact inputs and second-derivative demand. Amplitude-first analytic
+truth must require finite nonzero value, first derivative, and second
+derivative before the smallest scale-safe evaluation change is implemented.
+
+### TREND002-REV-005 - P2: compact support still evaluates the fixed kernel
+
+Affected code:
+
+- `crates/georbf/src/local_trend.rs:916-932`
+
+Use a D=1 regional control with region `[-1, 1]`, transition width `0.25`,
+location zero, unit strength and radius, and spheroidal lengths `0.5`, so the
+fixed transform is `A = 2`. Evaluate at query `f64::MAX` and kernel center zero
+through Hessian order. The query regional jet is identically zero, hence the
+local component and all its query derivatives are mathematically zero. The
+mixture evaluator nevertheless evaluates the component kernel; forming the
+transformed separation overflows and returns a kernel/anisotropy error. The
+unit-isotropic Gaussian background remains evaluable and is exactly zero at
+that separation.
+
+A Repair must add a public compiled-mixture regression for this configuration
+and require `Ok` with exact zero value, gradient, and Hessian contribution from
+the compact local component before skipping a provably zero query factor ahead
+of fixed-kernel evaluation.
+
+### TREND002-REV-006 - P2: a loose derivative bound rejects valid C2 widths
+
+Affected code:
+
+- `crates/georbf/src/local_trend.rs:113-119`
+
+For region `[0, 1]` and width `w = 5e-154`, `1 / w^2 = 4e306` is finite. The
+exact smootherstep maxima are
+
+```text
+max |S''(t)| / w^2 = (10 / sqrt(3)) / w^2 ~= 2.3094e307,
+max S'(t) / w      = (15 / 8) / w        ~= 3.75e153,
+```
+
+so both demanded derivatives are representable. Construction nevertheless
+rejects the width because its unattained loose bound `60 / w^2` overflows.
+
+A Repair must add a D=1 construction regression requiring
+`SmoothRegion::try_new([0], [1], 5e-154)` to succeed and verify that the second
+derivative at `t = (3 - sqrt(3)) / 6` is finite and approximately `2.3094e307`
+before replacing the nonphysical validation bound.
+
+### Re-review validation and disposition
+
+- All nine public `trend_controls` tests and all three private Repair
+  regressions pass. Those regressions close TREND002-REV-001 through
+  TREND002-REV-003 but do not cover the new findings.
+- Exact Repair head `5f35789` retains the recorded complete local standard
+  gate. The tail to reviewed head `e8596df` changes only the review record and
+  bounded handoff, so no production, test, manifest, schema, CI, or build input
+  changed.
+- Draft Ubuntu CI run 29895932230 passed its configured correctness gate on
+  exact reviewed head `e8596df`. The Ready-only Windows, Ubuntu, macOS, and
+  benchmark-smoke matrix was skipped as designed and is not claimed as passed.
+- The fixed-SPD diagonal-congruence construction and strict constant background
+  otherwise preserve SPD. CPD rejection, rotation truth, reference-gradient
+  behavior, Hessian capability checks, deterministic ordering, interfaces, and
+  the absence of hidden regularization otherwise satisfy the reviewed scope.
+- Polynomial rank, hard constraints, infeasibility, and solver behavior are
+  not applicable to this compiler requirement. The recorded unavailable and
+  deferred checks remain unexecuted and are not claimed as passed.
+
+PR #109 remains Draft and REQ-TREND-002 remains `implemented`, not
+`integrated`. A fresh Repair task must address only TREND002-REV-004,
+TREND002-REV-005, and TREND002-REV-006, add the specified regressions, run
+focused checks and one complete stable-head standard gate after the last code
+change, update this record and the bounded handoff, push, and stop for another
+fresh independent re-review. Do not begin another requirement.

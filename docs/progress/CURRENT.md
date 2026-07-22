@@ -6,34 +6,39 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / REQ-TREND-002 findings addressed, pending fresh re-review
+- Mode: Review / new REQ-TREND-002 findings recorded, pending Repair
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
 - Original reviewed head: `9781e8f`
 - Repair code/test/evidence head: `5f35789`
+- Fresh re-reviewed head: `e8596df`
 - Stable full-gate head: `5f35789`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are integrated
 - Registry state in this change: `implemented`
 
-## Repair scope
+## Independent re-review result
 
-- TREND002-REV-001: regional smootherstep derivatives are evaluated directly
-  in physical units with scale-safe first-derivative ordering and a factored
-  second derivative, preserving both reviewed extreme representable values.
-- TREND002-REV-002: an exactly zero compact regional jet short-circuits before
-  Gaussian displacement formation through Hessian demand.
-- TREND002-REV-003: independent tests now cover hand-formed rotated
-  spheroidal/ellipsoidal metrics, explicit excessive-condition rejection, a
-  mixed regional Hessian finite difference, and unknown, unavailable, zero,
-  and unrepresentable reference-gradient failures.
-- No dependency, public API, schema, adapter, solver, persistence, or registry
-  status change was introduced.
+- A fresh isolated read-only `math_reviewer` independently closed
+  TREND002-REV-001, TREND002-REV-002, and TREND002-REV-003.
+- TREND002-REV-004 (P1): forming a tiny smootherstep gate before applying a
+  large valid strength can underflow the gate and erase representable weight,
+  gradient, Hessian, and local-kernel product terms.
+- TREND002-REV-005 (P2): the mixture evaluator still evaluates a fixed kernel
+  when the query regional jet is identically zero, so an irrelevant transformed
+  separation can overflow instead of returning the exact compact-support zero.
+- TREND002-REV-006 (P2): region construction uses the unattained loose bound
+  `60 / width^2` and rejects widths whose exact maximum C2 derivatives remain
+  finite and representable.
+- No other P0-P3 finding was identified. No dependency, public API, schema,
+  adapter, solver, persistence, or registry status change was introduced.
 
 ## Validation state
 
 - All nine public `trend_controls` integration tests pass.
 - All three private extreme regional-jet regressions pass.
+- Those tests independently close TREND002-REV-001 through TREND002-REV-003 but
+  do not cover TREND002-REV-004 through TREND002-REV-006.
 - The runnable `trend_controls` example passes.
 - The release-mode focused benchmark smoke passes at approximately 11.4 us for
   four controls and 43.0 us for sixteen controls on this development machine.
@@ -48,18 +53,19 @@ records, benchmark reports, Git, and GitHub.
   it changes no production code, test, manifest, schema, CI, build input, API,
   numerical behavior, dependency, or benchmark, so `5f35789` remains the
   applicable immutable full-gate evidence.
+- Draft Ubuntu CI run 29895932230 passed its configured correctness gate on
+  exact re-reviewed head `e8596df`. The Ready-only three-platform and benchmark-
+  smoke matrix was skipped as designed and is not claimed as passed.
 
 ## Next task boundary
 
-A fresh Review/re-review task must inspect only PR #109 and REQ-TREND-002. It
-must use an independent read-only `math_reviewer` to confirm closure of
-TREND002-REV-001, TREND002-REV-002, and TREND002-REV-003 and check for new
-P0-P3 findings. If findings remain, record them and stop without repairing. If
-the review is clean and the exact final head retains a complete green local
-gate, synchronize PR evidence, mark the PR ready, wait for the complete
-Windows/Ubuntu/macOS and benchmark-smoke CI on that exact ready head, merge
-only if all of it is green, and record truthful integration state. Do not begin
-another requirement in that task.
+A fresh Repair task must address only TREND002-REV-004,
+TREND002-REV-005, and TREND002-REV-006. Add the specified independent
+regressions before or alongside the smallest complete production fixes, run
+focused checks during development, and run the complete standard gate once on
+the stable head after the last code change. Update the review evidence and this
+bounded handoff, push, and stop for another fresh independent re-review. Do not
+begin another requirement.
 
 ## Durable evidence
 
