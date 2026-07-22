@@ -4,11 +4,12 @@
 //! principal axes and relative axis ratios, never an absolute correlation
 //! length. Axial observations contribute normalized outer products, so
 //! reversing any input direction leaves every result unchanged.
-//! Represented trace normalization and exact-sign principal-minor review keep
-//! independently rounded D-by-D entries positive semidefinite. If roundoff
-//! alone crosses that boundary, a bounded uniform off-diagonal retention step
-//! preserves the maximum certified represented correlation without changing
-//! any diagonal, clipping an eigenvalue, or adding jitter.
+//! Represented trace normalization and exact dyadic principal-minor review keep
+//! independently rounded D-by-D entries positive semidefinite, including when
+//! a represented product is smaller than the minimum binary64 subnormal. If
+//! roundoff alone crosses that boundary, a bounded uniform off-diagonal
+//! retention step preserves the maximum certified represented correlation
+//! without changing any diagonal, clipping an eigenvalue, or adding jitter.
 //!
 //! ```compile_fail
 //! use georbf::OrientationTensorEstimator;
@@ -20,8 +21,11 @@ use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt;
 
+#[cfg(test)]
+use std::cell::Cell;
+
 use nalgebra::{
-    DMatrix,
+    Matrix2, Matrix3,
     linalg::{SVD, SymmetricEigen},
 };
 
@@ -30,6 +34,16 @@ use crate::geometry::UnitDirection;
 
 const EIGENSPACE_RESOLUTION_FACTOR: f64 = 64.0;
 const INFLUENCE_ROUNDOFF_FACTOR: f64 = 64.0;
+
+#[cfg(test)]
+std::thread_local! {
+    static EXPLICIT_ALLOCATION_ATTEMPTS: Cell<usize> = const { Cell::new(0) };
+}
+
+#[cfg(test)]
+fn record_allocation_attempt() {
+    EXPLICIT_ALLOCATION_ATTEMPTS.with(|count| count.set(count.get() + 1));
+}
 
 /// One validated axial direction and its nonnegative estimation weight.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -121,12 +135,25 @@ where
             });
         }
         let maximum = values[0];
+        let mut squares = [0.0; D];
         for (axis, value) in values.iter().copied().enumerate() {
             let scaled = value / maximum;
-            if scaled != 0.0 && scaled * scaled == 0.0 {
+            let square = scaled * scaled;
+            if scaled != 0.0 && square == 0.0 {
                 return Err(OrientationTensorError::NonRepresentableRatioSquare {
                     axis,
                     value,
+                    maximum,
+                });
+            }
+            squares[axis] = square;
+        }
+        let square_sum = squares.iter().sum::<f64>();
+        for (axis, square) in squares.iter().copied().enumerate() {
+            if square != 0.0 && square / square_sum == 0.0 {
+                return Err(OrientationTensorError::NonRepresentableRatioSquare {
+                    axis,
+                    value: values[axis],
                     maximum,
                 });
             }
@@ -510,8 +537,8 @@ where
         let tensor = represented_tensor.values;
         let decomposition = decompose_tensor(tensor)?;
         let positive_sample_count = samples.iter().filter(|sample| sample.weight > 0.0).count();
-        let normalized_weights = normalized_weights(samples, None)?;
-        let maximum_weight_fraction = normalized_weights.iter().copied().fold(0.0_f64, f64::max);
+        let weight_normalization = weight_normalization(samples, None)?;
+        let maximum_weight_fraction = 1.0 / weight_normalization.scaled_sum;
 
         let (axis_ratios, candidate_scores, selection_kind) = match &self.selection {
             RatioSelection::Fixed(ratios) => (*ratios, Vec::new(), AxisRatioSelectionKind::Fixed),
@@ -521,7 +548,7 @@ where
                         positive: positive_sample_count,
                     });
                 }
-                let scores = cross_validation_scores(samples, &normalized_weights, candidates)?;
+                let scores = cross_validation_scores(samples, weight_normalization, candidates)?;
                 let selected = scores
                     .iter()
                     .min_by(|left, right| compare_candidate_scores(left, right))
@@ -542,6 +569,8 @@ where
             })
             .map_or((None, 0.0), |(index, value)| (Some(index), value));
 
+        #[cfg(test)]
+        record_allocation_attempt();
         let mut normalized_eigenvalue_gaps = Vec::with_capacity(D.saturating_sub(1));
         for axis in 0..D.saturating_sub(1) {
             normalized_eigenvalue_gaps.push(
@@ -867,10 +896,22 @@ where
     Ok(())
 }
 
-fn normalized_weights<const D: usize>(
+#[derive(Clone, Copy)]
+struct WeightNormalization {
+    maximum: f64,
+    scaled_sum: f64,
+}
+
+impl WeightNormalization {
+    fn weight_fraction(self, weight: f64) -> f64 {
+        (weight / self.maximum) / self.scaled_sum
+    }
+}
+
+fn weight_normalization<const D: usize>(
     samples: &[OrientationTensorSample<D>],
     excluded: Option<usize>,
-) -> Result<Vec<f64>, OrientationTensorError>
+) -> Result<WeightNormalization, OrientationTensorError>
 where
     Dim<D>: SupportedDimension,
 {
@@ -900,17 +941,10 @@ where
             operation: "weight normalization",
         });
     }
-    Ok(samples
-        .iter()
-        .enumerate()
-        .map(|(index, sample)| {
-            if Some(index) == excluded {
-                0.0
-            } else {
-                (sample.weight / maximum) / scaled_sum
-            }
-        })
-        .collect())
+    Ok(WeightNormalization {
+        maximum,
+        scaled_sum,
+    })
 }
 
 struct RepresentedTensor<const D: usize>
@@ -928,16 +962,17 @@ fn normalized_tensor<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
-    let weights = normalized_weights(samples, excluded)?;
+    let normalization = weight_normalization(samples, excluded)?;
     let mut tensor = [[0.0; D]; D];
     let mut compensation = [[0.0; D]; D];
     for (index, sample) in samples.iter().enumerate() {
-        if Some(index) == excluded || weights[index] == 0.0 {
+        if Some(index) == excluded || sample.weight == 0.0 {
             continue;
         }
+        let weight = normalization.weight_fraction(sample.weight);
         for row in 0..D {
             for column in row..D {
-                let term = weights[index]
+                let term = weight
                     * sample.direction.components()[row]
                     * sample.direction.components()[column];
                 let adjusted = term - compensation[row][column];
@@ -1040,7 +1075,7 @@ fn preserve_represented_positive_semidefiniteness<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
-    if represented_tensor_is_positive_semidefinite(tensor) {
+    if represented_tensor_is_positive_semidefinite(tensor)? {
         return Ok(1.0);
     }
 
@@ -1057,14 +1092,14 @@ where
                 candidate[column][row] = value;
             }
         }
-        if represented_tensor_is_positive_semidefinite(&candidate) {
+        if represented_tensor_is_positive_semidefinite(&candidate)? {
             accepted_scale = scale;
             *tensor = candidate;
         } else {
             rejected_scale = scale;
         }
     }
-    if represented_tensor_is_positive_semidefinite(tensor) {
+    if represented_tensor_is_positive_semidefinite(tensor)? {
         Ok(accepted_scale)
     } else {
         Err(OrientationTensorError::NonFiniteNumericalResult {
@@ -1073,25 +1108,27 @@ where
     }
 }
 
-fn represented_tensor_is_positive_semidefinite<const D: usize>(tensor: &[[f64; D]; D]) -> bool
+fn represented_tensor_is_positive_semidefinite<const D: usize>(
+    tensor: &[[f64; D]; D],
+) -> Result<bool, OrientationTensorError>
 where
     Dim<D>: SupportedDimension,
 {
     if (0..D).any(|axis| !tensor[axis][axis].is_finite() || tensor[axis][axis] < 0.0) {
-        return false;
+        return Ok(false);
     }
     for first in 0..D {
         for second in first + 1..D {
-            let mut minor = ExactExpansion::zero();
+            let mut minor = ExactDyadicSum::zero();
             minor.add_product(tensor[first][first], tensor[second][second], 1.0);
             minor.add_product(tensor[first][second], tensor[second][first], -1.0);
-            if minor.sign() == std::cmp::Ordering::Less {
-                return false;
+            if minor.sign()? == std::cmp::Ordering::Less {
+                return Ok(false);
             }
         }
     }
     if D == 3 {
-        let mut determinant = ExactExpansion::zero();
+        let mut determinant = ExactDyadicSum::zero();
         for (first, second, third, sign) in [
             (0, 1, 2, 1.0),
             (1, 2, 0, 1.0),
@@ -1107,83 +1144,163 @@ where
                 sign,
             );
         }
-        if determinant.sign() == std::cmp::Ordering::Less {
-            return false;
+        if determinant.sign()? == std::cmp::Ordering::Less {
+            return Ok(false);
         }
     }
-    true
+    Ok(true)
 }
 
 #[derive(Clone, Copy)]
-struct ExactExpansion {
-    components: [f64; 64],
-    length: usize,
+struct ExactDyadicSum {
+    positive: [u64; Self::LIMBS],
+    negative: [u64; Self::LIMBS],
+    overflowed: bool,
 }
 
-impl ExactExpansion {
+impl ExactDyadicSum {
+    const LIMBS: usize = 100;
+    const MINIMUM_TRIPLE_EXPONENT: i32 = -3 * 1074;
+
     const fn zero() -> Self {
         Self {
-            components: [0.0; 64],
-            length: 0,
+            positive: [0; Self::LIMBS],
+            negative: [0; Self::LIMBS],
+            overflowed: false,
         }
-    }
-
-    fn add_component(&mut self, component: f64) {
-        let mut output = [0.0; 64];
-        let mut output_length = 0;
-        let mut accumulator = component;
-        for value in self.components.iter().copied().take(self.length) {
-            let (sum, error) = exact_two_sum(accumulator, value);
-            if error != 0.0 {
-                output[output_length] = error;
-                output_length += 1;
-            }
-            accumulator = sum;
-        }
-        if accumulator != 0.0 || output_length == 0 {
-            output[output_length] = accumulator;
-            output_length += 1;
-        }
-        self.components = output;
-        self.length = output_length;
     }
 
     fn add_product(&mut self, left: f64, right: f64, sign: f64) {
-        let product = left * right;
-        let error = left.mul_add(right, -product);
-        self.add_component(sign * error);
-        self.add_component(sign * product);
+        self.add_factors(&[left, right], sign);
     }
 
     fn add_triple_product(&mut self, first: f64, second: f64, third: f64, sign: f64) {
-        let product = first * second;
-        let product_error = first.mul_add(second, -product);
-        for partial in [product_error, product] {
-            let scaled = partial * third;
-            let scaled_error = partial.mul_add(third, -scaled);
-            self.add_component(sign * scaled_error);
-            self.add_component(sign * scaled);
+        self.add_factors(&[first, second, third], sign);
+    }
+
+    fn add_factors(&mut self, factors: &[f64], sign: f64) {
+        let mut significand_product = [0_u64; 3];
+        significand_product[0] = 1;
+        let mut exponent = 0_i32;
+        let mut negative = sign.is_sign_negative();
+        for factor in factors.iter().copied() {
+            if factor == 0.0 {
+                return;
+            }
+            let Some((significand, factor_exponent, factor_negative)) = dyadic_parts(factor) else {
+                self.overflowed = true;
+                return;
+            };
+            negative ^= factor_negative;
+            exponent += factor_exponent;
+            if !multiply_significand(&mut significand_product, significand) {
+                self.overflowed = true;
+                return;
+            }
+        }
+        let shift = exponent - Self::MINIMUM_TRIPLE_EXPONENT;
+        let Ok(shift) = usize::try_from(shift) else {
+            self.overflowed = true;
+            return;
+        };
+        let target = if negative {
+            &mut self.negative
+        } else {
+            &mut self.positive
+        };
+        if !add_shifted(target, &significand_product, shift) {
+            self.overflowed = true;
         }
     }
 
-    fn sign(&self) -> std::cmp::Ordering {
-        self.components
-            .iter()
-            .copied()
-            .take(self.length)
-            .rev()
-            .find(|value| *value != 0.0)
-            .map_or(std::cmp::Ordering::Equal, |value| value.total_cmp(&0.0))
+    fn sign(&self) -> Result<std::cmp::Ordering, OrientationTensorError> {
+        if self.overflowed {
+            return Err(OrientationTensorError::NonFiniteNumericalResult {
+                operation: "exact dyadic principal-minor accumulation",
+            });
+        }
+        for (positive, negative) in self.positive.iter().zip(&self.negative).rev() {
+            match positive.cmp(negative) {
+                std::cmp::Ordering::Equal => {}
+                ordering => return Ok(ordering),
+            }
+        }
+        Ok(std::cmp::Ordering::Equal)
     }
 }
 
-fn exact_two_sum(left: f64, right: f64) -> (f64, f64) {
-    let sum = left + right;
-    let right_virtual = sum - left;
-    let left_virtual = sum - right_virtual;
-    let right_roundoff = right - right_virtual;
-    let left_roundoff = left - left_virtual;
-    (sum, left_roundoff + right_roundoff)
+fn dyadic_parts(value: f64) -> Option<(u64, i32, bool)> {
+    if !value.is_finite() || value == 0.0 {
+        return None;
+    }
+    let bits = value.to_bits();
+    let exponent_bits = ((bits >> 52) & 0x7ff) as i32;
+    let fraction = bits & ((1_u64 << 52) - 1);
+    let negative = value.is_sign_negative();
+    if exponent_bits == 0 {
+        Some((fraction, -1074, negative))
+    } else {
+        Some(((1_u64 << 52) | fraction, exponent_bits - 1075, negative))
+    }
+}
+
+fn multiply_significand(product: &mut [u64; 3], factor: u64) -> bool {
+    let mut carry = 0_u128;
+    for word in product.iter_mut() {
+        let next = u128::from(*word) * u128::from(factor) + carry;
+        let Ok(low_word) = u64::try_from(next & u128::from(u64::MAX)) else {
+            return false;
+        };
+        *word = low_word;
+        carry = next >> 64;
+    }
+    carry == 0
+}
+
+fn add_shifted(target: &mut [u64; ExactDyadicSum::LIMBS], value: &[u64; 3], shift: usize) -> bool {
+    let word_shift = shift / 64;
+    let bit_shift = shift % 64;
+    let mut shifted = [0_u64; 4];
+    for (index, word) in value.iter().copied().enumerate() {
+        if word == 0 {
+            continue;
+        }
+        shifted[index] |= word << bit_shift;
+        if bit_shift != 0 {
+            shifted[index + 1] |= word >> (64 - bit_shift);
+        }
+    }
+    let mut carry = 0_u128;
+    for (offset, addend) in shifted.into_iter().enumerate() {
+        let Some(index) = word_shift.checked_add(offset) else {
+            return false;
+        };
+        if index >= target.len() {
+            return false;
+        }
+        let sum = u128::from(target[index]) + u128::from(addend) + carry;
+        let Ok(low_word) = u64::try_from(sum & u128::from(u64::MAX)) else {
+            return false;
+        };
+        target[index] = low_word;
+        carry = sum >> 64;
+    }
+    let Some(mut index) = word_shift.checked_add(shifted.len()) else {
+        return false;
+    };
+    while carry != 0 {
+        if index >= target.len() {
+            return false;
+        }
+        let sum = u128::from(target[index]) + carry;
+        let Ok(low_word) = u64::try_from(sum & u128::from(u64::MAX)) else {
+            return false;
+        };
+        target[index] = low_word;
+        carry = sum >> 64;
+        index += 1;
+    }
+    true
 }
 
 fn next_toward_zero(value: f64) -> f64 {
@@ -1215,43 +1332,80 @@ where
     Dim<D>: SupportedDimension,
 {
     const MAXIMUM_EIGEN_ITERATIONS: usize = 64;
-    let matrix = DMatrix::from_fn(D, D, |row, column| tensor[row][column]);
-    let decomposition = SymmetricEigen::try_new(matrix, f64::EPSILON, MAXIMUM_EIGEN_ITERATIONS)
-        .ok_or(OrientationTensorError::EigendecompositionDidNotConverge {
-            maximum_iterations: MAXIMUM_EIGEN_ITERATIONS,
-        })?;
-    if decomposition
-        .eigenvalues
-        .iter()
-        .any(|value| !value.is_finite())
-    {
-        return Err(OrientationTensorError::NonFiniteNumericalResult {
-            operation: "symmetric eigendecomposition",
-        });
-    }
-    if decomposition.eigenvalues.iter().all(|value| *value >= 0.0) {
+    if D == 1 {
         return finish_decomposition(
-            decomposition.eigenvalues.as_slice(),
-            |source, component| decomposition.eigenvectors[(component, source)],
+            &[tensor[0][0]],
+            |_, _| 1.0,
             OrientationTensorSpectralBackend::SymmetricEigen,
         );
     }
 
-    let matrix = DMatrix::from_fn(D, D, |row, column| tensor[row][column]);
-    let decomposition = SVD::try_new(matrix, false, true, f64::EPSILON, MAXIMUM_EIGEN_ITERATIONS)
-        .ok_or(OrientationTensorError::EigendecompositionDidNotConverge {
-        maximum_iterations: MAXIMUM_EIGEN_ITERATIONS,
-    })?;
-    let right_axes = decomposition
-        .v_t
-        .ok_or(OrientationTensorError::NonFiniteNumericalResult {
-            operation: "positive-semidefinite spectral axes",
-        })?;
-    finish_decomposition(
-        decomposition.singular_values.as_slice(),
-        |source, component| right_axes[(source, component)],
-        OrientationTensorSpectralBackend::PositiveSemidefiniteSvd,
-    )
+    macro_rules! decompose_static_matrix {
+        ($matrix:expr) => {{
+            let matrix = $matrix;
+            let decomposition =
+                SymmetricEigen::try_new(matrix, f64::EPSILON, MAXIMUM_EIGEN_ITERATIONS).ok_or(
+                    OrientationTensorError::EigendecompositionDidNotConverge {
+                        maximum_iterations: MAXIMUM_EIGEN_ITERATIONS,
+                    },
+                )?;
+            if decomposition
+                .eigenvalues
+                .iter()
+                .any(|value| !value.is_finite())
+            {
+                return Err(OrientationTensorError::NonFiniteNumericalResult {
+                    operation: "symmetric eigendecomposition",
+                });
+            }
+            if decomposition.eigenvalues.iter().all(|value| *value >= 0.0) {
+                return finish_decomposition(
+                    decomposition.eigenvalues.as_slice(),
+                    |source, component| decomposition.eigenvectors[(component, source)],
+                    OrientationTensorSpectralBackend::SymmetricEigen,
+                );
+            }
+
+            let decomposition =
+                SVD::try_new(matrix, false, true, f64::EPSILON, MAXIMUM_EIGEN_ITERATIONS).ok_or(
+                    OrientationTensorError::EigendecompositionDidNotConverge {
+                        maximum_iterations: MAXIMUM_EIGEN_ITERATIONS,
+                    },
+                )?;
+            let right_axes =
+                decomposition
+                    .v_t
+                    .ok_or(OrientationTensorError::NonFiniteNumericalResult {
+                        operation: "positive-semidefinite spectral axes",
+                    })?;
+            finish_decomposition(
+                decomposition.singular_values.as_slice(),
+                |source, component| right_axes[(source, component)],
+                OrientationTensorSpectralBackend::PositiveSemidefiniteSvd,
+            )
+        }};
+    }
+
+    if D == 2 {
+        decompose_static_matrix!(Matrix2::new(
+            tensor[0][0],
+            tensor[0][1],
+            tensor[1][0],
+            tensor[1][1],
+        ))
+    } else {
+        decompose_static_matrix!(Matrix3::new(
+            tensor[0][0],
+            tensor[0][1],
+            tensor[0][2],
+            tensor[1][0],
+            tensor[1][1],
+            tensor[1][2],
+            tensor[2][0],
+            tensor[2][1],
+            tensor[2][2],
+        ))
+    }
 }
 
 fn finish_decomposition<const D: usize>(
@@ -1262,7 +1416,7 @@ fn finish_decomposition<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
-    let mut order: Vec<usize> = (0..D).collect();
+    let mut order: [usize; D] = std::array::from_fn(|axis| axis);
     order.sort_by(|left, right| {
         spectral_values[*right]
             .total_cmp(&spectral_values[*left])
@@ -1294,19 +1448,23 @@ where
         });
     }
     let normalized_eigenvalues = std::array::from_fn(|axis| eigenvalues[axis] / eigenvalue_sum);
-    let mut axes = Vec::with_capacity(D);
-    for components in axis_components {
-        axes.push(UnitDirection::try_new(components).map_err(|_| {
+    let placeholder =
+        UnitDirection::try_new(std::array::from_fn(
+            |component| {
+                if component == 0 { 1.0 } else { 0.0 }
+            },
+        ))
+        .map_err(|_| OrientationTensorError::NonFiniteNumericalResult {
+            operation: "principal-axis initialization",
+        })?;
+    let mut axes = [placeholder; D];
+    for (axis, components) in axis_components.into_iter().enumerate() {
+        axes[axis] = UnitDirection::try_new(components).map_err(|_| {
             OrientationTensorError::NonFiniteNumericalResult {
                 operation: "principal-axis normalization",
             }
-        })?);
+        })?;
     }
-    let axes: [UnitDirection<D>; D] =
-        axes.try_into()
-            .map_err(|_| OrientationTensorError::NonFiniteNumericalResult {
-                operation: "principal-axis collection",
-            })?;
     Ok(TensorDecomposition {
         axes,
         eigenvalues,
@@ -1353,13 +1511,17 @@ where
 
 fn cross_validation_scores<const D: usize>(
     samples: &[OrientationTensorSample<D>],
-    normalized_weights: &[f64],
+    weight_normalization: WeightNormalization,
     candidates: &[PrincipalAxisRatios<D>],
 ) -> Result<Vec<AxisRatioCandidateScore<D>>, OrientationTensorError>
 where
     Dim<D>: SupportedDimension,
 {
+    #[cfg(test)]
+    record_allocation_attempt();
     let expected: Vec<[f64; D]> = candidates.iter().copied().map(expected_shares).collect();
+    #[cfg(test)]
+    record_allocation_attempt();
     let mut totals = vec![0.0; candidates.len()];
     for (held_out, sample) in samples.iter().enumerate() {
         if sample.weight == 0.0 {
@@ -1383,7 +1545,7 @@ where
                 &expected[candidate],
                 &decomposition.normalized_eigenvalues,
             );
-            *total += normalized_weights[held_out] * loss;
+            *total += weight_normalization.weight_fraction(sample.weight) * loss;
             if !total.is_finite() {
                 return Err(OrientationTensorError::NonFiniteNumericalResult {
                     operation: "cross-validation score",
@@ -1391,6 +1553,8 @@ where
             }
         }
     }
+    #[cfg(test)]
+    record_allocation_attempt();
     Ok(candidates
         .iter()
         .copied()
@@ -1476,6 +1640,8 @@ fn leave_one_out_influences<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
+    #[cfg(test)]
+    record_allocation_attempt();
     let mut influences = Vec::with_capacity(samples.len());
     for (sample_index, sample) in samples.iter().enumerate() {
         let computed_change = if sample.weight == 0.0 {
@@ -1519,4 +1685,65 @@ where
         });
     }
     Ok(influences)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    type TestResult = Result<(), Box<dyn Error>>;
+
+    fn scratch_allocation_count(
+        sample_count: usize,
+        cross_validated: bool,
+    ) -> Result<usize, Box<dyn Error>> {
+        let ratios = PrincipalAxisRatios::try_new([3.0, 2.0, 1.0])?;
+        let estimator = if cross_validated {
+            OrientationTensorEstimator::try_cross_validated(
+                vec![ratios, PrincipalAxisRatios::try_new([4.0, 2.0, 1.0])?],
+                4.0,
+                0.0,
+            )?
+        } else {
+            OrientationTensorEstimator::try_fixed(ratios, 0.0)?
+        };
+        let directions = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+        let samples = (0..sample_count)
+            .map(|index| {
+                Ok(OrientationTensorSample::try_new(
+                    UnitDirection::try_new(directions[index % directions.len()])?,
+                    1.0,
+                )?)
+            })
+            .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
+
+        EXPLICIT_ALLOCATION_ATTEMPTS.with(|count| count.set(0));
+        let _estimate = estimator.try_estimate(&samples)?;
+        Ok(EXPLICIT_ALLOCATION_ATTEMPTS.with(Cell::get))
+    }
+
+    #[test]
+    fn leave_one_out_scratch_allocation_count_is_independent_of_sample_count() -> TestResult {
+        assert_eq!(scratch_allocation_count(4, false)?, 2);
+        assert_eq!(scratch_allocation_count(16, false)?, 2);
+        assert_eq!(scratch_allocation_count(4, true)?, 5);
+        assert_eq!(scratch_allocation_count(16, true)?, 5);
+        Ok(())
+    }
+
+    #[test]
+    fn exact_dyadic_sum_retains_underflowed_products_and_triples() -> TestResult {
+        let minimum_subnormal = f64::from_bits(1);
+        let mut product = ExactDyadicSum::zero();
+        product.add_product(minimum_subnormal, minimum_subnormal, -1.0);
+        assert_eq!(product.sign()?, Ordering::Less);
+
+        product.add_product(minimum_subnormal, minimum_subnormal, 1.0);
+        assert_eq!(product.sign()?, Ordering::Equal);
+
+        let mut triple = ExactDyadicSum::zero();
+        triple.add_triple_product(minimum_subnormal, minimum_subnormal, minimum_subnormal, 1.0);
+        assert_eq!(triple.sign()?, Ordering::Greater);
+        Ok(())
+    }
 }

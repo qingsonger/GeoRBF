@@ -110,6 +110,23 @@ fn generic_single_d2_direction_preserves_psd_and_trace_normalization() -> TestRe
 }
 
 #[test]
+fn minimum_subnormal_d2_direction_preserves_exact_dyadic_psd() -> TestResult {
+    let minimum_subnormal = f64::from_bits(1);
+    let estimator =
+        OrientationTensorEstimator::try_fixed(PrincipalAxisRatios::try_new([1.0, 1.0])?, 0.0)?;
+    let estimate = estimator.try_estimate(&[sample([1.0, minimum_subnormal], 1.0)?])?;
+
+    let tensor = estimate.tensor();
+    assert_eq!(tensor[0][0] + tensor[1][1], 1.0);
+    assert!(
+        tensor[1][1] != 0.0 || tensor[0][1] == 0.0,
+        "represented tensor has exact dyadic determinant -m^2: {tensor:?}"
+    );
+    assert!(estimate.eigenvalues().iter().all(|value| *value >= 0.0));
+    Ok(())
+}
+
+#[test]
 fn d3_axes_and_tensor_are_rotation_covariant_away_from_degeneracy() -> TestResult {
     let angle = 0.47_f64;
     let (sine, cosine) = angle.sin_cos();
@@ -407,6 +424,15 @@ fn candidate_and_weight_failures_are_structured() -> TestResult {
     assert!(matches!(
         PrincipalAxisRatios::<2>::try_new([2.0, 1.5]),
         Err(OrientationTensorError::UnnormalizedAxisRatios { .. })
+    ));
+    let ratio_whose_normalized_share_underflows = 2.0_f64.powi(537);
+    assert!(matches!(
+        PrincipalAxisRatios::<3>::try_new([
+            ratio_whose_normalized_share_underflows,
+            ratio_whose_normalized_share_underflows,
+            1.0,
+        ]),
+        Err(OrientationTensorError::NonRepresentableRatioSquare { axis: 2, .. })
     ));
 
     let unit = PrincipalAxisRatios::try_new([1.0, 1.0])?;

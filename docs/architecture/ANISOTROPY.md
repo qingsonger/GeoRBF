@@ -95,14 +95,17 @@ the upper triangle and copy it to the lower triangle, preserving represented
 symmetry. A final trace division is retained when it already sums to represented
 one; otherwise the last diagonal receives the explicit represented residual,
 with at most bounded one-ulp diagonal corrections if division crossed the
-trace boundary. Exact floating expansions then certify every D=2/D=3 principal
-minor. If independently rounded off-diagonal entries alone cross the PSD
-boundary, 64 deterministic bisection steps retain the greatest certified
-uniform factor on all off-diagonal entries while leaving every diagonal
-unchanged. This is a represented-arithmetic closure of the outer-product
-invariant, not eigenvalue clipping, diagonal jitter, or hidden regularization.
-Diagnostics record the applied uniform factor, with one meaning no correlation
-adjustment was required.
+trace boundary. Fixed-capacity exact dyadic integer sums, formed directly from
+the represented binary64 signs, significands, and exponents, then certify every
+D=2/D=3 principal minor. Their exponent range includes products and triple
+products below the minimum binary64 subnormal, so no accepted finite component
+is erased before the exact sign decision. If independently rounded
+off-diagonal entries alone cross the PSD boundary, 64 deterministic bisection
+steps retain the greatest certified uniform factor on all off-diagonal entries
+while leaving every diagonal unchanged. This is a represented-arithmetic
+closure of the outer-product invariant, not eigenvalue clipping, diagonal
+jitter, or hidden regularization. Diagnostics record the applied uniform
+factor, with one meaning no correlation adjustment was required.
 Because `(-n_i)(-n_i)^T = n_i n_i^T`, polarity is immaterial. The normalized
 tensor is trace one and positive semidefinite and estimates axes, not absolute
 correlation lengths.
@@ -136,7 +139,10 @@ representation requires finite nonincreasing values at least one and an
 exactly-one final value, so no arbitrary common scale remains. Construction
 does not sort or rescale input. A caller either supplies one such ratio vector
 or a finite candidate list and an explicit finite maximum ratio. Empty,
-duplicate, unrepresentable, or out-of-bound candidates are rejected.
+duplicate, unrepresentable, or out-of-bound candidates are rejected. Every
+positive maximum-scaled square and its normalized share after division by the
+represented square sum must remain positive; construction rejects either
+underflow boundary instead of silently removing an axis from scoring.
 
 Candidate selection is deterministic leave-one-out cross-validation over
 strictly positive-weight samples. For each held-out direction, axes are fitted
@@ -167,7 +173,12 @@ reported eigendecomposition.
 The lowest score wins. An exact score tie selects the lexicographically smaller
 ratio vector, independent of candidate order. At least two positive-weight
 samples are required; no random search, candidate generation, regularization,
-or implicit ratio inference occurs.
+or implicit ratio inference occurs. Weight normalization uses two fixed-state
+passes and no sample-sized scratch vector. D=1/D=2/D=3 decompositions use
+fixed-size nalgebra matrices, and leave-one-out folds use only stack-owned
+fixed-size tensor and spectral state. Heap allocations are limited to a fixed
+number of owned result and candidate-work vectors, independent of sample
+count; no allocation occurs per held-out sample.
 
 Per-sample outlier influence is the rotation-invariant normalized Frobenius
 change `||C-C_-i||_F/sqrt(2)`. A zero-weight sample has zero influence; removing
