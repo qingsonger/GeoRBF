@@ -603,3 +603,64 @@ PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
 `integrated`. Open a fresh bounded Repair task for ANISO002-REV-005,
 ANISO002-REV-006, and ANISO002-REV-007 only. Do not repair production code,
 mark the PR Ready, merge it, or begin another requirement in this Review task.
+
+## ANISO002-REV-005/006/007 Repair evidence pending fresh independent re-review
+
+- Repair code, test, normative-document, and complete-gate head:
+  `b634751d6545957d0d65039fb344108ad67169df`
+- Pre-repair branch head: `45645cb1e47e9f09fc7cae3215ea136ae643a4e1`
+- Repair date: 2026-07-22
+
+The three required regressions were added before production repair. Against
+the pre-repair implementation, the public D=2 minimum-subnormal case returned
+`[[1, f64::from_bits(1)], [f64::from_bits(1), 0]]`; the ratio constructor
+accepted `[2^537,2^537,1]`; and the serial fixed-ratio allocation audit counted
+9 explicit allocations for four samples but 21 for sixteen samples.
+
+ANISO002-REV-005 is repaired with a fixed-capacity exact dyadic accumulator.
+It decomposes each finite binary64 term into its sign, integer significand, and
+power-of-two exponent, multiplies at most three significands in three limbs,
+and adds signed shifted products over the complete binary64 product/triple-
+product exponent range. Products below `2^-1074` therefore remain present in
+the exact principal-minor sign. The public `[1,f64::from_bits(1)]` case now
+retains the greatest bisection-certified correlation scale whose represented
+tensor is PSD, and a direct unit regression verifies negative, cancelling,
+and positive exact signs for products and triples below the binary64 range.
+
+ANISO002-REV-006 is repaired at construction. After maximum scaling, every
+positive square and every normalized share obtained by division by the
+represented square sum must remain positive. `[2^537,2^537,1]` now returns the
+existing structured `NonRepresentableRatioSquare` error for axis 2; no ratio
+is clipped, rescaled, or silently removed.
+
+ANISO002-REV-007 is repaired without changing estimator results. Weight
+normalization now uses two scalar-state passes and computes fractions on
+demand. D=1, D=2, and D=3 spectral paths use stack-owned fixed-size nalgebra
+matrices, and fixed arrays replace spectral ordering and axis-collection
+vectors. No sample-sized weight vector or heap-backed matrix remains inside a
+held-out fold. The serial audit records exactly two fixed owned-result
+allocation attempts for both four and sixteen fixed-ratio samples, and exactly
+five for both four and sixteen cross-validated samples.
+
+All 16 public orientation-tensor tests and both private exact-dyadic/allocation
+tests pass. Warning-denying georbf all-target/all-feature Clippy, the D=4
+compile-fail Rustdoc contract, the runnable example, the optimized benchmark
+smoke, all 58 requirement checks, and diff whitespace passed. The optimized
+100,000-estimate smoke reported checksum `5.02144060231886397e5`, preserving
+the prior per-estimate contribution, at approximately 5.15 us per estimate
+locally.
+
+After the final production, test, and normative-document change, exact head
+`b634751` passed the complete standard workspace gate: format; warning-denying
+workspace all-target/all-feature Clippy; all-feature workspace tests;
+workspace Rustdoc; all 58 requirement checks; and complete diff whitespace
+validation. No dependency, feature, lockfile, public interface, schema, CI,
+registry status, or requirement scope changed.
+
+This section records Repair evidence only and does not independently close
+ANISO002-REV-005/006/007. PR #106 remains Draft and REQ-ANISO-002 remains
+`implemented`. A fresh isolated mathematical and numerical re-review must
+verify these repairs and the complete PR diff before any Ready or integration
+action. Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run
+and is not claimed as passed; the unavailable/deferred check list remains
+unchanged.

@@ -114,8 +114,8 @@ four-sample, three-candidate D=3 estimate over 2,000 estimates, with checksum
 performance promise. The ANISO002-REV-004 exact-sign certification and explicit
 spectral fallback policy retained that checksum at approximately 9.20 us per
 estimate locally. The ANISO002-REV-005/006/007 fixed-size spectral and
-allocation repair retained the checksum at approximately 5.15 us per estimate
-over 100,000 estimates locally.
+allocation repair retained the per-estimate checksum contribution at
+approximately 5.15 us per estimate over 100,000 estimates locally.
 
 Rust and the focused benchmark are implemented. CLI is N/A until the M8
 versioned schema and complete CLI requirements define persisted estimator
