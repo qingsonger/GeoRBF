@@ -6,17 +6,16 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete / fresh isolated re-review required for PR #106
+- Mode: Review clean / Ready evidence commit pending for PR #106
 - Requirement: REQ-ANISO-002, Issue #105
 - Branch: `codex/req-aniso-002-orientation-tensor`
 - Implementation pull request: #106 (Draft)
 - Latest independently reviewed head:
-  `7a63864fa0fc26c436b56aecc2a5e00709ad12de`
+  `0b7f5588e6b83fd0cd6a6d937b427972498f9702`
 - Latest ANISO002-REV-008 Repair code, tests, change fragment, and normative
   document head: `358199bf07f949b604f76ef771dc645e65944907`
-- Review state: ANISO002-REV-001 through ANISO002-REV-007 and
-  ANISO002-REV-009 are closed; ANISO002-REV-008 has Repair evidence but remains
-  open pending fresh isolated re-review
+- Review state: ANISO002-REV-001 through ANISO002-REV-009 are independently
+  closed; the complete PR has no remaining P0-P3 finding
 - Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
 - Registry state in this change: `implemented`
 
@@ -81,28 +80,29 @@ records, benchmark reports, Git, and GitHub.
   with all features, workspace Rustdoc, all 58 requirement checks, and complete
   diff whitespace. Only review evidence and this bounded Markdown handoff are
   changed afterward.
-- The isolated reviewer passed format, all 18 public tests, the actual-allocation
-  regression, both private exact-dyadic tests, strict georbf Clippy, the
-  example, optimized benchmark smoke, all 58 requirement checks, and complete
-  diff whitespace on exact reviewed head `7a63864`.
-- Draft Ubuntu CI run 29887805845 passed on pre-Repair review-evidence head
-  `e1b893c`. CI on the final Repair head has not yet run and is not claimed.
+- A fresh isolated reviewer closed ANISO002-REV-008 and found no P0-P3 issue in
+  the complete PR. Exact rational review rejects scales one and one-minus-one-
+  ulp, accepts `1.0.to_bits() - 2`, and proves the returned scale maximal. The
+  decisive interval bound is positive, and 1,100 exact interval probes across
+  every cubic sign plus zero-factor cases found no upper-bound violation.
+- The reviewer passed all 19 public tests, the actual-allocation regression,
+  all three private exact-dyadic tests, the example, optimized benchmark smoke,
+  the complete standard workspace gate, all 58 requirement checks, and diff
+  whitespace on exact reviewed head `0b7f558`.
+- Draft Ubuntu CI run 29888287014 passed its complete configured correctness
+  gate on exact reviewed head `0b7f558`.
 - Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run and is
   not claimed as passed. Local `actionlint` and the unavailable later tools
   listed below remain unexecuted and are not claimed as passed.
 
 ## Next task boundary
 
-Open a fresh isolated Review task for PR #106. Supply the project
-`math_reviewer` only the bounded REQ-ANISO-002 summary and dependency closure,
-Issue #105 criteria, M6 plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, the
-complete PR and latest Repair diffs, directly relevant source/tests, and the
-recorded validation evidence. Independently verify ANISO002-REV-008 closure,
-the complete `2xyz` determinant interval upper bound, exact rejection of the
-two scales above `1.0.to_bits() - 2`, maximality of the returned scale, and the
-complete PR. If any finding remains, record evidence and stop; do not repair in
-Review. If clean, follow the repository's ready-CI-integration sequence on the
-exact reviewed head. Do not begin another requirement.
+Commit and push the evidence-only final re-review record, synchronize PR #106
+evidence, and mark it Ready. Wait for the complete Windows, Ubuntu, and macOS
+workspace and benchmark-smoke CI on that exact Ready head. Squash-merge exactly
+once only if every required check is green, wait for the post-merge `main` gate,
+then record truthful integration state through an isolated branch and pull
+request. Do not begin another requirement.
 
 ## Durable evidence
 

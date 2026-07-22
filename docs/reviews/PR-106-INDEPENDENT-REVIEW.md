@@ -1160,3 +1160,98 @@ ANISO002-REV-008. PR #106 remains Draft and REQ-ANISO-002 remains
 `implemented`, not `integrated`. A fresh isolated mathematical/numerical
 re-review of the complete PR and exact Repair head is required next. This
 Repair does not mark the PR Ready, merge it, or begin another requirement.
+
+## Fresh independent final re-review after positive-cubic-coefficient Repair
+
+- Exact reviewed head: `0b7f5588e6b83fd0cd6a6d937b427972498f9702`
+- Production/test/normative-document Repair head:
+  `358199bf07f949b604f76ef771dc645e65944907`
+- Base: `d34458f6c29d1b56f2832ddac9356d28a87a3f8f`
+- Re-review date: 2026-07-22
+- Result: ANISO002-REV-008 closed; no P0-P3 finding remains
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-ANISO-002 summary and integrated dependency closure, Issue #105 acceptance
+criteria and exclusions, the M6 plan, ANISOTROPY and ADR-0009/ADR-0010
+contracts, the complete PR and latest Repair diffs, directly relevant source,
+tests, example and benchmark, and the recorded validation evidence. It
+inherited no Repair reasoning transcript and made no repository, Git, or
+GitHub change.
+
+### ANISO002-REV-008 closure
+
+For a D=3 symmetric tensor with diagonal entries `a,b,c` and off-diagonal
+entries `x,y,z`, the exact determinant is
+
+```text
+abc + 2xyz - az^2 - by^2 - cx^2.
+```
+
+The Repair now calls the exact triple-product accumulator twice for `xyz`, so
+the interval calculation includes the complete positive coefficient despite
+the helper's final argument encoding sign only. Independent exact-rational
+evaluation of the reviewed represented tensor gives:
+
+| Scale bits | Order-two minors | Exact determinant | PSD |
+| --- | --- | ---: | --- |
+| `1.0.to_bits()` | two negative | `-2.38778212573874348e-34` | no |
+| `1.0.to_bits() - 1` | all nonnegative | `-2.54871468238536627e-34` | no |
+| `1.0.to_bits() - 2` | all nonnegative | `+1.39003537129806358e-33` | yes |
+
+The public estimator and regression return `1.0.to_bits() - 2`. Because the
+only two greater represented scales are exactly rejected, that scale is
+maximal. The exact conservative upper bound on the decisive interval from
+`1.0.to_bits() - 2` through `1.0.to_bits() - 1` is
+`+8.78080466557045361e-18`; the former single-`xyz` expression was
+`-1.75961434744401242e-2`. The direct interval regression therefore exercises
+the defect and now keeps the accepted scale searchable.
+
+The bound is conservative for every cubic-sign case: represented
+off-diagonal magnitudes are monotone in the nonnegative scale; positive
+`2xyz` is maximized at the upper endpoint, negative `2xyz` is least negative
+at the lower endpoint, and every nonpositive squared term is maximized at the
+lower endpoint. Zero factors remain exact. An independent exact-rational probe
+covered 1,100 intervals across all eight cubic sign combinations and three
+zero-factor patterns without finding a determinant above the implemented
+bound.
+
+### Complete re-review disposition
+
+- Exact dyadic principal-minor certification, the monotone order-two
+  bisection, high-scale-first D=3 traversal, and proved-negative-only pruning
+  preserve represented trace-one PSD and return the greatest certified scale.
+- The bounded symmetric-eigendecomposition/SVD paths, deterministic axes,
+  eigenspace-grouped leave-one-out scoring, ratio validation, influence range,
+  and allocation behavior satisfy their documented contracts without
+  clipping, jitter, a pseudoinverse, hidden regularization, or valid-input
+  rejection.
+- Public Rust interfaces, diagnostics, tests, Rustdoc, example, benchmark and
+  Ready-CI wiring, interface N/A dispositions, dependency evidence, and the
+  registry's `implemented` state are truthful. No nalgebra type crosses the
+  public API.
+- Kernels, centers, polynomial spaces, hard constraints, infeasibility,
+  Hessians, persistence, field fitting, and language adapters remain outside
+  this estimator's atomic scope.
+
+### Final re-review validation
+
+The isolated reviewer passed all 19 public orientation-tensor tests, the
+actual-allocation regression, all three private exact-dyadic tests, the
+runnable example, optimized benchmark smoke with checksum
+`1.00428812046557887e4`, workspace format, warning-denying workspace
+all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
+all 58 requirement checks, and complete PR diff whitespace validation on exact
+head `0b7f558`. Draft Ubuntu CI run 29888287014 passed its complete configured
+correctness gate on the same exact head.
+
+`cargo-nextest`, `cargo-deny`, `cargo-audit`, `cargo-semver-checks`, local
+`actionlint`, and Miri remain unavailable. Sanitizers, executable fuzzing,
+mutation testing, and API/ABI/schema gates remain deferred. No unavailable or
+deferred check is claimed as passed.
+
+No P0-P3 finding remains. The evidence-only commit recording this conclusion
+does not alter production code, tests, manifests, schemas, CI, build inputs,
+API, dependency resolution, or numerical behavior. PR #106 may be marked
+Ready only after this evidence is pushed. Integration still requires the
+complete exact-Ready-head Windows, Ubuntu, macOS, and benchmark-smoke CI to
+pass before one merge.
