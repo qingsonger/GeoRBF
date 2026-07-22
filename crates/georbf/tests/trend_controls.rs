@@ -877,3 +877,146 @@ fn gaussian_weight_underflow_does_not_erase_representable_mixture_value()
     }
     Ok(())
 }
+
+#[test]
+fn rounded_log_cancellation_preserves_regional_gradient() -> Result<(), Box<dyn Error>> {
+    let strength = 1.0e154_f64;
+    let radius = 1.0e-16_f64;
+    let control_location = 9.460_674_157_303_392e-18_f64;
+    let query = 1.78e-16_f64;
+    let region = SmoothRegion::try_new(point([0.0])?, point([2.0])?, 1.0)?;
+    let control = LocalTrendControl::new(
+        point([control_location])?,
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0])?),
+            axial_length: 1.0,
+            transverse_length: 1.0,
+        },
+        radius,
+        strength,
+        Some(region),
+    );
+    let compiled = try_compile_local_trend_controls(
+        background()?,
+        &[control],
+        None,
+        domain(2.0)?,
+        0.25,
+        policy(1.0e-12, 1.0, 1.0)?,
+    )?;
+
+    // Independently evaluated with 80-decimal arithmetic from the exact
+    // represented binary64 inputs above.
+    let expected = -1.873_235_441_191_699_5e211_f64;
+    assert!(expected.is_finite() && expected != 0.0);
+
+    let actual = compiled
+        .mixture()
+        .try_evaluate(
+            point([query])?,
+            point([control_location])?,
+            KernelDerivativeOrder::First,
+        )?
+        .gradient()
+        .ok_or("missing gradient")?[0];
+    // The analytic terms cancel at almost the full binary64 significand; the
+    // regression requires the independently derived scale and sign without
+    // pretending the ill-conditioned residual has full relative precision.
+    assert_close(actual, expected, expected.abs() * 0.15);
+    Ok(())
+}
+
+#[test]
+fn overflowing_weight_hessian_is_scaled_before_representability_check() -> Result<(), Box<dyn Error>>
+{
+    let strength = 1.0e154_f64;
+    let radius = 1.0e-100_f64;
+    let center = 3.2e-99_f64;
+    let control = LocalTrendControl::new(
+        point([0.0])?,
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0])?),
+            axial_length: 1.0,
+            transverse_length: 1.0,
+        },
+        radius,
+        strength,
+        None,
+    );
+    let compiled = try_compile_local_trend_controls(
+        background()?,
+        &[control],
+        None,
+        domain(1.0)?,
+        0.25,
+        policy(1.0e-12, 1.0, 1.0)?,
+    )?;
+
+    let inverse_radius_squared = radius.recip() * radius.recip();
+    let local_log_magnitude =
+        2.0 * strength.ln() - 0.5 * (center / radius).powi(2) - 0.5 * center * center
+            + (inverse_radius_squared + 1.0 - center * center).ln();
+    let local_expected = -local_log_magnitude.exp();
+    let background_expected = 0.25 * (center * center - 1.0) * (-0.5 * center * center).exp();
+    let expected = local_expected + background_expected;
+    assert!(expected.is_finite() && expected != 0.0);
+
+    let actual = compiled
+        .mixture()
+        .try_evaluate(
+            point([0.0])?,
+            point([center])?,
+            KernelDerivativeOrder::Second,
+        )?
+        .hessian()
+        .ok_or("missing Hessian")?[0][0];
+    assert_close(actual, expected, expected.abs() * 512.0 * f64::EPSILON);
+    Ok(())
+}
+
+#[test]
+fn fixed_gaussian_underflow_does_not_erase_representable_mixture_value()
+-> Result<(), Box<dyn Error>> {
+    let strength = 1.0e154_f64;
+    let influence_radius = 1000.0_f64;
+    let separation = 39.0_f64;
+    let control = LocalTrendControl::new(
+        point([0.0])?,
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0])?),
+            axial_length: 1.0,
+            transverse_length: 1.0,
+        },
+        influence_radius,
+        strength,
+        None,
+    );
+    let compiled = try_compile_local_trend_controls(
+        background()?,
+        &[control],
+        None,
+        domain(40.0)?,
+        0.25,
+        policy(1.0e-12, 1.0, 1.0)?,
+    )?;
+
+    let expected = (2.0 * strength.ln()
+        - 0.5 * (separation / influence_radius).powi(2)
+        - 0.5 * separation * separation)
+        .exp();
+    assert!(expected.is_finite() && expected != 0.0);
+
+    let actual = compiled
+        .mixture()
+        .try_evaluate(
+            point([0.0])?,
+            point([separation])?,
+            KernelDerivativeOrder::Value,
+        )?
+        .value();
+    assert_close(actual, expected, expected * 1024.0 * f64::EPSILON);
+    Ok(())
+}

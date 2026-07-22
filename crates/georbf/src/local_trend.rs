@@ -25,7 +25,7 @@ use crate::anisotropy::GlobalAnisotropy;
 use crate::dimension::{Dim, SupportedDimension};
 use crate::geometry::Point;
 use crate::kernel::{KernelDefiniteness, KernelDerivativeCapability, KernelDerivativeOrder};
-use crate::kernel_calculus::KernelArgument;
+use crate::kernel_calculus::{KernelArgument, SpatialKernelJet};
 use crate::model::{KernelDefinition, KernelDefinitionEvaluationError};
 
 /// Closed finite axis-aligned domain on which background conditioning policy applies.
@@ -918,7 +918,10 @@ where
     /// A component whose complete demanded query-weight jet or center weight is
     /// mathematically exactly zero is skipped before its fixed kernel is
     /// evaluated. Gaussian factors that merely underflow individually retain
-    /// their logarithmic scale through the complete represented contribution.
+    /// their logarithmic scale through the complete represented contribution,
+    /// including the fixed Gaussian kernel value. Weight derivatives are not
+    /// required to be individually representable before the complete mixture
+    /// term is formed.
     ///
     /// # Errors
     ///
@@ -950,17 +953,16 @@ where
             if center_weight.stable.value.exact_zero {
                 continue;
             }
-            let kernel = component
-                .kernel
-                .try_spatial_jet(query, center, demanded, Some(&component.anisotropy))
-                .map_err(|source| LocalTrendEvaluationError::Kernel {
-                    component: component_index,
-                    source,
-                })?;
+            let (kernel, stable_kernel_value) =
+                component_kernel_jet(component, query, center, demanded, component_index)?;
 
             let value_term = checked_stable_terms(
-                &[query_weight.stable.value, center_weight.stable.value],
-                &[kernel.value()],
+                &[
+                    query_weight.stable.value,
+                    center_weight.stable.value,
+                    stable_kernel_value,
+                ],
+                &[],
                 component_index,
                 LocalTrendQuantity::Value,
             )?;
@@ -978,8 +980,9 @@ where
                         &[
                             center_weight.stable.value,
                             query_weight.stable.gradient[axis],
+                            stable_kernel_value,
                         ],
-                        &[kernel.value()],
+                        &[],
                         component_index,
                         LocalTrendQuantity::Gradient { axis },
                     )?;
@@ -1010,7 +1013,7 @@ where
                         &mut hessian,
                         query_weight,
                         center_weight.stable.value,
-                        kernel.value(),
+                        stable_kernel_value,
                         kernel_gradient,
                         kernel_hessian,
                         component_index,
@@ -1429,7 +1432,7 @@ where
 {
     fn try_from_stable(
         stable: StableWeightJet<D>,
-        demanded: KernelDerivativeOrder,
+        _demanded: KernelDerivativeOrder,
     ) -> Result<Self, LocalTrendEvaluationError<D>> {
         let value = stable.value.represented_value(1.0).ok_or(
             LocalTrendEvaluationError::NonFiniteWeightDerivative {
@@ -1437,28 +1440,6 @@ where
                 quantity: LocalTrendQuantity::Value,
             },
         )?;
-        if demanded >= KernelDerivativeOrder::First {
-            for (axis, factor) in stable.gradient.iter().enumerate() {
-                factor.represented_value(1.0).ok_or(
-                    LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                        component: usize::MAX,
-                        quantity: LocalTrendQuantity::Gradient { axis },
-                    },
-                )?;
-            }
-        }
-        if demanded >= KernelDerivativeOrder::Second {
-            for (row, stable_row) in stable.hessian.iter().enumerate() {
-                for (column, factor) in stable_row.iter().enumerate() {
-                    factor.represented_value(1.0).ok_or(
-                        LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                            component: usize::MAX,
-                            quantity: LocalTrendQuantity::Hessian { row, column },
-                        },
-                    )?;
-                }
-            }
-        }
         Ok(Self { value, stable })
     }
 
@@ -1507,9 +1488,39 @@ impl<const D: usize> StableWeightJet<D> {
     }
 }
 
+fn double_sum(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
+    if !left.0.is_finite() || !right.0.is_finite() {
+        return (left.0 + right.0, 0.0);
+    }
+    let sum = left.0 + right.0;
+    let right_virtual = sum - left.0;
+    let error = (left.0 - (sum - right_virtual)) + (right.0 - right_virtual) + left.1 + right.1;
+    let corrected = sum + error;
+    (corrected, error - (corrected - sum))
+}
+
+fn double_product(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
+    let product = left.0 * right.0;
+    if !product.is_finite() || product == 0.0 {
+        return (product, 0.0);
+    }
+    let error =
+        left.0.mul_add(right.0, -product) + left.0 * right.1 + left.1 * right.0 + left.1 * right.1;
+    if !error.is_finite() {
+        return (product, 0.0);
+    }
+    let corrected = product + error;
+    (corrected, error - (corrected - product))
+}
+
+fn double_product_f64(left: (f64, f64), right: f64) -> (f64, f64) {
+    double_product(left, (right, 0.0))
+}
+
 #[derive(Clone, Copy)]
 struct StableFactor {
     direct: f64,
+    direct_error: f64,
     logarithm: f64,
     negative: bool,
     exact_zero: bool,
@@ -1518,6 +1529,7 @@ struct StableFactor {
 impl StableFactor {
     const ZERO: Self = Self {
         direct: 0.0,
+        direct_error: 0.0,
         logarithm: f64::NEG_INFINITY,
         negative: false,
         exact_zero: true,
@@ -1525,6 +1537,7 @@ impl StableFactor {
 
     const ONE: Self = Self {
         direct: 1.0,
+        direct_error: 0.0,
         logarithm: 0.0,
         negative: false,
         exact_zero: false,
@@ -1532,6 +1545,7 @@ impl StableFactor {
 
     const INEXACT_ZERO: Self = Self {
         direct: 0.0,
+        direct_error: 0.0,
         logarithm: f64::NEG_INFINITY,
         negative: false,
         exact_zero: false,
@@ -1541,15 +1555,30 @@ impl StableFactor {
         if factors.contains(&0.0) {
             return Self::ZERO;
         }
-        let direct = factors.iter().product();
+        let (direct, direct_error) = factors.iter().copied().fold((1.0, 0.0), double_product_f64);
         let negative = factors.iter().fold(false, |negative, factor| {
             negative ^ factor.is_sign_negative()
         });
         let logarithm = factors.iter().map(|factor| factor.abs().ln()).sum();
         Self {
             direct,
+            direct_error,
             logarithm,
             negative,
+            exact_zero: false,
+        }
+    }
+
+    fn from_double(direct: f64, direct_error: f64) -> Self {
+        if direct == 0.0 && direct_error == 0.0 {
+            return Self::ZERO;
+        }
+        let represented = direct + direct_error;
+        Self {
+            direct,
+            direct_error,
+            logarithm: represented.abs().ln(),
+            negative: represented.is_sign_negative(),
             exact_zero: false,
         }
     }
@@ -1558,8 +1587,10 @@ impl StableFactor {
         if amplitude == 0.0 {
             return Self::ZERO;
         }
+        let (direct, direct_error) = double_product_f64((amplitude, 0.0), exponent.exp());
         Self {
-            direct: amplitude * exponent.exp(),
+            direct,
+            direct_error,
             logarithm: amplitude.abs().ln() + exponent,
             negative: amplitude.is_sign_negative(),
             exact_zero: false,
@@ -1574,8 +1605,13 @@ impl StableFactor {
         if self.exact_zero || other.exact_zero {
             return Self::ZERO;
         }
+        let (direct, direct_error) = double_product(
+            (self.direct, self.direct_error),
+            (other.direct, other.direct_error),
+        );
         Self {
-            direct: self.direct * other.direct,
+            direct,
+            direct_error,
             logarithm: self.logarithm + other.logarithm,
             negative: self.negative ^ other.negative,
             exact_zero: false,
@@ -1586,10 +1622,13 @@ impl StableFactor {
         if self.exact_zero || factors.contains(&0.0) {
             return Self::ZERO;
         }
+        let (direct, direct_error) = factors
+            .iter()
+            .copied()
+            .fold((self.direct, self.direct_error), double_product_f64);
         Self {
-            direct: factors
-                .iter()
-                .fold(self.direct, |product, factor| product * factor),
+            direct,
+            direct_error,
             logarithm: factors
                 .iter()
                 .fold(self.logarithm, |sum, factor| sum + factor.abs().ln()),
@@ -1603,6 +1642,7 @@ impl StableFactor {
     fn negated(mut self) -> Self {
         if !self.exact_zero {
             self.direct = -self.direct;
+            self.direct_error = -self.direct_error;
             self.negative = !self.negative;
         }
         self
@@ -1615,19 +1655,34 @@ impl StableFactor {
         if other.exact_zero {
             return self;
         }
-        let direct = self.direct + other.direct;
+        let (direct, direct_error) = double_sum(
+            (self.direct, self.direct_error),
+            (other.direct, other.direct_error),
+        );
         if self.negative == other.negative {
             let maximum = self.logarithm.max(other.logarithm);
             let minimum = self.logarithm.min(other.logarithm);
             return Self {
                 direct,
+                direct_error,
                 logarithm: maximum + (minimum - maximum).exp().ln_1p(),
                 negative: self.negative,
                 exact_zero: false,
             };
         }
         if self.logarithm.total_cmp(&other.logarithm).is_eq() {
-            return Self::ZERO;
+            return if direct.is_finite() && (direct != 0.0 || direct_error != 0.0) {
+                let represented = direct + direct_error;
+                Self {
+                    direct,
+                    direct_error,
+                    logarithm: represented.abs().ln(),
+                    negative: represented.is_sign_negative(),
+                    exact_zero: false,
+                }
+            } else {
+                Self::INEXACT_ZERO
+            };
         }
         let (larger, smaller) = if self.logarithm > other.logarithm {
             (self, other)
@@ -1636,6 +1691,7 @@ impl StableFactor {
         };
         Self {
             direct,
+            direct_error,
             logarithm: larger.logarithm + (-(smaller.logarithm - larger.logarithm).exp()).ln_1p(),
             negative: larger.negative,
             exact_zero: false,
@@ -1656,7 +1712,7 @@ impl StableFactor {
                 0.0
             });
         }
-        let direct = scale * self.direct;
+        let direct = scale.mul_add(self.direct, scale * self.direct_error);
         if direct.is_finite() && direct != 0.0 {
             return Some(direct);
         }
@@ -1747,29 +1803,21 @@ fn scaled_smootherstep_jet(
             second: StableFactor::ZERO,
         };
     }
-    let complement = parameter - 1.0;
+    let parameter_factor = StableFactor::from_factors(&[parameter]);
+    let complement = parameter_factor.sum(StableFactor::from_factors(&[-1.0]));
+    let polynomial = StableFactor::from_factors(&[6.0, parameter, parameter])
+        .sum(StableFactor::from_factors(&[-15.0, parameter]))
+        .sum(StableFactor::from_factors(&[10.0]));
+    let two_parameter_minus_one =
+        StableFactor::from_factors(&[2.0, parameter]).sum(StableFactor::from_factors(&[-1.0]));
     AxisGate {
-        value: StableFactor::from_factors(&[
-            parameter,
-            parameter,
-            parameter,
-            parameter * (6.0 * parameter - 15.0) + 10.0,
-        ]),
-        first: StableFactor::from_factors(&[
-            30.0,
-            parameter,
-            inverse_width,
-            parameter,
-            complement,
-            complement,
-        ]),
-        second: StableFactor::from_factors(&[
-            60.0,
-            parameter,
-            complement,
-            2.0 * parameter - 1.0,
-            inverse_width_squared,
-        ]),
+        value: StableFactor::from_factors(&[parameter, parameter, parameter]).product(polynomial),
+        first: StableFactor::from_factors(&[30.0, parameter, inverse_width, parameter])
+            .product(complement)
+            .product(complement),
+        second: StableFactor::from_factors(&[60.0, parameter, inverse_width_squared])
+            .product(complement)
+            .product(two_parameter_minus_one),
     }
 }
 
@@ -1844,7 +1892,11 @@ where
             gaussian
                 .factor
                 .product(gate.value)
-                .product_factors(&[-inverse_radius_squared, gaussian.displacements[axis]])
+                .product_factors(&[-inverse_radius_squared])
+                .product(StableFactor::from_double(
+                    gaussian.displacements[axis],
+                    gaussian.displacement_errors[axis],
+                ))
                 .sum(gaussian.factor.product(gate.gradient[axis]))
         })
     } else {
@@ -1911,6 +1963,7 @@ where
 #[derive(Clone, Copy)]
 struct GaussianWeightState<const D: usize> {
     displacements: [f64; D],
+    displacement_errors: [f64; D],
     factor: StableFactor,
 }
 
@@ -1924,6 +1977,7 @@ where
     Dim<D>: SupportedDimension,
 {
     let mut displacements = [0.0; D];
+    let mut displacement_errors = [0.0; D];
     let mut squared_radius = 0.0;
     for (axis, displacement) in displacements.iter_mut().enumerate() {
         *displacement = point.components()[axis] - center.components()[axis];
@@ -1933,6 +1987,11 @@ where
                 axis,
             });
         }
+        displacement_errors[axis] = double_sum(
+            (point.components()[axis], 0.0),
+            (-center.components()[axis], 0.0),
+        )
+        .1;
         let scaled = *displacement * inverse_radius;
         let square = scaled * scaled;
         if !scaled.is_finite() || !square.is_finite() {
@@ -1946,6 +2005,7 @@ where
     let exponent = -0.5 * squared_radius;
     Ok(Some(GaussianWeightState {
         displacements,
+        displacement_errors,
         factor: StableFactor::from_gaussian(amplitude, exponent),
     }))
 }
@@ -2077,6 +2137,59 @@ where
     })
 }
 
+fn stable_kernel_value<const D: usize>(
+    kernel: KernelDefinition<D>,
+    query: Point<D>,
+    center: Point<D>,
+    anisotropy: &GlobalAnisotropy<D>,
+    represented: f64,
+) -> Result<StableFactor, KernelDefinitionEvaluationError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    match kernel {
+        KernelDefinition::Gaussian(gaussian) => {
+            let separation = anisotropy
+                .try_transform_separation(query, center)
+                .map_err(KernelDefinitionEvaluationError::Anisotropy)?;
+            let scaled = separation.radius() / gaussian.length_scale();
+            Ok(StableFactor::from_gaussian(1.0, -0.5 * scaled * scaled))
+        }
+        _ => Ok(StableFactor::from_factors(&[represented])),
+    }
+}
+
+fn component_kernel_jet<const D: usize>(
+    component: &LocalTrendComponent<D>,
+    query: Point<D>,
+    center: Point<D>,
+    demanded: KernelDerivativeOrder,
+    component_index: usize,
+) -> Result<(SpatialKernelJet<D>, StableFactor), LocalTrendEvaluationError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let kernel = component
+        .kernel
+        .try_spatial_jet(query, center, demanded, Some(&component.anisotropy))
+        .map_err(|source| LocalTrendEvaluationError::Kernel {
+            component: component_index,
+            source,
+        })?;
+    let stable_value = stable_kernel_value(
+        component.kernel,
+        query,
+        center,
+        &component.anisotropy,
+        kernel.value(),
+    )
+    .map_err(|source| LocalTrendEvaluationError::Kernel {
+        component: component_index,
+        source,
+    })?;
+    Ok((kernel, stable_value))
+}
+
 fn checked_add<const D: usize>(
     left: f64,
     right: f64,
@@ -2096,7 +2209,7 @@ fn accumulate_component_hessian<const D: usize>(
     total: &mut [[f64; D]; D],
     query_weight: WeightJet<D>,
     center_weight: StableFactor,
-    kernel_value: f64,
+    kernel_value: StableFactor,
     kernel_gradient: [f64; D],
     kernel_hessian: [[f64; D]; D],
     component: usize,
@@ -2109,8 +2222,12 @@ where
             let quantity = LocalTrendQuantity::Hessian { row, column };
             let terms = [
                 checked_stable_terms(
-                    &[center_weight, query_weight.stable.hessian[row][column]],
-                    &[kernel_value],
+                    &[
+                        center_weight,
+                        query_weight.stable.hessian[row][column],
+                        kernel_value,
+                    ],
+                    &[],
                     component,
                     quantity,
                 )?,

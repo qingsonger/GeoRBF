@@ -371,7 +371,7 @@ fn coverage_and_value_skip_irrelevant_weight_hessian_overflow() -> Result<(), Bo
     assert!(value.value().is_finite());
     assert!(matches!(
         mixture.try_evaluate(point, point, KernelDerivativeOrder::Second),
-        Err(LocalTrendEvaluationError::NonFiniteWeightDerivative {
+        Err(LocalTrendEvaluationError::NonFiniteContribution {
             component: 1,
             quantity: georbf::LocalTrendQuantity::Hessian { row: 0, column: 0 },
         })

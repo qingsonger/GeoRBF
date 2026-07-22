@@ -57,7 +57,15 @@ derivative whose ungated Gaussian value underflows. Another public D=1
 regression isolates a finite mixture value in both argument orders when one
 Gaussian weight individually underflows; internal signed logarithmic scale and
 exact-zero provenance now survive through the complete mixture product. A
-runnable example demonstrates regional compilation and Hessian evaluation.
+regional-gradient counterexample also retains the independently derived
+approximately `-1.87e211` scale when opposite analytic terms have equal rounded
+binary64 log magnitudes. A second-derivative counterexample defers
+representability until a small center weight rescues an individually
+overflowing query-weight Hessian into a finite approximately `-4.38e285`
+complete contribution. A fixed-Gaussian counterexample retains analytic kernel
+logarithmic scale after its represented value underflows and recovers the
+independently derived approximately `5.23e-23` local value. A runnable example
+demonstrates regional compilation and Hessian evaluation.
 
 Rust is implemented. CLI and versioned schemas are N/A until M8 defines the
 persisted control representation and complete data CLI. C, C++, and Python are
