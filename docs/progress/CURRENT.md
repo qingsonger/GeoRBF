@@ -6,17 +6,16 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete / fresh Repair required for PR #106
+- Mode: Repair complete / fresh isolated re-review required for PR #106
 - Requirement: REQ-ANISO-002, Issue #105
 - Branch: `codex/req-aniso-002-orientation-tensor`
 - Implementation pull request: #106 (Draft)
-- ANISO002-REV-008/009 Repair code, tests, manifest, lockfile, normative
-  document, and complete-gate state:
-  `1a95323ffd9b8ba43eb5f0390aa02d812edfdba2`
+- ANISO002-REV-008 maximal-scale Repair code, tests, change fragment,
+  normative document, and complete-gate state:
+  `682b55ffe1310dcfafa8d127932fab11f4e9848c`
 - Review state: ANISO002-REV-001 through ANISO002-REV-007 and
-  ANISO002-REV-009 are closed; ANISO002-REV-008 remains open because the
-  repaired D=3 greatest-scale search assumes a false represented-PSD
-  monotonicity property
+  ANISO002-REV-009 are closed; ANISO002-REV-008 has Repair evidence but remains
+  open pending fresh isolated re-review
 - Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
 - Registry state in this change: `implemented`
 
@@ -27,9 +26,10 @@ records, benchmark reports, Git, and GitHub.
   symmetric accumulation.
 - Added represented trace normalization, complete-exponent exact dyadic
   D=2/D=3 principal-minor review, and a uniform off-diagonal retention policy.
-  The Repair searches the complete ordered positive binary64 scale domain, but
-  fresh re-review proved its bisection can miss the greatest certified D=3
-  factor because represented PSD acceptance is nonmonotone.
+  Exact order-two minors use monotone ordered-bit bisection; D=3 uses a finite
+  high-scale-first interval search whose exact dyadic determinant upper bound
+  permits only proved-negative pruning, so independently rounded nonmonotone
+  acceptance still returns the greatest certified scale.
 - Added a primary bounded symmetric eigendecomposition and an explicit bounded
   PSD-SVD path when eigensolver roundoff is negative for a certified matrix;
   diagnostics record both the spectral path and correlation-retention scale.
@@ -56,44 +56,41 @@ records, benchmark reports, Git, and GitHub.
   structured numerical error and now succeeds at exact scale `2^-537`, trace
   one, zero represented off-diagonal, exact represented PSD, and nonnegative
   spectrum.
+- The reviewed public D=3 counterexample failed before the final Repair by
+  returning `1.0.to_bits() - 3`. It now returns and exactly matches the tensor
+  at `1.0.to_bits() - 1`; an exact dyadic regression covers the final
+  accepted--rejected--accepted--rejected determinant sequence and verifies the
+  order-two minors at the greatest accepted scale.
 - The actual allocator regression measures only warmed `try_estimate` calls.
   Fixed ratios allocate twice for both four and sixteen samples;
   cross-validation allocates five times for both counts. Manual annotation
   counters were removed.
-- All 17 public orientation-tensor tests, the dedicated allocation test, the
-  private exact-dyadic test, georbf strict Clippy, the example, optimized
+- All 18 public orientation-tensor tests, the dedicated actual-allocation test,
+  both private exact-dyadic tests, georbf strict Clippy, the example, optimized
   benchmark smoke, and diff whitespace passed. The smoke checksum remained
-  `1.00428812046557887e4` at approximately 6.53 us per estimate locally.
-- The stable code/test/manifest/lockfile/normative-document state committed at
-  `1a95323` passed the complete standard workspace gate: format,
-  warning-denying all-target/all-feature Clippy, all workspace tests with all
-  features, workspace Rustdoc, all 58 requirement checks, and complete diff
-  whitespace. The only later pre-commit edit was change-fragment Markdown.
-- Fresh isolated re-review and an independent parent public-API probe found a
-  valid D=3 single-sample counterexample whose exact represented PSD states
-  near one are accepted at `1-3 ulps`, rejected at `1-2 ulps`, accepted at
-  `1-1 ulp`, and rejected at one. The estimator returns `1-3 ulps`, not the
-  greatest certified `1-1 ulp` factor, so ANISO002-REV-008 remains open.
-- The parent Review task passed the complete standard workspace gate on exact
-  reviewed head `f99be61`, plus the example and optimized benchmark smoke with
-  checksum `1.00428812046557887e4`. Draft Ubuntu CI run 29885690427 also
-  passed on that head.
+  `1.00428812046557887e4` at approximately 6.11 us per estimate locally.
+- Exact Repair head `682b55f` passed the complete standard workspace gate:
+  format, warning-denying all-target/all-feature Clippy, all workspace tests
+  with all features, workspace Rustdoc, all 58 requirement checks, and complete
+  diff whitespace. Only review evidence and this bounded Markdown handoff are
+  changed afterward.
+- Draft Ubuntu CI run 29885690427 passed on earlier reviewed head `f99be61`.
+  CI on the final pushed Repair head has not yet run and is not claimed.
 - Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run and is
   not claimed as passed. Local `actionlint` and the unavailable later tools
   listed below remain unexecuted and are not claimed as passed.
 
 ## Next task boundary
 
-Open a fresh bounded Repair task for only ANISO002-REV-008 in PR #106. First
-add the reviewed public D=3 regression using direction
-`[0.2929103819395529, 0.39358823180141855, -0.3403261034581484]`, unit weight,
-and ratios `[1,1,1]`; require exact represented PSD and the greatest scale bits
-`1.0.to_bits() - 1`, while covering the accepted--rejected--accepted sequence.
-Replace the monotonic ordered-bit bisection with the smallest bounded method
-that proves maximality under independently rounded correlations. Run focused
-checks during repair and the complete standard gate after the final code
-change, update review evidence and this bounded handoff, commit, push, and stop
-for a fresh isolated re-review. Do not begin another requirement.
+Open a fresh isolated Review task for PR #106. Supply the project
+`math_reviewer` only the bounded REQ-ANISO-002 summary and dependency closure,
+Issue #105 criteria, M6 plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, the
+complete PR and latest Repair diffs, directly relevant source/tests, and the
+recorded validation evidence. Independently verify ANISO002-REV-008 closure,
+the exact determinant interval upper-bound proof, maximality of the returned
+scale, and the complete PR. If any finding remains, record evidence and stop;
+do not repair in Review. If clean, follow the repository's ready-CI-integration
+sequence on the exact reviewed head. Do not begin another requirement.
 
 ## Durable evidence
 

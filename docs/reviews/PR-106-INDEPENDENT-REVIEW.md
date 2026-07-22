@@ -946,3 +946,52 @@ PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
 `integrated`. Open a fresh bounded Repair task for ANISO002-REV-008 only. Do
 not repair production code, mark the PR Ready, merge it, or begin another
 requirement in this Review task.
+
+## ANISO002-REV-008 maximal-scale Repair pending fresh independent re-review
+
+- Repair code, tests, change fragment, and normative-document head:
+  `682b55ffe1310dcfafa8d127932fab11f4e9848c`
+- Repair date: 2026-07-22
+- Scope: ANISO002-REV-008 only
+
+The required public D=3 regression was added before production repair and
+failed on reviewed head `3f9bbd2`: the estimator returned scale bits
+`1.0.to_bits() - 3` instead of the greatest certified
+`1.0.to_bits() - 1`. The regression uses the reviewed unit-weight direction
+`[0.2929103819395529, 0.39358823180141855, -0.3403261034581484]` with fixed
+ratios `[1,1,1]`. It now checks the exact returned tensor, represented trace
+one, nonnegative spectral values, and the greatest scale bits. A private exact
+dyadic regression covers the final accepted--rejected--accepted--rejected PSD
+sequence and confirms every order-two minor at the greatest accepted scale.
+
+The Repair no longer bisects the nonmonotone D=3 determinant predicate. It
+first uses ordered-bit bisection only for the monotone exact order-two minors.
+It then traverses the remaining finite D=3 scale-bit interval from higher to
+lower partitions. For each partition, monotonic rounded off-diagonal
+magnitudes give an exact determinant upper bound: the signed cubic term is
+maximized at the appropriate endpoint and all negative squared terms use the
+lower endpoint. A partition is pruned only when fixed-capacity exact dyadic
+accumulation proves that upper bound negative. Consequently the first accepted
+endpoint is the greatest accepted bit pattern even when independently rounded
+correlations toggle determinant sign. The construction adds no clipping,
+jitter, pseudoinverse, hidden regularization, input rejection, dependency,
+interface, schema, or registry-status change.
+
+Focused validation passed all 18 public orientation-tensor tests, both private
+exact-dyadic tests, the actual-allocation regression, warning-denying georbf
+all-target/all-feature Clippy, the runnable example, optimized benchmark smoke,
+and diff whitespace. The benchmark checksum remained
+`1.00428812046557887e4` at approximately 6.11 us per estimate locally.
+
+The exact Repair head passed the complete standard workspace gate after the
+final code and normative-document change: format, warning-denying workspace
+all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
+all 58 requirement checks, and complete diff whitespace. This evidence section
+and the bounded handoff are the only later edits and do not change production,
+tests, manifests, schemas, or build inputs.
+
+This section records Repair evidence only and does not independently close
+ANISO002-REV-008. PR #106 remains Draft and REQ-ANISO-002 remains
+`implemented`, not `integrated`. A fresh isolated mathematical/numerical
+re-review of the complete PR and exact Repair head is required next. This
+Repair does not mark the PR Ready, merge it, or begin another requirement.
