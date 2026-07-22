@@ -641,3 +641,158 @@ This Repair evidence does not close its own finding. PR #109 remains Draft and
 REQ-TREND-002 remains `implemented`, not `integrated`, until a fresh isolated
 read-only `math_reviewer` verifies exact Repair head `accad99` and checks for
 new P0-P3 findings.
+
+## Fresh independent re-review after fourth Repair
+
+- Exact reviewed fourth Repair code/test/contract head:
+  `accad99a9f84145d75199dc6e9fc1bf5996e3a77`
+- Documentation-only evidence head:
+  `d8c5a9eefe9cee74b073f6a6a70170b96c0cfc75`
+- Base and merge-base head:
+  `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
+- Re-review date: 2026-07-22
+- Result: TREND002-REV-008 is closed and TREND002-REV-007 remains closed; P1
+  TREND002-REV-009, TREND002-REV-010, and TREND002-REV-011 require Repair
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-TREND-002 summary and integrated dependency closure, Issue #108 acceptance
+criteria and exclusions, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008
+contracts, the complete PR and fourth-Repair diffs, directly relevant source,
+tests, example and benchmark, and recorded validation evidence. It inherited
+no Implement or Repair reasoning transcript and made no repository, Git, or
+GitHub change.
+
+### Closure of TREND002-REV-008 and retained TREND002-REV-007
+
+- TREND002-REV-008 is closed for its exact published strength, influence
+  radius, fixed-kernel length, separation, and both argument orders. The
+  regression retains the independently derived finite local value when one
+  Gaussian weight individually underflows.
+- TREND002-REV-007 remains closed. Mathematically exact compact query jets and
+  center factors still skip the irrelevant fixed kernel symmetrically through
+  Hessian demand.
+
+### TREND002-REV-009 - P1: rounded log equality is treated as exact cancellation
+
+Affected code and contract:
+
+- `crates/georbf/src/local_trend.rs:1611-1631`
+- `crates/georbf/src/local_trend.rs:1842-1849`
+- `docs/architecture/ANISOTROPY.md:359-362`
+
+`StableFactor::sum` returns the mathematical exact-zero sentinel whenever two
+opposite-sign factors have equal represented logarithms. Equality of rounded
+binary64 logarithms does not prove equality of the underlying factors.
+
+For a valid D=1 regional control with region `[0, 2]`, transition width one,
+strength `1e154`, radius `1e-16`, control location and kernel center
+`c = 9.460674157303392e-18`, query `x = 1.78e-16`, and a unit Gaussian fixed
+kernel and metric, the two analytic terms of
+
+```text
+b'(x) = A exp(-(x-c)^2/(2r^2)) [S'(x) - (x-c)S(x)/r^2]
+```
+
+receive the same rounded log magnitude `284.0495302377682`. The implementation
+therefore marks their sum as mathematically zero. High-precision evaluation
+from the exact represented inputs instead gives approximately
+`b'(x) = -2.2122087785713344e107`, `b(c) = 8.467715431458748e103`, and a
+complete local gradient of `-1.8732354411916995e211`. The evaluator drops that
+term and retains only an approximately `-1.94495619321668e195` fixed-kernel
+gradient term.
+
+A Repair must first add a public compiled D=1 regional-control gradient
+regression with those exact inputs and compare against independently evaluated
+analytic truth. The smallest production repair must never promote equality of
+rounded logarithmic magnitudes to mathematical exact-zero provenance.
+
+### TREND002-REV-010 - P1: premature derivative conversion rejects a finite product
+
+Affected code and contract:
+
+- `crates/georbf/src/local_trend.rs:1430-1462`
+- `crates/georbf/src/local_trend.rs:939-942`
+- `docs/architecture/ANISOTROPY.md:359-362`
+
+`WeightJet::try_from_stable` requires every individually demanded weight
+derivative to be representable as `f64` before it can be multiplied by the
+center factor and fixed kernel. A complete mixture contribution can remain
+finite even when that individual derivative does not.
+
+For a valid nonregional D=1 control with strength `1e154`, radius `1e-100`,
+query and control location zero, kernel center `3.2e-99`, and a unit Gaussian
+fixed kernel and metric, the query-weight Hessian has magnitude `1e354` and is
+rejected. The center weight is approximately `4.377491037053051e-69`, so the
+dominant complete Hessian contribution is approximately
+`-4.3774910370537e285`, which is finite and representable; its log magnitude
+`657.7132272409754` is below `ln(f64::MAX) = 709.782712893384`.
+
+A Repair must first add a public compiled D=1 second-derivative regression for
+those exact inputs, require successful evaluation, and compare the complete
+Hessian against independent logarithmic analytic truth. Representability must
+be decided after each complete mixture term is formed.
+
+### TREND002-REV-011 - P1: fixed-kernel underflow is marked mathematically exact
+
+Affected code and evidence:
+
+- `crates/georbf/src/local_trend.rs:1540-1554`
+- `crates/georbf/src/local_trend.rs:961-966`
+- `crates/georbf/src/local_trend.rs:2055-2077`
+- `changes/REQ-TREND-002.md:58-59`
+
+`checked_stable_terms` wraps represented fixed-kernel values with
+`StableFactor::from_factors`. A kernel value that merely rounded to zero is
+therefore assigned mathematical exact-zero provenance and cannot be recovered
+after multiplication by large but valid weight factors.
+
+For a valid nonregional D=1 control with strength `1e154`, influence radius
+`1000`, fixed Gaussian length one, query zero, center `39`, and a unit metric,
+the represented fixed-kernel value is zero because `exp(-760.5)` underflows.
+The complete local value is nevertheless
+
+```text
+exp(2 ln(1e154) - 0.5 (39/1000)^2 - 0.5 39^2)
+    = 5.232584273707644e-23,
+```
+
+while the implementation returns zero. A unit-Gaussian background also
+underflows at that separation, so a regression can isolate the local value.
+
+A Repair must first add a public compiled D=1 value regression with those
+exact inputs and independent logarithmic truth. The smallest production repair
+must retain exact-zero or logarithmic provenance for fixed-kernel values through
+complete mixture products, analogous to the repaired weight provenance.
+
+### Re-review validation and disposition
+
+- The reviewer verified the exact base and Repair head, the complete scoped PR
+  and fourth-Repair diffs, and that the tail from `accad99` through `d8c5a9e`
+  changes only this review record and the bounded handoff.
+- The exact TREND002-REV-008 and TREND002-REV-007 focused regressions and all
+  five private `local_trend` regressions pass. Complete PR diff whitespace
+  validation also passes.
+- The parent Review task independently passed all eleven public
+  `trend_controls` tests, all five private `local_trend` regressions, workspace
+  format, all 58 requirement checks, and working-diff whitespace validation.
+- Draft Ubuntu CI passed its configured correctness gate on documentation-only
+  evidence head `d8c5a9e`. The Ready-only Windows, Ubuntu, macOS, and
+  benchmark-smoke matrix remains intentionally unexecuted.
+- Exact stable fourth Repair head `accad99` retains the recorded complete local
+  standard gate. No production, test, manifest, schema, CI, or build input
+  changed in the documentation-only tail, so the full workspace gate was not
+  rerun.
+- The fixed-SPD diagonal-congruence construction, strict background, CPD
+  rejection, C2 signs and dimensions, capability gating, interfaces,
+  diagnostics, allocation behavior, and absence of hidden regularization
+  otherwise satisfy the reviewed scope. Polynomial spaces, rank decisions,
+  hard constraints, and solver infeasibility are not applicable.
+
+No additional P0, P2, or P3 finding was identified. PR #109 remains Draft and
+REQ-TREND-002 remains `implemented`, not `integrated`. A fresh Repair task must
+address only TREND002-REV-009, TREND002-REV-010, and TREND002-REV-011, add the
+specified regressions before the smallest production repair, run focused
+checks and one complete stable-head standard gate after the last code change,
+update this record and the bounded handoff, push, and stop for another fresh
+independent re-review. Do not mark the PR ready, merge it, or begin another
+requirement.
