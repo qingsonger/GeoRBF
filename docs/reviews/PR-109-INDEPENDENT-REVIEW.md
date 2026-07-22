@@ -943,3 +943,46 @@ PR #109 must remain Draft and REQ-TREND-002 must remain `implemented`, not
 specified independent derivative regression, run focused checks and one final
 stable-head standard gate, update evidence, push, and stop for another fresh
 independent re-review.
+
+## Sixth Repair evidence pending fresh independent re-review
+
+Sixth Repair code/test/contract and stable full-gate head:
+`cc5fa6f0593f40e57218e98a9322c0b1fc7ef012`.
+
+This Repair addresses only TREND002-REV-012 and remains pending a fresh
+independent re-review:
+
+- The existing fixed-Gaussian-underflow public regression now demands Hessian
+  order and independently checks the retained approximately `5.23e-23` value,
+  `2.04e-21` gradient, and `7.95e-20` Hessian. Before the production change,
+  the new gradient assertion reproduced the finding with expected
+  `2.040707866745981e-21` and actual zero.
+- Fixed Gaussian kernels now retain a complete internal stable jet. Its query
+  gradient uses the analytic transformed-coordinate projection
+  `-A^T A(x-y)/ell^2`, and its query Hessian retains both the projection outer
+  product and `-A^T A/ell^2` curvature terms as signed stable factors. Value,
+  gradient, and Hessian representability is decided only after the two weight
+  factors and each complete mixture term are combined.
+- Non-Gaussian kernels retain their prior represented-jet behavior. Exact
+  compact-support short-circuits, fixed-SPD construction, CPD rejection, and
+  the prior TREND002-REV-007 through TREND002-REV-011 regressions are unchanged.
+
+Focused validation passed all fourteen public `trend_controls` tests, all
+fifteen `local_trend` integration tests, all five private local-trend
+regressions, warning-denying georbf all-target/all-feature Clippy, and complete
+diff whitespace validation. The release-mode focused benchmark smoke completed
+at approximately 8.7 us for four controls and 36.0 us for sixteen controls over
+200 compilations per case on the development machine.
+
+After the final production, test, Rustdoc, architecture, and change-fragment
+edit, exact stable head `cc5fa6f` passed workspace format, warning-denying
+workspace all-target/all-feature Clippy, all-feature workspace tests, workspace
+Rustdoc, all 58 requirement checks, and complete diff whitespace validation.
+The remaining review-record and bounded-handoff edits change only Markdown
+review state and do not alter production, test, manifest, schema, CI, or build
+input.
+
+This Repair evidence does not close its own finding. PR #109 remains Draft and
+REQ-TREND-002 remains `implemented`, not `integrated`, until a fresh isolated
+read-only `math_reviewer` verifies exact Repair head `cc5fa6f` and checks for
+new P0-P3 findings.
