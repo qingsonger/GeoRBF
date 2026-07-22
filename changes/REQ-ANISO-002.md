@@ -109,12 +109,23 @@ result/candidate-work vectors remain.
 
 The ANISO002-REV-008/009 Repair replaces fixed-count real-number correlation
 bisection with a finite search over the ordered positive binary64 scale bit
-patterns from zero through one. The public D=2 `[1,2^-538]` regression now
-reaches the greatest certified represented scale `2^-537`, rounds both
-off-diagonal entries to zero, retains trace one, and returns a nonnegative
-spectrum. It also removes every manual allocation annotation. A dedicated
-single-test integration binary constructs and warms the inputs outside the
-measured region, then observes actual allocator calls around only
+patterns from zero through one. The public D=2 `[1,2^-538]` regression reaches
+the greatest certified represented scale `2^-537`, rounds both off-diagonal
+entries to zero, retains trace one, and returns a nonnegative spectrum. A fresh
+re-review then showed that exact represented D=3 determinant acceptance can be
+nonmonotone because the three correlations round independently. The final
+ANISO002-REV-008 Repair therefore bisects only the monotone order-two minors,
+then searches the remaining D=3 bit interval from high to low with exact dyadic
+determinant upper bounds. It prunes an interval only when its greatest possible
+determinant is proved negative, so the first accepted candidate is maximal
+without assuming determinant monotonicity. The reviewed single-sample direction
+`[0.2929103819395529, 0.39358823180141855, -0.3403261034581484]` now retains
+scale `1.0.to_bits() - 1`; exact tests cover accepted, rejected, accepted, and
+rejected states at the final four scale patterns.
+
+The ANISO002-REV-008/009 Repair also removes every manual allocation annotation.
+A dedicated single-test integration binary constructs and warms the inputs
+outside the measured region, then observes actual allocator calls around only
 `try_estimate`: fixed-ratio estimation performs two allocations for both four
 and sixteen samples, while cross-validated estimation performs five for both.
 This supplies the remaining independent regression evidence for

@@ -1065,29 +1065,109 @@ where
     }
 
     let original = *tensor;
+    let greatest_pairwise_bits = greatest_pairwise_psd_scale_bits(original)?;
+    let pairwise_scale = f64::from_bits(greatest_pairwise_bits);
+    let pairwise_candidate = tensor_with_correlation_scale(original, pairwise_scale);
+    if D < 3 || represented_tensor_is_positive_semidefinite(&pairwise_candidate)? {
+        *tensor = pairwise_candidate;
+        return Ok(pairwise_scale);
+    }
+
+    let Some(accepted_bits) = greatest_d3_psd_scale_bits(original, 0, greatest_pairwise_bits)?
+    else {
+        return Err(OrientationTensorError::NonFiniteNumericalResult {
+            operation: "positive-semidefinite tensor representation",
+        });
+    };
+    let accepted_scale = f64::from_bits(accepted_bits);
+    *tensor = tensor_with_correlation_scale(original, accepted_scale);
+    Ok(accepted_scale)
+}
+
+fn greatest_pairwise_psd_scale_bits<const D: usize>(
+    original: [[f64; D]; D],
+) -> Result<u64, OrientationTensorError>
+where
+    Dim<D>: SupportedDimension,
+{
+    if represented_tensor_has_nonnegative_order_two_minors(&original)? {
+        return Ok(1.0_f64.to_bits());
+    }
+
     let mut accepted_bits = 0_u64;
     let mut rejected_bits = 1.0_f64.to_bits();
     while accepted_bits + 1 < rejected_bits {
         let scale_bits = accepted_bits + (rejected_bits - accepted_bits) / 2;
         let scale = f64::from_bits(scale_bits);
         let candidate = tensor_with_correlation_scale(original, scale);
-        if represented_tensor_is_positive_semidefinite(&candidate)? {
+        if represented_tensor_has_nonnegative_order_two_minors(&candidate)? {
             accepted_bits = scale_bits;
         } else {
             rejected_bits = scale_bits;
         }
     }
+    Ok(accepted_bits)
+}
 
-    let accepted_scale = f64::from_bits(accepted_bits);
-    let candidate = tensor_with_correlation_scale(original, accepted_scale);
-    if represented_tensor_is_positive_semidefinite(&candidate)? {
-        *tensor = candidate;
-        Ok(accepted_scale)
-    } else {
-        Err(OrientationTensorError::NonFiniteNumericalResult {
-            operation: "positive-semidefinite tensor representation",
-        })
+fn greatest_d3_psd_scale_bits<const D: usize>(
+    original: [[f64; D]; D],
+    lower_bits: u64,
+    upper_bits: u64,
+) -> Result<Option<u64>, OrientationTensorError>
+where
+    Dim<D>: SupportedDimension,
+{
+    let upper = tensor_with_correlation_scale(original, f64::from_bits(upper_bits));
+    if represented_tensor_is_positive_semidefinite(&upper)? {
+        return Ok(Some(upper_bits));
     }
+    if lower_bits == upper_bits
+        || !d3_determinant_interval_can_be_nonnegative(original, lower_bits, upper_bits)?
+    {
+        return Ok(None);
+    }
+
+    let middle_bits = lower_bits + (upper_bits - lower_bits) / 2;
+    // Search the upper partition first. The exact interval bound below is the
+    // only reason a partition is discarded, so the first accepted endpoint
+    // reached by this finite traversal is the greatest accepted bit pattern.
+    if let Some(bits) = greatest_d3_psd_scale_bits(original, middle_bits + 1, upper_bits)? {
+        return Ok(Some(bits));
+    }
+    greatest_d3_psd_scale_bits(original, lower_bits, middle_bits)
+}
+
+fn d3_determinant_interval_can_be_nonnegative<const D: usize>(
+    original: [[f64; D]; D],
+    lower_bits: u64,
+    upper_bits: u64,
+) -> Result<bool, OrientationTensorError>
+where
+    Dim<D>: SupportedDimension,
+{
+    debug_assert_eq!(D, 3);
+    let lower = tensor_with_correlation_scale(original, f64::from_bits(lower_bits));
+    let upper = tensor_with_correlation_scale(original, f64::from_bits(upper_bits));
+    let cubic_is_zero = original[0][1] == 0.0 || original[0][2] == 0.0 || original[1][2] == 0.0;
+    let cubic_is_negative = original[0][1].is_sign_negative()
+        ^ original[0][2].is_sign_negative()
+        ^ original[1][2].is_sign_negative();
+    let positive_cubic = cubic_is_zero || !cubic_is_negative;
+    let cubic = if positive_cubic { upper } else { lower };
+
+    // For det(D + O) = abc + 2xyz - az^2 - by^2 - cx^2, every rounded
+    // off-diagonal magnitude is monotone over the scale interval. Maximize the
+    // positive cubic at the upper endpoint (or the negative cubic at the
+    // lower endpoint) and minimize all squared penalties at the lower
+    // endpoint. Exact dyadic accumulation makes the resulting sign a proved
+    // upper bound even though the represented determinant itself may toggle.
+    let mut determinant_upper_bound = ExactDyadicSum::zero();
+    determinant_upper_bound.add_triple_product(original[0][0], original[1][1], original[2][2], 1.0);
+    determinant_upper_bound.add_triple_product(cubic[0][1], cubic[0][2], cubic[1][2], 2.0);
+    determinant_upper_bound.add_triple_product(original[0][0], lower[1][2], lower[1][2], -1.0);
+    determinant_upper_bound.add_triple_product(original[1][1], lower[0][2], lower[0][2], -1.0);
+    determinant_upper_bound.add_triple_product(original[2][2], lower[0][1], lower[0][1], -1.0);
+    Ok(determinant_upper_bound.sign()? != Ordering::Less)
 }
 
 fn tensor_with_correlation_scale<const D: usize>(
@@ -1114,18 +1194,8 @@ fn represented_tensor_is_positive_semidefinite<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
-    if (0..D).any(|axis| !tensor[axis][axis].is_finite() || tensor[axis][axis] < 0.0) {
+    if !represented_tensor_has_nonnegative_order_two_minors(tensor)? {
         return Ok(false);
-    }
-    for first in 0..D {
-        for second in first + 1..D {
-            let mut minor = ExactDyadicSum::zero();
-            minor.add_product(tensor[first][first], tensor[second][second], 1.0);
-            minor.add_product(tensor[first][second], tensor[second][first], -1.0);
-            if minor.sign()? == std::cmp::Ordering::Less {
-                return Ok(false);
-            }
-        }
     }
     if D == 3 {
         let mut determinant = ExactDyadicSum::zero();
@@ -1146,6 +1216,28 @@ where
         }
         if determinant.sign()? == std::cmp::Ordering::Less {
             return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
+fn represented_tensor_has_nonnegative_order_two_minors<const D: usize>(
+    tensor: &[[f64; D]; D],
+) -> Result<bool, OrientationTensorError>
+where
+    Dim<D>: SupportedDimension,
+{
+    if (0..D).any(|axis| !tensor[axis][axis].is_finite() || tensor[axis][axis] < 0.0) {
+        return Ok(false);
+    }
+    for first in 0..D {
+        for second in first + 1..D {
+            let mut minor = ExactDyadicSum::zero();
+            minor.add_product(tensor[first][first], tensor[second][second], 1.0);
+            minor.add_product(tensor[first][second], tensor[second][first], -1.0);
+            if minor.sign()? == std::cmp::Ordering::Less {
+                return Ok(false);
+            }
         }
     }
     Ok(true)
@@ -1698,6 +1790,42 @@ mod tests {
         let mut triple = ExactDyadicSum::zero();
         triple.add_triple_product(minimum_subnormal, minimum_subnormal, minimum_subnormal, 1.0);
         assert_eq!(triple.sign()?, Ordering::Greater);
+        Ok(())
+    }
+
+    #[test]
+    fn exact_d3_psd_states_can_be_accepted_rejected_then_accepted() -> TestResult {
+        let represented = [
+            [
+                0.240_643_090_561_415_03,
+                0.323_355_860_185_392_5,
+                -0.279_597_891_998_903_6,
+            ],
+            [
+                0.323_355_860_185_392_5,
+                0.434_498_294_018_337_2,
+                -0.375_700_032_202_895_44,
+            ],
+            [
+                -0.279_597_891_998_903_6,
+                -0.375_700_032_202_895_44,
+                0.324_858_615_420_247_7,
+            ],
+        ];
+        let one_bits = 1.0_f64.to_bits();
+        let psd_states = [3_u64, 2, 1, 0]
+            .map(|offset| {
+                tensor_with_correlation_scale(represented, f64::from_bits(one_bits - offset))
+            })
+            .map(|candidate| represented_tensor_is_positive_semidefinite(&candidate))
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()?;
+
+        assert_eq!(psd_states, [true, false, true, false]);
+        let greatest = tensor_with_correlation_scale(represented, f64::from_bits(one_bits - 1));
+        assert!(represented_tensor_has_nonnegative_order_two_minors(
+            &greatest
+        )?);
         Ok(())
     }
 }

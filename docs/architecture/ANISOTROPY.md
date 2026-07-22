@@ -100,10 +100,18 @@ the represented binary64 signs, significands, and exponents, then certify every
 D=2/D=3 principal minor. Their exponent range includes products and triple
 products below the minimum binary64 subnormal, so no accepted finite component
 is erased before the exact sign decision. If independently rounded
-off-diagonal entries alone cross the PSD boundary, deterministic bisection over
-the ordered positive binary64 scale bit patterns retains the greatest certified
-uniform factor on all off-diagonal entries while leaving every diagonal
-unchanged. The finite search covers the complete represented interval from
+off-diagonal entries alone cross the PSD boundary, a two-stage finite search
+retains the greatest certified uniform factor on all off-diagonal entries while
+leaving every diagonal unchanged. Exact order-two minor acceptance is monotone,
+so ordered-bit bisection first finds its greatest admissible scale. D=3 then
+uses a high-scale-first partition of that finite bit interval because the exact
+determinant of independently rounded correlations need not be monotone. A
+partition is discarded only when an exact dyadic upper bound is negative: the
+bound maximizes the signed cubic correlation term over the interval and
+minimizes every negative squared-correlation term. Searching the upper
+partition first and pruning only on that proof makes the first accepted scale
+the greatest accepted bit pattern, including an accepted--rejected--accepted
+rounding sequence. The search covers the complete represented interval from
 zero through one, including scales below the normal range. This is a
 represented-arithmetic closure of the outer-product invariant, not eigenvalue
 clipping, diagonal jitter, or hidden regularization. Diagnostics record the
