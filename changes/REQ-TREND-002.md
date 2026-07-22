@@ -76,8 +76,14 @@ instead of a spurious negative approximately `-3.68e-201` fixed-kernel term.
 An extreme-radius plateau counterexample keeps the residual-aware diagonal
 factors separate until each receives one inverse-radius-square scale, retaining
 the independent positive approximately `1.27501e128` complete Hessian instead
-of underflowing the curvature and returning approximately `-0.618`. A runnable
-example demonstrates regional compilation and Hessian evaluation.
+of underflowing the curvature and returning approximately `-0.618`. The same
+exact counterexample without a region now uses the shared residual-aware
+Gaussian state and retains the same positive Hessian. A fixed-Gaussian
+counterexample with length `1e200` and two `1e154` spatial weights retains two
+represented reciprocal-length factors through complete-term scaling and
+recovers the independent approximately `-3.67879441171431e-93` Hessian instead
+of only the `-2^-1074` background term. A runnable example demonstrates
+regional compilation and Hessian evaluation.
 
 Rust is implemented. CLI and versioned schemas are N/A until M8 defines the
 persisted control representation and complete data CLI. C, C++, and Python are

@@ -1560,3 +1560,52 @@ repairs, run focused checks and one final stable-head standard gate, update
 evidence, push, and stop for another fresh independent re-review. This Review
 task does not repair production code, mark the PR Ready, merge it, or begin
 another requirement.
+
+## Tenth Repair of TREND002-REV-016 and TREND002-REV-017
+
+Exact tenth Repair code/test/contract head:
+`2a25f4467588edd7ac040074a79e3aeed6b3f459`.
+
+The new public non-regional D=1 regression uses the exact reviewed REV-016
+inputs: influence radius `2^-500`, control location `-2^-1074`, query and
+kernel center `2^-500`, unit strength, fixed anisotropy and Gaussian length,
+no region, and the constant-`0.5` strict Gaussian background. Before the
+production repair it reproduced `-0.6178794411714423`; it now retains the
+independent positive `1.2750102220326992e128` Hessian within `64 * EPSILON`
+relative tolerance.
+
+The smallest REV-016 repair reuses the residual-aware Gaussian state already
+required by the regional path. Non-regional value, gradient, diagonal Hessian,
+and mixed Hessian formation now preserve the error-free subtraction residual;
+the diagonal factors `d-r` and `d+r` each receive one represented
+inverse-radius-square factor before their product. No region semantics or
+public API changes.
+
+The new public compiled D=1 REV-017 regression uses control location zero,
+query and kernel center `1e154`, strength and influence radius `1e154`, no
+region, unit fixed anisotropy, fixed Gaussian length `1e200`, and a constant
+background weight and policy minimum of `2^-537`. Before the repair it
+reproduced only the `-2^-1074` background Hessian; it now retains the
+independent finite approximately `-3.67879441171431e-93` complete Hessian
+within `1024 * EPSILON` relative tolerance.
+
+The smallest REV-017 repair no longer squares the represented reciprocal
+fixed-Gaussian length before stable-factor construction. Both gradient
+projections and Hessian curvature retain two reciprocal-length factors until
+they are combined with anisotropy, displacement, Gaussian value, and both
+spatial weights. The ordinary smooth-kernel representation and public API are
+unchanged.
+
+Focused validation passed all nineteen public `trend_controls` tests, all
+fifteen public `local_trend` integration tests, all five private local-trend
+regressions, both exact new regressions, and complete diff whitespace
+validation. After the last production/test change, exact stable head `2a25f44`
+passed workspace format, warning-denying workspace all-target/all-feature
+Clippy, all-feature workspace tests, workspace Rustdoc, all 58 requirement
+checks, and complete diff whitespace validation.
+
+TREND002-REV-016 and TREND002-REV-017 are repaired pending a fresh isolated
+read-only re-review; this Repair does not close its own findings. PR #109
+remains Draft and REQ-TREND-002 remains `implemented`, not `integrated`.
+Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI remain intentionally
+unexecuted. No unavailable check is claimed as passed.
