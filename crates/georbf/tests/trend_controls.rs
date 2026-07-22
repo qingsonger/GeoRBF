@@ -7,12 +7,13 @@ use georbf::{
     AffineNormalization, AngleUnit, AnisotropyConditionPolicy, AxisOrder, CenterRepresenter,
     CompiledTrendControls, ConditionPolicy, CoordinateMetadata, CrsMetadata, DenseFactorization,
     DenseSolveOptions, Enforcement, ExecutionOptions, FieldId, FieldProblem, FittedField,
-    FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm, Gaussian, GeoProject,
-    GlobalAnisotropy, Handedness, KernelDefinition, KernelDerivativeOrder, LengthUnit,
-    LocalTrendBackground, LocalTrendControl, Multiquadric, ObservationFunctional, ObservationId,
-    OperationalDomain, Point, ProjectField, Regularization, ResolvedTrendDirectionSource,
-    ResolvedTrendOrientation, SemanticConstraint, SemanticExpression, SemanticProblemIr,
-    SemanticProvenance, SemanticRelation, SmoothRegion, SmoothSpatialWeight, SourceLocation,
+    FittedFieldEvaluationError, FunctionalAtom, FunctionalExpr, FunctionalProvenance,
+    FunctionalTerm, Gaussian, GeoProject, GlobalAnisotropy, Handedness, KernelDefinition,
+    KernelDerivativeOrder, LengthUnit, LocalTrendBackground, LocalTrendControl, Matern,
+    MaternSmoothness, Multiquadric, ObservationFunctional, ObservationId, OperationalDomain, Point,
+    ProjectField, Regularization, ResolvedTrendDirectionSource, ResolvedTrendOrientation,
+    SemanticConstraint, SemanticExpression, SemanticProblemIr, SemanticProvenance,
+    SemanticRelation, SmoothRegion, SmoothSpatialWeight, SourceLocation,
     TrendControlCompilationError, TrendControlOrientation, TrendControlPolicy,
     TrendControlPolicyError, TrendDirectionSource, UnitDirection, VerticalDirection,
     try_compile_local_trend_controls,
@@ -152,6 +153,69 @@ fn explicit_spheroidal_and_ellipsoidal_controls_compile_in_order() -> Result<(),
 }
 
 #[test]
+fn rotated_control_metrics_match_hand_formed_truth() -> Result<(), Box<dyn Error>> {
+    let spheroidal_axis = direction([1.0, 1.0])?;
+    let ellipsoidal_axes = [direction([1.0, 1.0])?, direction([-1.0, 1.0])?];
+    let controls = [
+        LocalTrendControl::new(
+            point([0.0, 0.0])?,
+            KernelDefinition::from(Gaussian::try_new(0.8)?),
+            TrendControlOrientation::Spheroidal {
+                principal_axis: TrendDirectionSource::Explicit(spheroidal_axis),
+                axial_length: 2.0,
+                transverse_length: 0.75,
+            },
+            1.0,
+            1.0,
+            None,
+        ),
+        LocalTrendControl::new(
+            point([0.0, 0.0])?,
+            KernelDefinition::from(Gaussian::try_new(0.8)?),
+            TrendControlOrientation::Ellipsoidal {
+                principal_axes: ellipsoidal_axes.map(TrendDirectionSource::Explicit),
+                axis_lengths: [3.0, 1.0],
+                orthogonality_tolerance: 8.0 * f64::EPSILON,
+            },
+            1.0,
+            1.0,
+            None,
+        ),
+    ];
+    let compiled = try_compile_local_trend_controls(
+        background()?,
+        &controls,
+        None,
+        domain(2.0)?,
+        0.25,
+        policy(1.0e-12, 1.0e-6, 1.0)?,
+    )?;
+
+    let spheroidal_metric = compiled.mixture().components()[1].anisotropy().metric();
+    let u = spheroidal_axis.components();
+    for (row, actual_row) in spheroidal_metric.iter().enumerate() {
+        for (column, actual) in actual_row.iter().enumerate() {
+            let projector = u[row] * u[column];
+            let expected = projector / 2.0_f64.powi(2)
+                + (f64::from(row == column) - projector) / 0.75_f64.powi(2);
+            assert_close(*actual, expected, 32.0 * f64::EPSILON);
+        }
+    }
+
+    let ellipsoidal_metric = compiled.mixture().components()[2].anisotropy().metric();
+    for (row, actual_row) in ellipsoidal_metric.iter().enumerate() {
+        for (column, actual) in actual_row.iter().enumerate() {
+            let expected = ellipsoidal_axes[0].components()[row]
+                * ellipsoidal_axes[0].components()[column]
+                / 3.0_f64.powi(2)
+                + ellipsoidal_axes[1].components()[row] * ellipsoidal_axes[1].components()[column];
+            assert_close(*actual, expected, 32.0 * f64::EPSILON);
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn regional_gate_is_exactly_c2_zero_at_boundaries() -> Result<(), Box<dyn Error>> {
     let region = SmoothRegion::try_new(point([-1.0, -1.0])?, point([1.0, 1.0])?, 0.25)?;
     let control = spheroid([0.0, 0.0], [1.0, 0.0], Some(region))?;
@@ -249,6 +313,13 @@ fn regional_gaussian_product_rules_match_finite_differences() -> Result<(), Box<
             / (h * h);
         assert!((hessian[axis][axis] - finite_difference).abs() <= 2.0e-5);
     }
+    let mixed_finite_difference = (mixture_value(&compiled, [query[0] + h, query[1] + h], center)?
+        - mixture_value(&compiled, [query[0] + h, query[1] - h], center)?
+        - mixture_value(&compiled, [query[0] - h, query[1] + h], center)?
+        + mixture_value(&compiled, [query[0] - h, query[1] - h], center)?)
+        / (4.0 * h * h);
+    assert!((hessian[0][1] - mixed_finite_difference).abs() <= 2.0e-5);
+    assert!((hessian[1][0] - mixed_finite_difference).abs() <= 2.0e-5);
     Ok(())
 }
 
@@ -320,7 +391,11 @@ where
     )?])?)
 }
 
-fn fitted_axis<const D: usize>() -> Result<FittedField<D>, Box<dyn Error>>
+fn fitted_two_point<const D: usize>(
+    targets: [f64; 2],
+    normalization: AffineNormalization<D>,
+    kernel: KernelDefinition<D>,
+) -> Result<FittedField<D>, Box<dyn Error>>
 where
     georbf::Dim<D>: georbf::SupportedDimension,
 {
@@ -347,7 +422,7 @@ where
                     ObservationFunctional::new(expression),
                     0.0,
                 )?,
-                target: coordinate,
+                target: targets[index],
             },
             Enforcement::Hard,
         )?);
@@ -359,11 +434,8 @@ where
     Ok(FittedField::try_fit(
         problem,
         metadata()?,
-        AffineNormalization::try_new(
-            point([0.0; D])?,
-            std::array::from_fn(|row| std::array::from_fn(|column| f64::from(row == column))),
-        )?,
-        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        normalization,
+        kernel,
         None,
         DenseSolveOptions::try_new(
             DenseFactorization::Cholesky,
@@ -373,6 +445,41 @@ where
             NonZeroUsize::new(TEST_MEMORY_LIMIT_BYTES).ok_or("memory limit")?,
         )?,
     )?)
+}
+
+fn fitted_axis<const D: usize>() -> Result<FittedField<D>, Box<dyn Error>>
+where
+    georbf::Dim<D>: georbf::SupportedDimension,
+{
+    fitted_two_point(
+        [-1.0, 1.0],
+        AffineNormalization::try_new(
+            point([0.0; D])?,
+            std::array::from_fn(|row| std::array::from_fn(|column| f64::from(row == column))),
+        )?,
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+    )
+}
+
+fn reference_control<const D: usize>(
+    location: [f64; D],
+    field_id: FieldId,
+) -> Result<LocalTrendControl<D>, Box<dyn Error>>
+where
+    georbf::Dim<D>: georbf::SupportedDimension,
+{
+    Ok(LocalTrendControl::new(
+        point(location)?,
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::ReferenceFieldGradient(field_id),
+            axial_length: 1.0,
+            transverse_length: 1.0,
+        },
+        1.0,
+        1.0,
+        None,
+    ))
 }
 
 #[test]
@@ -438,6 +545,162 @@ fn reference_gradient_is_normalized_with_provenance_and_confidence() -> Result<(
             policy(1000.0, 1000.0, 1.0)?,
         ),
         Err(TrendControlCompilationError::ReferenceGradientBelowMinimum { .. })
+    ));
+    Ok(())
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn reference_gradient_failures_are_structured_for_all_required_cases() -> Result<(), Box<dyn Error>>
+{
+    let known = FieldId::new(20);
+    let unknown = FieldId::new(21);
+    let ordinary_project = GeoProject::try_new([ProjectField::new(known, fitted_axis::<1>()?)])?;
+    let unknown_control = reference_control([0.0], unknown)?;
+    let unknown_result = try_compile_local_trend_controls(
+        background()?,
+        &[unknown_control],
+        Some(&ordinary_project),
+        domain(2.0)?,
+        0.25,
+        policy(f64::MIN_POSITIVE, 1.0, 1.0)?,
+    );
+
+    let unavailable_field = fitted_two_point(
+        [-1.0, 1.0],
+        AffineNormalization::try_new(point([0.0])?, [[1.0]])?,
+        KernelDefinition::from(Matern::try_new(MaternSmoothness::OneHalf, 1.0)?),
+    )?;
+    let unavailable_project = GeoProject::try_new([ProjectField::new(known, unavailable_field)])?;
+    let unavailable_control = reference_control([-1.0], known)?;
+    let unavailable_result = try_compile_local_trend_controls(
+        background()?,
+        &[unavailable_control],
+        Some(&unavailable_project),
+        domain(2.0)?,
+        0.25,
+        policy(f64::MIN_POSITIVE, 1.0, 1.0)?,
+    );
+
+    let zero_field = fitted_two_point(
+        [1.0, 1.0],
+        AffineNormalization::try_new(point([0.0])?, [[1.0]])?,
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+    )?;
+    let zero_project = GeoProject::try_new([ProjectField::new(known, zero_field)])?;
+    let zero_control = reference_control([0.0], known)?;
+    let zero_result = try_compile_local_trend_controls(
+        background()?,
+        &[zero_control],
+        Some(&zero_project),
+        domain(2.0)?,
+        0.25,
+        policy(f64::MIN_POSITIVE, 1.0, 1.0)?,
+    );
+
+    let normalized_gradient = fitted_axis::<2>()?.try_gradient(point([0.0, 0.0])?)?;
+    let normalized_axis_gradient = normalized_gradient.components()[0].abs();
+    let desired_component = 0.75 * f64::MAX;
+    let inverse_scale = desired_component / normalized_axis_gradient;
+    let unrepresentable_field = fitted_two_point(
+        [-1.0, 1.0],
+        AffineNormalization::try_new(
+            point([0.0, 0.0])?,
+            [[inverse_scale.recip(), -1.0], [0.0, 1.0]],
+        )?,
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+    )?;
+    let unrepresentable_project =
+        GeoProject::try_new([ProjectField::new(known, unrepresentable_field)])?;
+    let unrepresentable_control = reference_control([0.0, 0.0], known)?;
+    let unrepresentable_result = try_compile_local_trend_controls(
+        background()?,
+        &[unrepresentable_control],
+        Some(&unrepresentable_project),
+        domain(2.0)?,
+        0.25,
+        policy(f64::MIN_POSITIVE, 1.0, 1.0)?,
+    );
+
+    let cases = [
+        (
+            "unknown field",
+            matches!(
+                unknown_result,
+                Err(TrendControlCompilationError::UnknownReferenceField {
+                    field_id,
+                    ..
+                }) if field_id == unknown
+            ),
+        ),
+        (
+            "unavailable evaluation",
+            matches!(
+                unavailable_result,
+                Err(TrendControlCompilationError::ReferenceEvaluation { source, .. })
+                    if matches!(
+                        source.as_ref(),
+                        FittedFieldEvaluationError::UnavailableAtCenter { .. }
+                    )
+            ),
+        ),
+        (
+            "zero gradient",
+            matches!(
+                zero_result,
+                Err(TrendControlCompilationError::ReferenceGradientBelowMinimum {
+                    norm,
+                    ..
+                }) if norm == 0.0
+            ),
+        ),
+        (
+            "unrepresentable norm",
+            matches!(
+                unrepresentable_result,
+                Err(TrendControlCompilationError::NonRepresentableReferenceGradientNorm { .. })
+            ),
+        ),
+    ];
+    for (case, matched) in cases {
+        assert!(
+            matched,
+            "missing structured reference-gradient case: {case}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn compiler_rejects_excessive_control_condition_number() -> Result<(), Box<dyn Error>> {
+    let control = LocalTrendControl::new(
+        point([0.0, 0.0])?,
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0, 0.0])?),
+            axial_length: 100.0,
+            transverse_length: 1.0,
+        },
+        1.0,
+        1.0,
+        None,
+    );
+    let explicit_policy =
+        TrendControlPolicy::try_new(AnisotropyConditionPolicy::Maximum(10.0), 1.0e-12, 1.0, 1.0)?;
+
+    assert!(matches!(
+        try_compile_local_trend_controls(
+            background()?,
+            &[control],
+            None,
+            domain(2.0)?,
+            0.25,
+            explicit_policy,
+        ),
+        Err(TrendControlCompilationError::Anisotropy {
+            source: georbf::AnisotropyError::ConditionNumberExceeded { maximum, .. },
+            ..
+        }) if maximum.to_bits() == 10.0_f64.to_bits()
     ));
     Ok(())
 }

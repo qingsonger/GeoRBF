@@ -38,13 +38,19 @@ allocation-free point coverage diagnostics remain available from the compiled
 mixture. The result and diagnostics are deterministic, immutable, and
 `Send + Sync`.
 
-Independent tests cover explicit spheroidal and ellipsoidal truth, deterministic
-control order, control coverage, exact C2 region boundaries, independent
-finite-difference regional product rules, reference-gradient normalization,
-provenance, confidence and failure paths, condition policy, CPD rejection,
-D=1/D=2/D=3, compile-time D=4 rejection, `Send + Sync`, and a represented
-regional derivative whose ungated Gaussian value underflows. A runnable
-example demonstrates regional compilation and Hessian evaluation.
+Independent tests cover rotated spheroidal and ellipsoidal metrics against
+hand-formed `B` matrices, deterministic control order, control coverage, exact
+C2 region boundaries, diagonal and mixed finite-difference regional product
+rules, explicit excessive-condition rejection, reference-gradient
+normalization, provenance, confidence, and structured unknown/unavailable/zero/
+unrepresentable failures, CPD rejection, D=1/D=2/D=3, compile-time D=4
+rejection, and `Send + Sync`. Private numerical regressions verify that narrow
+region transitions retain representable physical first and second derivatives
+and that an exactly zero compact gate short-circuits an otherwise overflowing
+Gaussian displacement through Hessian order. A separate public regression
+retains a represented regional derivative whose ungated Gaussian value
+underflows. A runnable example demonstrates regional compilation and Hessian
+evaluation.
 
 Rust is implemented. CLI and versioned schemas are N/A until M8 defines the
 persisted control representation and complete data CLI. C, C++, and Python are

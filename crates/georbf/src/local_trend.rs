@@ -1409,18 +1409,24 @@ fn axis_region_gate(
     if coordinate <= minimum || coordinate >= maximum {
         return AxisGate::default();
     }
-    let left = smootherstep_jet((coordinate - minimum) * inverse_width);
-    let right = smootherstep_jet((maximum - coordinate) * inverse_width);
+    let left = scaled_smootherstep_jet(
+        (coordinate - minimum) * inverse_width,
+        inverse_width,
+        inverse_width_squared,
+    );
+    let right = scaled_smootherstep_jet(
+        (maximum - coordinate) * inverse_width,
+        inverse_width,
+        inverse_width_squared,
+    );
     let value = left.value * right.value;
     let first = if demanded >= KernelDerivativeOrder::First {
-        inverse_width * (left.first * right.value - left.value * right.first)
+        left.first * right.value - left.value * right.first
     } else {
         0.0
     };
     let second = if demanded >= KernelDerivativeOrder::Second {
-        inverse_width_squared
-            * (left.second * right.value - 2.0 * left.first * right.first
-                + left.value * right.second)
+        left.second * right.value - 2.0 * left.first * right.first + left.value * right.second
     } else {
         0.0
     };
@@ -1431,7 +1437,11 @@ fn axis_region_gate(
     }
 }
 
-fn smootherstep_jet(parameter: f64) -> AxisGate {
+fn scaled_smootherstep_jet(
+    parameter: f64,
+    inverse_width: f64,
+    inverse_width_squared: f64,
+) -> AxisGate {
     if parameter <= 0.0 {
         return AxisGate::default();
     }
@@ -1442,12 +1452,11 @@ fn smootherstep_jet(parameter: f64) -> AxisGate {
             second: 0.0,
         };
     }
-    let squared = parameter * parameter;
     let complement = parameter - 1.0;
     AxisGate {
-        value: squared * parameter * (parameter * (6.0 * parameter - 15.0) + 10.0),
-        first: 30.0 * squared * complement * complement,
-        second: 60.0 * parameter * (2.0 * squared - 3.0 * parameter + 1.0),
+        value: parameter * parameter * parameter * (parameter * (6.0 * parameter - 15.0) + 10.0),
+        first: 30.0 * (parameter * inverse_width) * parameter * complement * complement,
+        second: 60.0 * parameter * complement * (2.0 * parameter - 1.0) * inverse_width_squared,
     }
 }
 
@@ -1507,6 +1516,16 @@ where
     Dim<D>: SupportedDimension,
 {
     let gate = region.try_jet(point, demanded)?;
+    if gate.value == 0.0
+        && gate.gradient.iter().all(|entry| *entry == 0.0)
+        && gate.hessian.iter().flatten().all(|entry| *entry == 0.0)
+    {
+        return Ok(WeightJet {
+            value: 0.0,
+            gradient: [0.0; D],
+            hessian: [[0.0; D]; D],
+        });
+    }
     let Some(gaussian) = gaussian_weight_state(point, center, amplitude, inverse_radius)? else {
         return Ok(WeightJet {
             value: 0.0,
@@ -1989,4 +2008,82 @@ where
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn narrow_region_gate_preserves_representable_first_derivative() {
+        let width = 1.0e-153_f64;
+        let inverse_width = width.recip();
+        let coordinate = 1.0e-323;
+        let parameter = coordinate * inverse_width;
+        let complement = 1.0 - parameter;
+        let expected = 30.0 * (parameter * inverse_width) * parameter * complement * complement;
+
+        let gate = axis_region_gate(
+            coordinate,
+            0.0,
+            1.0,
+            inverse_width,
+            inverse_width * inverse_width,
+            KernelDerivativeOrder::First,
+        );
+
+        assert!(expected.is_finite() && expected != 0.0);
+        assert!(gate.first.is_finite() && gate.first != 0.0);
+        assert!((gate.first - expected).abs() <= expected.abs() * 16.0 * f64::EPSILON);
+    }
+
+    #[test]
+    fn narrow_region_gate_preserves_factored_second_derivative_near_join() {
+        let width = 1.0e-153_f64;
+        let inverse_width = width.recip();
+        let coordinate = f64::from_bits(width.to_bits() - 1);
+        let parameter = coordinate * inverse_width;
+        let expected = 60.0
+            * parameter
+            * (parameter - 1.0)
+            * (2.0 * parameter - 1.0)
+            * (inverse_width * inverse_width);
+
+        let gate = axis_region_gate(
+            coordinate,
+            0.0,
+            1.0,
+            inverse_width,
+            inverse_width * inverse_width,
+            KernelDerivativeOrder::Second,
+        );
+
+        assert!(expected.is_finite() && expected != 0.0);
+        assert!(gate.second.is_finite() && gate.second != 0.0);
+        assert!((gate.second - expected).abs() <= expected.abs() * 16.0 * f64::EPSILON);
+    }
+
+    #[test]
+    fn regional_weight_is_zero_outside_support_before_gaussian_displacement()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let region = SmoothRegion::try_new(Point::try_new([-1.0])?, Point::try_new([1.0])?, 0.25)?;
+        let jet = regional_gaussian_weight_jet(
+            Point::try_new([f64::MAX])?,
+            Point::try_new([-f64::MAX])?,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            region,
+            KernelDerivativeOrder::Second,
+        )?;
+
+        assert_eq!(jet.value.to_bits(), 0.0_f64.to_bits());
+        assert_eq!(jet.gradient.map(f64::to_bits), [0.0_f64.to_bits()]);
+        assert_eq!(
+            jet.hessian.map(|row| row.map(f64::to_bits)),
+            [[0.0_f64.to_bits()]]
+        );
+        Ok(())
+    }
 }
