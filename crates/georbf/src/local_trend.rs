@@ -1912,18 +1912,18 @@ where
         std::array::from_fn(|row| {
             std::array::from_fn(|column| {
                 let gaussian_curvature = if row == column {
-                    gaussian.diagonal_curvature(row, radius)
+                    gaussian.scaled_diagonal_curvature(row, radius, inverse_radius_squared)
                 } else {
                     let first_axis = row.min(column);
                     let second_axis = row.max(column);
                     gaussian
                         .displacement(first_axis)
                         .product(gaussian.displacement(second_axis))
+                        .product_factors(&[inverse_radius_squared, inverse_radius_squared])
                 };
                 gaussian
                     .factor
                     .product(gate.value)
-                    .product_factors(&[inverse_radius_squared, inverse_radius_squared])
                     .product(gaussian_curvature)
                     .sum(
                         gaussian
@@ -1967,12 +1967,21 @@ impl<const D: usize> GaussianWeightState<D> {
         StableFactor::from_double(self.displacements[axis], self.displacement_errors[axis])
     }
 
-    fn diagonal_curvature(self, axis: usize, radius: f64) -> StableFactor {
+    fn scaled_diagonal_curvature(
+        self,
+        axis: usize,
+        radius: f64,
+        inverse_radius_squared: f64,
+    ) -> StableFactor {
         let displacement = (self.displacements[axis], self.displacement_errors[axis]);
         let lower = double_sum(displacement, (-radius, 0.0));
         let upper = double_sum(displacement, (radius, 0.0));
-        let (direct, error) = double_product(lower, upper);
-        StableFactor::from_double(direct, error)
+        StableFactor::from_double(lower.0, lower.1)
+            .product_factors(&[inverse_radius_squared])
+            .product(
+                StableFactor::from_double(upper.0, upper.1)
+                    .product_factors(&[inverse_radius_squared]),
+            )
     }
 }
 

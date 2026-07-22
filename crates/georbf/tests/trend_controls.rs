@@ -1131,3 +1131,46 @@ fn regional_hessian_preserves_rounded_displacement_residual() -> Result<(), Box<
     assert_close(actual, expected, expected * 64.0 * f64::EPSILON);
     Ok(())
 }
+
+#[test]
+fn regional_hessian_scales_diagonal_curvature_before_underflow() -> Result<(), Box<dyn Error>> {
+    let eta = f64::from_bits(1);
+    let influence_radius = 2.0_f64.powi(-500);
+    let region = SmoothRegion::try_new(point([-1.0])?, point([1.0])?, 0.25)?;
+    let control = LocalTrendControl::new(
+        point([-eta])?,
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0])?),
+            axial_length: 1.0,
+            transverse_length: 1.0,
+        },
+        influence_radius,
+        1.0,
+        Some(region),
+    );
+    let compiled = try_compile_local_trend_controls(
+        background()?,
+        &[control],
+        None,
+        domain(1.0)?,
+        0.25,
+        policy(1.0e-12, 1.0, 1.0)?,
+    )?;
+
+    // Independently evaluated with high-precision arithmetic from the exact
+    // represented inputs above: exp(-(1 + 2^-574)^2) times
+    // (2^427 + 2^-148 - 1), plus the background Hessian -0.25.
+    let expected = 1.275_010_222_032_699_2e128_f64;
+    let actual = compiled
+        .mixture()
+        .try_evaluate(
+            point([influence_radius])?,
+            point([influence_radius])?,
+            KernelDerivativeOrder::Second,
+        )?
+        .hessian()
+        .ok_or("missing Hessian")?[0][0];
+    assert_close(actual, expected, expected * 64.0 * f64::EPSILON);
+    Ok(())
+}
