@@ -4,10 +4,11 @@
 - Issue: https://github.com/qingsonger/GeoRBF/issues/108
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/109
 - Branch: `codex/req-trend-002-region-controls`
-- Reviewed head: `9781e8fd6ac140b444a3858c3e1ce38565f42f85`
+- Latest re-reviewed code/test/contract head: `cc5fa6f0593f40e57218e98a9322c0b1fc7ef012`
 - Base head: `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
 - Review date: 2026-07-22
-- Result: P1 TREND002-REV-001 and P2 TREND002-REV-002/003 require Repair
+- Result: TREND002-REV-001 through TREND002-REV-012 closed; P1
+  TREND002-REV-013 requires Repair; no other P0-P3 finding remains
 
 ## Scope and independence
 
@@ -986,3 +987,112 @@ This Repair evidence does not close its own finding. PR #109 remains Draft and
 REQ-TREND-002 remains `implemented`, not `integrated`, until a fresh isolated
 read-only `math_reviewer` verifies exact Repair head `cc5fa6f` and checks for
 new P0-P3 findings.
+
+## Fresh independent re-review after sixth Repair
+
+A fresh isolated read-only project `math_reviewer` reviewed exact sixth Repair
+code/test/contract head `cc5fa6f0593f40e57218e98a9322c0b1fc7ef012`
+against base and merge-base `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`.
+It received only the bounded REQ-TREND-002 summary and integrated dependency
+closure, Issue #108 acceptance criteria and exclusions, M6 plan context,
+ANISOTROPY and ADR-0005/ADR-0008 contracts, complete PR and Repair diffs,
+source, tests, example, benchmark, registry, and validation evidence. It
+inherited no Repair reasoning and made no repository or remote change. The
+evidence-only tail from `cc5fa6f` through `860eed1` changes only this review
+record and the bounded handoff.
+
+Result: TREND002-REV-012 is closed for its exact published regression, and
+TREND002-REV-007 through TREND002-REV-011 remain closed. One new P1 finding,
+TREND002-REV-013, requires Repair. No P0, P2, or P3 finding was identified.
+
+### Closure of TREND002-REV-012
+
+For the exact represented inputs with strength `A = 1e154`, influence radius
+`R = 1000`, query `q = 0`, center `y = 39`, and a unit fixed Gaussian, the
+independent high-precision values are
+
+```text
+L       = 5.2325842737073416406723e-23
+dL/dq   = 39 L = 2.0407078667458632398622e-21
+d2L/dq2 = (39^2 - 1 - R^-2) L
+        = 7.9535280908025750201146e-20.
+```
+
+The background value and derivatives round below the binary64 subnormal range.
+The regression's `f64` logarithmic oracle is approximately `5.77e-14`
+relatively above the high-precision truth for all three quantities, within its
+`1024 * EPSILON` relative tolerance. The repaired implementation has the
+correct analytic signs and tensor form: the query gradient retains
+`-A^T A(x-y)/ell^2`, the Hessian retains the projection outer product and
+`-A^T A/ell^2` curvature, and value, gradient, and Hessian remain signed stable
+factors until each complete term is combined with both weights.
+
+The exact compact query and center-factor short-circuits remain symmetric
+through Hessian demand, individually underflowed Gaussian weights retain
+non-exact-zero provenance in both argument orders, equal rounded logarithms do
+not invent mathematical exact-zero provenance, overflowing weight Hessians are
+scaled only as complete terms, and fixed-Gaussian value underflow remains
+recoverable. TREND002-REV-007 through TREND002-REV-011 therefore remain closed
+for their published regressions.
+
+### TREND002-REV-013 - P1: represented kernel preflight rejects finite complete Gaussian terms
+
+Locations: `crates/georbf/src/local_trend.rs:2248-2262`,
+`crates/georbf/src/model.rs:164-197`, and
+`crates/georbf/src/anisotropy.rs:648-669`. This contradicts the demand-bounded
+and complete-term representability contract in
+`docs/architecture/ANISOTROPY.md:365-369`.
+
+`component_kernel_jet` first invokes the generic represented
+`try_spatial_jet` before constructing the stable Gaussian jet. That generic
+path forms and anisotropy-transforms a full represented jet, including second
+derivatives even for `Value` demand. An individually overflowing fixed-kernel
+Hessian therefore aborts evaluation before two small weights can make the
+complete local contribution finite.
+
+An exact accepted D=1 reproducer uses a local Gaussian length `1e-100`,
+spheroidal axial and transverse lengths `1e-154` with condition number one,
+strength `1e-154`, influence radius one, control and query at zero, center
+`5e-255`, and an ordinary strict Gaussian background. Exact sixth Repair head
+`cc5fa6f` returns
+
+```text
+Kernel {
+    component: 1,
+    source: Anisotropy(
+        NonFiniteSecondDerivative { row: 0, column: 0 }
+    )
+}
+```
+
+for `Value`, `First`, and `Second` demand. Yet after multiplication by both
+weights, the complete query Hessian is independently finite at approximately
+`-6.6187267693844664e199`.
+
+Required regression and Repair: add one public compiled D=1 regression with
+those exact inputs. `Value` demand must succeed without evaluating unused
+derivatives, and `Second` demand must return the independently log-evaluated
+finite Hessian. Route Gaussian evaluation directly through a demand-bounded
+stable jet before requiring any individually represented derivative.
+
+### Re-review validation and disposition
+
+The reviewer independently passed all fourteen public `trend_controls` tests,
+all fifteen `local_trend` integration tests, all five private local-trend
+regressions, complete PR and sixth-Repair diff whitespace validation, and the
+compact requirement `show` and dependency-closure commands. It confirmed the
+fixed-SPD diagonal-congruence construction, strict background, CPD rejection,
+C2 signs and dimensions, capability gating apart from TREND002-REV-013,
+diagnostics, deterministic ordering, allocation behavior, interface
+disposition, and absence of hidden regularization. Polynomial spaces,
+scale-aware rank decisions, hard constraints, and solver infeasibility do not
+apply.
+
+The immutable `cc5fa6f` full workspace gate was not rerun. Ready-only Windows,
+Ubuntu, macOS, and benchmark-smoke CI remain intentionally unexecuted. PR #109
+must remain Draft and REQ-TREND-002 remains `implemented`, not `integrated`.
+A fresh Repair task must address only TREND002-REV-013, add the specified
+regression before the smallest production repair, run focused checks and one
+final stable-head standard gate, update evidence, push, and stop for another
+fresh independent re-review. Do not mark the PR ready, merge it, or begin
+another requirement.

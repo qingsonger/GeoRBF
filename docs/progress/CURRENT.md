@@ -6,7 +6,7 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Sixth Repair complete, fresh independent re-review required
+- Mode: Sixth Repair re-review complete, Repair required
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
@@ -16,27 +16,27 @@ records, benchmark reports, Git, and GitHub.
   integrated
 - Registry state in this change: `implemented`
 
-## Sixth Repair result
+## Sixth Repair re-review result
 
-- TREND002-REV-012 is addressed by retaining fixed-Gaussian value, gradient,
-  and Hessian as analytic signed stable factors until each complete mixture
-  term is formed with both weights.
-- The existing fixed-Gaussian-underflow regression now demands Hessian order
-  and independently checks the approximately `5.23e-23` value,
-  `2.04e-21` gradient, and `7.95e-20` Hessian. Before the repair, the new
-  gradient assertion reproduced actual zero.
-- The Repair preserves the exact compact-support short-circuits and all prior
-  TREND002-REV-007 through TREND002-REV-011 regressions. Its evidence does not
-  close TREND002-REV-012 without a fresh independent re-review.
+- Fresh independent re-review closes TREND002-REV-012 for its exact published
+  value, gradient, and Hessian input. TREND002-REV-007 through
+  TREND002-REV-011 remain closed.
+- The re-review found one new P1, TREND002-REV-013: the fixed-Gaussian path
+  invokes the generic represented kernel jet before its stable jet, so an
+  individually overflowing anisotropic Hessian can be rejected even when two
+  small weights make the complete contribution finite.
+- The exact accepted D=1 reproducer uses Gaussian length `1e-100`, metric
+  lengths `1e-154`, strength `1e-154`, control/query zero, and center
+  `5e-255`. All demand orders currently return `NonFiniteSecondDerivative`,
+  while the complete Hessian is approximately `-6.62e199`.
 - PR #109 remains Draft and the requirement remains `implemented`.
 
 ## Validation state
 
-- Focused validation passed all fourteen public `trend_controls` tests, all
+- The fresh reviewer passed all fourteen public `trend_controls` tests, all
   fifteen `local_trend` integration tests, all five private local-trend
-  regressions, warning-denying georbf all-target/all-feature Clippy, complete
-  diff whitespace validation, and the release-mode benchmark smoke at about
-  8.7/36.0 us for four/sixteen controls.
+  regressions, complete PR and sixth-Repair diff whitespace validation, and
+  compact requirement `show` and dependency-closure checks.
 - Exact stable head `cc5fa6f` passed workspace format, warning-denying workspace
   all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
   all 58 requirement checks, and complete diff whitespace validation.
@@ -46,11 +46,15 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-A fresh isolated read-only `math_reviewer` must re-review exact sixth Repair
-code/test/contract head `cc5fa6f`, verify TREND002-REV-012 against its published
-value/gradient/Hessian input, retain the prior closures, inspect for new P0-P3
-findings, record the result, and stop. Do not repair production code in that
-Review task. Do not mark the PR ready, merge, or begin another requirement.
+A fresh Repair task must address only TREND002-REV-013. Add the exact public
+D=1 regression before the smallest production repair: `Value` demand must not
+evaluate the unused overflowing Hessian, and `Second` demand must retain the
+independently finite complete Hessian after both weights. Route Gaussian
+evaluation through the demand-bounded stable jet before any individually
+represented derivative is required, run focused checks and one final stable-
+head standard gate, update evidence, push, and stop for another fresh
+independent re-review. Do not mark the PR ready, merge, or begin another
+requirement.
 
 ## Durable evidence
 
