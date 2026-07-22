@@ -456,3 +456,45 @@ specified symmetric regression, run focused checks and one complete stable-head
 standard gate after the final code change, update this record and the bounded
 handoff, push, and stop for another fresh independent re-review. Do not begin
 another requirement.
+
+## Third Repair evidence pending fresh independent re-review
+
+Third Repair code/test/evidence head:
+`8203876292982f6ca6765b5fc8963358373bba79`.
+
+This Repair addresses only TREND002-REV-007 and remains pending a fresh
+independent re-review:
+
+- The public compact-control regression now evaluates the reviewed D=1 case in
+  both argument orders through Hessian demand. Query zero with center
+  `f64::MAX` succeeds with the same exact-zero background truth as the existing
+  reversed case, so the compact local contribution is exact zero for value,
+  gradient, and Hessian.
+- After the center value-only weight evaluation, an exactly zero center factor
+  skips the component before fixed-kernel evaluation. This is algebraically
+  valid because every value and query-derivative product-rule term contains
+  that center factor, and it restores argument-symmetric compact support at
+  finite extreme inputs.
+- Rustdoc, the anisotropy architecture contract, and the requirement change
+  fragment now state the symmetric query-jet/center-factor short-circuit.
+
+The new regression reproduced the reviewed
+`NonFiniteTransformedDisplacementComponent` failure before the production
+change. Focused validation then passed the regression, all ten public
+`trend_controls` tests, all five private local-trend regressions,
+warning-denying georbf all-target/all-feature Clippy, the runnable example, and
+the release-mode compilation benchmark smoke (approximately 16.6 us for four
+controls and 49.3 us for sixteen controls on this development machine).
+
+After the final Rust change and one rustfmt-only correction found by the first
+format check, the complete standard gate was rerun from the beginning and
+passed on the stable code/test/evidence tree: workspace format,
+warning-denying workspace all-target/all-feature Clippy, all-feature workspace
+tests, workspace Rustdoc, all 58 requirement checks, and complete diff
+whitespace validation. This documentation-only evidence tail changes no
+production, test, manifest, schema, CI, or build input.
+
+This Repair evidence does not close its own finding. PR #109 remains Draft and
+REQ-TREND-002 remains `implemented`, not `integrated`, until a fresh isolated
+read-only `math_reviewer` verifies exact Repair head `8203876` and checks for
+new P0-P3 findings.

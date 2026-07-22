@@ -6,65 +6,53 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete, Repair required
+- Mode: Repair complete, fresh independent re-review required
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
 - Exact independently reviewed head: `4820021`
-- Second Repair code/test/evidence head: `00c9b3d`
-- Stable full-gate head: `00c9b3d`
+- Third Repair code/test/evidence head: `8203876`
+- Stable full-gate head: `8203876`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are
   integrated
 - Registry state in this change: `implemented`
 
-## Fresh independent re-review result
+## Third Repair result
 
-- TREND002-REV-004 is closed. Signed logarithmic regional gate factors retain
-  the reviewed amplitude-scaled value, first derivative, and second derivative
-  when the unscaled smootherstep value underflows.
-- TREND002-REV-005 is closed as scoped. A complete demanded query jet that is
-  exactly zero skips center-weight and fixed-kernel evaluation.
-- TREND002-REV-006 is closed. Region validation uses the attained curvature
-  maximum `10 / sqrt(3) / width^2` and retains the reviewed finite narrow
-  transition.
-- TREND002-REV-007 is a new P2 finding. The evaluator reads an exactly zero
-  center weight but still evaluates the fixed kernel. With the existing compact
-  D=1 construction reversed to query zero and center `f64::MAX`, the local
-  factor is algebraically zero but `A = 2` overflows the irrelevant transformed
-  separation. Compact support must short-circuit symmetrically when the center
-  value is zero.
-- No other P0-P3 finding was identified.
+- TREND002-REV-007 is repaired pending fresh independent re-review. The public
+  compact-control regression now covers both argument orders for the reviewed
+  D=1 extreme input through Hessian demand.
+- An exactly zero center weight skips the component before fixed-kernel
+  evaluation. Every value and query-derivative term contains that factor, so
+  the short-circuit preserves exact algebra and restores argument-symmetric
+  compact support.
+- Rustdoc, the anisotropy contract, and the requirement change fragment state
+  the symmetric query-jet/center-factor behavior.
 
 ## Validation state
 
-- The isolated reviewer passed all ten public `trend_controls` tests, all five
-  private local-trend regressions, the runnable example, workspace format, all
-  58 requirement checks, and complete PR diff whitespace validation.
-- The parent Review task independently passed the ten public and five private
-  focused tests.
-- The reviewer independently reproduced TREND002-REV-007 using D=1, region
-  `[-1, 1]`, width `0.25`, control/query zero, local length `0.5`, center
-  `f64::MAX`, and Hessian demand. Evaluation incorrectly returns an anisotropy
-  transformed-displacement error for component one.
-- Exact second Repair head `00c9b3d` retains its recorded complete standard
-  gate: workspace format, warning-denying workspace all-target/all-feature
+- The new symmetric regression first reproduced
+  `NonFiniteTransformedDisplacementComponent` before the production change.
+- Focused validation passed all ten public `trend_controls` tests, all five
+  private local-trend regressions, warning-denying georbf all-target/all-feature
+  Clippy, the runnable example, and the release benchmark smoke.
+- After the last Rust change and a rustfmt-only correction, the complete
+  standard gate was rerun from the beginning and passed on exact head
+  `8203876`: workspace format, warning-denying workspace all-target/all-feature
   Clippy, all-feature workspace tests, workspace Rustdoc, all 58 requirement
-  checks, and complete diff whitespace validation. The tail through this Review
-  changes only review evidence and this bounded Markdown handoff.
-- Draft Ubuntu CI run 29898025166 passed on exact reviewed head `4820021`. The
-  Ready-only Windows/Ubuntu/macOS and benchmark-smoke matrix remains
-  intentionally unexecuted while PR #109 is Draft.
+  checks, and complete diff whitespace validation.
+- The evidence/handoff tail after `8203876` is Markdown-only. Draft PR #109 and
+  `implemented` registry state are intentionally retained.
 
 ## Next task boundary
 
-A fresh Repair task must address only TREND002-REV-007. First extend
-`compact_control_skips_overflowing_fixed_kernel_when_query_factor_is_zero` with
-the reversed query/center case and require successful background truth plus an
-exact-zero compact local contribution through Hessian order. Then implement the
-smallest center-zero short-circuit before fixed-kernel evaluation. Run focused
-checks during repair and one complete standard gate after the last code change;
-update the review record and bounded handoff, commit, push, and stop for a fresh
-independent re-review. Do not begin another requirement.
+A fresh Review task must use an isolated read-only project `math_reviewer` to
+verify TREND002-REV-007 on exact Repair head `8203876` and inspect the complete
+PR for new P0-P3 findings. If any finding remains, record it and stop without a
+production repair. Only after a clean review and green local final-head checks
+may that fresh task mark PR #109 Ready, wait for the complete Windows/Ubuntu/
+macOS and benchmark-smoke CI on the exact Ready head, merge once, and record
+truthful integration state. Do not begin another requirement.
 
 ## Durable evidence
 
