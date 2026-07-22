@@ -356,10 +356,13 @@ mixture evaluator applies the complete value, gradient, and Hessian product
 rules to this compiled weight and the fixed anisotropic kernel. Regional gate
 factors retain signed logarithmic scale until they are combined with strength
 and the Gaussian exponent, so an underflowed unscaled gate cannot erase a
-representable final weight or derivative. When the complete demanded query
-weight jet or the center weight is provably zero, the component is skipped
-before fixed-kernel evaluation; compact support therefore remains exact and
-argument-symmetric even if an irrelevant transformed separation would overflow.
+representable final weight or derivative. Weight-jet factors retain the same
+zero provenance and logarithmic scale through the complete mixture value,
+gradient, or Hessian term. A represented Gaussian zero therefore does not erase
+a contribution made representable by the other argument's weight. Only a
+mathematically exact-zero complete query jet or center weight skips fixed-kernel
+evaluation; compact regional support remains exact and argument-symmetric even
+if an irrelevant transformed separation would overflow.
 
 Diagnostics retain the resolved axes, paired lengths, explicit/reference
 provenance, original reference-gradient norms and low-confidence flags,

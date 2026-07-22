@@ -830,3 +830,50 @@ fn compact_control_skips_overflowing_fixed_kernel_when_query_factor_is_zero()
     }
     Ok(())
 }
+
+#[test]
+fn gaussian_weight_underflow_does_not_erase_representable_mixture_value()
+-> Result<(), Box<dyn Error>> {
+    let strength = 1.0e154;
+    let separation = 47.0;
+    let fixed_kernel_length = 100.0;
+    let control = LocalTrendControl::new(
+        point([0.0])?,
+        KernelDefinition::from(Gaussian::try_new(fixed_kernel_length)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0])?),
+            axial_length: 1.0,
+            transverse_length: 1.0,
+        },
+        1.0,
+        strength,
+        None,
+    );
+    let compiled = try_compile_local_trend_controls(
+        background()?,
+        &[control],
+        None,
+        domain(50.0)?,
+        0.25,
+        policy(1.0e-12, 1.0, 1.0)?,
+    )?;
+
+    let expected = (2.0 * strength.ln()
+        - 0.5 * separation * separation
+        - 0.5 * (separation / fixed_kernel_length).powi(2))
+    .exp();
+    assert!(expected.is_finite() && expected != 0.0);
+
+    for (query, center) in [(0.0, separation), (separation, 0.0)] {
+        let actual = compiled
+            .mixture()
+            .try_evaluate(
+                point([query])?,
+                point([center])?,
+                KernelDerivativeOrder::Value,
+            )?
+            .value();
+        assert_close(actual, expected, expected * 32.0 * f64::EPSILON);
+    }
+    Ok(())
+}

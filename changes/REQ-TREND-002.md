@@ -53,8 +53,11 @@ unscaled gate underflows; accept a transition whose attained maximum C2
 curvature remains finite; and skip an irrelevant overflowing fixed anisotropic
 kernel when either the demanded compact query jet or compact center factor is
 exactly zero. A separate public regression retains a represented regional
-derivative whose ungated Gaussian value underflows. A runnable example
-demonstrates regional compilation and Hessian evaluation.
+derivative whose ungated Gaussian value underflows. Another public D=1
+regression isolates a finite mixture value in both argument orders when one
+Gaussian weight individually underflows; internal signed logarithmic scale and
+exact-zero provenance now survive through the complete mixture product. A
+runnable example demonstrates regional compilation and Hessian evaluation.
 
 Rust is implemented. CLI and versioned schemas are N/A until M8 defines the
 persisted control representation and complete data CLI. C, C++, and Python are

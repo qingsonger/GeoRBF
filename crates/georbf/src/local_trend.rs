@@ -166,40 +166,7 @@ where
         point: Point<D>,
         demanded: KernelDerivativeOrder,
     ) -> Result<WeightJet<D>, LocalTrendEvaluationError<D>> {
-        let stable = self.stable_jet(point, demanded);
-        let mut jet = WeightJet {
-            value: stable.value.represented_value(1.0).ok_or(
-                LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                    component: usize::MAX,
-                    quantity: LocalTrendQuantity::Value,
-                },
-            )?,
-            gradient: [0.0; D],
-            hessian: [[0.0; D]; D],
-        };
-        if demanded >= KernelDerivativeOrder::First {
-            for (axis, output) in jet.gradient.iter_mut().enumerate() {
-                *output = stable.gradient[axis].represented_value(1.0).ok_or(
-                    LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                        component: usize::MAX,
-                        quantity: LocalTrendQuantity::Gradient { axis },
-                    },
-                )?;
-            }
-        }
-        if demanded >= KernelDerivativeOrder::Second {
-            for (row, output_row) in jet.hessian.iter_mut().enumerate() {
-                for (column, output) in output_row.iter_mut().enumerate() {
-                    *output = stable.hessian[row][column].represented_value(1.0).ok_or(
-                        LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                            component: usize::MAX,
-                            quantity: LocalTrendQuantity::Hessian { row, column },
-                        },
-                    )?;
-                }
-            }
-        }
-        Ok(jet)
+        WeightJet::try_from_stable(self.stable_jet(point, demanded), demanded)
     }
 
     fn stable_jet(self, point: Point<D>, demanded: KernelDerivativeOrder) -> StableWeightJet<D> {
@@ -319,7 +286,7 @@ where
 /// A concrete smooth scalar basis used on both arguments of one mixture component.
 ///
 /// Both supported forms are analytic through Hessian order. Gaussian weights may
-/// underflow to exact zero far from their centers and therefore cannot serve
+/// underflow to represented zero far from their centers and therefore cannot serve
 /// as the strict background; they remain valid positive-semidefinite diagonal
 /// congruence factors for non-background components.
 ///
@@ -493,8 +460,11 @@ where
         match self.kind {
             SmoothSpatialWeightKind::Constant { value } => Ok(WeightJet {
                 value,
-                gradient: [0.0; D],
-                hessian: [[0.0; D]; D],
+                stable: StableWeightJet {
+                    value: StableFactor::from_factors(&[value]),
+                    gradient: [StableFactor::ZERO; D],
+                    hessian: [[StableFactor::ZERO; D]; D],
+                },
             }),
             SmoothSpatialWeightKind::Gaussian {
                 center,
@@ -918,24 +888,12 @@ where
         })
     }
 
-    /// Evaluates the mixture through the demanded query derivative order.
-    ///
-    /// The gradient and Hessian include every product-rule term from `b_r(x)`:
-    /// `b_y (grad(b_x) k + b_x grad(k))` and
-    /// `b_y (H(b_x) k + grad(b_x) grad(k)^T + grad(k) grad(b_x)^T + b_x H(k))`.
-    /// A component whose complete demanded query-weight jet or center weight is
-    /// exactly zero is skipped before its fixed kernel is evaluated.
-    ///
-    /// # Errors
-    ///
-    /// Rejects third-order demand, unavailable center capability, a component
-    /// kernel failure, or a non-finite represented contribution/sum.
-    pub fn try_evaluate(
+    fn ensure_derivative_available(
         &self,
         query: Point<D>,
         center: Point<D>,
         demanded: KernelDerivativeOrder,
-    ) -> Result<LocalTrendEvaluation<D>, LocalTrendEvaluationError<D>> {
+    ) -> Result<(), LocalTrendEvaluationError<D>> {
         if demanded == KernelDerivativeOrder::Third {
             return Err(LocalTrendEvaluationError::UnsupportedDerivative { demanded });
         }
@@ -949,6 +907,30 @@ where
                 at_center,
             });
         }
+        Ok(())
+    }
+
+    /// Evaluates the mixture through the demanded query derivative order.
+    ///
+    /// The gradient and Hessian include every product-rule term from `b_r(x)`:
+    /// `b_y (grad(b_x) k + b_x grad(k))` and
+    /// `b_y (H(b_x) k + grad(b_x) grad(k)^T + grad(k) grad(b_x)^T + b_x H(k))`.
+    /// A component whose complete demanded query-weight jet or center weight is
+    /// mathematically exactly zero is skipped before its fixed kernel is
+    /// evaluated. Gaussian factors that merely underflow individually retain
+    /// their logarithmic scale through the complete represented contribution.
+    ///
+    /// # Errors
+    ///
+    /// Rejects third-order demand, unavailable center capability, a component
+    /// kernel failure, or a non-finite represented contribution/sum.
+    pub fn try_evaluate(
+        &self,
+        query: Point<D>,
+        center: Point<D>,
+        demanded: KernelDerivativeOrder,
+    ) -> Result<LocalTrendEvaluation<D>, LocalTrendEvaluationError<D>> {
+        self.ensure_derivative_available(query, center, demanded)?;
 
         let mut value = 0.0;
         let mut gradient = [0.0; D];
@@ -958,15 +940,14 @@ where
                 .weight
                 .try_jet(query, demanded)
                 .map_err(|source| source.with_component(component_index))?;
-            if query_weight.is_zero() {
+            if query_weight.is_exact_zero() {
                 continue;
             }
             let center_weight = component
                 .weight
                 .try_jet(center, KernelDerivativeOrder::Value)
-                .map_err(|source| source.with_component(component_index))?
-                .value;
-            if center_weight == 0.0 {
+                .map_err(|source| source.with_component(component_index))?;
+            if center_weight.stable.value.exact_zero {
                 continue;
             }
             let kernel = component
@@ -977,8 +958,9 @@ where
                     source,
                 })?;
 
-            let value_term = checked_terms(
-                &[query_weight.value, center_weight, kernel.value()],
+            let value_term = checked_stable_terms(
+                &[query_weight.stable.value, center_weight.stable.value],
+                &[kernel.value()],
                 component_index,
                 LocalTrendQuantity::Value,
             )?;
@@ -992,13 +974,18 @@ where
             if demanded >= KernelDerivativeOrder::First {
                 let kernel_gradient = kernel.first_derivative(KernelArgument::Query);
                 for axis in 0..D {
-                    let weight_term = checked_terms(
-                        &[center_weight, query_weight.gradient[axis], kernel.value()],
+                    let weight_term = checked_stable_terms(
+                        &[
+                            center_weight.stable.value,
+                            query_weight.stable.gradient[axis],
+                        ],
+                        &[kernel.value()],
                         component_index,
                         LocalTrendQuantity::Gradient { axis },
                     )?;
-                    let kernel_term = checked_terms(
-                        &[center_weight, query_weight.value, kernel_gradient[axis]],
+                    let kernel_term = checked_stable_terms(
+                        &[center_weight.stable.value, query_weight.stable.value],
+                        &[kernel_gradient[axis]],
                         component_index,
                         LocalTrendQuantity::Gradient { axis },
                     )?;
@@ -1022,7 +1009,7 @@ where
                     accumulate_component_hessian(
                         &mut hessian,
                         query_weight,
-                        center_weight,
+                        center_weight.stable.value,
                         kernel.value(),
                         kernel_gradient,
                         kernel_hessian,
@@ -1433,15 +1420,65 @@ where
 #[derive(Clone, Copy)]
 struct WeightJet<const D: usize> {
     value: f64,
-    gradient: [f64; D],
-    hessian: [[f64; D]; D],
+    stable: StableWeightJet<D>,
 }
 
-impl<const D: usize> WeightJet<D> {
-    fn is_zero(self) -> bool {
-        self.value == 0.0
-            && self.gradient.iter().all(|entry| *entry == 0.0)
-            && self.hessian.iter().flatten().all(|entry| *entry == 0.0)
+impl<const D: usize> WeightJet<D>
+where
+    Dim<D>: SupportedDimension,
+{
+    fn try_from_stable(
+        stable: StableWeightJet<D>,
+        demanded: KernelDerivativeOrder,
+    ) -> Result<Self, LocalTrendEvaluationError<D>> {
+        let value = stable.value.represented_value(1.0).ok_or(
+            LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                component: usize::MAX,
+                quantity: LocalTrendQuantity::Value,
+            },
+        )?;
+        if demanded >= KernelDerivativeOrder::First {
+            for (axis, factor) in stable.gradient.iter().enumerate() {
+                factor.represented_value(1.0).ok_or(
+                    LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                        component: usize::MAX,
+                        quantity: LocalTrendQuantity::Gradient { axis },
+                    },
+                )?;
+            }
+        }
+        if demanded >= KernelDerivativeOrder::Second {
+            for (row, stable_row) in stable.hessian.iter().enumerate() {
+                for (column, factor) in stable_row.iter().enumerate() {
+                    factor.represented_value(1.0).ok_or(
+                        LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                            component: usize::MAX,
+                            quantity: LocalTrendQuantity::Hessian { row, column },
+                        },
+                    )?;
+                }
+            }
+        }
+        Ok(Self { value, stable })
+    }
+
+    fn exact_zero(demanded: KernelDerivativeOrder) -> Result<Self, LocalTrendEvaluationError<D>> {
+        Self::try_from_stable(StableWeightJet::exact_zero(), demanded)
+    }
+
+    fn inexact_zero(demanded: KernelDerivativeOrder) -> Result<Self, LocalTrendEvaluationError<D>> {
+        Self::try_from_stable(StableWeightJet::inexact_zero(), demanded)
+    }
+
+    fn is_exact_zero(self) -> bool {
+        self.stable.value.exact_zero
+            && self.stable.gradient.iter().all(|entry| entry.exact_zero)
+            && self
+                .stable
+                .hessian
+                .iter()
+                .flatten()
+                .all(|entry| entry.exact_zero)
     }
 }
 
@@ -1450,6 +1487,24 @@ struct StableWeightJet<const D: usize> {
     value: StableFactor,
     gradient: [StableFactor; D],
     hessian: [[StableFactor; D]; D],
+}
+
+impl<const D: usize> StableWeightJet<D> {
+    const fn exact_zero() -> Self {
+        Self {
+            value: StableFactor::ZERO,
+            gradient: [StableFactor::ZERO; D],
+            hessian: [[StableFactor::ZERO; D]; D],
+        }
+    }
+
+    const fn inexact_zero() -> Self {
+        Self {
+            value: StableFactor::INEXACT_ZERO,
+            gradient: [StableFactor::INEXACT_ZERO; D],
+            hessian: [[StableFactor::INEXACT_ZERO; D]; D],
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -1475,6 +1530,13 @@ impl StableFactor {
         exact_zero: false,
     };
 
+    const INEXACT_ZERO: Self = Self {
+        direct: 0.0,
+        logarithm: f64::NEG_INFINITY,
+        negative: false,
+        exact_zero: false,
+    };
+
     fn from_factors(factors: &[f64]) -> Self {
         if factors.contains(&0.0) {
             return Self::ZERO;
@@ -1492,6 +1554,18 @@ impl StableFactor {
         }
     }
 
+    fn from_gaussian(amplitude: f64, exponent: f64) -> Self {
+        if amplitude == 0.0 {
+            return Self::ZERO;
+        }
+        Self {
+            direct: amplitude * exponent.exp(),
+            logarithm: amplitude.abs().ln() + exponent,
+            negative: amplitude.is_sign_negative(),
+            exact_zero: false,
+        }
+    }
+
     fn product_many(factors: impl IntoIterator<Item = Self>) -> Self {
         factors.into_iter().fold(Self::ONE, Self::product)
     }
@@ -1504,6 +1578,24 @@ impl StableFactor {
             direct: self.direct * other.direct,
             logarithm: self.logarithm + other.logarithm,
             negative: self.negative ^ other.negative,
+            exact_zero: false,
+        }
+    }
+
+    fn product_factors(self, factors: &[f64]) -> Self {
+        if self.exact_zero || factors.contains(&0.0) {
+            return Self::ZERO;
+        }
+        Self {
+            direct: factors
+                .iter()
+                .fold(self.direct, |product, factor| product * factor),
+            logarithm: factors
+                .iter()
+                .fold(self.logarithm, |sum, factor| sum + factor.abs().ln()),
+            negative: factors.iter().fold(self.negative, |negative, factor| {
+                negative ^ factor.is_sign_negative()
+            }),
             exact_zero: false,
         }
     }
@@ -1550,13 +1642,19 @@ impl StableFactor {
         }
     }
 
-    #[cfg(test)]
     fn represented_value(self, scale: f64) -> Option<f64> {
         if self.exact_zero || scale == 0.0 {
             return Some(0.0);
         }
-        if !scale.is_finite() || !self.logarithm.is_finite() {
+        if !scale.is_finite() || self.logarithm.is_nan() || self.logarithm == f64::INFINITY {
             return None;
+        }
+        if self.logarithm == f64::NEG_INFINITY {
+            return Some(if scale.is_sign_negative() ^ self.negative {
+                -0.0
+            } else {
+                0.0
+            });
         }
         let direct = scale * self.direct;
         if direct.is_finite() && direct != 0.0 {
@@ -1735,153 +1833,85 @@ where
         && gate.gradient.iter().all(|entry| entry.exact_zero)
         && gate.hessian.iter().flatten().all(|entry| entry.exact_zero)
     {
-        return Ok(WeightJet {
-            value: 0.0,
-            gradient: [0.0; D],
-            hessian: [[0.0; D]; D],
-        });
+        return WeightJet::exact_zero(demanded);
     }
     let Some(gaussian) = gaussian_weight_state(point, center, amplitude, inverse_radius)? else {
-        return Ok(WeightJet {
-            value: 0.0,
-            gradient: [0.0; D],
-            hessian: [[0.0; D]; D],
-        });
+        return WeightJet::inexact_zero(demanded);
     };
-    let value = stable_gaussian_factor_product(
-        gaussian.value,
-        amplitude,
-        gaussian.exponent,
-        &[],
-        gate.value,
-    )
-    .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
-        component: usize::MAX,
-        quantity: LocalTrendQuantity::Value,
-    })?;
-    let mut gradient = [0.0; D];
-    let mut hessian = [[0.0; D]; D];
-    if demanded >= KernelDerivativeOrder::First {
-        for (axis, output) in gradient.iter_mut().enumerate() {
-            let first = stable_gaussian_factor_product(
-                gaussian.value,
-                amplitude,
-                gaussian.exponent,
-                &[-inverse_radius_squared, gaussian.displacements[axis]],
-                gate.value,
-            )
-            .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                component: usize::MAX,
-                quantity: LocalTrendQuantity::Gradient { axis },
-            })?;
-            let second = stable_gaussian_factor_product(
-                gaussian.value,
-                amplitude,
-                gaussian.exponent,
-                &[],
-                gate.gradient[axis],
-            )
-            .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                component: usize::MAX,
-                quantity: LocalTrendQuantity::Gradient { axis },
-            })?;
-            *output = finite_sum(first, second).ok_or(
-                LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                    component: usize::MAX,
-                    quantity: LocalTrendQuantity::Gradient { axis },
-                },
-            )?;
-        }
-    }
-    if demanded >= KernelDerivativeOrder::Second {
-        for (row, hessian_row) in hessian.iter_mut().enumerate() {
-            for (column, output) in hessian_row.iter_mut().enumerate() {
-                let quantity = LocalTrendQuantity::Hessian { row, column };
-                let gaussian_hessian = if row == column {
-                    stable_gaussian_factor_product(
-                        gaussian.value,
-                        amplitude,
-                        gaussian.exponent,
-                        &[
-                            inverse_radius_squared,
-                            inverse_radius_squared,
-                            gaussian.displacements[row] - radius,
-                            gaussian.displacements[row] + radius,
-                        ],
-                        gate.value,
-                    )
+    let value = gaussian.factor.product(gate.value);
+    let gradient = if demanded >= KernelDerivativeOrder::First {
+        std::array::from_fn(|axis| {
+            gaussian
+                .factor
+                .product(gate.value)
+                .product_factors(&[-inverse_radius_squared, gaussian.displacements[axis]])
+                .sum(gaussian.factor.product(gate.gradient[axis]))
+        })
+    } else {
+        [StableFactor::ZERO; D]
+    };
+    let hessian = if demanded >= KernelDerivativeOrder::Second {
+        std::array::from_fn(|row| {
+            std::array::from_fn(|column| {
+                let gaussian_hessian_factors = if row == column {
+                    [
+                        inverse_radius_squared,
+                        inverse_radius_squared,
+                        gaussian.displacements[row] - radius,
+                        gaussian.displacements[row] + radius,
+                    ]
                 } else {
                     let first_axis = row.min(column);
                     let second_axis = row.max(column);
-                    stable_gaussian_factor_product(
-                        gaussian.value,
-                        amplitude,
-                        gaussian.exponent,
-                        &[
-                            inverse_radius_squared,
-                            inverse_radius_squared,
-                            gaussian.displacements[first_axis],
-                            gaussian.displacements[second_axis],
-                        ],
-                        gate.value,
-                    )
+                    [
+                        inverse_radius_squared,
+                        inverse_radius_squared,
+                        gaussian.displacements[first_axis],
+                        gaussian.displacements[second_axis],
+                    ]
                 };
-                let terms = [
-                    gaussian_hessian,
-                    stable_gaussian_factor_product(
-                        gaussian.value,
-                        amplitude,
-                        gaussian.exponent,
-                        &[-inverse_radius_squared, gaussian.displacements[row]],
-                        gate.gradient[column],
-                    ),
-                    stable_gaussian_factor_product(
-                        gaussian.value,
-                        amplitude,
-                        gaussian.exponent,
-                        &[-inverse_radius_squared, gaussian.displacements[column]],
-                        gate.gradient[row],
-                    ),
-                    stable_gaussian_factor_product(
-                        gaussian.value,
-                        amplitude,
-                        gaussian.exponent,
-                        &[],
-                        gate.hessian[row][column],
-                    ),
-                ];
-                let mut sum = 0.0;
-                for term in terms {
-                    sum = finite_sum(
-                        sum,
-                        term.ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                            component: usize::MAX,
-                            quantity,
-                        })?,
+                gaussian
+                    .factor
+                    .product(gate.value)
+                    .product_factors(&gaussian_hessian_factors)
+                    .sum(
+                        gaussian
+                            .factor
+                            .product(gate.gradient[column])
+                            .product_factors(&[
+                                -inverse_radius_squared,
+                                gaussian.displacements[row],
+                            ]),
                     )
-                    .ok_or(
-                        LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                            component: usize::MAX,
-                            quantity,
-                        },
-                    )?;
-                }
-                *output = sum;
-            }
-        }
-    }
-    Ok(WeightJet {
-        value,
-        gradient,
-        hessian,
-    })
+                    .sum(
+                        gaussian
+                            .factor
+                            .product(gate.gradient[row])
+                            .product_factors(&[
+                                -inverse_radius_squared,
+                                gaussian.displacements[column],
+                            ]),
+                    )
+                    .sum(gaussian.factor.product(gate.hessian[row][column]))
+            })
+        })
+    } else {
+        [[StableFactor::ZERO; D]; D]
+    };
+    WeightJet::try_from_stable(
+        StableWeightJet {
+            value,
+            gradient,
+            hessian,
+        },
+        demanded,
+    )
 }
 
 #[derive(Clone, Copy)]
 struct GaussianWeightState<const D: usize> {
     displacements: [f64; D],
-    exponent: f64,
-    value: f64,
+    factor: StableFactor,
 }
 
 fn gaussian_weight_state<const D: usize>(
@@ -1914,16 +1944,9 @@ where
         }
     }
     let exponent = -0.5 * squared_radius;
-    let value = stable_gaussian_value(amplitude, exponent).ok_or(
-        LocalTrendEvaluationError::NonFiniteWeightDerivative {
-            component: usize::MAX,
-            quantity: LocalTrendQuantity::Value,
-        },
-    )?;
     Ok(Some(GaussianWeightState {
         displacements,
-        exponent,
-        value,
+        factor: StableFactor::from_gaussian(amplitude, exponent),
     }))
 }
 
@@ -1954,224 +1977,69 @@ where
         *output = displacement * inverse_radius;
         let square = *output * *output;
         if !output.is_finite() || !square.is_finite() {
-            return Ok(WeightJet {
-                value: 0.0,
-                gradient: [0.0; D],
-                hessian: [[0.0; D]; D],
-            });
+            return WeightJet::inexact_zero(demanded);
         }
         squared_radius += square;
         if !squared_radius.is_finite() {
-            return Ok(WeightJet {
-                value: 0.0,
-                gradient: [0.0; D],
-                hessian: [[0.0; D]; D],
-            });
+            return WeightJet::inexact_zero(demanded);
         }
     }
     let exponent = -0.5 * squared_radius;
-    let value = stable_gaussian_value(amplitude, exponent).ok_or(
-        LocalTrendEvaluationError::NonFiniteWeightDerivative {
-            component: usize::MAX,
-            quantity: LocalTrendQuantity::Value,
+    let value = StableFactor::from_gaussian(amplitude, exponent);
+    let gradient = if demanded >= KernelDerivativeOrder::First {
+        std::array::from_fn(|axis| {
+            value.product_factors(&[-inverse_radius_squared, displacements[axis]])
+        })
+    } else {
+        [StableFactor::ZERO; D]
+    };
+    let hessian = if demanded >= KernelDerivativeOrder::Second {
+        gaussian_weight_hessian(value, radius, inverse_radius_squared, displacements)
+    } else {
+        [[StableFactor::ZERO; D]; D]
+    };
+    WeightJet::try_from_stable(
+        StableWeightJet {
+            value,
+            gradient,
+            hessian,
         },
-    )?;
-    let mut gradient = [0.0; D];
-    let hessian = [[0.0; D]; D];
-    if demanded == KernelDerivativeOrder::Value {
-        return Ok(WeightJet {
-            value,
-            gradient,
-            hessian,
-        });
-    }
-    for axis in 0..D {
-        gradient[axis] = stable_gaussian_product(
-            value,
-            amplitude,
-            exponent,
-            &[-inverse_radius_squared, displacements[axis]],
-        )
-        .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
-            component: usize::MAX,
-            quantity: LocalTrendQuantity::Gradient { axis },
-        })?;
-    }
-    if demanded == KernelDerivativeOrder::First {
-        return Ok(WeightJet {
-            value,
-            gradient,
-            hessian,
-        });
-    }
-    let hessian = gaussian_weight_hessian(
-        value,
-        amplitude,
-        exponent,
-        radius,
-        inverse_radius_squared,
-        displacements,
-    )?;
-    Ok(WeightJet {
-        value,
-        gradient,
-        hessian,
-    })
+        demanded,
+    )
 }
 
 fn gaussian_weight_hessian<const D: usize>(
-    value: f64,
-    amplitude: f64,
-    exponent: f64,
+    value: StableFactor,
     radius: f64,
     inverse_radius_squared: f64,
     displacements: [f64; D],
-) -> Result<[[f64; D]; D], LocalTrendEvaluationError<D>>
+) -> [[StableFactor; D]; D]
 where
     Dim<D>: SupportedDimension,
 {
-    let mut hessian = [[0.0; D]; D];
+    let mut hessian = [[StableFactor::ZERO; D]; D];
     for (row, hessian_row) in hessian.iter_mut().enumerate() {
         for (column, entry) in hessian_row.iter_mut().enumerate() {
             *entry = if row == column {
-                stable_gaussian_product(
-                    value,
-                    amplitude,
-                    exponent,
-                    &[
-                        inverse_radius_squared,
-                        inverse_radius_squared,
-                        displacements[row] - radius,
-                        displacements[row] + radius,
-                    ],
-                )
+                value.product_factors(&[
+                    inverse_radius_squared,
+                    inverse_radius_squared,
+                    displacements[row] - radius,
+                    displacements[row] + radius,
+                ])
             } else {
                 let first_axis = row.min(column);
                 let second_axis = row.max(column);
-                stable_gaussian_product(
-                    value,
-                    amplitude,
-                    exponent,
-                    &[
-                        inverse_radius_squared,
-                        inverse_radius_squared,
-                        displacements[first_axis],
-                        displacements[second_axis],
-                    ],
-                )
-            }
-            .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
-                component: usize::MAX,
-                quantity: LocalTrendQuantity::Hessian { row, column },
-            })?;
+                value.product_factors(&[
+                    inverse_radius_squared,
+                    inverse_radius_squared,
+                    displacements[first_axis],
+                    displacements[second_axis],
+                ])
+            };
         }
     }
-    Ok(hessian)
-}
-
-#[inline]
-fn stable_gaussian_value(amplitude: f64, exponent: f64) -> Option<f64> {
-    if amplitude == 0.0 {
-        return Some(0.0);
-    }
-    if !amplitude.is_finite() || !exponent.is_finite() {
-        return None;
-    }
-    let value = amplitude * exponent.exp();
-    if value.is_normal() {
-        return Some(value);
-    }
-
-    let logarithm = amplitude.abs().ln() + exponent;
-    let magnitude = logarithm.exp();
-    let value = if amplitude.is_sign_negative() {
-        -magnitude
-    } else {
-        magnitude
-    };
-    value.is_finite().then_some(value)
-}
-
-#[inline]
-fn stable_gaussian_product(
-    value: f64,
-    amplitude: f64,
-    exponent: f64,
-    factors: &[f64],
-) -> Option<f64> {
-    if amplitude == 0.0 || factors.contains(&0.0) {
-        return Some(0.0);
-    }
-    if !amplitude.is_finite()
-        || !exponent.is_finite()
-        || factors.iter().any(|factor| !factor.is_finite())
-    {
-        return None;
-    }
-    let (product, direct_is_normal) = factors.iter().fold(
-        (value, value.is_normal()),
-        |(product, all_normal), factor| {
-            let product = product * factor;
-            (product, all_normal && product.is_normal())
-        },
-    );
-    if direct_is_normal {
-        return Some(product);
-    }
-
-    let negative = factors
-        .iter()
-        .fold(amplitude.is_sign_negative(), |negative, factor| {
-            negative ^ factor.is_sign_negative()
-        });
-    let logarithm = factors
-        .iter()
-        .fold(amplitude.abs().ln() + exponent, |logarithm, factor| {
-            logarithm + factor.abs().ln()
-        });
-    let magnitude = logarithm.exp();
-    let value = if negative { -magnitude } else { magnitude };
-    value.is_finite().then_some(value)
-}
-
-#[inline]
-fn stable_gaussian_factor_product(
-    value: f64,
-    amplitude: f64,
-    exponent: f64,
-    factors: &[f64],
-    stable_factor: StableFactor,
-) -> Option<f64> {
-    if amplitude == 0.0 || stable_factor.exact_zero || factors.contains(&0.0) {
-        return Some(0.0);
-    }
-    if !amplitude.is_finite()
-        || !exponent.is_finite()
-        || !stable_factor.logarithm.is_finite()
-        || factors.iter().any(|factor| !factor.is_finite())
-    {
-        return None;
-    }
-    let direct = factors
-        .iter()
-        .fold(value * stable_factor.direct, |product, factor| {
-            product * factor
-        });
-    if direct.is_finite() && direct != 0.0 {
-        return Some(direct);
-    }
-
-    let negative = factors.iter().fold(
-        amplitude.is_sign_negative() ^ stable_factor.negative,
-        |negative, factor| negative ^ factor.is_sign_negative(),
-    );
-    let logarithm = factors.iter().fold(
-        amplitude.abs().ln() + exponent + stable_factor.logarithm,
-        |logarithm, factor| logarithm + factor.abs().ln(),
-    );
-    let magnitude = logarithm.exp();
-    let value = if negative { -magnitude } else { magnitude };
-    value.is_finite().then_some(value)
+    hessian
 }
 
 fn finite_product(left: f64, right: f64) -> Option<f64> {
@@ -2184,19 +2052,28 @@ fn finite_sum(left: f64, right: f64) -> Option<f64> {
     sum.is_finite().then_some(sum)
 }
 
-fn checked_terms<const D: usize>(
-    terms: &[f64],
+fn checked_stable_terms<const D: usize>(
+    stable_terms: &[StableFactor],
+    represented_terms: &[f64],
     component: usize,
     quantity: LocalTrendQuantity,
 ) -> Result<f64, LocalTrendEvaluationError<D>>
 where
     Dim<D>: SupportedDimension,
 {
-    terms.iter().try_fold(1.0, |product, term| {
-        finite_product(product, *term).ok_or(LocalTrendEvaluationError::NonFiniteContribution {
+    if represented_terms.iter().any(|term| !term.is_finite()) {
+        return Err(LocalTrendEvaluationError::NonFiniteContribution {
             component,
             quantity,
-        })
+        });
+    }
+    StableFactor::product_many(stable_terms.iter().copied().chain(std::iter::once(
+        StableFactor::from_factors(represented_terms),
+    )))
+    .represented_value(1.0)
+    .ok_or(LocalTrendEvaluationError::NonFiniteContribution {
+        component,
+        quantity,
     })
 }
 
@@ -2218,7 +2095,7 @@ where
 fn accumulate_component_hessian<const D: usize>(
     total: &mut [[f64; D]; D],
     query_weight: WeightJet<D>,
-    center_weight: f64,
+    center_weight: StableFactor,
     kernel_value: f64,
     kernel_gradient: [f64; D],
     kernel_hessian: [[f64; D]; D],
@@ -2231,23 +2108,27 @@ where
         for column in 0..D {
             let quantity = LocalTrendQuantity::Hessian { row, column };
             let terms = [
-                checked_terms(
-                    &[query_weight.hessian[row][column], kernel_value],
+                checked_stable_terms(
+                    &[center_weight, query_weight.stable.hessian[row][column]],
+                    &[kernel_value],
                     component,
                     quantity,
                 )?,
-                checked_terms(
-                    &[query_weight.gradient[row], kernel_gradient[column]],
+                checked_stable_terms(
+                    &[center_weight, query_weight.stable.gradient[row]],
+                    &[kernel_gradient[column]],
                     component,
                     quantity,
                 )?,
-                checked_terms(
-                    &[kernel_gradient[row], query_weight.gradient[column]],
+                checked_stable_terms(
+                    &[center_weight, query_weight.stable.gradient[column]],
+                    &[kernel_gradient[row]],
                     component,
                     quantity,
                 )?,
-                checked_terms(
-                    &[query_weight.value, kernel_hessian[row][column]],
+                checked_stable_terms(
+                    &[center_weight, query_weight.stable.value],
+                    &[kernel_hessian[row][column]],
                     component,
                     quantity,
                 )?,
@@ -2255,9 +2136,7 @@ where
             let inside = terms
                 .into_iter()
                 .try_fold(0.0, |sum, term| checked_add(sum, term, component, quantity))?;
-            let contribution = checked_terms(&[center_weight, inside], component, quantity)?;
-            total[row][column] =
-                checked_add(total[row][column], contribution, component, quantity)?;
+            total[row][column] = checked_add(total[row][column], inside, component, quantity)?;
         }
     }
     Ok(())
@@ -2334,10 +2213,13 @@ mod tests {
         )?;
 
         assert_eq!(jet.value.to_bits(), 0.0_f64.to_bits());
-        assert_eq!(jet.gradient.map(f64::to_bits), [0.0_f64.to_bits()]);
+        assert!(jet.stable.gradient.iter().all(|factor| factor.exact_zero));
         assert_eq!(
-            jet.hessian.map(|row| row.map(f64::to_bits)),
-            [[0.0_f64.to_bits()]]
+            jet.stable.hessian[0][0]
+                .represented_value(1.0)
+                .unwrap_or(f64::NAN)
+                .to_bits(),
+            0.0_f64.to_bits()
         );
         Ok(())
     }
@@ -2370,16 +2252,21 @@ mod tests {
         for value in [expected_value, expected_first, expected_second] {
             assert!(value.is_finite() && value != 0.0);
         }
+        let actual_first = jet.stable.gradient[0]
+            .represented_value(1.0)
+            .unwrap_or(f64::NAN);
+        let actual_second = jet.stable.hessian[0][0]
+            .represented_value(1.0)
+            .unwrap_or(f64::NAN);
         assert!(jet.value.is_finite() && jet.value != 0.0);
-        assert!(jet.gradient[0].is_finite() && jet.gradient[0] != 0.0);
-        assert!(jet.hessian[0][0].is_finite() && jet.hessian[0][0] != 0.0);
+        assert!(actual_first.is_finite() && actual_first != 0.0);
+        assert!(actual_second.is_finite() && actual_second != 0.0);
         assert!((jet.value - expected_value).abs() <= expected_value.abs() * 256.0 * f64::EPSILON);
         assert!(
-            (jet.gradient[0] - expected_first).abs() <= expected_first.abs() * 32.0 * f64::EPSILON
+            (actual_first - expected_first).abs() <= expected_first.abs() * 32.0 * f64::EPSILON
         );
         assert!(
-            (jet.hessian[0][0] - expected_second).abs()
-                <= expected_second.abs() * 32.0 * f64::EPSILON
+            (actual_second - expected_second).abs() <= expected_second.abs() * 32.0 * f64::EPSILON
         );
         Ok(())
     }
@@ -2394,10 +2281,13 @@ mod tests {
             KernelDerivativeOrder::Second,
         )?;
         let expected = (10.0 / 3.0_f64.sqrt()) * (width.recip() * width.recip());
+        let actual = jet.stable.hessian[0][0]
+            .represented_value(1.0)
+            .unwrap_or(f64::NAN);
 
         assert!(expected.is_finite() && expected != 0.0);
-        assert!(jet.hessian[0][0].is_finite() && jet.hessian[0][0] != 0.0);
-        assert!((jet.hessian[0][0] - expected).abs() <= expected.abs() * 32.0 * f64::EPSILON);
+        assert!(actual.is_finite() && actual != 0.0);
+        assert!((actual - expected).abs() <= expected.abs() * 32.0 * f64::EPSILON);
         Ok(())
     }
 }
