@@ -69,8 +69,11 @@ recovers the independently derived approximately `5.23e-23` local value,
 counterexample routes value-only evaluation directly through its demand-bounded
 stable jet and retains an individually overflowing anisotropic Hessian only
 after both small weights make the complete approximately `-6.62e199`
-contribution finite. A runnable example demonstrates regional compilation and
-Hessian evaluation.
+contribution finite. A regional plateau counterexample preserves the exact
+subtraction residual when a represented displacement rounds from `1 + 2^-53`
+to one, retaining the independent positive approximately `8.17e-17` Hessian
+instead of a spurious negative approximately `-3.68e-201` fixed-kernel term. A
+runnable example demonstrates regional compilation and Hessian evaluation.
 
 Rust is implemented. CLI and versioned schemas are N/A until M8 defines the
 persisted control representation and complete data CLI. C, C++, and Python are

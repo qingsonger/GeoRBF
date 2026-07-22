@@ -1235,3 +1235,39 @@ PR #109 must remain Draft and REQ-TREND-002 remains `implemented`, not
 `integrated`. Open a fresh bounded Repair task for TREND002-REV-014 only. Do
 not repair production code, mark the PR Ready, merge it, or begin another
 requirement in this Review task.
+
+## Eighth Repair of TREND002-REV-014
+
+Exact eighth Repair code/test/contract head:
+`d42ccb5692a72e90d970329236cb8a402c6763ef`.
+
+The new public compiled D=1 regression uses the exact reviewed inputs: control
+location `-2^-53`, query and kernel center one on the plateau of region
+`[-2, 2]` with transition width `0.25`, unit strength, influence radius, and
+fixed anisotropy, fixed Gaussian length `1e100`, and strict-background weight
+`2^-537`. Before the production repair it reproduced the review's tiny
+negative `-3.6787944117144235e-201` Hessian instead of the independent positive
+`8.168564517495419e-17` truth. It now retains the positive truth within
+`64 * EPSILON` relative tolerance.
+
+The smallest production repair consumes the existing error-free subtraction
+residual throughout the regional Gaussian displacement path. Squared scaled
+distance is accumulated from the two-component displacement, and Hessian
+curvature uses the residual-aware product `(d-r)(d+r)`; mixed curvature and
+region-gradient product-rule terms use the same stable displacement factor.
+The gate, fixed kernel, public API, diagnostics, and non-regional weight path
+are otherwise unchanged.
+
+Focused validation passed all sixteen public `trend_controls` tests, all
+fifteen public `local_trend` integration tests, all five private local-trend
+regressions, and complete diff whitespace validation. After the last
+production/test change, exact stable head `d42ccb5` passed workspace format,
+warning-denying workspace all-target/all-feature Clippy, all-feature workspace
+tests, workspace Rustdoc, all 58 requirement checks, and complete PR diff
+whitespace validation.
+
+TREND002-REV-014 is repaired pending a fresh isolated read-only re-review; this
+Repair does not close its own finding. PR #109 remains Draft and
+REQ-TREND-002 remains `implemented`, not `integrated`. Ready-only Windows,
+Ubuntu, macOS, and benchmark-smoke CI remain intentionally unexecuted. No
+unavailable check is claimed as passed.
