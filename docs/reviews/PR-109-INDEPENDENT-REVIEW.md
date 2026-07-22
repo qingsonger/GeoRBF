@@ -839,3 +839,107 @@ This Repair evidence does not close its own findings. PR #109 remains Draft and
 REQ-TREND-002 remains `implemented`, not `integrated`, until a fresh isolated
 read-only `math_reviewer` verifies exact Repair head `a2c04f0` and checks for
 new P0-P3 findings.
+
+## Fresh independent re-review after fifth Repair
+
+The fresh isolated read-only `math_reviewer` reviewed exact fifth Repair
+code/test/contract head `a2c04f0a9fd7990e9efd4f7a93ce7d6c4696290c` without
+the implementation task's reasoning transcript. The evidence-only tail through
+`e7abea2` changes only this review record and the bounded handoff.
+
+Result: TREND002-REV-009, TREND002-REV-010, and TREND002-REV-011 are closed for
+their exact published regressions, and TREND002-REV-007/008 remain closed. One
+new P1 finding, TREND002-REV-012, requires Repair. No P0, P2, or P3 finding was
+identified.
+
+### Closure of TREND002-REV-009 through TREND002-REV-011
+
+- TREND002-REV-009 is closed for its exact input. Independent evaluation gave
+  a regional query derivative of approximately `-2.2122087785713344e107`, a
+  center weight of approximately `8.467715431458746e103`, and the complete
+  gradient `-1.873235441191699523e211`. The regression's 15% tolerance is
+  appropriate for its approximately `2.08e16` cancellation condition and
+  excludes the former `1e195`-scale result.
+- TREND002-REV-010 is closed. The independently derived complete Hessian is
+  approximately `-4.377491037053051603e285`; delaying representability until
+  the complete weight/kernel term is formed retains it within the published
+  `512 * EPSILON` relative tolerance.
+- TREND002-REV-011 is closed for its required value case. The independently
+  derived local value is approximately `5.232584273707341641e-23`, retained
+  within the published `1024 * EPSILON` relative tolerance.
+- TREND002-REV-007 remains closed: mathematically exact compact query jets and
+  center factors still short-circuit symmetrically before fixed-kernel
+  evaluation through Hessian demand.
+- TREND002-REV-008 remains closed: individually underflowed Gaussian weights
+  retain non-exact-zero provenance and recover the required value in both
+  argument orders.
+
+### TREND002-REV-012 - P1: fixed Gaussian derivatives lose recoverable scale
+
+Locations: `crates/georbf/src/local_trend.rs:977`,
+`crates/georbf/src/local_trend.rs:989`,
+`crates/georbf/src/local_trend.rs:2140`, and
+`crates/georbf/src/local_trend.rs:2234`; the exposing public input begins at
+`crates/georbf/tests/trend_controls.rs:980`.
+
+The fifth Repair preserves an analytic stable factor only for the fixed
+Gaussian kernel value. Kernel gradients and Hessians remain represented
+`f64` values and enter `StableFactor::from_factors`; an underflowed represented
+derivative zero is consequently treated as an exact multiplicative zero even
+when the two weight factors make the complete product finite.
+
+The existing TREND002-REV-011 input proves the gradient failure independently.
+For the exact represented inputs `A = 1e154`, influence radius `R = 1000`,
+query `q = 0`, center `y = 39`, and a unit fixed Gaussian, the retained local
+value is
+
+```text
+L = A^2 exp(-0.5 (39 / R)^2 - 0.5 39^2)
+  = 5.2325842737073416407e-23.
+```
+
+The query weight derivative is zero and the fixed-kernel query derivative is
+`39 k`, so the complete local gradient is
+
+```text
+39 L = 2.0407078667458632399e-21
+     = 0x1.34620fd0577b6p-69 after binary64 rounding.
+```
+
+The background derivative is approximately `5.10565e-330` and rounds to zero.
+The represented fixed-kernel derivative also underflows because its log
+magnitude is approximately `-756.84`, but unlike the background it becomes
+finite after multiplication by the two large weights. Exact Repair head
+`a2c04f0` nevertheless returns zero. The analogous represented Hessian path
+can lose fixed-kernel derivative contributions for the same reason.
+
+Required regression and Repair: extend
+`fixed_gaussian_underflow_does_not_erase_representable_mixture_value` to demand
+the first derivative for this same query/center and require approximately
+`2.0407078667458633e-21` within about `1024 * EPSILON` relative tolerance. The
+implementation must retain analytic stable Gaussian gradient and Hessian
+factors until each complete mixture term is formed.
+
+### Re-review validation and disposition
+
+The reviewer inspected the complete `origin/main...a2c04f0` diff, the fifth
+Repair delta, the requirement and dependency summaries, Issue #108, M6 plan
+context, ANISOTROPY contract, ADR-0005/0008, source, tests, example, benchmark,
+change fragment, registry, and prior review evidence. It independently ran:
+
+- all 14 public `trend_controls` tests;
+- all 15 public `local_trend` integration tests;
+- all five private `local_trend` regressions;
+- complete diff whitespace validation; and
+- compact requirement `show` and `deps` commands.
+
+The supplied stable-head full gate was not rerun because no code, test,
+manifest, schema, CI, or build input changed after `a2c04f0`. Ready-only
+Windows/Ubuntu/macOS and benchmark-smoke CI remain intentionally unexecuted
+while PR #109 is Draft.
+
+PR #109 must remain Draft and REQ-TREND-002 must remain `implemented`, not
+`integrated`. A fresh Repair task must address only TREND002-REV-012, add the
+specified independent derivative regression, run focused checks and one final
+stable-head standard gate, update evidence, push, and stop for another fresh
+independent re-review.

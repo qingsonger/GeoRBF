@@ -6,53 +6,55 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Fifth Repair complete, fresh independent re-review required
+- Mode: Fresh independent re-review complete, sixth Repair required
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
-- Exact fifth Repair code/test/contract head: `a2c04f0`
+- Exact reviewed fifth Repair code/test/contract head: `a2c04f0`
 - Stable full-gate head: `a2c04f0`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are
   integrated
 - Registry state in this change: `implemented`
 
-## Fifth Repair evidence
+## Independent re-review result
 
-- TREND002-REV-009: compensated signed products and sums preserve the reviewed
-  approximately `-1.87e211` regional-gradient scale and never infer exact-zero
-  provenance from equal rounded logarithms.
-- TREND002-REV-010: demanded weight derivatives remain stable factors until a
-  complete mixture term is formed; the reviewed overflowing query-weight
-  Hessian is rescued to a finite approximately `-4.38e285` result.
-- TREND002-REV-011: fixed Gaussian values retain analytic logarithmic scale;
-  the reviewed represented kernel underflow recovers the independently derived
-  approximately `5.23e-23` local value.
-- Public D=1 regressions cover the exact three reviewed inputs. REV-007 compact
-  query/center short-circuits and the REV-008 two-argument-order regression
-  remain green. PR #109 remains Draft and the registry remains `implemented`.
+- TREND002-REV-009, TREND002-REV-010, and TREND002-REV-011 are closed for their
+  exact published regression inputs. TREND002-REV-007 and TREND002-REV-008
+  remain closed.
+- TREND002-REV-012 (P1): the fixed Gaussian value retains analytic logarithmic
+  scale, but its represented gradient and Hessian entries do not. An
+  underflowed kernel derivative is treated as an exact zero even when large
+  query and center weights make the complete contribution finite.
+- The existing REV-011 input independently requires a query gradient of
+  approximately `2.0407078667458633e-21`; exact head `a2c04f0` returns zero.
+  The repair must retain analytic stable Gaussian gradient and Hessian factors
+  through complete mixture-term formation.
+- No P0, P2, or P3 finding was identified. PR #109 remains Draft and the
+  requirement remains `implemented`.
 
 ## Validation state
 
-- Focused validation passed all fourteen public `trend_controls` tests, all
+- The isolated reviewer reran all fourteen public `trend_controls` tests, all
   fifteen `local_trend` integration tests, all five private local-trend
-  regressions, and warning-denying georbf all-target/all-feature Clippy.
-- The release-mode focused benchmark completed at approximately 23.4 us for
-  four controls and 61.5 us for sixteen controls over 10,000 compilations per
-  case on this development machine.
-- Exact stable head `a2c04f0` passed workspace format, warning-denying workspace
-  all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
-  all 58 requirement checks, and complete diff whitespace validation.
+  regressions, diff whitespace validation, and compact requirement `show` and
+  `deps` commands.
+- Exact stable head `a2c04f0` previously passed workspace format,
+  warning-denying workspace all-target/all-feature Clippy, all-feature workspace
+  tests, workspace Rustdoc, all 58 requirement checks, and complete diff
+  whitespace validation.
 - The evidence tail after `a2c04f0` changes only this review record and bounded
   Markdown handoff. Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI
   remain intentionally unexecuted while PR #109 is Draft.
 
 ## Next task boundary
 
-A fresh isolated read-only `math_reviewer` must verify exact fifth Repair head
-`a2c04f0` against TREND002-REV-009, TREND002-REV-010, and TREND002-REV-011,
-retain REV-007/008, and inspect the complete scoped diff for new P0-P3 findings.
-It must record its result and stop. Do not repair production code in that Review
-task, mark the PR ready, merge, or begin another requirement.
+A fresh Repair task must address only TREND002-REV-012. Extend the existing
+fixed-Gaussian-underflow public regression to demand the independently derived
+approximately `2.0407078667458633e-21` gradient, retain analytic Gaussian
+gradient and Hessian scales until complete mixture terms are formed, run
+focused checks and one final stable-head standard gate, update review evidence
+and this bounded handoff, push, and stop for a fresh independent re-review. Do
+not mark the PR ready, merge, or begin another requirement.
 
 ## Durable evidence
 
