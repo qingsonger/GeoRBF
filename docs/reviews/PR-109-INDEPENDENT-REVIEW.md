@@ -595,3 +595,49 @@ address only TREND002-REV-008, add the specified regression, run focused checks
 and one complete stable-head standard gate after the final code change, update
 this record and the bounded handoff, push, and stop for another fresh
 independent re-review. Do not begin another requirement.
+
+## Fourth Repair evidence pending fresh independent re-review
+
+Fourth Repair code/test/contract and stable full-gate head:
+`accad99a9f84145d75199dc6e9fc1bf5996e3a77`.
+
+This Repair addresses only TREND002-REV-008 and remains pending a fresh
+independent re-review:
+
+- A public compiled D=1 regression uses strength `1e154`, unit influence
+  radius, fixed Gaussian length `100`, query/control points zero and `47`, and
+  both argument orders. Its strict background kernel underflows at that
+  separation, isolating the local term, and its expected value is formed
+  independently in the logarithmic domain.
+- Internal weight jets now retain represented value, signed logarithmic scale,
+  and mathematical exact-zero provenance. Mixture value, gradient, and Hessian
+  products combine the query and center weight scales before final conversion
+  to `f64`, so an individually underflowed Gaussian factor cannot erase a
+  representable contribution.
+- Only a mathematically exact-zero complete query jet or center factor skips
+  fixed-kernel evaluation. The exact compact regional short-circuit from
+  TREND002-REV-007 remains argument-symmetric through Hessian demand.
+- The direct represented path preserves the established ordered factor
+  multiplication, so existing narrow/subnormal derivative truth is unchanged;
+  logarithmic evaluation is the fallback when the direct product underflows or
+  overflows.
+
+Before the production change, the new regression reproduced the reviewed
+failure with expected `1.87835170036433494e-172` and actual zero. Focused
+validation then passed all eleven public `trend_controls` tests, all fifteen
+`local_trend` integration tests, the five private local-trend unit regressions,
+warning-denying georbf all-target/all-feature Clippy, the runnable example, and
+the release-mode compilation benchmark smoke (approximately 12.4 us for four
+controls and 43.9 us for sixteen controls on this development machine).
+
+After the final production, test, Rustdoc, architecture, and change-fragment
+edit, the complete standard gate passed on exact stable head `accad99`:
+workspace format, warning-denying workspace all-target/all-feature Clippy,
+all-feature workspace tests, workspace Rustdoc, all 58 requirement checks, and
+complete diff whitespace validation. This evidence and bounded-handoff tail
+changes no production, test, manifest, schema, CI, or build input.
+
+This Repair evidence does not close its own finding. PR #109 remains Draft and
+REQ-TREND-002 remains `implemented`, not `integrated`, until a fresh isolated
+read-only `math_reviewer` verifies exact Repair head `accad99` and checks for
+new P0-P3 findings.
