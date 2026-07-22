@@ -1911,44 +1911,33 @@ where
     let hessian = if demanded >= KernelDerivativeOrder::Second {
         std::array::from_fn(|row| {
             std::array::from_fn(|column| {
-                let gaussian_hessian_factors = if row == column {
-                    [
-                        inverse_radius_squared,
-                        inverse_radius_squared,
-                        gaussian.displacements[row] - radius,
-                        gaussian.displacements[row] + radius,
-                    ]
+                let gaussian_curvature = if row == column {
+                    gaussian.diagonal_curvature(row, radius)
                 } else {
                     let first_axis = row.min(column);
                     let second_axis = row.max(column);
-                    [
-                        inverse_radius_squared,
-                        inverse_radius_squared,
-                        gaussian.displacements[first_axis],
-                        gaussian.displacements[second_axis],
-                    ]
+                    gaussian
+                        .displacement(first_axis)
+                        .product(gaussian.displacement(second_axis))
                 };
                 gaussian
                     .factor
                     .product(gate.value)
-                    .product_factors(&gaussian_hessian_factors)
+                    .product_factors(&[inverse_radius_squared, inverse_radius_squared])
+                    .product(gaussian_curvature)
                     .sum(
                         gaussian
                             .factor
                             .product(gate.gradient[column])
-                            .product_factors(&[
-                                -inverse_radius_squared,
-                                gaussian.displacements[row],
-                            ]),
+                            .product_factors(&[-inverse_radius_squared])
+                            .product(gaussian.displacement(row)),
                     )
                     .sum(
                         gaussian
                             .factor
                             .product(gate.gradient[row])
-                            .product_factors(&[
-                                -inverse_radius_squared,
-                                gaussian.displacements[column],
-                            ]),
+                            .product_factors(&[-inverse_radius_squared])
+                            .product(gaussian.displacement(column)),
                     )
                     .sum(gaussian.factor.product(gate.hessian[row][column]))
             })
@@ -1973,6 +1962,20 @@ struct GaussianWeightState<const D: usize> {
     factor: StableFactor,
 }
 
+impl<const D: usize> GaussianWeightState<D> {
+    fn displacement(self, axis: usize) -> StableFactor {
+        StableFactor::from_double(self.displacements[axis], self.displacement_errors[axis])
+    }
+
+    fn diagonal_curvature(self, axis: usize, radius: f64) -> StableFactor {
+        let displacement = (self.displacements[axis], self.displacement_errors[axis]);
+        let lower = double_sum(displacement, (-radius, 0.0));
+        let upper = double_sum(displacement, (radius, 0.0));
+        let (direct, error) = double_product(lower, upper);
+        StableFactor::from_double(direct, error)
+    }
+}
+
 fn gaussian_weight_state<const D: usize>(
     point: Point<D>,
     center: Point<D>,
@@ -1984,7 +1987,7 @@ where
 {
     let mut displacements = [0.0; D];
     let mut displacement_errors = [0.0; D];
-    let mut squared_radius = 0.0;
+    let mut squared_radius = (0.0, 0.0);
     for (axis, displacement) in displacements.iter_mut().enumerate() {
         *displacement = point.components()[axis] - center.components()[axis];
         if !displacement.is_finite() {
@@ -1998,17 +2001,17 @@ where
             (-center.components()[axis], 0.0),
         )
         .1;
-        let scaled = *displacement * inverse_radius;
-        let square = scaled * scaled;
-        if !scaled.is_finite() || !square.is_finite() {
+        let scaled = double_product_f64((*displacement, displacement_errors[axis]), inverse_radius);
+        let square = double_product(scaled, scaled);
+        if !scaled.0.is_finite() || !scaled.1.is_finite() || !square.0.is_finite() {
             return Ok(None);
         }
-        squared_radius += square;
-        if !squared_radius.is_finite() {
+        squared_radius = double_sum(squared_radius, square);
+        if !squared_radius.0.is_finite() || !squared_radius.1.is_finite() {
             return Ok(None);
         }
     }
-    let exponent = -0.5 * squared_radius;
+    let exponent = -0.5 * (squared_radius.0 + squared_radius.1);
     Ok(Some(GaussianWeightState {
         displacements,
         displacement_errors,

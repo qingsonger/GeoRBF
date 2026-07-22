@@ -1087,3 +1087,47 @@ fn fixed_gaussian_overflow_is_scaled_before_derivative_representability_check()
     );
     Ok(())
 }
+
+#[test]
+fn regional_hessian_preserves_rounded_displacement_residual() -> Result<(), Box<dyn Error>> {
+    let control_location = -0.5 * f64::EPSILON;
+    let region = SmoothRegion::try_new(point([-2.0])?, point([2.0])?, 0.25)?;
+    let control = LocalTrendControl::new(
+        point([control_location])?,
+        KernelDefinition::from(Gaussian::try_new(1.0e100)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0])?),
+            axial_length: 1.0,
+            transverse_length: 1.0,
+        },
+        1.0,
+        1.0,
+        Some(region),
+    );
+    let background_weight = 2.0_f64.powi(-537);
+    let tiny_background = LocalTrendBackground::new(
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        GlobalAnisotropy::try_isotropic(1.0)?,
+        SmoothSpatialWeight::try_constant(background_weight)?,
+    );
+    let compiled = try_compile_local_trend_controls(
+        tiny_background,
+        &[control],
+        None,
+        domain(2.0)?,
+        background_weight,
+        policy(1.0e-12, 1.0, 1.0)?,
+    )?;
+
+    // Independently evaluated with 100-decimal arithmetic from the exact
+    // represented inputs above: exp(-(1 + 2^-53)^2) times
+    // ((1 + 2^-53)^2 - 1 - 1e-200).
+    let expected = 8.168_564_517_495_419e-17_f64;
+    let actual = compiled
+        .mixture()
+        .try_evaluate(point([1.0])?, point([1.0])?, KernelDerivativeOrder::Second)?
+        .hessian()
+        .ok_or("missing Hessian")?[0][0];
+    assert_close(actual, expected, expected * 64.0 * f64::EPSILON);
+    Ok(())
+}
