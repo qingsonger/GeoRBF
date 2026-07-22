@@ -498,3 +498,100 @@ This Repair evidence does not close its own finding. PR #109 remains Draft and
 REQ-TREND-002 remains `implemented`, not `integrated`, until a fresh isolated
 read-only `math_reviewer` verifies exact Repair head `8203876` and checks for
 new P0-P3 findings.
+
+## Fresh independent re-review after third Repair
+
+- Exact reviewed head: `3a8ba8f8ad9e83b29ebf8bb8ef0f8cd35ae87de2`
+- Third Repair code/test/evidence head:
+  `8203876292982f6ca6765b5fc8963358373bba79`
+- Base and merge-base head:
+  `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
+- Re-review date: 2026-07-22
+- Result: TREND002-REV-007 is closed; P1 TREND002-REV-008 requires Repair
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-TREND-002 summary and integrated dependency closure, Issue #108 acceptance
+criteria and exclusions, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008
+contracts, the complete PR and third-Repair diffs, directly relevant source,
+tests, example and benchmark, and the recorded validation evidence. It
+inherited no Implement or Repair reasoning transcript and made no repository,
+Git, or GitHub change.
+
+### Closure of TREND002-REV-007
+
+TREND002-REV-007 is closed as scoped. Exact Repair head `8203876` skips an
+exactly zero compact center factor before fixed-kernel evaluation, and the
+public regression covers both argument orders through Hessian demand. Every
+query derivative of `b(x) b(y) k(x, y)` retains `b(y)`, so this short-circuit
+is algebraically valid for a mathematically exact compact-support zero.
+
+### TREND002-REV-008 - P1: rounded-zero Gaussian factors erase a representable mixture value
+
+Affected code and overstated contract:
+
+- `crates/georbf/src/local_trend.rs:957-970`
+- `docs/architecture/ANISOTROPY.md:360`
+
+`WeightJet` retains only represented `f64` values, so the repaired
+short-circuits cannot distinguish a mathematically exact compact-support zero
+from a Gaussian value that merely underflowed to represented zero. Consider a
+valid D=1 non-regional control at zero with strength `1e154`, influence radius
+one, a Gaussian fixed kernel, isotropic fixed length `100`, query zero, and
+kernel center `47`. The center-weight logarithm is
+
+```text
+log(b(47)) = log(1e154) - 47^2 / 2 ~= -749.9019,
+```
+
+so the individual represented center weight is zero. The independently
+combined value is nevertheless
+
+```text
+b(0) b(47) k(0, 47)
+  = exp(2 log(1e154) - 47^2 / 2)
+    exp(-(47 / 100)^2 / 2)
+  ~= 1.878351700364362e-172,
+```
+
+which is finite and representable. With center `47`, the center-factor branch
+skips the component; after reversing the arguments, the query-jet branch skips
+it. Both orders therefore return zero and silently erase the valid local
+kernel contribution. This violates the scale-aware evaluation contract and
+shows that represented zero alone does not prove a mathematical zero.
+
+A fresh Repair must first add a public compiled D=1 regression with those
+exact inputs. It must evaluate both argument orders with value demand, isolate
+the local term using a background whose value is zero at separation `47`, and
+compare with the independent logarithmic-domain value above. The smallest
+production repair must retain zero provenance or logarithmic scale far enough
+to skip only a mathematically exact compact-support zero; it must not weaken
+the valid TREND002-REV-007 compact short-circuit.
+
+### Re-review validation and disposition
+
+- The reviewer verified the complete PR diff, exact Repair and documentation
+  tail, and independently derived the counterexample above. It passed all ten
+  public trend-control tests, all five private local-trend regressions, the
+  exact TREND002-REV-007 regression, and complete diff whitespace validation.
+- The parent Review task independently passed the same ten public and five
+  private focused tests, workspace format, all 58 requirement checks, and
+  complete diff whitespace validation on exact reviewed head `3a8ba8f`.
+- Exact stable Repair head `8203876` retains the recorded complete local
+  standard gate. The tail to `3a8ba8f` changes only this review record and the
+  bounded Markdown handoff.
+- Draft Ubuntu CI run 29902996233 passed its configured correctness gate on
+  exact reviewed head `3a8ba8f`. The Ready-only Windows, Ubuntu, macOS, and
+  benchmark-smoke matrix remains intentionally unexecuted.
+- The fixed-SPD diagonal-congruence proof, strict background, CPD rejection,
+  smootherstep signs and units, C2/Hessian product rules, rotated metric truth,
+  reference-gradient behavior, condition policy, diagnostics, allocation
+  behavior, interfaces, and absence of hidden regularization otherwise satisfy
+  the reviewed scope. Polynomial rank, hard constraints, solver infeasibility,
+  and polynomial spaces are not applicable.
+
+No additional P0, P2, or P3 finding was identified. PR #109 remains Draft and
+REQ-TREND-002 remains `implemented`, not `integrated`. A fresh Repair task must
+address only TREND002-REV-008, add the specified regression, run focused checks
+and one complete stable-head standard gate after the final code change, update
+this record and the bounded handoff, push, and stop for another fresh
+independent re-review. Do not begin another requirement.

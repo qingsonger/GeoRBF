@@ -6,53 +6,56 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete, fresh independent re-review required
+- Mode: Review complete, fresh Repair required
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
-- Exact independently reviewed head: `4820021`
+- Exact independently reviewed head: `3a8ba8f`
 - Third Repair code/test/evidence head: `8203876`
 - Stable full-gate head: `8203876`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are
   integrated
 - Registry state in this change: `implemented`
 
-## Third Repair result
+## Fresh re-review result
 
-- TREND002-REV-007 is repaired pending fresh independent re-review. The public
-  compact-control regression now covers both argument orders for the reviewed
-  D=1 extreme input through Hessian demand.
-- An exactly zero center weight skips the component before fixed-kernel
-  evaluation. Every value and query-derivative term contains that factor, so
-  the short-circuit preserves exact algebra and restores argument-symmetric
-  compact support.
-- Rustdoc, the anisotropy contract, and the requirement change fragment state
-  the symmetric query-jet/center-factor behavior.
+- TREND002-REV-007 is independently closed. The compact center-factor
+  short-circuit is algebraically correct, and the public regression covers both
+  argument orders through Hessian demand.
+- New P1 TREND002-REV-008 remains. Represented-zero query or center factors do
+  not distinguish exact compact support from Gaussian underflow. For a valid
+  D=1 non-regional control with strength `1e154`, radius one, fixed Gaussian
+  length `100`, query zero, and center `47`, each argument order short-circuits
+  even though the independently combined local value is the finite,
+  representable `1.878351700364362e-172`.
+- No additional P0, P2, or P3 finding was identified. PR #109 remains Draft
+  and the registry remains `implemented`.
 
 ## Validation state
 
-- The new symmetric regression first reproduced
-  `NonFiniteTransformedDisplacementComponent` before the production change.
-- Focused validation passed all ten public `trend_controls` tests, all five
-  private local-trend regressions, warning-denying georbf all-target/all-feature
-  Clippy, the runnable example, and the release benchmark smoke.
-- After the last Rust change and a rustfmt-only correction, the complete
-  standard gate was rerun from the beginning and passed on exact head
-  `8203876`: workspace format, warning-denying workspace all-target/all-feature
-  Clippy, all-feature workspace tests, workspace Rustdoc, all 58 requirement
-  checks, and complete diff whitespace validation.
-- The evidence/handoff tail after `8203876` is Markdown-only. Draft PR #109 and
-  `implemented` registry state are intentionally retained.
+- The isolated reviewer passed all ten public `trend_controls` tests, all five
+  private local-trend regressions, the exact TREND002-REV-007 regression, and
+  complete diff whitespace validation.
+- The parent Review task independently passed the same public and private
+  focused tests, workspace format, all 58 requirement checks, and complete
+  diff whitespace on exact reviewed head `3a8ba8f`.
+- Draft Ubuntu CI run 29902996233 passed its configured correctness gate on
+  exact reviewed head `3a8ba8f`. Ready-only Windows/Ubuntu/macOS and benchmark
+  smoke remain intentionally unexecuted.
+- Exact Repair head `8203876` retains the complete recorded standard gate. The
+  tail afterward changes only the review record and bounded Markdown handoff.
 
 ## Next task boundary
 
-A fresh Review task must use an isolated read-only project `math_reviewer` to
-verify TREND002-REV-007 on exact Repair head `8203876` and inspect the complete
-PR for new P0-P3 findings. If any finding remains, record it and stop without a
-production repair. Only after a clean review and green local final-head checks
-may that fresh task mark PR #109 Ready, wait for the complete Windows/Ubuntu/
-macOS and benchmark-smoke CI on the exact Ready head, merge once, and record
-truthful integration state. Do not begin another requirement.
+A fresh Repair task must address only TREND002-REV-008. First add a public
+compiled D=1 regression using the reviewed strength, radius, fixed-kernel
+length, query, and center in both argument orders, isolate the local term with
+a zero-valued background, and compare against independent logarithmic-domain
+truth. Then retain zero provenance or logarithmic scale far enough to skip only
+mathematically exact compact-support zeros without regressing TREND002-REV-007.
+Run focused checks and one complete stable-head standard gate after the final
+code change, update review evidence and this bounded handoff, push, and stop
+for a fresh independent re-review. Do not begin another requirement.
 
 ## Durable evidence
 
