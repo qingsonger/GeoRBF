@@ -65,8 +65,12 @@ overflowing query-weight Hessian into a finite approximately `-4.38e285`
 complete contribution. A fixed-Gaussian counterexample retains analytic value,
 gradient, and Hessian scale after the represented kernel jet underflows and
 recovers the independently derived approximately `5.23e-23` local value,
-`2.04e-21` gradient, and `7.95e-20` Hessian. A runnable example demonstrates
-regional compilation and Hessian evaluation.
+`2.04e-21` gradient, and `7.95e-20` Hessian. A second fixed-Gaussian
+counterexample routes value-only evaluation directly through its demand-bounded
+stable jet and retains an individually overflowing anisotropic Hessian only
+after both small weights make the complete approximately `-6.62e199`
+contribution finite. A runnable example demonstrates regional compilation and
+Hessian evaluation.
 
 Rust is implemented. CLI and versioned schemas are N/A until M8 defines the
 persisted control representation and complete data CLI. C, C++, and Python are

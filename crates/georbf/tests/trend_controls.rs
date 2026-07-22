@@ -1030,3 +1030,60 @@ fn fixed_gaussian_underflow_does_not_erase_representable_mixture_value()
     );
     Ok(())
 }
+
+#[test]
+fn fixed_gaussian_overflow_is_scaled_before_derivative_representability_check()
+-> Result<(), Box<dyn Error>> {
+    let fixed_kernel_length = 1.0e-100_f64;
+    let anisotropy_length = 1.0e-154_f64;
+    let strength = 1.0e-154_f64;
+    let center = 5.0e-255_f64;
+    let control = LocalTrendControl::new(
+        point([0.0])?,
+        KernelDefinition::from(Gaussian::try_new(fixed_kernel_length)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0])?),
+            axial_length: anisotropy_length,
+            transverse_length: anisotropy_length,
+        },
+        1.0,
+        strength,
+        None,
+    );
+    let compiled = try_compile_local_trend_controls(
+        background()?,
+        &[control],
+        None,
+        domain(1.0)?,
+        0.25,
+        policy(1.0e-12, 1.0, 1.0)?,
+    )?;
+
+    let value = compiled.mixture().try_evaluate(
+        point([0.0])?,
+        point([center])?,
+        KernelDerivativeOrder::Value,
+    )?;
+    assert_eq!(value.value().to_bits(), 0.25_f64.to_bits());
+
+    let effective_inverse_length_log = anisotropy_length.recip().ln() - fixed_kernel_length.ln();
+    let expected_hessian =
+        -(2.0 * strength.ln() - 0.125 + 0.75_f64.ln() + 2.0 * effective_inverse_length_log).exp();
+    assert!(expected_hessian.is_finite() && expected_hessian != 0.0);
+
+    let actual_hessian = compiled
+        .mixture()
+        .try_evaluate(
+            point([0.0])?,
+            point([center])?,
+            KernelDerivativeOrder::Second,
+        )?
+        .hessian()
+        .ok_or("missing Hessian")?[0][0];
+    assert_close(
+        actual_hessian,
+        expected_hessian,
+        expected_hessian.abs() * 1024.0 * f64::EPSILON,
+    );
+    Ok(())
+}

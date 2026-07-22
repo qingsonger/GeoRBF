@@ -25,7 +25,7 @@ use crate::anisotropy::GlobalAnisotropy;
 use crate::dimension::{Dim, SupportedDimension};
 use crate::geometry::Point;
 use crate::kernel::{KernelDefiniteness, KernelDerivativeCapability, KernelDerivativeOrder};
-use crate::kernel_calculus::{KernelArgument, SpatialKernelJet};
+use crate::kernel_calculus::KernelArgument;
 use crate::model::{KernelDefinition, KernelDefinitionEvaluationError};
 
 /// Closed finite axis-aligned domain on which background conditioning policy applies.
@@ -2148,74 +2148,73 @@ fn stable_kernel_jet<const D: usize>(
     query: Point<D>,
     center: Point<D>,
     anisotropy: &GlobalAnisotropy<D>,
-    represented: SpatialKernelJet<D>,
     demanded: KernelDerivativeOrder,
 ) -> Result<StableKernelJet<D>, KernelDefinitionEvaluationError<D>>
 where
     Dim<D>: SupportedDimension,
 {
-    match kernel {
-        KernelDefinition::Gaussian(gaussian) => {
-            let separation = anisotropy
-                .try_transform_separation(query, center)
-                .map_err(KernelDefinitionEvaluationError::Anisotropy)?;
-            let scaled = separation.radius() / gaussian.length_scale();
-            let value = StableFactor::from_gaussian(1.0, -0.5 * scaled * scaled);
-            let transformed = match separation.unit_displacement() {
-                Some(unit) => std::array::from_fn(|axis| unit[axis] * separation.radius()),
-                None => [0.0; D],
-            };
-            let inverse_length = gaussian.length_scale().recip();
-            let inverse_length_squared = inverse_length * inverse_length;
-            let scaled_projections = if demanded >= KernelDerivativeOrder::First {
-                std::array::from_fn(|axis| {
-                    (0..D)
-                        .map(|row| {
+    if let KernelDefinition::Gaussian(gaussian) = kernel {
+        let separation = anisotropy
+            .try_transform_separation(query, center)
+            .map_err(KernelDefinitionEvaluationError::Anisotropy)?;
+        let scaled = separation.radius() / gaussian.length_scale();
+        let value = StableFactor::from_gaussian(1.0, -0.5 * scaled * scaled);
+        let transformed = match separation.unit_displacement() {
+            Some(unit) => std::array::from_fn(|axis| unit[axis] * separation.radius()),
+            None => [0.0; D],
+        };
+        let inverse_length = gaussian.length_scale().recip();
+        let inverse_length_squared = inverse_length * inverse_length;
+        let scaled_projections = if demanded >= KernelDerivativeOrder::First {
+            std::array::from_fn(|axis| {
+                (0..D)
+                    .map(|row| {
+                        StableFactor::from_factors(&[
+                            anisotropy.transform()[row][axis],
+                            transformed[row],
+                            inverse_length_squared,
+                        ])
+                    })
+                    .fold(StableFactor::ZERO, StableFactor::sum)
+            })
+        } else {
+            [StableFactor::ZERO; D]
+        };
+        let gradient = if demanded >= KernelDerivativeOrder::First {
+            scaled_projections.map(|projection| value.product(projection.negated()))
+        } else {
+            [StableFactor::ZERO; D]
+        };
+        let hessian = if demanded >= KernelDerivativeOrder::Second {
+            std::array::from_fn(|row| {
+                std::array::from_fn(|column| {
+                    let curvature = (0..D)
+                        .map(|axis| {
                             StableFactor::from_factors(&[
-                                anisotropy.transform()[row][axis],
-                                transformed[row],
-                                inverse_length_squared,
+                                -inverse_length_squared,
+                                anisotropy.transform()[axis][row],
+                                anisotropy.transform()[axis][column],
                             ])
                         })
-                        .fold(StableFactor::ZERO, StableFactor::sum)
+                        .fold(StableFactor::ZERO, StableFactor::sum);
+                    value.product(
+                        scaled_projections[row]
+                            .product(scaled_projections[column])
+                            .sum(curvature),
+                    )
                 })
-            } else {
-                [StableFactor::ZERO; D]
-            };
-            let gradient = if demanded >= KernelDerivativeOrder::First {
-                scaled_projections.map(|projection| value.product(projection.negated()))
-            } else {
-                [StableFactor::ZERO; D]
-            };
-            let hessian = if demanded >= KernelDerivativeOrder::Second {
-                std::array::from_fn(|row| {
-                    std::array::from_fn(|column| {
-                        let curvature = (0..D)
-                            .map(|axis| {
-                                StableFactor::from_factors(&[
-                                    -inverse_length_squared,
-                                    anisotropy.transform()[axis][row],
-                                    anisotropy.transform()[axis][column],
-                                ])
-                            })
-                            .fold(StableFactor::ZERO, StableFactor::sum);
-                        value.product(
-                            scaled_projections[row]
-                                .product(scaled_projections[column])
-                                .sum(curvature),
-                        )
-                    })
-                })
-            } else {
-                [[StableFactor::ZERO; D]; D]
-            };
-            Ok(StableKernelJet {
-                value,
-                gradient,
-                hessian,
             })
-        }
-        _ => Ok(StableKernelJet {
+        } else {
+            [[StableFactor::ZERO; D]; D]
+        };
+        Ok(StableKernelJet {
+            value,
+            gradient,
+            hessian,
+        })
+    } else {
+        let represented = kernel.try_spatial_jet(query, center, demanded, Some(anisotropy))?;
+        Ok(StableKernelJet {
             value: StableFactor::from_factors(&[represented.value()]),
             gradient: if demanded >= KernelDerivativeOrder::First {
                 represented
@@ -2231,7 +2230,7 @@ where
             } else {
                 [[StableFactor::ZERO; D]; D]
             },
-        }),
+        })
     }
 }
 
@@ -2245,19 +2244,11 @@ fn component_kernel_jet<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
-    let kernel = component
-        .kernel
-        .try_spatial_jet(query, center, demanded, Some(&component.anisotropy))
-        .map_err(|source| LocalTrendEvaluationError::Kernel {
-            component: component_index,
-            source,
-        })?;
     stable_kernel_jet(
         component.kernel,
         query,
         center,
         &component.anisotropy,
-        kernel,
         demanded,
     )
     .map_err(|source| LocalTrendEvaluationError::Kernel {
