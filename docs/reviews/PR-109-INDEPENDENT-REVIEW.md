@@ -796,3 +796,46 @@ checks and one complete stable-head standard gate after the last code change,
 update this record and the bounded handoff, push, and stop for another fresh
 independent re-review. Do not mark the PR ready, merge it, or begin another
 requirement.
+
+## Fifth Repair evidence pending fresh independent re-review
+
+Fifth Repair code/test/contract and stable full-gate head:
+`a2c04f0a9fd7990e9efd4f7a93ce7d6c4696290c`.
+
+This Repair addresses only TREND002-REV-009, TREND002-REV-010, and
+TREND002-REV-011 and remains pending a fresh independent re-review:
+
+- TREND002-REV-009: signed factors now retain compensated direct products and
+  sums. Equal rounded logarithmic magnitudes can use a finite compensated
+  residual but can never create mathematical exact-zero provenance. The public
+  compiled D=1 regional regression retains the independently evaluated
+  approximately `-1.87e211` gradient scale instead of the former approximately
+  `-1.94e195` residual.
+- TREND002-REV-010: weight-jet derivatives remain signed stable factors until
+  each complete mixture product is formed. The reviewed individually
+  overflowing query-weight Hessian is scaled by its center weight and fixed
+  kernel before representability is decided, returning the independently
+  derived finite approximately `-4.38e285` complete Hessian.
+- TREND002-REV-011: a fixed Gaussian kernel value retains its analytic
+  logarithmic scale separately from the represented kernel jet. The reviewed
+  underflowed fixed-kernel value combines with both valid large weight factors
+  to recover the independently derived approximately `5.23e-23` local value.
+
+The new regressions first reproduced all three reviewed failures. Focused
+validation then passed all fourteen public `trend_controls` tests, all fifteen
+`local_trend` integration tests, all five private local-trend regressions, and
+warning-denying georbf all-target/all-feature Clippy. The release-mode focused
+benchmark completed at approximately 23.4 us for four controls and 61.5 us for
+sixteen controls over 10,000 compilations per case on this development machine.
+
+After the final production, test, Rustdoc, architecture, and change-fragment
+edit, exact stable head `a2c04f0` passed workspace format, warning-denying
+workspace all-target/all-feature Clippy, all-feature workspace tests, workspace
+Rustdoc, all 58 requirement checks, and complete diff whitespace validation.
+The remaining evidence and bounded-handoff edits change only Markdown review
+state and do not alter production, test, manifest, schema, CI, or build input.
+
+This Repair evidence does not close its own findings. PR #109 remains Draft and
+REQ-TREND-002 remains `implemented`, not `integrated`, until a fresh isolated
+read-only `math_reviewer` verifies exact Repair head `a2c04f0` and checks for
+new P0-P3 findings.
