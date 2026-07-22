@@ -362,3 +362,97 @@ This Repair evidence does not close its own findings. PR #109 remains Draft
 and REQ-TREND-002 remains `implemented`, not `integrated`, until a fresh
 isolated read-only `math_reviewer` verifies the exact Repair head and checks for
 new P0-P3 findings.
+
+## Fresh independent re-review after second Repair
+
+- Exact reviewed head: `482002164a3af66e8d85e88ddfed0f1d559165a8`
+- Second Repair code/test/evidence head:
+  `00c9b3dae63b754c3e1bb89e29cdd5df0aeaaaa2`
+- Base and merge-base head:
+  `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
+- Re-review date: 2026-07-22
+- Result: TREND002-REV-004 through TREND002-REV-006 are closed; P2
+  TREND002-REV-007 requires Repair
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-TREND-002 summary and integrated dependency closure, Issue #108 acceptance
+criteria and exclusions, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008
+contracts, the complete PR and second-Repair diffs, directly relevant source,
+tests, example and benchmark, and the recorded validation evidence. It
+inherited no Implement or Repair reasoning transcript and made no repository,
+Git, or GitHub change.
+
+### Closure of TREND002-REV-004 through TREND002-REV-006
+
+- TREND002-REV-004 is closed. Signed logarithmic gate factors are combined
+  with strength and the Gaussian exponent before conversion back to represented
+  values. The reviewed D=1 value, first derivative, and second derivative stay
+  finite and nonzero when the unscaled smootherstep value underflows.
+- TREND002-REV-005 is closed as scoped. A complete demanded query weight jet
+  that is exactly zero skips center-weight and fixed-kernel evaluation, and the
+  reviewed public Hessian regression returns exact zeros.
+- TREND002-REV-006 is closed. Transition validation uses the attained
+  smootherstep curvature maximum `10 / sqrt(3) / width^2`; width `5e-154` and
+  its finite analytic maximum curvature are retained by the regression.
+
+### TREND002-REV-007 - P2: zero center factor does not skip the fixed kernel
+
+Affected code and missing symmetric regression:
+
+- `crates/georbf/src/local_trend.rs:962-973`
+- `crates/georbf/tests/trend_controls.rs:782`
+
+For one component
+
+```text
+K_r(x, y) = b_r(x) b_r(y) k_r(x, y),
+```
+
+an exactly zero center factor `b_r(y)` makes the value and every query
+derivative through Hessian order exactly zero. Every product-rule term retains
+that center factor, so the fixed kernel is irrelevant. The evaluator reads the
+zero center value but then calls the fixed kernel unconditionally.
+
+The reviewer independently reversed the existing compact-query regression:
+D=1, region `[-1, 1]`, transition width `0.25`, control and query at zero,
+spheroidal length `0.5` so `A = 2`, center `f64::MAX`, and second-derivative
+demand. The center gate is exactly zero, but the irrelevant transformed
+separation overflows and evaluation returns
+`NonFiniteTransformedDisplacementComponent { axis: 0 }` for component one.
+The local component is algebraically zero, so compact support is incorrectly
+argument-asymmetric at finite extreme inputs.
+
+A Repair must first extend
+`compact_control_skips_overflowing_fixed_kernel_when_query_factor_is_zero`
+with the reversed query and center. It must require successful evaluation with
+the same background truth and exact-zero value, gradient, and Hessian from the
+compact local component. The smallest implementation change must skip the
+fixed kernel once the center weight is exactly zero.
+
+### Re-review validation and disposition
+
+- Exact reviewed head and merge base were verified, and the tail from
+  `00c9b3d` to `4820021` changes only the review record and bounded handoff.
+- The reviewer passed all ten public `trend_controls` tests, all five private
+  local-trend regressions, the runnable example, workspace format, all 58
+  requirement checks, and complete PR diff whitespace validation. The parent
+  Review task independently passed the same public and private focused tests.
+- The reviewer independently reproduced TREND002-REV-007 with the exact public
+  construction above. Existing tests do not cover the reversed center-zero
+  case.
+- Draft Ubuntu CI run 29898025166 passed its configured correctness gate on
+  exact reviewed head `4820021`. The Ready-only Windows, Ubuntu, macOS, and
+  benchmark-smoke matrix remains intentionally unexecuted.
+- The fixed-SPD diagonal-congruence construction, strict constant background,
+  CPD rejection, product-rule signs and units, rotation behavior, Hessian
+  capability checks, deterministic diagnostics, allocation behavior,
+  interfaces, and absence of hidden regularization otherwise satisfy the
+  reviewed scope. Polynomial rank, solver hard constraints, and infeasibility
+  are not applicable.
+
+PR #109 remains Draft and REQ-TREND-002 remains `implemented`, not
+`integrated`. A fresh Repair task must address only TREND002-REV-007, add the
+specified symmetric regression, run focused checks and one complete stable-head
+standard gate after the final code change, update this record and the bounded
+handoff, push, and stop for another fresh independent re-review. Do not begin
+another requirement.
