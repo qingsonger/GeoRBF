@@ -1163,7 +1163,8 @@ where
     // upper bound even though the represented determinant itself may toggle.
     let mut determinant_upper_bound = ExactDyadicSum::zero();
     determinant_upper_bound.add_triple_product(original[0][0], original[1][1], original[2][2], 1.0);
-    determinant_upper_bound.add_triple_product(cubic[0][1], cubic[0][2], cubic[1][2], 2.0);
+    determinant_upper_bound.add_triple_product(cubic[0][1], cubic[0][2], cubic[1][2], 1.0);
+    determinant_upper_bound.add_triple_product(cubic[0][1], cubic[0][2], cubic[1][2], 1.0);
     determinant_upper_bound.add_triple_product(original[0][0], lower[1][2], lower[1][2], -1.0);
     determinant_upper_bound.add_triple_product(original[1][1], lower[0][2], lower[0][2], -1.0);
     determinant_upper_bound.add_triple_product(original[2][2], lower[0][1], lower[0][1], -1.0);
@@ -1825,6 +1826,43 @@ mod tests {
         let greatest = tensor_with_correlation_scale(represented, f64::from_bits(one_bits - 1));
         assert!(represented_tensor_has_nonnegative_order_two_minors(
             &greatest
+        )?);
+        Ok(())
+    }
+
+    #[test]
+    fn positive_cubic_interval_bound_keeps_a_certified_scale_searchable() -> TestResult {
+        let represented = [
+            [
+                0.556_956_780_593_790_2,
+                0.223_035_611_992_594_25,
+                0.443_859_258_017_088,
+            ],
+            [
+                0.223_035_611_992_594_25,
+                0.089_315_519_534_345_86,
+                0.177_745_248_284_573_55,
+            ],
+            [
+                0.443_859_258_017_088,
+                0.177_745_248_284_573_55,
+                0.353_727_699_871_864_03,
+            ],
+        ];
+        let one_bits = 1.0_f64.to_bits();
+        let states = [0_u64, 1, 2]
+            .map(|offset| {
+                tensor_with_correlation_scale(represented, f64::from_bits(one_bits - offset))
+            })
+            .map(|candidate| represented_tensor_is_positive_semidefinite(&candidate))
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()?;
+
+        assert_eq!(states, [false, false, true]);
+        assert!(d3_determinant_interval_can_be_nonnegative(
+            represented,
+            one_bits - 2,
+            one_bits - 1
         )?);
         Ok(())
     }

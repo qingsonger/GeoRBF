@@ -107,8 +107,8 @@ so ordered-bit bisection first finds its greatest admissible scale. D=3 then
 uses a high-scale-first partition of that finite bit interval because the exact
 determinant of independently rounded correlations need not be monotone. A
 partition is discarded only when an exact dyadic upper bound is negative: the
-bound maximizes the signed cubic correlation term over the interval and
-minimizes every negative squared-correlation term. Searching the upper
+bound maximizes the complete signed cubic correlation term `2xyz` over the
+interval and minimizes every negative squared-correlation term. Searching the upper
 partition first and pruning only on that proof makes the first accepted scale
 the greatest accepted bit pattern, including an accepted--rejected--accepted
 rounding sequence. The search covers the complete represented interval from

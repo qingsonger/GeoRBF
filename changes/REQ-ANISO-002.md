@@ -123,6 +123,17 @@ without assuming determinant monotonicity. The reviewed single-sample direction
 scale `1.0.to_bits() - 1`; exact tests cover accepted, rejected, accepted, and
 rejected states at the final four scale patterns.
 
+A further ANISO002-REV-008 Repair corrects that interval bound's positive
+cubic coefficient. The exact accumulator's coefficient argument encoded only
+sign, so passing `2.0` added one `xyz` term instead of the determinant's full
+`2xyz`. The Repair adds the exact triple product twice. The reviewed public
+single-sample direction
+`[0.9249979276407545,0.37041918883416014,0.7371647282797207]` now retains the
+greatest certified scale `1.0.to_bits() - 2`; exact dyadic tests reject both
+larger scales and prove that the interval containing the accepted scale cannot
+be pruned. No tolerance, clipping, jitter, pseudoinverse, hidden
+regularization, or valid-input rejection is introduced.
+
 The ANISO002-REV-008/009 Repair also removes every manual allocation annotation.
 A dedicated single-test integration binary constructs and warms the inputs
 outside the measured region, then observes actual allocator calls around only

@@ -192,6 +192,53 @@ fn d3_nonmonotone_rounding_reaches_the_greatest_represented_psd_scale() -> TestR
 }
 
 #[test]
+fn d3_interval_search_keeps_the_positive_cubic_maximal_scale() -> TestResult {
+    let estimator =
+        OrientationTensorEstimator::try_fixed(PrincipalAxisRatios::try_new([1.0, 1.0, 1.0])?, 0.0)?;
+    let estimate = estimator.try_estimate(&[sample(
+        [
+            0.924_997_927_640_754_5,
+            0.370_419_188_834_160_14,
+            0.737_164_728_279_720_7,
+        ],
+        1.0,
+    )?])?;
+
+    let scale_bits = 1.0_f64.to_bits() - 2;
+    assert_eq!(
+        estimate.diagnostics().tensor_correlation_scale().to_bits(),
+        scale_bits
+    );
+    let scale = f64::from_bits(scale_bits);
+    let expected = [
+        [
+            0.556_956_780_593_790_2,
+            0.223_035_611_992_594_25 * scale,
+            0.443_859_258_017_088 * scale,
+        ],
+        [
+            0.223_035_611_992_594_25 * scale,
+            0.089_315_519_534_345_86,
+            0.177_745_248_284_573_55 * scale,
+        ],
+        [
+            0.443_859_258_017_088 * scale,
+            0.177_745_248_284_573_55 * scale,
+            0.353_727_699_871_864_03,
+        ],
+    ];
+    assert_eq!(*estimate.tensor(), expected);
+    assert_eq!(
+        (0..3)
+            .map(|axis| estimate.tensor()[axis][axis])
+            .sum::<f64>(),
+        1.0
+    );
+    assert!(estimate.eigenvalues().iter().all(|value| *value >= 0.0));
+    Ok(())
+}
+
+#[test]
 fn d3_axes_and_tensor_are_rotation_covariant_away_from_degeneracy() -> TestResult {
     let angle = 0.47_f64;
     let (sine, cosine) = angle.sin_cos();
