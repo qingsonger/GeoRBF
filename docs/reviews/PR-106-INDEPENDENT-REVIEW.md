@@ -844,3 +844,105 @@ ANISO002-REV-008 or ANISO002-REV-009. PR #106 remains Draft and
 REQ-ANISO-002 remains `implemented`. A fresh isolated mathematical/numerical
 re-review of the complete PR and exact Repair head is required next. This
 Repair does not mark the PR Ready, merge it, or begin another requirement.
+
+## Fresh independent re-review after ANISO002-REV-008/009 Repair
+
+- Exact reviewed head: `f99be614e9f0f8fbaec57279180d2872b458c406`
+- Latest production/test Repair head:
+  `1a95323ffd9b8ba43eb5f0390aa02d812edfdba2`
+- Base: `d34458f6c29d1b56f2832ddac9356d28a87a3f8f`
+- Re-review date: 2026-07-22
+- Result: ANISO002-REV-007 and ANISO002-REV-009 are closed;
+  ANISO002-REV-008 remains open as the P2 finding below
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-ANISO-002 summary and integrated dependency closure, Issue #105 criteria
+and exclusions, the M6 plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, the
+complete PR and latest Repair diffs, directly relevant source/tests, and the
+recorded validation evidence. It inherited no Repair reasoning transcript and
+made no repository change.
+
+### ANISO002-REV-008 - P2: rounded D=3 PSD acceptance is nonmonotone
+
+Affected code and contracts:
+
+- `crates/georbf/src/orientation_tensor.rs:1068-1078`
+- `docs/architecture/ANISOTROPY.md:103-107`
+- the greatest-certified-scale claim in the Repair evidence above
+
+The ordered-bit bisection assumes that exact PSD certification remains
+monotone after every off-diagonal product is independently rounded to
+binary64. Although the unrounded affine family `D + scale O` intersects the
+convex PSD cone in an interval, the represented family
+`round(original_ij * scale)` need not. In D=3, independently changing the
+three rounded correlations can alternate the exact determinant sign.
+
+A valid unit-weight single-sample public counterexample starts from direction
+
+```text
+[0.2929103819395529, 0.39358823180141855, -0.3403261034581484]
+```
+
+and forms the represented normalized tensor
+
+```text
+[[ 0.24064309056141503,  0.3233558601853925,  -0.2795978919989036 ],
+ [ 0.3233558601853925,   0.4344982940183372,  -0.37570003220289544],
+ [-0.2795978919989036,  -0.37570003220289544,  0.3248586154202477 ]].
+```
+
+Independent exact rational evaluation of every represented principal minor
+gives this acceptance sequence near one:
+
+| Scale bits | Scale | Exact determinant sign | PSD |
+| --- | ---: | ---: | --- |
+| `1.0.to_bits() - 3` | `0.9999999999999997` | positive | yes |
+| `1.0.to_bits() - 2` | `0.9999999999999998` | negative | no |
+| `1.0.to_bits() - 1` | `0.9999999999999999` | positive | yes |
+| `1.0.to_bits()` | `1.0` | negative | no |
+
+All three two-by-two principal minors are also positive at
+`1.0.to_bits() - 1`. It is therefore the greatest certified represented
+factor because the only larger factor, one, is rejected. The public estimator
+instead returns `1.0.to_bits() - 3`; the parent Review task independently
+reproduced that result and removed its temporary probe before recording this
+evidence.
+
+The returned tensor remains PSD, but the implementation discards more
+correlation than the normative maximum-retention policy permits and the
+diagnostic does not report the greatest certified factor. Repair must add a
+public D=3 fixed-ratio regression for the sample above with ratios `[1,1,1]`,
+requiring the returned scale bits to equal `1.0.to_bits() - 1`, exact
+represented PSD, rejection at one, and explicit coverage of the intervening
+accepted--rejected--accepted sequence. The replacement bounded construction
+must prove maximality without assuming represented PSD monotonicity and must
+not add clipping, jitter, a pseudoinverse, hidden regularization, or an input
+rejection for this valid sample.
+
+No P0, P1, P3, or additional P2 finding was identified. ANISO002-REV-007 is
+closed because production fold state is fixed-size and the actual warmed
+allocator regression observes constant calls for four and sixteen samples
+under both policies. ANISO002-REV-009 is closed because manual annotations are
+gone and the pinned test-only allocator observes actual allocation calls.
+
+### Re-review validation and disposition
+
+- The isolated reviewer passed all 17 public orientation-tensor tests, the
+  dedicated allocation test, the private exact-dyadic test, the runnable
+  example, format, strict georbf all-target/all-feature Clippy, all 58
+  requirement checks, benchmark smoke with checksum
+  `1.00428812046557887e4`, and complete diff whitespace validation.
+- The parent Review task passed the complete standard workspace gate on exact
+  reviewed head `f99be61`: format, warning-denying workspace
+  all-target/all-feature Clippy, all-feature workspace tests, workspace
+  Rustdoc, all 58 requirement checks, and complete diff whitespace. It also
+  passed the example and optimized benchmark smoke with the same checksum.
+- Draft Ubuntu CI run 29885690427 passed on exact reviewed head `f99be61`.
+  Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI did not run and are
+  not claimed as passed. The recorded unavailable/deferred checks remain
+  unexecuted and are not claimed as passed.
+
+PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
+`integrated`. Open a fresh bounded Repair task for ANISO002-REV-008 only. Do
+not repair production code, mark the PR Ready, merge it, or begin another
+requirement in this Review task.
