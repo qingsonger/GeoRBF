@@ -6,55 +6,51 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Sixth Repair re-review complete, Repair required
+- Mode: Seventh Repair complete, fresh independent re-review required
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
-- Sixth Repair code/test/contract head: `cc5fa6f`
-- Stable full-gate head: `cc5fa6f`
+- Seventh Repair code/test/contract head: `42c5686`
+- Stable full-gate head: `42c5686`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are
   integrated
 - Registry state in this change: `implemented`
 
-## Sixth Repair re-review result
+## Seventh Repair result
 
-- Fresh independent re-review closes TREND002-REV-012 for its exact published
-  value, gradient, and Hessian input. TREND002-REV-007 through
-  TREND002-REV-011 remain closed.
-- The re-review found one new P1, TREND002-REV-013: the fixed-Gaussian path
-  invokes the generic represented kernel jet before its stable jet, so an
-  individually overflowing anisotropic Hessian can be rejected even when two
-  small weights make the complete contribution finite.
-- The exact accepted D=1 reproducer uses Gaussian length `1e-100`, metric
-  lengths `1e-154`, strength `1e-154`, control/query zero, and center
-  `5e-255`. All demand orders currently return `NonFiniteSecondDerivative`,
-  while the complete Hessian is approximately `-6.62e199`.
+- TREND002-REV-013 is repaired at exact code/test/contract head `42c5686`,
+  pending fresh independent re-review. Gaussian evaluation now enters the
+  demand-bounded stable jet before any generic represented derivative is
+  required; non-Gaussian evaluation and error mapping are unchanged.
+- A public D=1 regression uses fixed Gaussian length `1e-100`, condition-one
+  metric lengths `1e-154`, strength `1e-154`, control/query zero, and center
+  `5e-255`. `Value` demand succeeds without evaluating the unused overflowing
+  Hessian, and `Second` demand retains the independently log-evaluated finite
+  Hessian of approximately `-6.62e199` after both weights.
 - PR #109 remains Draft and the requirement remains `implemented`.
 
 ## Validation state
 
-- The fresh reviewer passed all fourteen public `trend_controls` tests, all
-  fifteen `local_trend` integration tests, all five private local-trend
-  regressions, complete PR and sixth-Repair diff whitespace validation, and
-  compact requirement `show` and dependency-closure checks.
-- Exact stable head `cc5fa6f` passed workspace format, warning-denying workspace
+- Focused checks passed all fifteen public `trend_controls` tests, all fifteen
+  `local_trend` integration tests, all five private local-trend regressions,
+  and complete diff whitespace validation.
+- Exact stable head `42c5686` passed workspace format, warning-denying workspace
   all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
   all 58 requirement checks, and complete diff whitespace validation.
-- The evidence tail after `cc5fa6f` changes only this review record and bounded
+- The evidence tail after `42c5686` changes only this review record and bounded
   Markdown handoff. Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI
   remain intentionally unexecuted while PR #109 is Draft.
 
 ## Next task boundary
 
-A fresh Repair task must address only TREND002-REV-013. Add the exact public
-D=1 regression before the smallest production repair: `Value` demand must not
-evaluate the unused overflowing Hessian, and `Second` demand must retain the
-independently finite complete Hessian after both weights. Route Gaussian
-evaluation through the demand-bounded stable jet before any individually
-represented derivative is required, run focused checks and one final stable-
-head standard gate, update evidence, push, and stop for another fresh
-independent re-review. Do not mark the PR ready, merge, or begin another
-requirement.
+A fresh Review task must independently re-review exact Repair head `42c5686`,
+confirm TREND002-REV-013 is closed for its published regression, and search for
+new P0-P3 findings without inheriting this Repair reasoning. If any finding
+remains, record it and stop without production repair. If the review is clean
+and the stable local gate remains valid, follow the mandatory sequence: update
+review evidence, mark PR #109 ready, wait for complete Windows/Ubuntu/macOS and
+benchmark-smoke CI on that exact ready head, merge only when all are green,
+then record truthful integration state. Do not begin another requirement.
 
 ## Durable evidence
 

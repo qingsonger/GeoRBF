@@ -1096,3 +1096,38 @@ regression before the smallest production repair, run focused checks and one
 final stable-head standard gate, update evidence, push, and stop for another
 fresh independent re-review. Do not mark the PR ready, merge it, or begin
 another requirement.
+
+## Seventh Repair of TREND002-REV-013
+
+Exact seventh Repair code/test/contract head:
+`42c56862b61591a70d5c82bb17721bad7a96578a`.
+
+The public D=1 regression uses the review's exact represented inputs: fixed
+Gaussian length `1e-100`, condition-one axial and transverse metric lengths
+`1e-154`, strength `1e-154`, unit influence radius, zero control and query,
+and center `5e-255`. Before the production change, even `Value` demand
+reproduced `NonFiniteSecondDerivative { row: 0, column: 0 }`. The regression
+now proves that value-only evaluation succeeds without evaluating an unused
+Hessian and that `Second` demand retains the independently log-evaluated
+approximately `-6.6187267693844664e199` complete Hessian.
+
+The smallest production repair routes the Gaussian variant directly through
+the existing demand-bounded stable kernel jet. The generic represented
+`try_spatial_jet` is now invoked only for non-Gaussian variants, so no
+individually overflowing Gaussian derivative is required before both weights
+scale the complete term. The fixed-SPD construction, derivative formulae,
+capability checks, non-Gaussian evaluation, and structured error mapping are
+otherwise unchanged.
+
+Focused validation passed all fifteen public `trend_controls` tests, all
+fifteen `local_trend` integration tests, all five private local-trend
+regressions, and complete diff whitespace validation. After the final
+production/test change, exact head `42c5686` passed workspace format,
+warning-denying workspace all-target/all-feature Clippy, all-feature workspace
+tests, workspace Rustdoc, and all 58 requirement checks. The later evidence
+tail changes Markdown only.
+
+TREND002-REV-013 is repaired pending a fresh independent re-review. PR #109
+remains Draft and REQ-TREND-002 remains `implemented`, not `integrated`.
+Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI remain intentionally
+unexecuted. No unavailable check is claimed as passed.
