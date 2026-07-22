@@ -791,3 +791,56 @@ ANISO002-REV-009 only. The Repair must also provide the actual-allocation
 regression needed to complete ANISO002-REV-007 closure. Do not repair
 production code, mark the PR Ready, merge it, or begin another requirement in
 this Review task.
+
+## ANISO002-REV-008/009 Repair evidence pending fresh independent re-review
+
+- Repair code, tests, manifest, lockfile, and normative-document head:
+  `1a95323ffd9b8ba43eb5f0390aa02d812edfdba2`
+- Repair date: 2026-07-22
+- Scope: ANISO002-REV-008 and ANISO002-REV-009 only, including the remaining
+  actual-allocation evidence obligation for ANISO002-REV-007
+
+The required public D=2 regression was added before production repair and
+failed on the reviewed head with
+`NonFiniteNumericalResult("positive-semidefinite tensor representation")` for
+one valid `[1,2^-538]` sample. The repaired search bisects the ordered positive
+binary64 scale bit patterns from zero through one instead of performing 64
+real-number halvings. It therefore covers the complete represented interval
+and selects the greatest exactly certified scale. The regression succeeds,
+retains represented trace one, produces zero off-diagonal entries and a
+nonnegative spectrum, and records the exact boundary scale `2^-537`. No input
+rejection, clipping, jitter, pseudoinverse, or hidden regularization was added.
+
+All `EXPLICIT_ALLOCATION_ATTEMPTS` state and manual production markers were
+removed. A dedicated one-test integration binary constructs both estimators and
+their four- or sixteen-sample inputs, warms the selected path, and then measures
+actual allocator calls around only `try_estimate`. It observes exactly two
+allocations for both fixed-ratio sample counts and exactly five allocations for
+both cross-validated sample counts. This protects the sample-count-independent
+property from unannotated `Vec`, `Box`, or heap-backed fold scratch and supplies
+the missing ANISO002-REV-007 regression evidence.
+
+The measurement uses exactly pinned test-only `allocation-counter` 0.8.1. The
+complete maintenance, license, MSRV, platform, size, unsafe, and alternatives
+review is recorded in `changes/REQ-ANISO-002.md`. The crate has no transitive
+dependencies and does not enter production artifacts; GeoRBF source remains
+free of unsafe code.
+
+Focused validation passed all 17 public orientation-tensor tests, the dedicated
+actual-allocation test, the private exact-dyadic test, warning-denying georbf
+all-target/all-feature Clippy, the runnable example, optimized benchmark smoke,
+and diff whitespace. The smoke retained checksum `1.00428812046557887e4` at
+approximately 6.53 us per estimate locally.
+
+After the final code, test, manifest, lockfile, and normative architecture
+change, the stable state passed the complete standard workspace gate: format,
+warning-denying all-target/all-feature Clippy, all-feature workspace tests,
+workspace Rustdoc, all 58 requirement checks, and complete diff whitespace.
+The only later pre-commit edit was change-fragment Markdown and did not alter a
+production, test, manifest, schema, or build input.
+
+This section records Repair evidence only and does not independently close
+ANISO002-REV-008 or ANISO002-REV-009. PR #106 remains Draft and
+REQ-ANISO-002 remains `implemented`. A fresh isolated mathematical/numerical
+re-review of the complete PR and exact Repair head is required next. This
+Repair does not mark the PR Ready, merge it, or begin another requirement.
