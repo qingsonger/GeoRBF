@@ -4,11 +4,12 @@
 - Issue: https://github.com/qingsonger/GeoRBF/issues/108
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/109
 - Branch: `codex/req-trend-002-region-controls`
-- Latest re-reviewed code/test/contract head: `d42ccb5692a72e90d970329236cb8a402c6763ef`
+- Latest re-reviewed code/test/contract head: `144a018f697e3c6e9f23fc9621b434337543be7f`
 - Base head: `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
-- Review date: 2026-07-22
-- Result: TREND002-REV-001 through TREND002-REV-014 closed; P1
-  TREND002-REV-015 requires Repair; no other P0-P3 finding remains
+- Review date: 2026-07-22; latest re-review: 2026-07-23
+- Result: TREND002-REV-001 through TREND002-REV-015 closed; P1 findings
+  TREND002-REV-016 and TREND002-REV-017 require Repair; no other P0-P3
+  finding remains
 
 ## Scope and independence
 
@@ -1416,3 +1417,146 @@ Repair does not close its own finding. PR #109 remains Draft and REQ-TREND-002
 remains `implemented`, not `integrated`. Ready-only Windows, Ubuntu, macOS, and
 benchmark-smoke CI remain intentionally unexecuted. No unavailable check is
 claimed as passed.
+
+## Fresh independent re-review after ninth Repair
+
+- Exact reviewed evidence head:
+  `d516be797f385b120c1d6ea7a988dd43039b5ac9`
+- Ninth Repair code/test/contract head:
+  `144a018f697e3c6e9f23fc9621b434337543be7f`
+- Base and merge-base:
+  `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
+- Re-review date: 2026-07-23
+- Result: TREND002-REV-015 closed; P1 findings TREND002-REV-016 and
+  TREND002-REV-017 require Repair; no P0, P2, or P3 finding remains
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-TREND-002 summary and integrated dependency closure, Issue #108 acceptance
+criteria and exclusions, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008
+contracts, the complete PR and ninth-Repair diffs, directly relevant source,
+tests, example, benchmark, registry, change evidence, handoff, and recorded
+validation evidence. It inherited no Repair reasoning and made no repository,
+Git, or GitHub change. The tail from `144a018` through `d516be7` changes only
+the requirement change fragment, this review record, and the bounded handoff.
+
+### Closure of TREND002-REV-015
+
+TREND002-REV-015 is closed for its published regional D=1 regression. With
+`r = 2^-500`, `eta = 2^-1074`, and the exact represented displacement
+`d = r + eta`, the independent curvature scale is
+
+```text
+(d^2 - r^2) / r^4 = 2 eta / r^3 + eta^2 / r^4
+                    = 2^427 + 2^-148.
+```
+
+The Repair scales the residual-aware `d-r` and `d+r` separately by `r^-2`.
+Those factors remain representable near `2^-74` and `2^501` before their
+product, including the residual term. After the fixed-kernel and background
+contributions, the complete Hessian is
+
+```text
+exp(-(1 + 2^-574)^2) * (2^427 + 2^-148 - 1) - 0.25
+    approximately 1.2750102220326992e128.
+```
+
+The exact public regression returns that positive result within
+`64 * EPSILON` relative tolerance. Its formula, signs, scale, and complete-term
+representability are correct.
+
+### TREND002-REV-016 - P1: non-regional weights erase the same displacement residual
+
+Affected code:
+
+- `crates/georbf/src/local_trend.rs:2047-2055`
+- `crates/georbf/src/local_trend.rs:2101-2107`
+
+The non-regional `gaussian_weight_jet` retains only the rounded subtraction
+`point - center`. Its diagonal Hessian then forms `(d-r)(d+r)` from that
+rounded value. It retains neither the error-free subtraction residual nor the
+separately scaled diagonal factors used by the repaired regional path.
+
+The exact accepted public counterexample is the REV-015 configuration with
+only `region = None`: D=1, `eta = 2^-1074`, influence radius `r = 2^-500`,
+control location `-eta`, query and kernel center `r`, unit strength, unit fixed
+anisotropy and fixed Gaussian length, and the constant-`0.5` strict Gaussian
+background. The independent positive truth is the same
+`1.2750102220326992e128` Hessian above. The current implementation rounds `d`
+to `r`, treats `d-r` as exact zero, and returns
+`-exp(-1) - 0.25 = -0.6178794411714423`, reversing the sign.
+
+A fresh Repair must first add a public D=1 regression cloned from
+`regional_hessian_scales_diagonal_curvature_before_underflow` with only the
+region removed, then make the smallest residual-aware non-regional repair.
+
+### TREND002-REV-017 - P1: fixed-Gaussian inverse-length square becomes exact zero too early
+
+Affected code:
+
+- `crates/georbf/src/local_trend.rs:2178-2188`
+- `crates/georbf/src/local_trend.rs:2203-2215`
+- `crates/georbf/src/kernel/smooth_global.rs:456-468`
+
+The stable fixed-Gaussian path forms `inverse_length * inverse_length` as one
+binary64 value. An accepted length `1e200` retains the represented reciprocal
+`1e-200`, but its square underflows to zero. Passing that zero through
+`StableFactor::from_factors` promotes analytic Gaussian gradient and curvature
+to mathematical exact zero before two large spatial weights can make the
+complete Hessian finite. The smooth-kernel constructor rejects non-finite
+cached inverse powers but permits this zero square.
+
+An exact accepted public D=1 counterexample uses control location zero, query
+and kernel center `1e154`, strength and influence radius `1e154`, no region,
+unit fixed anisotropy, fixed Gaussian length `1e200`, and a unit-Gaussian
+constant background weight `2^-537` with the same policy minimum. At `d = r`
+the spatial-weight Hessian and fixed-kernel gradient are exactly zero, while
+
+```text
+H_local = -strength^2 exp(-1) / length^2
+        = -exp(2 ln(1e154) - 1 - 2 ln(1e200))
+        approximately -3.67879441171431e-93.
+```
+
+The background adds only `-2^-1074`. The current implementation returns that
+single minimum-subnormal background term and loses the finite local Hessian.
+This contradicts the complete fixed-Gaussian scaling evidence in the
+requirement change fragment.
+
+A fresh Repair must first add the exact public compiled-control regression and
+then retain two reciprocal-length factors, or mathematically equivalent
+logarithmic scale, until complete mixture-term formation.
+
+### Re-review validation and disposition
+
+The reviewer and parent Review task each passed all seventeen public
+`trend_controls` tests, all fifteen public `local_trend` tests, all five private
+local-trend regressions, the exact REV-015 regression, compact requirement
+`show` and dependency review, and complete PR diff whitespace validation. The
+parent also independently reproduced both new findings through temporary
+public-API tests: REV-016 returned `-0.6178794411714423`, and REV-017 returned
+only `-2^-1074`; both temporary tests were removed and the worktree restored
+before recording evidence. Independent high-precision calculations establish
+the positive REV-016 truth and the finite negative REV-017 truth above.
+
+Draft Ubuntu CI run 29931521124 passed on exact reviewed evidence head
+`d516be7`. Exact stable code/test/contract head `144a018` retains its recorded
+complete local standard gate. Ready-only Windows, Ubuntu, macOS, and benchmark
+smoke remain unexecuted and are not claimed as passed.
+
+The regional REV-015 path, analytic Gaussian and gate product rules within its
+published case, fixed-SPD construction, strict background, CPD rejection, C2
+behavior, reference normalization, capability checks, deterministic
+diagnostics/order, allocation behavior, interface disposition, and absence of
+hidden regularization otherwise satisfy the reviewed scope. Polynomial
+spaces, scale-aware rank decisions, hard constraints, solver infeasibility,
+and solver regularization do not apply because this compiler constructs only
+fixed-SPD mixture components and rejects CPD kernels before any polynomial or
+solver path.
+
+PR #109 must remain Draft and REQ-TREND-002 remains `implemented`, not
+`integrated`. A fresh Repair task must address only TREND002-REV-016 and
+TREND002-REV-017, add both exact regressions before the smallest production
+repairs, run focused checks and one final stable-head standard gate, update
+evidence, push, and stop for another fresh independent re-review. This Review
+task does not repair production code, mark the PR Ready, merge it, or begin
+another requirement.

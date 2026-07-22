@@ -6,29 +6,31 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Ninth Repair complete, fresh independent re-review required
+- Mode: Independent re-review complete, fresh Repair required
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
-- Ninth Repair code/test/contract head: `144a018`
+- Latest reviewed code/test/contract head: `144a018`
+- Reviewed evidence head: `d516be7`
 - Stable full-gate head: `144a018`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are
   integrated
 - Registry state in this change: `implemented`
 
-## Ninth Repair result
+## Independent re-review result
 
-- TREND002-REV-015 is repaired at exact code/test/contract head `144a018`,
-  pending fresh independent re-review. The residual-aware factors `d-r` and
-  `d+r` are each combined with one inverse-radius-square factor before their
-  product, so neither the intermediate curvature nor the complete Hessian is
-  erased by underflow.
-- The exact public D=1 regional-plateau regression uses radius `2^-500`,
-  control `-2^-1074`, query and center `2^-500`, and the reviewed unit kernel,
-  metric, strength, region, and constant-`0.5` background. It reproduces the
-  old approximately `-0.618` result before the repair and now retains the
-  independent positive approximately `1.2750102220326992e128` Hessian.
-- PR #109 remains Draft and the requirement remains `implemented`.
+- A fresh isolated read-only `math_reviewer` closed TREND002-REV-015 for its
+  exact regional D=1 regression and found no P0, P2, or P3 issue.
+- TREND002-REV-016 is a new P1: the non-regional Gaussian-weight path still
+  discards the exact subtraction residual and returns approximately `-0.618`
+  instead of the independent positive approximately
+  `1.2750102220326992e128` Hessian for the same accepted inputs with no region.
+- TREND002-REV-017 is a new P1: the stable fixed-Gaussian path squares a
+  represented reciprocal length too early. With accepted length `1e200` and
+  two `1e154` spatial weights it returns only the `-2^-1074` background term
+  instead of the independently finite approximately `-3.67879441171431e-93`
+  complete Hessian.
+- PR #109 remains Draft and REQ-TREND-002 remains `implemented`.
 
 ## Validation state
 
@@ -36,24 +38,25 @@ records, benchmark reports, Git, and GitHub.
   fifteen `local_trend` integration tests, all five private local-trend
   regressions, the exact REV-015 regression, and complete diff whitespace
   validation.
+- The reviewer and parent Review task independently reproduced both new
+  findings. The parent's temporary public-API regressions were removed, and
+  the worktree was restored before review evidence was recorded.
 - Exact stable head `144a018` passed workspace format, warning-denying workspace
   all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
   all 58 requirement checks, and complete diff whitespace validation.
-- The evidence tail after `144a018` changes only the requirement change
-  fragment, independent-review record, and bounded Markdown handoff. Ready-only
-  Windows/Ubuntu/macOS and benchmark-smoke CI remain intentionally unexecuted
-  while PR #109 is Draft.
+- The reviewed evidence tail from `144a018` through `d516be7` changes only the
+  requirement change fragment, independent-review record, and bounded Markdown
+  handoff. Draft Ubuntu CI run 29931521124 passed on `d516be7`. Ready-only
+  Windows/Ubuntu/macOS and benchmark-smoke CI remain intentionally unexecuted.
 
 ## Next task boundary
 
-A fresh Review task must independently re-review exact Repair head `144a018`,
-confirm TREND002-REV-015 is closed for its published regression, and search for
-new P0-P3 findings without inheriting this Repair reasoning. If any finding
-remains, record it and stop without production repair. If the review is clean
-and the stable local gate remains valid, follow the mandatory sequence: update
-review evidence, mark PR #109 ready, wait for complete Windows/Ubuntu/macOS and
-benchmark-smoke CI on that exact ready head, merge only when all are green,
-then record truthful integration state. Do not begin another requirement.
+A fresh Repair task must address only TREND002-REV-016 and TREND002-REV-017.
+Add both exact public D=1 regressions before the smallest residual-aware
+non-regional weight repair and complete-term fixed-Gaussian reciprocal-scale
+repair. Run focused checks and one final standard workspace gate after the last
+code change, update evidence, push, and stop for another fresh independent
+re-review. Do not mark PR #109 Ready, merge it, or begin another requirement.
 
 ## Durable evidence
 
