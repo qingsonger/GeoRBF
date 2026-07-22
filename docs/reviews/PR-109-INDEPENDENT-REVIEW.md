@@ -4,11 +4,11 @@
 - Issue: https://github.com/qingsonger/GeoRBF/issues/108
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/109
 - Branch: `codex/req-trend-002-region-controls`
-- Latest re-reviewed code/test/contract head: `cc5fa6f0593f40e57218e98a9322c0b1fc7ef012`
+- Latest re-reviewed code/test/contract head: `42c56862b61591a70d5c82bb17721bad7a96578a`
 - Base head: `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
 - Review date: 2026-07-22
-- Result: TREND002-REV-001 through TREND002-REV-012 closed; P1
-  TREND002-REV-013 requires Repair; no other P0-P3 finding remains
+- Result: TREND002-REV-001 through TREND002-REV-013 closed; P1
+  TREND002-REV-014 requires Repair; no other P0-P3 finding remains
 
 ## Scope and independence
 
@@ -1131,3 +1131,107 @@ TREND002-REV-013 is repaired pending a fresh independent re-review. PR #109
 remains Draft and REQ-TREND-002 remains `implemented`, not `integrated`.
 Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI remain intentionally
 unexecuted. No unavailable check is claimed as passed.
+
+## Fresh independent re-review after seventh Repair
+
+- Exact reviewed evidence head:
+  `b0ff092195595862a9a314c4d3cc3975c1c94490`
+- Seventh Repair code/test/contract head:
+  `42c56862b61591a70d5c82bb17721bad7a96578a`
+- Base and merge-base:
+  `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
+- Re-review date: 2026-07-22
+- Result: TREND002-REV-013 closed; P1 TREND002-REV-014 requires Repair; no
+  other P0-P3 finding remains
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-TREND-002 summary and integrated dependency closure, Issue #108 acceptance
+criteria and exclusions, M6 plan context, ANISOTROPY and ADR-0005/ADR-0008
+contracts, the complete PR and seventh-Repair diffs, directly relevant source,
+tests, example, benchmark, registry, change evidence, handoff, and recorded
+validation evidence. It inherited no Implement or Repair reasoning transcript
+and made no repository, Git, or GitHub change.
+
+### Closure of TREND002-REV-013
+
+TREND002-REV-013 is closed for its published regression. Gaussian evaluation
+now enters the demand-bounded stable jet directly; the generic represented
+`try_spatial_jet` call is confined to non-Gaussian variants, so value demand no
+longer evaluates the unused overflowing Hessian. For the reviewed D=1 inputs,
+the independent complete local Hessian is
+
+```text
+-(0.75) exp(-0.125) * 10^200 = -6.6187267693844664e199,
+```
+
+and the exact public regression passes. The analytic signs, metric scaling,
+and complete-term representability are correct for that case.
+
+### TREND002-REV-014 - P1: rounded displacement erases a representable regional Hessian
+
+Affected code:
+
+- `crates/georbf/src/local_trend.rs:1914-1953`
+- `crates/georbf/src/local_trend.rs:1989-2015`
+
+`gaussian_weight_state` computes the exact subtraction residual, but the
+Gaussian exponent and Hessian factors use only the rounded displacement. The
+factor `displacement - radius` can therefore become represented zero even when
+the exact difference between the represented input coordinates is nonzero.
+
+An accepted D=1 counterexample uses a regional control whose query and kernel
+center are on the plateau of region `[-2, 2]` with transition width `0.25`,
+control location `c = -2^-53`, query and kernel center `x = y = 1`, unit
+strength and influence radius, unit fixed anisotropy, fixed Gaussian length
+`1e100`, and a valid negligible strict background such as constant weight
+`2^-537`. For the exact represented coordinates,
+
+```text
+d = x - c = 1 + 2^-53,
+b(x) b(y) = exp(-d^2),
+H_local = exp(-d^2) (d^2 - 1 - 1e-200)
+        = 8.168564517495419e-17 approximately.
+```
+
+Binary64 subtraction rounds `1 - (-2^-53)` to exactly one. The current
+Hessian factors consequently erase `d^2 - 1` and retain only the fixed-kernel
+curvature,
+
+```text
+-exp(-1) * 1e-200 = -3.678794411714423e-201 approximately.
+```
+
+An independent 100-digit decimal evaluation reproduced both values and the
+sign reversal. Accepted input can therefore lose a representable derivative
+and return the wrong Hessian sign, violating the regional analytic product-rule
+and complete representability contracts.
+
+A fresh Repair must first add one public compiled D=1 regional-control
+regression with the exact inputs above and both arguments on the plateau.
+Second-derivative demand must return the independently evaluated positive
+Hessian near `8.168564517495419e-17`, not the current tiny negative result,
+before the smallest residual-aware displacement repair is implemented.
+
+### Re-review validation and disposition
+
+The reviewer inspected the complete base-to-`b0ff092` PR diff and exact
+seventh-Repair delta and independently reran the published REV-013 regression.
+The parent Review task passed all fifteen public `trend_controls` tests, all
+fifteen public `local_trend` tests, all five private local-trend regressions,
+and complete PR diff whitespace validation. Exact code/test/contract head
+`42c5686` retains its recorded complete standard local gate; the tail to
+reviewed head `b0ff092` changes only the bounded Markdown handoff.
+
+The fixed-SPD diagonal-congruence construction, strict background, CPD
+rejection, metric formulae, C2 signs, reference normalization, capability
+checks, deterministic diagnostics, allocation behavior, interface disposition,
+and absence of hidden regularization otherwise satisfy the reviewed scope.
+Polynomial spaces, rank decisions, hard constraints, and infeasibility are not
+applicable. Draft Ubuntu CI passed on exact reviewed head `b0ff092`; Ready-only
+Windows, Ubuntu, macOS, and benchmark-smoke CI remain unexecuted and are not
+claimed as passed.
+
+PR #109 must remain Draft and REQ-TREND-002 remains `implemented`, not
+`integrated`. Open a fresh bounded Repair task for TREND002-REV-014 only. Do
+not repair production code, mark the PR Ready, merge it, or begin another
+requirement in this Review task.
