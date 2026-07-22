@@ -4,11 +4,11 @@
 - Issue: https://github.com/qingsonger/GeoRBF/issues/108
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/109
 - Branch: `codex/req-trend-002-region-controls`
-- Latest re-reviewed code/test/contract head: `42c56862b61591a70d5c82bb17721bad7a96578a`
+- Latest re-reviewed code/test/contract head: `d42ccb5692a72e90d970329236cb8a402c6763ef`
 - Base head: `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
 - Review date: 2026-07-22
-- Result: TREND002-REV-001 through TREND002-REV-013 closed; P1
-  TREND002-REV-014 requires Repair; no other P0-P3 finding remains
+- Result: TREND002-REV-001 through TREND002-REV-014 closed; P1
+  TREND002-REV-015 requires Repair; no other P0-P3 finding remains
 
 ## Scope and independence
 
@@ -16,8 +16,8 @@ A fresh read-only project `math_reviewer` received only the bounded
 REQ-TREND-002 summary and integrated dependency closure, Issue #108 acceptance
 criteria and exclusions, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008
 contracts, the exact PR diff, tests, benchmark and CI wiring, registry,
-handoff, and validation evidence. It inherited no Implement reasoning and made
-no repository or remote change.
+handoff, and validation evidence. It inherited no Implement or Repair reasoning
+and made no repository or remote change.
 
 The reviewer independently checked formulae, signs, dimensions, units,
 SPD/CPD classification, center and boundary limits, rotation invariance,
@@ -1271,3 +1271,112 @@ Repair does not close its own finding. PR #109 remains Draft and
 REQ-TREND-002 remains `implemented`, not `integrated`. Ready-only Windows,
 Ubuntu, macOS, and benchmark-smoke CI remain intentionally unexecuted. No
 unavailable check is claimed as passed.
+
+## Fresh independent re-review after eighth Repair
+
+- Exact reviewed evidence head:
+  `473f831ecf55030bdcdcdf807184047219fc48d5`
+- Eighth Repair code/test/contract head:
+  `d42ccb5692a72e90d970329236cb8a402c6763ef`
+- Base and merge-base:
+  `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
+- Re-review date: 2026-07-22
+- Result: TREND002-REV-014 closed; P1 TREND002-REV-015 requires Repair; no
+  other P0-P3 finding remains
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-TREND-002 summary and integrated dependency closure, Issue #108 acceptance
+criteria and exclusions, M6 plan context, ANISOTROPY and ADR-0005/ADR-0008
+contracts, the complete PR and eighth-Repair diffs, directly relevant source,
+tests, example, benchmark, registry, change evidence, handoff, and recorded
+validation evidence. It inherited no Implement or Repair reasoning transcript
+and made no repository, Git, or GitHub change.
+
+### Closure of TREND002-REV-014
+
+TREND002-REV-014 is closed for its published regression. The exact public
+`regional_hessian_preserves_rounded_displacement_residual` regression passes,
+and an independent 100-decimal evaluation from the represented inputs gives
+
+```text
+true Hessian = 8.1685645174954193488e-17
+old rounded-displacement result = -3.6787944117144231e-201.
+```
+
+For this case the residual-aware exponent, diagonal and mixed curvature, both
+region-gradient product-rule factors, gate Hessian signs, and complete mixture
+Hessian scaling are correct.
+
+### TREND002-REV-015 - P1: diagonal curvature underflows before recoverable scaling
+
+Affected code:
+
+- `crates/georbf/src/local_trend.rs:1508-1512`
+- `crates/georbf/src/local_trend.rs:1578-1580`
+- `crates/georbf/src/local_trend.rs:1923-1927`
+- `crates/georbf/src/local_trend.rs:1970-1975`
+
+`GaussianWeightState::diagonal_curvature` forms residual-aware
+`(d-r)(d+r)` with `double_product`, but `double_product` returns exact zero
+when its immediate binary64 product underflows. `StableFactor::from_double`
+then classifies the curvature as mathematically zero before the later two
+inverse-radius-square factors can restore a representable complete term. This
+violates the complete-term scaling contract in ANISOTROPY.
+
+An accepted D=1 counterexample uses `eta = 2^-1074`, influence radius
+`r = 2^-500`, control location `c = -eta`, and query and kernel center
+`x = y = r`. It has unit strength, unit fixed anisotropy, fixed Gaussian
+length one, region `[-1, 1]` with transition width `0.25`, and an ordinary
+constant-`0.5` strict Gaussian background. Both arguments are on the region
+plateau, so all gate derivatives are exactly zero.
+
+For the exact represented displacement `d = r + eta`, although its leading
+binary64 subtraction rounds to `r`,
+
+```text
+(d^2 - r^2) / r^4 = 2 eta / r^3 + eta^2 / r^4
+                      = 2^427 + 2^-148.
+```
+
+The independently derived complete Hessian is therefore
+
+```text
+exp(-(d/r)^2) * (2^427 + 2^-148 - 1) - 0.25
+    approximately 1.2750102220326992e128.
+```
+
+The current path instead multiplies lower factor `eta` by upper factor
+`2r + eta`; the leading `2^-1573` product underflows and the curvature becomes
+exact zero. It consequently returns approximately
+`-exp(-1) - 0.25 = -0.6178794411714423`, reversing the sign and losing a large
+representable Hessian.
+
+A fresh Repair must first add one public compiled D=1 regional-control
+regression with those exact inputs and assert the positive high-precision
+value near `1.2750102220326992e128`. It must then preserve the diagonal
+curvature until multiplication by both inverse-radius-square factors, rather
+than materializing or classifying `(d-r)(d+r)` as zero first.
+
+### Re-review validation and disposition
+
+The reviewer independently passed the exact REV-014 regression, all sixteen
+public `trend_controls` tests, all fifteen public `local_trend` tests, all five
+private local-trend regressions, complete PR diff whitespace validation, and
+the compact requirement `show` and dependency-closure commands. It verified
+that `d42ccb5..473f831` changes only the three recorded Markdown evidence
+files. Draft Ubuntu CI passed on exact evidence head `473f831`.
+
+The analytic Gaussian and gate product rules, fixed-SPD construction, strict
+background, CPD rejection, C2 behavior, reference normalization, capability
+checks, deterministic diagnostics and order, allocation behavior, interface
+disposition, and absence of hidden regularization otherwise satisfy the
+reviewed scope. Polynomial spaces, rank decisions, hard constraints, solver
+infeasibility, and solver regularization do not apply. The immutable
+`d42ccb5` complete standard local gate remains valid; Ready-only Windows,
+Ubuntu, macOS, and benchmark-smoke CI remain unexecuted and are not claimed as
+passed.
+
+PR #109 must remain Draft and REQ-TREND-002 remains `implemented`, not
+`integrated`. Open a fresh bounded Repair task for TREND002-REV-015 only. Do
+not repair production code, mark the PR Ready, merge it, or begin another
+requirement in this Review task.
