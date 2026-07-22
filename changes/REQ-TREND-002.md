@@ -72,8 +72,12 @@ after both small weights make the complete approximately `-6.62e199`
 contribution finite. A regional plateau counterexample preserves the exact
 subtraction residual when a represented displacement rounds from `1 + 2^-53`
 to one, retaining the independent positive approximately `8.17e-17` Hessian
-instead of a spurious negative approximately `-3.68e-201` fixed-kernel term. A
-runnable example demonstrates regional compilation and Hessian evaluation.
+instead of a spurious negative approximately `-3.68e-201` fixed-kernel term.
+An extreme-radius plateau counterexample keeps the residual-aware diagonal
+factors separate until each receives one inverse-radius-square scale, retaining
+the independent positive approximately `1.27501e128` complete Hessian instead
+of underflowing the curvature and returning approximately `-0.618`. A runnable
+example demonstrates regional compilation and Hessian evaluation.
 
 Rust is implemented. CLI and versioned schemas are N/A until M8 defines the
 persisted control representation and complete data CLI. C, C++, and Python are

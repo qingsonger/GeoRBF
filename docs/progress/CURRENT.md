@@ -6,58 +6,54 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete, fresh Repair required
+- Mode: Ninth Repair complete, fresh independent re-review required
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
-- Latest reviewed code/test/contract head: `d42ccb5`
-- Exact reviewed evidence head: `473f831`
-- Stable full-gate head: `d42ccb5`
+- Ninth Repair code/test/contract head: `144a018`
+- Stable full-gate head: `144a018`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are
   integrated
 - Registry state in this change: `implemented`
 
-## Review result
+## Ninth Repair result
 
-- A fresh isolated read-only `math_reviewer` closed TREND002-REV-014 for its
-  exact public D=1 plateau regression. The repaired path returns the independent
-  positive `8.168564517495419e-17` truth instead of the prior approximately
-  `-3.68e-201` result.
-- New P1 TREND002-REV-015 remains. With radius `2^-500`, displacement residual
-  `2^-1074`, and both arguments on a region plateau, the residual-aware
-  diagonal factor `(d-r)(d+r)` underflows before later `r^-4` scaling. The
-  implementation returns approximately `-0.618` instead of the independently
-  representable positive approximately `1.27501e128` complete Hessian.
-- No other P0-P3 finding remains.
+- TREND002-REV-015 is repaired at exact code/test/contract head `144a018`,
+  pending fresh independent re-review. The residual-aware factors `d-r` and
+  `d+r` are each combined with one inverse-radius-square factor before their
+  product, so neither the intermediate curvature nor the complete Hessian is
+  erased by underflow.
+- The exact public D=1 regional-plateau regression uses radius `2^-500`,
+  control `-2^-1074`, query and center `2^-500`, and the reviewed unit kernel,
+  metric, strength, region, and constant-`0.5` background. It reproduces the
+  old approximately `-0.618` result before the repair and now retains the
+  independent positive approximately `1.2750102220326992e128` Hessian.
 - PR #109 remains Draft and the requirement remains `implemented`.
 
 ## Validation state
 
-- This Review passed all sixteen public `trend_controls` tests, all fifteen
-  `local_trend` integration tests, all five private local-trend regressions,
-  the exact REV-014 regression, compact requirement show/dependency checks,
-  and complete PR diff whitespace validation.
-- Exact stable head `d42ccb5` passed workspace format, warning-denying workspace
+- Focused checks passed all seventeen public `trend_controls` tests, all
+  fifteen `local_trend` integration tests, all five private local-trend
+  regressions, the exact REV-015 regression, and complete diff whitespace
+  validation.
+- Exact stable head `144a018` passed workspace format, warning-denying workspace
   all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
   all 58 requirement checks, and complete diff whitespace validation.
-- The evidence tail after `d42ccb5` changes only the requirement change
+- The evidence tail after `144a018` changes only the requirement change
   fragment, independent-review record, and bounded Markdown handoff. Ready-only
   Windows/Ubuntu/macOS and benchmark-smoke CI remain intentionally unexecuted
   while PR #109 is Draft.
 
 ## Next task boundary
 
-Open a fresh Repair task for TREND002-REV-015 only. First add the exact public
-D=1 regional plateau regression recorded in the review: radius `2^-500`,
-control `-2^-1074`, query and center `2^-500`, unit strength/metric/fixed
-Gaussian length, region `[-1, 1]`, transition width `0.25`, and constant-`0.5`
-strict Gaussian background. Reproduce the incorrect negative Hessian against
-the independent positive approximately `1.2750102220326992e128` truth. Then
-implement the smallest repair that keeps diagonal curvature recoverable until
-the two inverse-radius-square factors are applied, run focused checks and one
-complete stable-head standard gate after the last code change, update evidence,
-push, and stop for a fresh independent re-review. Do not mark PR #109 ready,
-merge it, or begin another requirement.
+A fresh Review task must independently re-review exact Repair head `144a018`,
+confirm TREND002-REV-015 is closed for its published regression, and search for
+new P0-P3 findings without inheriting this Repair reasoning. If any finding
+remains, record it and stop without production repair. If the review is clean
+and the stable local gate remains valid, follow the mandatory sequence: update
+review evidence, mark PR #109 ready, wait for complete Windows/Ubuntu/macOS and
+benchmark-smoke CI on that exact ready head, merge only when all are green,
+then record truthful integration state. Do not begin another requirement.
 
 ## Durable evidence
 
