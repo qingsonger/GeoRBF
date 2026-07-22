@@ -2040,39 +2040,21 @@ fn gaussian_weight_jet<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
-    let mut displacements = [0.0; D];
-    let mut scaled = [0.0; D];
-    let mut squared_radius = 0.0;
-    for (axis, output) in scaled.iter_mut().enumerate() {
-        let displacement = point.components()[axis] - center.components()[axis];
-        if !displacement.is_finite() {
-            return Err(LocalTrendEvaluationError::NonFiniteWeightDisplacement {
-                component: usize::MAX,
-                axis,
-            });
-        }
-        displacements[axis] = displacement;
-        *output = displacement * inverse_radius;
-        let square = *output * *output;
-        if !output.is_finite() || !square.is_finite() {
-            return WeightJet::inexact_zero(demanded);
-        }
-        squared_radius += square;
-        if !squared_radius.is_finite() {
-            return WeightJet::inexact_zero(demanded);
-        }
-    }
-    let exponent = -0.5 * squared_radius;
-    let value = StableFactor::from_gaussian(amplitude, exponent);
+    let Some(state) = gaussian_weight_state(point, center, amplitude, inverse_radius)? else {
+        return WeightJet::inexact_zero(demanded);
+    };
+    let value = state.factor;
     let gradient = if demanded >= KernelDerivativeOrder::First {
         std::array::from_fn(|axis| {
-            value.product_factors(&[-inverse_radius_squared, displacements[axis]])
+            value
+                .product_factors(&[-inverse_radius_squared])
+                .product(state.displacement(axis))
         })
     } else {
         [StableFactor::ZERO; D]
     };
     let hessian = if demanded >= KernelDerivativeOrder::Second {
-        gaussian_weight_hessian(value, radius, inverse_radius_squared, displacements)
+        gaussian_weight_hessian(state, radius, inverse_radius_squared)
     } else {
         [[StableFactor::ZERO; D]; D]
     };
@@ -2087,10 +2069,9 @@ where
 }
 
 fn gaussian_weight_hessian<const D: usize>(
-    value: StableFactor,
+    state: GaussianWeightState<D>,
     radius: f64,
     inverse_radius_squared: f64,
-    displacements: [f64; D],
 ) -> [[StableFactor; D]; D]
 where
     Dim<D>: SupportedDimension,
@@ -2099,21 +2080,19 @@ where
     for (row, hessian_row) in hessian.iter_mut().enumerate() {
         for (column, entry) in hessian_row.iter_mut().enumerate() {
             *entry = if row == column {
-                value.product_factors(&[
+                state.factor.product(state.scaled_diagonal_curvature(
+                    row,
+                    radius,
                     inverse_radius_squared,
-                    inverse_radius_squared,
-                    displacements[row] - radius,
-                    displacements[row] + radius,
-                ])
+                ))
             } else {
                 let first_axis = row.min(column);
                 let second_axis = row.max(column);
-                value.product_factors(&[
-                    inverse_radius_squared,
-                    inverse_radius_squared,
-                    displacements[first_axis],
-                    displacements[second_axis],
-                ])
+                state
+                    .factor
+                    .product(state.displacement(first_axis))
+                    .product(state.displacement(second_axis))
+                    .product_factors(&[inverse_radius_squared, inverse_radius_squared])
             };
         }
     }
@@ -2176,7 +2155,6 @@ where
             None => [0.0; D],
         };
         let inverse_length = gaussian.length_scale().recip();
-        let inverse_length_squared = inverse_length * inverse_length;
         let scaled_projections = if demanded >= KernelDerivativeOrder::First {
             std::array::from_fn(|axis| {
                 (0..D)
@@ -2184,7 +2162,8 @@ where
                         StableFactor::from_factors(&[
                             anisotropy.transform()[row][axis],
                             transformed[row],
-                            inverse_length_squared,
+                            inverse_length,
+                            inverse_length,
                         ])
                     })
                     .fold(StableFactor::ZERO, StableFactor::sum)
@@ -2203,7 +2182,8 @@ where
                     let curvature = (0..D)
                         .map(|axis| {
                             StableFactor::from_factors(&[
-                                -inverse_length_squared,
+                                -inverse_length,
+                                inverse_length,
                                 anisotropy.transform()[axis][row],
                                 anisotropy.transform()[axis][column],
                             ])

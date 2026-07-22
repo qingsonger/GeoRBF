@@ -1174,3 +1174,96 @@ fn regional_hessian_scales_diagonal_curvature_before_underflow() -> Result<(), B
     assert_close(actual, expected, expected * 64.0 * f64::EPSILON);
     Ok(())
 }
+
+#[test]
+fn non_regional_hessian_scales_diagonal_curvature_before_underflow() -> Result<(), Box<dyn Error>> {
+    let eta = f64::from_bits(1);
+    let influence_radius = 2.0_f64.powi(-500);
+    let control = LocalTrendControl::new(
+        point([-eta])?,
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0])?),
+            axial_length: 1.0,
+            transverse_length: 1.0,
+        },
+        influence_radius,
+        1.0,
+        None,
+    );
+    let compiled = try_compile_local_trend_controls(
+        background()?,
+        &[control],
+        None,
+        domain(1.0)?,
+        0.25,
+        policy(1.0e-12, 1.0, 1.0)?,
+    )?;
+
+    // Independently evaluated with high-precision arithmetic from the exact
+    // represented inputs above: exp(-(1 + 2^-574)^2) times
+    // (2^427 + 2^-148 - 1), plus the background Hessian -0.25.
+    let expected = 1.275_010_222_032_699_2e128_f64;
+    let actual = compiled
+        .mixture()
+        .try_evaluate(
+            point([influence_radius])?,
+            point([influence_radius])?,
+            KernelDerivativeOrder::Second,
+        )?
+        .hessian()
+        .ok_or("missing Hessian")?[0][0];
+    assert_close(actual, expected, expected * 64.0 * f64::EPSILON);
+    Ok(())
+}
+
+#[test]
+fn fixed_gaussian_inverse_length_square_survives_complete_term_scaling()
+-> Result<(), Box<dyn Error>> {
+    let strength = 1.0e154_f64;
+    let influence_radius = 1.0e154_f64;
+    let fixed_kernel_length = 1.0e200_f64;
+    let evaluation_point = point([influence_radius])?;
+    let control = LocalTrendControl::new(
+        point([0.0])?,
+        KernelDefinition::from(Gaussian::try_new(fixed_kernel_length)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0])?),
+            axial_length: 1.0,
+            transverse_length: 1.0,
+        },
+        influence_radius,
+        strength,
+        None,
+    );
+    let background_weight = 2.0_f64.powi(-537);
+    let tiny_background = LocalTrendBackground::new(
+        KernelDefinition::from(Gaussian::try_new(1.0)?),
+        GlobalAnisotropy::try_isotropic(1.0)?,
+        SmoothSpatialWeight::try_constant(background_weight)?,
+    );
+    let compiled = try_compile_local_trend_controls(
+        tiny_background,
+        &[control],
+        None,
+        domain(influence_radius)?,
+        background_weight,
+        policy(1.0e-12, 1.0, 1.0)?,
+    )?;
+
+    // At displacement equal to the influence radius, the weight Hessian and
+    // fixed-kernel gradient vanish. The complete local term is therefore
+    // -strength^2 * exp(-1) / fixed_kernel_length^2.
+    let expected = -(2.0 * strength.ln() - 1.0 - 2.0 * fixed_kernel_length.ln()).exp();
+    let actual = compiled
+        .mixture()
+        .try_evaluate(
+            evaluation_point,
+            evaluation_point,
+            KernelDerivativeOrder::Second,
+        )?
+        .hessian()
+        .ok_or("missing Hessian")?[0][0];
+    assert_close(actual, expected, expected.abs() * 1024.0 * f64::EPSILON);
+    Ok(())
+}
