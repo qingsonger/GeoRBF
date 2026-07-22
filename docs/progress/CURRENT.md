@@ -6,72 +6,69 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / new REQ-TREND-002 findings recorded, pending Repair
+- Mode: Repair complete, pending fresh independent re-review
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
-- Original reviewed head: `9781e8f`
-- Repair code/test/evidence head: `5f35789`
-- Fresh re-reviewed head: `e8596df`
-- Stable full-gate head: `5f35789`
+- Fresh re-reviewed implementation head: `e8596df`
+- Re-review record head: `8493836`
+- Second Repair code/test/evidence head: `00c9b3d`
+- Stable full-gate head: `00c9b3d`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are integrated
 - Registry state in this change: `implemented`
 
-## Independent re-review result
+## Second Repair result
 
-- A fresh isolated read-only `math_reviewer` independently closed
-  TREND002-REV-001, TREND002-REV-002, and TREND002-REV-003.
-- TREND002-REV-004 (P1): forming a tiny smootherstep gate before applying a
-  large valid strength can underflow the gate and erase representable weight,
-  gradient, Hessian, and local-kernel product terms.
-- TREND002-REV-005 (P2): the mixture evaluator still evaluates a fixed kernel
-  when the query regional jet is identically zero, so an irrelevant transformed
-  separation can overflow instead of returning the exact compact-support zero.
-- TREND002-REV-006 (P2): region construction uses the unattained loose bound
-  `60 / width^2` and rejects widths whose exact maximum C2 derivatives remain
-  finite and representable.
-- No other P0-P3 finding was identified. No dependency, public API, schema,
-  adapter, solver, persistence, or registry status change was introduced.
+- TREND002-REV-004: regional gate factors retain signed logarithmic scale
+  until combined with strength and the Gaussian exponent. The reviewed
+  amplitude-scaled D=1 value, first derivative, and second derivative remain
+  finite and nonzero even though the unscaled smootherstep value underflows.
+- TREND002-REV-005: a component whose complete demanded query weight jet is
+  exactly zero is skipped before center-weight and fixed-kernel evaluation. The
+  reviewed compact D=1 compiled mixture therefore returns exact zero through
+  Hessian order instead of reporting irrelevant transformed-separation
+  overflow.
+- TREND002-REV-006: transition validation uses the attained smootherstep
+  curvature maximum `10 / sqrt(3) / width^2`, not the unattained loose
+  `60 / width^2` bound. Width `5e-154` is accepted and its analytic maximum
+  second derivative remains finite.
+- No dependency, public API, schema, adapter, solver, persistence, registry
+  status, unsafe code, or numerical dependency change was introduced.
 
 ## Validation state
 
-- All nine public `trend_controls` integration tests pass.
-- All three private extreme regional-jet regressions pass.
-- Those tests independently close TREND002-REV-001 through TREND002-REV-003 but
-  do not cover TREND002-REV-004 through TREND002-REV-006.
+- All ten public `trend_controls` integration tests and all five private
+  local-trend regressions pass.
+- Warning-denying georbf all-target/all-feature focused Clippy passes.
 - The runnable `trend_controls` example passes.
-- The release-mode focused benchmark smoke passes at approximately 11.4 us for
-  four controls and 43.0 us for sixteen controls on this development machine.
-- Exact repair head `5f35789` passed the complete standard gate: workspace
-  format, warning-denying workspace all-target/all-feature Clippy, all-feature
-  workspace tests, workspace Rustdoc, all 58 requirement checks, and complete
-  diff whitespace validation.
-- An earlier full-gate attempt stopped at Clippy on test-only lint violations;
-  after correcting them, the complete gate was rerun from the beginning and
-  passed.
-- The subsequent review-record and handoff commit changes documentation only;
-  it changes no production code, test, manifest, schema, CI, build input, API,
-  numerical behavior, dependency, or benchmark, so `5f35789` remains the
-  applicable immutable full-gate evidence.
-- Draft Ubuntu CI run 29895932230 passed its configured correctness gate on
-  exact re-reviewed head `e8596df`. The Ready-only three-platform and benchmark-
-  smoke matrix was skipped as designed and is not claimed as passed.
+- The release-mode focused benchmark smoke passes at approximately 12.0 us for
+  four controls and 49.7 us for sixteen controls on this development machine.
+- Exact Repair head `00c9b3d` passed the complete standard gate after the final
+  production and Rustdoc change: workspace format, warning-denying workspace
+  all-target/all-feature Clippy, all-feature workspace tests, workspace
+  Rustdoc, all 58 requirement checks, and complete diff whitespace validation.
+- Draft Ubuntu CI run 29896998234 passed on the preceding review-record head
+  `8493836`; CI for the new Repair head has not yet run and is not claimed.
+- The Ready-only Windows/Ubuntu/macOS and benchmark-smoke matrix remains
+  intentionally unexecuted while PR #109 is Draft.
 
 ## Next task boundary
 
-A fresh Repair task must address only TREND002-REV-004,
-TREND002-REV-005, and TREND002-REV-006. Add the specified independent
-regressions before or alongside the smallest complete production fixes, run
-focused checks during development, and run the complete standard gate once on
-the stable head after the last code change. Update the review evidence and this
-bounded handoff, push, and stop for another fresh independent re-review. Do not
-begin another requirement.
+A fresh Review task must inspect only PR #109 / REQ-TREND-002. Spawn the
+project `math_reviewer` in isolated read-only mode with the bounded requirement
+summary and dependency closure, Issue #108 criteria, M6 plan, ANISOTROPY and
+ADR-0005/ADR-0008 contracts, exact PR and second-Repair diffs, directly
+relevant source/tests, and validation evidence. Independently verify closure
+of TREND002-REV-004 through TREND002-REV-006 and check for new P0-P3 findings.
+If findings remain, record them and stop without repairing production code. If
+the review is clean, follow the repository's ready-CI-integration sequence.
+Do not begin another requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #108
 - Draft implementation: GitHub PR #109
-- Independent review and repair evidence:
+- Independent review and both Repair records:
   `docs/reviews/PR-109-INDEPENDENT-REVIEW.md`
 - Requirement summary and benchmark baseline: `changes/REQ-TREND-002.md`
 - Public implementation and Rustdoc: `crates/georbf/src/trend_controls.rs`,

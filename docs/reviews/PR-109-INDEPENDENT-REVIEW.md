@@ -325,6 +325,9 @@ fresh independent re-review. Do not begin another requirement.
 
 ## Second Repair evidence pending fresh independent re-review
 
+Second Repair code/test/evidence head:
+`00c9b3dae63b754c3e1bb89e29cdd5df0aeaaaa2`.
+
 This Repair addresses only TREND002-REV-004, TREND002-REV-005, and
 TREND002-REV-006 and remains pending a fresh independent re-review:
 
