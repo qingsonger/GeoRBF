@@ -923,6 +923,8 @@ where
     /// The gradient and Hessian include every product-rule term from `b_r(x)`:
     /// `b_y (grad(b_x) k + b_x grad(k))` and
     /// `b_y (H(b_x) k + grad(b_x) grad(k)^T + grad(k) grad(b_x)^T + b_x H(k))`.
+    /// A component whose complete demanded query-weight jet or center weight is
+    /// exactly zero is skipped before its fixed kernel is evaluated.
     ///
     /// # Errors
     ///
@@ -964,6 +966,9 @@ where
                 .try_jet(center, KernelDerivativeOrder::Value)
                 .map_err(|source| source.with_component(component_index))?
                 .value;
+            if center_weight == 0.0 {
+                continue;
+            }
             let kernel = component
                 .kernel
                 .try_spatial_jet(query, center, demanded, Some(&component.anisotropy))

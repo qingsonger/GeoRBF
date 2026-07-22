@@ -808,21 +808,25 @@ fn compact_control_skips_overflowing_fixed_kernel_when_query_factor_is_zero()
         point([0.0])?,
         KernelDerivativeOrder::Second,
     )?;
+    let reversed = compiled.mixture().try_evaluate(
+        point([0.0])?,
+        point([f64::MAX])?,
+        KernelDerivativeOrder::Second,
+    )?;
 
-    assert_eq!(evaluation.value().to_bits(), 0.0_f64.to_bits());
-    assert_eq!(
-        evaluation
-            .gradient()
-            .unwrap_or([f64::NAN])
-            .map(f64::to_bits),
-        [0.0_f64.to_bits()]
-    );
-    assert_eq!(
-        evaluation
-            .hessian()
-            .unwrap_or([[f64::NAN]])
-            .map(|row| row.map(f64::to_bits)),
-        [[0.0_f64.to_bits()]]
-    );
+    for result in [evaluation, reversed] {
+        assert_eq!(result.value().to_bits(), 0.0_f64.to_bits());
+        assert_eq!(
+            result.gradient().unwrap_or([f64::NAN]).map(f64::to_bits),
+            [0.0_f64.to_bits()]
+        );
+        assert_eq!(
+            result
+                .hessian()
+                .unwrap_or([[f64::NAN]])
+                .map(|row| row.map(f64::to_bits)),
+            [[0.0_f64.to_bits()]]
+        );
+    }
     Ok(())
 }

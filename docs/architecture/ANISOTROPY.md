@@ -357,9 +357,9 @@ rules to this compiled weight and the fixed anisotropic kernel. Regional gate
 factors retain signed logarithmic scale until they are combined with strength
 and the Gaussian exponent, so an underflowed unscaled gate cannot erase a
 representable final weight or derivative. When the complete demanded query
-weight jet is provably zero, the component is skipped before fixed-kernel
-evaluation; compact support therefore remains exact even if an irrelevant
-transformed separation would overflow.
+weight jet or the center weight is provably zero, the component is skipped
+before fixed-kernel evaluation; compact support therefore remains exact and
+argument-symmetric even if an irrelevant transformed separation would overflow.
 
 Diagnostics retain the resolved axes, paired lengths, explicit/reference
 provenance, original reference-gradient norms and low-confidence flags,

@@ -51,10 +51,10 @@ Gaussian displacement through Hessian order. Further regressions retain an
 amplitude-scaled regional value, gradient, and Hessian after the corresponding
 unscaled gate underflows; accept a transition whose attained maximum C2
 curvature remains finite; and skip an irrelevant overflowing fixed anisotropic
-kernel when the demanded compact query jet is exactly zero. A separate public
-regression retains a represented regional derivative whose ungated Gaussian
-value underflows. A runnable example demonstrates regional compilation and
-Hessian evaluation.
+kernel when either the demanded compact query jet or compact center factor is
+exactly zero. A separate public regression retains a represented regional
+derivative whose ungated Gaussian value underflows. A runnable example
+demonstrates regional compilation and Hessian evaluation.
 
 Rust is implemented. CLI and versioned schemas are N/A until M8 defines the
 persisted control representation and complete data CLI. C, C++, and Python are
