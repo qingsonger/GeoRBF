@@ -181,6 +181,8 @@ jobs:
         run: cargo bench -p georbf --bench orientation_tensor -- --smoke
       - name: Smoke-test local trend mixture benchmark
         run: cargo bench -p georbf --bench local_trend_mixture -- --smoke
+      - name: Smoke-test regional trend-control compilation benchmark
+        run: cargo bench -p georbf --bench trend_control_compilation -- --smoke
       - name: Smoke-test polynomial spaces benchmark
         run: cargo bench -p georbf --bench polynomial_spaces -- --smoke
       - name: Smoke-test atomic functionals benchmark

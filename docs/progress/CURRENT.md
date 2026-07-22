@@ -6,74 +6,61 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-ANISO-002 complete
-- Requirement: REQ-ANISO-002, Issue #105
-- Implementation pull request: #106, squash-merged as `bb099fe`
-- Integration-state branch: `codex/req-aniso-002-integration-state`
-- Integration-state pull request: #107 (Draft until exact Ready CI is green)
-- Independently reviewed implementation head: `0b7f558`
-- Clean re-review evidence / exact Ready head: `03d30a5`
-- Final Repair code/test/normative-document head: `358199b`
-- Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
-- Registry state in this change: `integrated`
+- Mode: Implement / REQ-TREND-002 complete
+- Requirement: REQ-TREND-002, Issue #108
+- Branch: `codex/req-trend-002-region-controls`
+- Draft pull request: pending creation after the stable-head gate
+- Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are integrated
+- Registry state before Draft PR creation: `planned`; implementation evidence
+  is populated and will become `implemented` when the PR number is recorded
 
-## Integration result
+## Implemented scope
 
-- A fresh isolated read-only `math_reviewer` closed ANISO002-REV-008 and found
-  no P0-P3 issue in the complete repaired PR. ANISO002-REV-001 through
-  ANISO002-REV-009 are closed.
-- Independent exact-rational review rejects scales one and
-  `1.0.to_bits() - 1`, accepts `1.0.to_bits() - 2`, and proves the returned
-  correlation scale maximal. The decisive determinant interval bound is
-  positive; 1,100 probes across all cubic signs and zero-factor cases found no
-  upper-bound violation.
-- Exact Ready head `03d30a5` passed complete Windows, Ubuntu, and macOS CI run
-  29889050240, including every configured backend combination, benchmark smoke,
-  and requirement validation.
-- PR #106 squash-merged exactly once as `bb099fe`; Issue #105 closed as
-  completed. Post-merge `main` CI run 29889557309 passed the same complete
-  three-platform gate on exact merge commit `bb099fe`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, numerical behavior, dependency,
-  tag, or release.
+- Ordered explicit and reference-gradient controls compile into the existing
+  strict-background `LocalTrendMixture<D>` for exactly D=1, D=2, and D=3.
+- Spheroidal and ellipsoidal inputs use fixed `GlobalAnisotropy` metrics under
+  caller condition policy. No axis repair, length inference, or arbitrary
+  location-dependent metric is introduced.
+- Optional axis-aligned regions multiply Gaussian influence by a compact
+  quintic C2 gate that is exactly zero with zero gradient and Hessian at every
+  boundary.
+- Immutable fitted project gradients are sampled once in their original-
+  coordinate convention, normalized only above explicit policy, and retain
+  field identifier, original norm, confidence, evaluation failures, and no
+  fallback direction.
+- Diagnostics retain resolved axes/lengths, provenance, strengths, radii,
+  regions, condition numbers, sign-invariant direction jumps, low-confidence
+  counts, and the primitive background/coverage evidence.
+- Rust is implemented. CLI/schema work is N/A until M8; C/C++/Python are N/A
+  until M9. Field refit and persistence are outside this compiler requirement.
 
 ## Validation state
 
-- Exact reviewed implementation head `0b7f558` passed the complete local
-  standard gate: workspace format, warning-denying workspace all-target/all-
-  feature Clippy, all workspace tests with all features, workspace Rustdoc,
-  all 58 requirement checks, and complete diff whitespace validation.
-- Both exact Ready-head run 29889050240 and post-merge `main` run 29889557309
-  are green on Windows, Ubuntu, and macOS, including every configured benchmark
-  smoke.
-- The isolated integration-state tree must pass the complete local standard
-  gate and exact Ready-head CI before it merges.
-- Local `actionlint` and the unavailable later tools listed below remain
-  unexecuted and are not claimed as passed.
+- Focused `trend_controls` integration tests pass.
+- The runnable `trend_controls` example passes.
+- The release-mode focused benchmark smoke passes at approximately 10.7 us for
+  four controls and 38.7 us for sixteen controls on this development machine.
+- Warning-denying `georbf` all-target/all-feature Clippy passes.
+- The complete stable-head standard gate is pending after documentation is
+  finalized. No pending check is claimed as passed.
 
 ## Next task boundary
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start another requirement in this
-task.
+Finish documentation, run the complete standard gate once on the stable head,
+commit and push, create or update the Draft PR, record its number here and in
+the registry, then stop. Independent mathematical/numerical Review must start
+in a fresh task; do not repair or integrate in this Implement task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #105
-- Merged implementation: GitHub PR #106
-- Integration-state pull request: GitHub PR #107
-- Independent findings and Repair evidence:
-  `docs/reviews/PR-106-INDEPENDENT-REVIEW.md`
-- Requirement summary and benchmark baseline: `changes/REQ-ANISO-002.md`
-- Public implementation and Rustdoc: `crates/georbf/src/orientation_tensor.rs`
-- Independent property/error tests: `crates/georbf/tests/orientation_tensor.rs`
-- Actual allocation regression:
-  `crates/georbf/tests/orientation_tensor_allocations.rs`
-- Runnable example: `crates/georbf/examples/orientation_tensor.rs`
-- Focused benchmark: `crates/georbf/benches/orientation_tensor.rs`
-- Mathematical contract: `docs/architecture/ANISOTROPY.md`, ADR-0009, ADR-0010
+- Acceptance criteria and exclusions: GitHub Issue #108
+- Requirement summary and benchmark baseline: `changes/REQ-TREND-002.md`
+- Public implementation and Rustdoc: `crates/georbf/src/trend_controls.rs`,
+  `crates/georbf/src/local_trend.rs`
+- Independent property/error tests: `crates/georbf/tests/trend_controls.rs`
+- Runnable example: `crates/georbf/examples/trend_controls.rs`
+- Focused benchmark: `crates/georbf/benches/trend_control_compilation.rs`
+- Mathematical contract: `docs/architecture/ANISOTROPY.md`, ADR-0005, ADR-0008
 
 ## Checks not yet available
 

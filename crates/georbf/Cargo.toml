@@ -48,6 +48,10 @@ name = "local_trend_mixture"
 harness = false
 
 [[bench]]
+name = "trend_control_compilation"
+harness = false
+
+[[bench]]
 name = "polynomial_spaces"
 harness = false
 

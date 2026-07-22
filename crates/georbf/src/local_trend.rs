@@ -39,6 +39,199 @@ where
     maximum: Point<D>,
 }
 
+/// A closed axis-aligned control region with an analytic C2 interior taper.
+///
+/// The gate is exactly zero outside the region and on its boundary. Along
+/// each axis it rises with the quintic smootherstep polynomial over
+/// `transition_width`, remains one across the interior plateau, and falls
+/// symmetrically at the opposite boundary. Value, gradient, and Hessian are
+/// therefore continuous through every face, edge, and corner.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[must_use]
+pub struct SmoothRegion<const D: usize>
+where
+    Dim<D>: SupportedDimension,
+{
+    minimum: Point<D>,
+    maximum: Point<D>,
+    transition_width: f64,
+    inverse_transition_width: f64,
+    inverse_transition_width_squared: f64,
+}
+
+impl<const D: usize> SmoothRegion<D>
+where
+    Dim<D>: SupportedDimension,
+{
+    /// Constructs a finite nondegenerate region with a non-overlapping C2 taper.
+    ///
+    /// The transition width must be positive, have representable first and
+    /// second derivative scales, and be no greater than half the extent of
+    /// every region axis.
+    ///
+    /// # Errors
+    ///
+    /// Returns a structured extent, width, or derivative-scale error.
+    pub fn try_new(
+        minimum: Point<D>,
+        maximum: Point<D>,
+        transition_width: f64,
+    ) -> Result<Self, LocalTrendConstructionError<D>> {
+        if !transition_width.is_finite() {
+            return Err(
+                LocalTrendConstructionError::NonFiniteRegionTransitionWidth {
+                    width: transition_width,
+                },
+            );
+        }
+        if transition_width <= 0.0 {
+            return Err(
+                LocalTrendConstructionError::NonPositiveRegionTransitionWidth {
+                    width: transition_width,
+                },
+            );
+        }
+        for axis in 0..D {
+            let minimum_value = minimum.components()[axis];
+            let maximum_value = maximum.components()[axis];
+            if minimum_value >= maximum_value {
+                return Err(LocalTrendConstructionError::NonPositiveRegionExtent {
+                    axis,
+                    minimum: minimum_value,
+                    maximum: maximum_value,
+                });
+            }
+            let half_extent = 0.5 * maximum_value - 0.5 * minimum_value;
+            if transition_width > half_extent {
+                return Err(LocalTrendConstructionError::RegionTransitionTooWide {
+                    axis,
+                    width: transition_width,
+                    maximum_width: half_extent,
+                });
+            }
+        }
+        let inverse_transition_width = transition_width.recip();
+        let inverse_transition_width_squared = inverse_transition_width * inverse_transition_width;
+        if !inverse_transition_width.is_finite()
+            || inverse_transition_width == 0.0
+            || !inverse_transition_width_squared.is_finite()
+            || inverse_transition_width_squared == 0.0
+            || !(60.0 * inverse_transition_width_squared).is_finite()
+        {
+            return Err(
+                LocalTrendConstructionError::NonRepresentableRegionTransitionWidth {
+                    width: transition_width,
+                },
+            );
+        }
+        Ok(Self {
+            minimum,
+            maximum,
+            transition_width,
+            inverse_transition_width,
+            inverse_transition_width_squared,
+        })
+    }
+
+    /// Returns the inclusive minimum corner.
+    pub const fn minimum(self) -> Point<D> {
+        self.minimum
+    }
+
+    /// Returns the inclusive maximum corner.
+    pub const fn maximum(self) -> Point<D> {
+        self.maximum
+    }
+
+    /// Returns the C2 transition width applied at every face.
+    #[must_use]
+    pub const fn transition_width(self) -> f64 {
+        self.transition_width
+    }
+
+    /// Reports whether the point lies in the closed geometric region.
+    #[must_use]
+    pub fn contains(self, point: Point<D>) -> bool {
+        (0..D).all(|axis| {
+            point.components()[axis] >= self.minimum.components()[axis]
+                && point.components()[axis] <= self.maximum.components()[axis]
+        })
+    }
+
+    fn try_jet(
+        self,
+        point: Point<D>,
+        demanded: KernelDerivativeOrder,
+    ) -> Result<WeightJet<D>, LocalTrendEvaluationError<D>> {
+        let mut factors = [AxisGate::default(); D];
+        for (axis, factor) in factors.iter_mut().enumerate() {
+            *factor = axis_region_gate(
+                point.components()[axis],
+                self.minimum.components()[axis],
+                self.maximum.components()[axis],
+                self.inverse_transition_width,
+                self.inverse_transition_width_squared,
+                demanded,
+            );
+        }
+
+        let value = factors.iter().map(|factor| factor.value).product::<f64>();
+        let gradient = if demanded >= KernelDerivativeOrder::First {
+            std::array::from_fn(|axis| {
+                factors[axis].first
+                    * factors
+                        .iter()
+                        .enumerate()
+                        .filter(|(other, _)| *other != axis)
+                        .map(|(_, factor)| factor.value)
+                        .product::<f64>()
+            })
+        } else {
+            [0.0; D]
+        };
+        let hessian = if demanded >= KernelDerivativeOrder::Second {
+            std::array::from_fn(|row| {
+                std::array::from_fn(|column| {
+                    if row == column {
+                        factors[row].second
+                            * factors
+                                .iter()
+                                .enumerate()
+                                .filter(|(other, _)| *other != row)
+                                .map(|(_, factor)| factor.value)
+                                .product::<f64>()
+                    } else {
+                        factors[row].first
+                            * factors[column].first
+                            * factors
+                                .iter()
+                                .enumerate()
+                                .filter(|(other, _)| *other != row && *other != column)
+                                .map(|(_, factor)| factor.value)
+                                .product::<f64>()
+                    }
+                })
+            })
+        } else {
+            [[0.0; D]; D]
+        };
+        if !value.is_finite()
+            || gradient.iter().any(|entry| !entry.is_finite())
+            || hessian.iter().flatten().any(|entry| !entry.is_finite())
+        {
+            return Err(LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                component: usize::MAX,
+                quantity: LocalTrendQuantity::Value,
+            });
+        }
+        Ok(WeightJet {
+            value,
+            gradient,
+            hessian,
+        })
+    }
+}
+
 impl<const D: usize> OperationalDomain<D>
 where
     Dim<D>: SupportedDimension,
@@ -133,6 +326,15 @@ where
         /// Cached finite squared reciprocal radius.
         inverse_radius_squared: f64,
     },
+    /// A Gaussian basis multiplied by one compact C2 region gate.
+    RegionalGaussian {
+        center: Point<D>,
+        amplitude: f64,
+        radius: f64,
+        inverse_radius: f64,
+        inverse_radius_squared: f64,
+        region: SmoothRegion<D>,
+    },
 }
 
 impl<const D: usize> SmoothSpatialWeight<D>
@@ -167,21 +369,7 @@ where
         radius: f64,
     ) -> Result<Self, LocalTrendConstructionError<D>> {
         validate_amplitude(amplitude)?;
-        if !radius.is_finite() {
-            return Err(LocalTrendConstructionError::NonFiniteWeightRadius { radius });
-        }
-        if radius <= 0.0 {
-            return Err(LocalTrendConstructionError::NonPositiveWeightRadius { radius });
-        }
-        let inverse_radius = radius.recip();
-        let inverse_radius_squared = inverse_radius * inverse_radius;
-        if !inverse_radius.is_finite()
-            || inverse_radius == 0.0
-            || !inverse_radius_squared.is_finite()
-            || inverse_radius_squared == 0.0
-        {
-            return Err(LocalTrendConstructionError::NonRepresentableWeightRadius { radius });
-        }
+        let (inverse_radius, inverse_radius_squared) = validate_radius(radius)?;
         Ok(Self {
             kind: SmoothSpatialWeightKind::Gaussian {
                 center,
@@ -193,12 +381,38 @@ where
         })
     }
 
+    /// Constructs a Gaussian influence multiplied by a compact C2 region gate.
+    ///
+    /// # Errors
+    ///
+    /// Returns a structured amplitude or radius representation error.
+    pub fn try_regional_gaussian(
+        center: Point<D>,
+        amplitude: f64,
+        radius: f64,
+        region: SmoothRegion<D>,
+    ) -> Result<Self, LocalTrendConstructionError<D>> {
+        validate_amplitude(amplitude)?;
+        let (inverse_radius, inverse_radius_squared) = validate_radius(radius)?;
+        Ok(Self {
+            kind: SmoothSpatialWeightKind::RegionalGaussian {
+                center,
+                amplitude,
+                radius,
+                inverse_radius,
+                inverse_radius_squared,
+                region,
+            },
+        })
+    }
+
     /// Returns the constant value, or `None` for a spatially varying basis.
     #[must_use]
     pub const fn constant_value(self) -> Option<f64> {
         match self.kind {
             SmoothSpatialWeightKind::Constant { value } => Some(value),
-            SmoothSpatialWeightKind::Gaussian { .. } => None,
+            SmoothSpatialWeightKind::Gaussian { .. }
+            | SmoothSpatialWeightKind::RegionalGaussian { .. } => None,
         }
     }
 
@@ -212,7 +426,24 @@ where
                 amplitude,
                 radius,
                 ..
+            }
+            | SmoothSpatialWeightKind::RegionalGaussian {
+                center,
+                amplitude,
+                radius,
+                ..
             } => Some((center, amplitude, radius)),
+        }
+    }
+
+    /// Returns the compact region for a regional Gaussian basis.
+    #[must_use]
+    pub const fn region(self) -> Option<SmoothRegion<D>> {
+        match self.kind {
+            SmoothSpatialWeightKind::RegionalGaussian { region, .. } => Some(region),
+            SmoothSpatialWeightKind::Constant { .. } | SmoothSpatialWeightKind::Gaussian { .. } => {
+                None
+            }
         }
     }
 
@@ -240,6 +471,23 @@ where
                 radius,
                 inverse_radius,
                 inverse_radius_squared,
+                demanded,
+            ),
+            SmoothSpatialWeightKind::RegionalGaussian {
+                center,
+                amplitude,
+                radius,
+                inverse_radius,
+                inverse_radius_squared,
+                region,
+            } => regional_gaussian_weight_jet(
+                point,
+                center,
+                amplitude,
+                radius,
+                inverse_radius,
+                inverse_radius_squared,
+                region,
                 demanded,
             ),
         }
@@ -761,6 +1009,39 @@ where
         /// Rejected maximum.
         maximum: f64,
     },
+    /// A compact region axis has no positive interior extent.
+    NonPositiveRegionExtent {
+        /// Zero-based axis.
+        axis: usize,
+        /// Rejected minimum.
+        minimum: f64,
+        /// Rejected maximum.
+        maximum: f64,
+    },
+    /// A compact-region transition width is not finite.
+    NonFiniteRegionTransitionWidth {
+        /// Rejected width.
+        width: f64,
+    },
+    /// A compact-region transition width is not positive.
+    NonPositiveRegionTransitionWidth {
+        /// Rejected width.
+        width: f64,
+    },
+    /// A transition leaves no untapered interior along one region axis.
+    RegionTransitionTooWide {
+        /// Zero-based axis.
+        axis: usize,
+        /// Rejected width.
+        width: f64,
+        /// Half of the axis extent.
+        maximum_width: f64,
+    },
+    /// Region-gate first or second derivative scales are not representable.
+    NonRepresentableRegionTransitionWidth {
+        /// Rejected width.
+        width: f64,
+    },
     /// A weight amplitude is not finite.
     NonFiniteWeightAmplitude {
         /// Rejected amplitude.
@@ -839,6 +1120,7 @@ impl<const D: usize> fmt::Display for LocalTrendConstructionError<D>
 where
     Dim<D>: SupportedDimension,
 {
+    #[allow(clippy::too_many_lines)]
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ReversedDomainAxis {
@@ -848,6 +1130,34 @@ where
             } => write!(
                 formatter,
                 "operational-domain axis {axis} has minimum {minimum} greater than maximum {maximum}"
+            ),
+            Self::NonPositiveRegionExtent {
+                axis,
+                minimum,
+                maximum,
+            } => write!(
+                formatter,
+                "control-region axis {axis} must have positive extent, got [{minimum}, {maximum}]"
+            ),
+            Self::NonFiniteRegionTransitionWidth { width } => write!(
+                formatter,
+                "control-region transition width must be finite, got {width}"
+            ),
+            Self::NonPositiveRegionTransitionWidth { width } => write!(
+                formatter,
+                "control-region transition width must be positive, got {width}"
+            ),
+            Self::RegionTransitionTooWide {
+                axis,
+                width,
+                maximum_width,
+            } => write!(
+                formatter,
+                "control-region transition width {width} exceeds half-extent {maximum_width} on axis {axis}"
+            ),
+            Self::NonRepresentableRegionTransitionWidth { width } => write!(
+                formatter,
+                "control-region transition width {width} has non-representable derivative scales"
             ),
             Self::NonFiniteWeightAmplitude { amplitude } => {
                 write!(
@@ -1081,6 +1391,66 @@ struct WeightJet<const D: usize> {
     hessian: [[f64; D]; D],
 }
 
+#[derive(Clone, Copy, Default)]
+struct AxisGate {
+    value: f64,
+    first: f64,
+    second: f64,
+}
+
+fn axis_region_gate(
+    coordinate: f64,
+    minimum: f64,
+    maximum: f64,
+    inverse_width: f64,
+    inverse_width_squared: f64,
+    demanded: KernelDerivativeOrder,
+) -> AxisGate {
+    if coordinate <= minimum || coordinate >= maximum {
+        return AxisGate::default();
+    }
+    let left = smootherstep_jet((coordinate - minimum) * inverse_width);
+    let right = smootherstep_jet((maximum - coordinate) * inverse_width);
+    let value = left.value * right.value;
+    let first = if demanded >= KernelDerivativeOrder::First {
+        inverse_width * (left.first * right.value - left.value * right.first)
+    } else {
+        0.0
+    };
+    let second = if demanded >= KernelDerivativeOrder::Second {
+        inverse_width_squared
+            * (left.second * right.value - 2.0 * left.first * right.first
+                + left.value * right.second)
+    } else {
+        0.0
+    };
+    AxisGate {
+        value,
+        first,
+        second,
+    }
+}
+
+fn smootherstep_jet(parameter: f64) -> AxisGate {
+    if parameter <= 0.0 {
+        return AxisGate::default();
+    }
+    if parameter >= 1.0 {
+        return AxisGate {
+            value: 1.0,
+            first: 0.0,
+            second: 0.0,
+        };
+    }
+    let squared = parameter * parameter;
+    let complement = parameter - 1.0;
+    AxisGate {
+        value: squared * parameter * (parameter * (6.0 * parameter - 15.0) + 10.0),
+        first: 30.0 * squared * complement * complement,
+        second: 60.0 * parameter * (2.0 * squared - 3.0 * parameter + 1.0),
+    }
+}
+
 fn validate_amplitude<const D: usize>(amplitude: f64) -> Result<(), LocalTrendConstructionError<D>>
 where
     Dim<D>: SupportedDimension,
@@ -1095,6 +1465,234 @@ where
         );
     }
     Ok(())
+}
+
+fn validate_radius<const D: usize>(
+    radius: f64,
+) -> Result<(f64, f64), LocalTrendConstructionError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    if !radius.is_finite() {
+        return Err(LocalTrendConstructionError::NonFiniteWeightRadius { radius });
+    }
+    if radius <= 0.0 {
+        return Err(LocalTrendConstructionError::NonPositiveWeightRadius { radius });
+    }
+    let inverse_radius = radius.recip();
+    let inverse_radius_squared = inverse_radius * inverse_radius;
+    if !inverse_radius.is_finite()
+        || inverse_radius == 0.0
+        || !inverse_radius_squared.is_finite()
+        || inverse_radius_squared == 0.0
+    {
+        return Err(LocalTrendConstructionError::NonRepresentableWeightRadius { radius });
+    }
+    Ok((inverse_radius, inverse_radius_squared))
+}
+
+#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_lines)]
+fn regional_gaussian_weight_jet<const D: usize>(
+    point: Point<D>,
+    center: Point<D>,
+    amplitude: f64,
+    radius: f64,
+    inverse_radius: f64,
+    inverse_radius_squared: f64,
+    region: SmoothRegion<D>,
+    demanded: KernelDerivativeOrder,
+) -> Result<WeightJet<D>, LocalTrendEvaluationError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let gate = region.try_jet(point, demanded)?;
+    let Some(gaussian) = gaussian_weight_state(point, center, amplitude, inverse_radius)? else {
+        return Ok(WeightJet {
+            value: 0.0,
+            gradient: [0.0; D],
+            hessian: [[0.0; D]; D],
+        });
+    };
+    let value =
+        stable_gaussian_product(gaussian.value, amplitude, gaussian.exponent, &[gate.value])
+            .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                component: usize::MAX,
+                quantity: LocalTrendQuantity::Value,
+            })?;
+    let mut gradient = [0.0; D];
+    let mut hessian = [[0.0; D]; D];
+    if demanded >= KernelDerivativeOrder::First {
+        for (axis, output) in gradient.iter_mut().enumerate() {
+            let first = stable_gaussian_product(
+                gaussian.value,
+                amplitude,
+                gaussian.exponent,
+                &[
+                    -inverse_radius_squared,
+                    gaussian.displacements[axis],
+                    gate.value,
+                ],
+            )
+            .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                component: usize::MAX,
+                quantity: LocalTrendQuantity::Gradient { axis },
+            })?;
+            let second = stable_gaussian_product(
+                gaussian.value,
+                amplitude,
+                gaussian.exponent,
+                &[gate.gradient[axis]],
+            )
+            .ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                component: usize::MAX,
+                quantity: LocalTrendQuantity::Gradient { axis },
+            })?;
+            *output = finite_sum(first, second).ok_or(
+                LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                    component: usize::MAX,
+                    quantity: LocalTrendQuantity::Gradient { axis },
+                },
+            )?;
+        }
+    }
+    if demanded >= KernelDerivativeOrder::Second {
+        for (row, hessian_row) in hessian.iter_mut().enumerate() {
+            for (column, output) in hessian_row.iter_mut().enumerate() {
+                let quantity = LocalTrendQuantity::Hessian { row, column };
+                let gaussian_hessian = if row == column {
+                    stable_gaussian_product(
+                        gaussian.value,
+                        amplitude,
+                        gaussian.exponent,
+                        &[
+                            inverse_radius_squared,
+                            inverse_radius_squared,
+                            gaussian.displacements[row] - radius,
+                            gaussian.displacements[row] + radius,
+                            gate.value,
+                        ],
+                    )
+                } else {
+                    let first_axis = row.min(column);
+                    let second_axis = row.max(column);
+                    stable_gaussian_product(
+                        gaussian.value,
+                        amplitude,
+                        gaussian.exponent,
+                        &[
+                            inverse_radius_squared,
+                            inverse_radius_squared,
+                            gaussian.displacements[first_axis],
+                            gaussian.displacements[second_axis],
+                            gate.value,
+                        ],
+                    )
+                };
+                let terms = [
+                    gaussian_hessian,
+                    stable_gaussian_product(
+                        gaussian.value,
+                        amplitude,
+                        gaussian.exponent,
+                        &[
+                            -inverse_radius_squared,
+                            gaussian.displacements[row],
+                            gate.gradient[column],
+                        ],
+                    ),
+                    stable_gaussian_product(
+                        gaussian.value,
+                        amplitude,
+                        gaussian.exponent,
+                        &[
+                            -inverse_radius_squared,
+                            gaussian.displacements[column],
+                            gate.gradient[row],
+                        ],
+                    ),
+                    stable_gaussian_product(
+                        gaussian.value,
+                        amplitude,
+                        gaussian.exponent,
+                        &[gate.hessian[row][column]],
+                    ),
+                ];
+                let mut sum = 0.0;
+                for term in terms {
+                    sum = finite_sum(
+                        sum,
+                        term.ok_or(LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                            component: usize::MAX,
+                            quantity,
+                        })?,
+                    )
+                    .ok_or(
+                        LocalTrendEvaluationError::NonFiniteWeightDerivative {
+                            component: usize::MAX,
+                            quantity,
+                        },
+                    )?;
+                }
+                *output = sum;
+            }
+        }
+    }
+    Ok(WeightJet {
+        value,
+        gradient,
+        hessian,
+    })
+}
+
+#[derive(Clone, Copy)]
+struct GaussianWeightState<const D: usize> {
+    displacements: [f64; D],
+    exponent: f64,
+    value: f64,
+}
+
+fn gaussian_weight_state<const D: usize>(
+    point: Point<D>,
+    center: Point<D>,
+    amplitude: f64,
+    inverse_radius: f64,
+) -> Result<Option<GaussianWeightState<D>>, LocalTrendEvaluationError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let mut displacements = [0.0; D];
+    let mut squared_radius = 0.0;
+    for (axis, displacement) in displacements.iter_mut().enumerate() {
+        *displacement = point.components()[axis] - center.components()[axis];
+        if !displacement.is_finite() {
+            return Err(LocalTrendEvaluationError::NonFiniteWeightDisplacement {
+                component: usize::MAX,
+                axis,
+            });
+        }
+        let scaled = *displacement * inverse_radius;
+        let square = scaled * scaled;
+        if !scaled.is_finite() || !square.is_finite() {
+            return Ok(None);
+        }
+        squared_radius += square;
+        if !squared_radius.is_finite() {
+            return Ok(None);
+        }
+    }
+    let exponent = -0.5 * squared_radius;
+    let value = stable_gaussian_value(amplitude, exponent).ok_or(
+        LocalTrendEvaluationError::NonFiniteWeightDerivative {
+            component: usize::MAX,
+            quantity: LocalTrendQuantity::Value,
+        },
+    )?;
+    Ok(Some(GaussianWeightState {
+        displacements,
+        exponent,
+        value,
+    }))
 }
 
 fn gaussian_weight_jet<const D: usize>(

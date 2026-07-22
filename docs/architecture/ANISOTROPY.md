@@ -298,3 +298,71 @@ Local geological controls, regions, reference-field gradients, direction-jump
 and confidence policy, and fitted-field integration belong to subsequent
 requirements. Versioned schemas and the complete CLI remain M8 work; C, C++,
 and Python adapters remain M9 work.
+
+### V1 regional and reference-field control compiler
+
+`REQ-TREND-002` compiles an ordered, nonempty control list into the existing
+`LocalTrendMixture<D>`; it does not add another point-pair metric. Component
+zero remains the caller's constant strict background. Every subsequent
+component retains one caller-selected SPD kernel, one newly constructed fixed
+`GlobalAnisotropy<D>`, and one smooth weight. Consequently the positive-
+definiteness proof and CPD rejection from `REQ-TREND-001` remain unchanged.
+
+A spheroidal control supplies one principal direction plus axial and transverse
+lengths. An ellipsoidal control supplies D ordered directions, D paired lengths,
+and an explicit orthogonality tolerance. Directions are either validated unit
+directions or normalized Cartesian gradients sampled once from an immutable
+project reference field at the control location. Fixed metrics are constructed
+through the existing global-anisotropy API under an explicit condition-number
+policy. The compiler never sorts, orthogonalizes, clips, invents lengths, or
+refits a field.
+
+Reference gradients use the fitted field's original-coordinate convention.
+Their stable Euclidean norm must be finite and at least the caller's positive
+minimum before normalization. A second explicit threshold marks a retained
+gradient as low confidence. Missing projects, unknown field identifiers,
+unavailable field gradients, zero or below-policy norms, and unrepresentable
+norms are structured failures; there is no fallback direction. Callers remain
+responsible for supplying control locations, regions, and correlation lengths
+in the same original-coordinate convention because a `GeoProject` does not
+infer cross-field reprojection.
+
+Every control has a finite location, a signed finite nonzero strength, a
+positive representable Gaussian influence radius, and an optional compact
+axis-aligned region. A region carries one positive transition width no greater
+than half any axis extent. For `0 < t < 1`, define the C2 smootherstep
+
+```text
+S(t) = 6 t^5 - 15 t^4 + 10 t^3,
+```
+
+extended by zero for `t <= 0` and one for `t >= 1`. Along each region axis the
+gate is the product of the rising and falling `S` factors; the complete region
+gate is the product over axes. The local basis is
+
+```text
+b_r(x) = strength_r
+         exp(-||x-location_r||^2 / (2 radius_r^2))
+         region_gate_r(x).
+```
+
+It is exactly zero outside and on the closed region boundary, with zero first
+and second derivatives there. It is analytic away from the finite transition
+joins and C2 across every face, edge, corner, and plateau join. The existing
+mixture evaluator applies the complete value, gradient, and Hessian product
+rules to this compiled weight and the fixed anisotropic kernel.
+
+Diagnostics retain the resolved axes, paired lengths, explicit/reference
+provenance, original reference-gradient norms and low-confidence flags,
+strengths, radii, regions, per-control condition numbers, and sign-invariant
+adjacent primary-direction jumps `acos(|u_i dot u_(i-1)|)`. Jump comparison
+uses an explicit caller threshold in `[0, pi/2]`; exceedance is diagnostic and
+does not rewrite a control. The compiled result also exposes the primitive's
+strict-background, maximum-condition, and pointwise coverage diagnostics.
+
+The compiler performs no automatic control, direction, length, kernel, or
+region selection; no topology inference, orientation-tensor estimation,
+solver change, persistence, or field mutation; and no jitter, regularization,
+pseudoinverse, eigenvalue clipping, or CPD polynomial workaround. Versioned
+schemas and the complete CLI remain M8 work. C, C++, and Python adapters remain
+M9 work.
