@@ -995,3 +995,126 @@ ANISO002-REV-008. PR #106 remains Draft and REQ-ANISO-002 remains
 `implemented`, not `integrated`. A fresh isolated mathematical/numerical
 re-review of the complete PR and exact Repair head is required next. This
 Repair does not mark the PR Ready, merge it, or begin another requirement.
+
+## Fresh independent re-review after ANISO002-REV-008 maximal-scale Repair
+
+- Exact reviewed head: `7a63864fa0fc26c436b56aecc2a5e00709ad12de`
+- Latest production/test Repair head:
+  `682b55ffe1310dcfafa8d127932fab11f4e9848c`
+- Base: `d34458f6c29d1b56f2832ddac9356d28a87a3f8f`
+- Re-review date: 2026-07-22
+- Result: ANISO002-REV-008 remains open as the P2 finding below
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-ANISO-002 summary and integrated dependency closure, Issue #105 criteria
+and exclusions, the M6 plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, the
+complete PR and latest Repair diffs, directly relevant source/tests, and the
+recorded validation evidence. It inherited no Repair reasoning transcript and
+made no repository change.
+
+### ANISO002-REV-008 - P2: determinant interval bound omits half the positive cubic term
+
+Affected code and contracts:
+
+- `crates/georbf/src/orientation_tensor.rs:1158-1166`
+- `crates/georbf/src/orientation_tensor.rs:1269-1277`
+- `docs/architecture/ANISOTROPY.md:103-112`
+- the proved-negative pruning and greatest-scale claims in the Repair evidence
+  and `changes/REQ-ANISO-002.md`
+
+For a D=3 symmetric tensor with diagonal entries `a,b,c` and off-diagonal
+entries `x,y,z`, the exact determinant is
+
+```text
+abc + 2xyz - az^2 - by^2 - cx^2.
+```
+
+For a scale interval `[L,U]` with positive cubic sign, a conservative upper
+bound must therefore add `2 x(U)y(U)z(U)` and subtract the three squared terms
+at `L`. The implementation calls
+`add_triple_product(x, y, z, 2.0)`, but the final argument of that helper is a
+sign: `add_factors` reads only `sign.is_sign_negative()` and ignores its
+magnitude. The implemented quantity adds only one `xyz`. It is smaller than
+the required upper bound, so a negative result cannot prove that the entire
+interval is rejected.
+
+The isolated reviewer found this valid public single-sample counterexample:
+
+```text
+direction =
+[0.9249979276407545, 0.37041918883416014, 0.7371647282797207]
+weight = 1
+fixed ratios = [1,1,1]
+```
+
+The represented tensor before correlation retention is
+
+```text
+[[0.5569567805937902,  0.22303561199259425, 0.443859258017088],
+ [0.22303561199259425, 0.08931551953434586, 0.17774524828457355],
+ [0.443859258017088,   0.17774524828457355, 0.35372769987186403]].
+```
+
+Independent exact-rational principal-minor evaluation gives:
+
+| Scale bits | Order-two minors | Exact determinant | PSD |
+| --- | --- | ---: | --- |
+| `1.0.to_bits()` | at least two negative | `-2.3877821257387435e-34` | no |
+| `1.0.to_bits() - 1` | all nonnegative | `-2.5487146823853663e-34` | no |
+| `1.0.to_bits() - 2` | all nonnegative | `+1.3900353712980636e-33` | yes |
+
+The greatest certified scale is therefore `1.0.to_bits() - 2`; the only two
+larger candidates are rejected. On the interval from `1.0.to_bits() - 2`
+through `1.0.to_bits() - 1`, the correct determinant upper bound is positive
+`8.780804665570454e-18`, while the implemented single-`xyz` quantity is
+negative `-0.017596143474440124`. The search consequently prunes the interval
+that contains the greatest accepted scale. The public estimator returns scale
+bits `4606057618404802559`, or `0.8751220703124999`, instead of
+`4607182418800017406`, or `1.0.to_bits() - 2`.
+
+The existing public REV-008 regression does not exercise this defect: its
+pairwise maximum is already PSD and returns before the D=3 interval search.
+The private accepted--rejected--accepted--rejected test checks individual
+states but neither calls the interval-bound predicate nor verifies the D=3
+search result.
+
+Repair must add both of these regressions before changing production code:
+
+1. A direct exact-dyadic interval test requiring the interval above to remain
+   searchable rather than be pruned.
+2. A public fixed-ratio regression requiring the counterexample to return
+   `1.0.to_bits() - 2`, with exact PSD certification there and exact rejection
+   at the two larger scales.
+
+The cubic coefficient must be accumulated exactly, for example by adding the
+same triple product twice. The Repair must not add a tolerance, clipping,
+jitter, pseudoinverse, hidden regularization, or valid-input rejection.
+
+No P0, P1, P3, or additional P2 finding was identified. The high-scale-first
+traversal and monotone order-two bisection remain sound, but the current
+determinant pruning is not proved-negative-only. ANISO002-REV-008 therefore
+remains open and the greatest-certified-scale contract is not yet satisfied.
+
+### Re-review validation and disposition
+
+- The isolated reviewer passed format, all 18 public orientation-tensor tests,
+  the actual-allocation regression, both private exact-dyadic tests, strict
+  georbf all-target/all-feature Clippy, the runnable example, optimized
+  benchmark smoke with checksum `1.00428812046557887e4`, all 58 requirement
+  checks, and complete PR diff whitespace validation.
+- The reviewer independently evaluated exact rational principal minors,
+  determinants, and interval bounds and reproduced the public estimator result
+  above without retaining any temporary probe in the worktree.
+- Exact production/test/normative-document head `682b55f` retains its recorded
+  complete local standard gate. The later reviewed head changes only Review
+  evidence and the bounded handoff.
+- Draft Ubuntu CI run 29887093239 passed on exact reviewed head `7a63864` after
+  the isolated review completed. Ready-only Windows, Ubuntu, macOS, and
+  benchmark-smoke CI did not run and are not claimed as passed.
+- The recorded unavailable and deferred checks remain unexecuted and are not
+  claimed as passed.
+
+PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
+`integrated`. Open a fresh bounded Repair task for ANISO002-REV-008 only. Do
+not repair production code, mark the PR Ready, merge it, or begin another
+requirement in this Review task.

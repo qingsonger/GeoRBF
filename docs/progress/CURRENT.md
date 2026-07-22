@@ -6,16 +6,16 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete / fresh isolated re-review required for PR #106
+- Mode: Review complete / fresh bounded Repair required for PR #106
 - Requirement: REQ-ANISO-002, Issue #105
 - Branch: `codex/req-aniso-002-orientation-tensor`
 - Implementation pull request: #106 (Draft)
-- ANISO002-REV-008 maximal-scale Repair code, tests, change fragment,
-  normative document, and complete-gate state:
-  `682b55ffe1310dcfafa8d127932fab11f4e9848c`
+- Latest independently reviewed head:
+  `7a63864fa0fc26c436b56aecc2a5e00709ad12de`
+- ANISO002-REV-008 maximal-scale Repair code/test head: `682b55f`
 - Review state: ANISO002-REV-001 through ANISO002-REV-007 and
-  ANISO002-REV-009 are closed; ANISO002-REV-008 has Repair evidence but remains
-  open pending fresh isolated re-review
+  ANISO002-REV-009 are closed; ANISO002-REV-008 remains open because the latest
+  Repair's determinant interval bound omits half the positive cubic term
 - Dependencies: REQ-ORIENT-001 and REQ-ANISO-001 are integrated
 - Registry state in this change: `implemented`
 
@@ -74,23 +74,28 @@ records, benchmark reports, Git, and GitHub.
   with all features, workspace Rustdoc, all 58 requirement checks, and complete
   diff whitespace. Only review evidence and this bounded Markdown handoff are
   changed afterward.
-- Draft Ubuntu CI run 29885690427 passed on earlier reviewed head `f99be61`.
-  CI on the final pushed Repair head has not yet run and is not claimed.
+- The isolated reviewer passed format, all 18 public tests, the actual-allocation
+  regression, both private exact-dyadic tests, strict georbf Clippy, the
+  example, optimized benchmark smoke, all 58 requirement checks, and complete
+  diff whitespace on exact reviewed head `7a63864`.
+- Draft Ubuntu CI run 29887093239 passed on exact reviewed head `7a63864`.
 - Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run and is
   not claimed as passed. Local `actionlint` and the unavailable later tools
   listed below remain unexecuted and are not claimed as passed.
 
 ## Next task boundary
 
-Open a fresh isolated Review task for PR #106. Supply the project
-`math_reviewer` only the bounded REQ-ANISO-002 summary and dependency closure,
-Issue #105 criteria, M6 plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, the
-complete PR and latest Repair diffs, directly relevant source/tests, and the
-recorded validation evidence. Independently verify ANISO002-REV-008 closure,
-the exact determinant interval upper-bound proof, maximality of the returned
-scale, and the complete PR. If any finding remains, record evidence and stop;
-do not repair in Review. If clean, follow the repository's ready-CI-integration
-sequence on the exact reviewed head. Do not begin another requirement.
+Open a fresh bounded Repair task for PR #106 and ANISO002-REV-008 only. First
+add the reviewed direct interval-bound regression and public end-to-end D=3
+regression. The public sample
+`[0.9249979276407545,0.37041918883416014,0.7371647282797207]` must return the
+greatest certified scale `1.0.to_bits() - 2`; both larger scales are exactly
+rejected. Repair the exact positive cubic coefficient without adding a
+tolerance, clipping, jitter, pseudoinverse, hidden regularization, or valid-
+input rejection. Run focused checks and the complete standard gate after the
+last production change, update bounded Repair evidence, push, and stop for a
+fresh isolated re-review. Do not mark Ready, merge, or begin another
+requirement.
 
 ## Durable evidence
 
