@@ -79,7 +79,7 @@ radial families because an invertible change of coordinates preserves the
 family classification; later CPD assembly still owns polynomial side
 conditions.
 
-## Deferred orientation estimation
+## Global orientation-tensor estimation
 
 An orientation tensor
 
@@ -88,10 +88,127 @@ C = sum_i weight_i n_i n_i^T
 ```
 
 uses unit directions, finite nonnegative weights, and at least one strictly
-positive weight. It is sign-invariant and positive semidefinite and estimates
-axes, not correlation lengths. Axis ratios are user-provided or selected by
-bounded deterministic candidates and cross-validation. Diagnostics include
-eigenvalue gaps, isotropy, maximum ratio, confidence, and outlier influence.
+positive weight. `REQ-ANISO-002` normalizes the weights by their maximum before
+their sum, so a common finite rescaling, including weights near `f64::MAX`,
+does not overflow merely while forming relative weights. Compensated sums form
+the upper triangle and copy it to the lower triangle, preserving represented
+symmetry. A final trace division is retained when it already sums to represented
+one; otherwise the last diagonal receives the explicit represented residual,
+with at most bounded one-ulp diagonal corrections if division crossed the
+trace boundary. Fixed-capacity exact dyadic integer sums, formed directly from
+the represented binary64 signs, significands, and exponents, then certify every
+D=2/D=3 principal minor. Their exponent range includes products and triple
+products below the minimum binary64 subnormal, so no accepted finite component
+is erased before the exact sign decision. If independently rounded
+off-diagonal entries alone cross the PSD boundary, a two-stage finite search
+retains the greatest certified uniform factor on all off-diagonal entries while
+leaving every diagonal unchanged. Exact order-two minor acceptance is monotone,
+so ordered-bit bisection first finds its greatest admissible scale. D=3 then
+uses a high-scale-first partition of that finite bit interval because the exact
+determinant of independently rounded correlations need not be monotone. A
+partition is discarded only when an exact dyadic upper bound is negative: the
+bound maximizes the complete signed cubic correlation term `2xyz` over the
+interval and minimizes every negative squared-correlation term. Searching the upper
+partition first and pruning only on that proof makes the first accepted scale
+the greatest accepted bit pattern, including an accepted--rejected--accepted
+rounding sequence. The search covers the complete represented interval from
+zero through one, including scales below the normal range. This is a
+represented-arithmetic closure of the outer-product invariant, not eigenvalue
+clipping, diagonal jitter, or hidden regularization. Diagnostics record the
+applied uniform factor, with one meaning no correlation adjustment was
+required.
+Because `(-n_i)(-n_i)^T = n_i n_i^T`, polarity is immaterial. The normalized
+tensor is trace one and positive semidefinite and estimates axes, not absolute
+correlation lengths.
+
+Principal axes are ordered by nonincreasing eigenvalue and their otherwise
+arbitrary signs are canonicalized by making the largest-magnitude component
+positive, with the lowest component index breaking magnitude ties. Exact or
+near repeated eigenvalues make individual axes unidentifiable; callers must
+use the reported normalized adjacent eigenvalue gaps and per-axis minimum
+adjacent gap as confidence evidence instead of interpreting a low-gap basis as
+geologically unique. The isotropy decision is explicit:
+
+```text
+(lambda_max - lambda_min) / sum_j lambda_j <= caller_threshold,
+caller_threshold in [0, 1].
+```
+
+The existing pinned nalgebra backend first performs the private symmetric
+eigendecomposition of the already finite, symmetric, exact-sign-certified PSD
+D-by-D tensor. If backend roundoff nevertheless returns a negative value, a
+bounded SVD of that same certified matrix supplies right singular vectors as
+principal axes and nonnegative singular values equal to the PSD eigenvalues.
+Diagnostics record which spectral path was used. Both paths use `f64::EPSILON`
+as their convergence resolution and are bounded to 64 iterations. Non-convergence,
+non-finite results, or an impossible negative fallback spectral value are
+structured errors. No eigenvalue is clipped, no eigengap becomes a hidden rank
+decision, and no nalgebra type crosses the public API.
+
+Principal-axis ratios are relative lengths in eigenvalue order. The public
+representation requires finite nonincreasing values at least one and an
+exactly-one final value, so no arbitrary common scale remains. Construction
+does not sort or rescale input. A caller either supplies one such ratio vector
+or a finite candidate list and an explicit finite maximum ratio. Empty,
+duplicate, unrepresentable, or out-of-bound candidates are rejected. Every
+positive maximum-scaled square and its normalized share after division by the
+represented square sum must remain positive; construction rejects either
+underflow boundary instead of silently removing an axis from scoring.
+
+Candidate selection is deterministic leave-one-out cross-validation over
+strictly positive-weight samples. For each held-out direction, axes are fitted
+from all remaining positive-weight directions. A candidate `r` defines the
+expected squared directional shares
+
+```text
+p_j = r_j^2 / sum_k r_k^2,
+o_j = (n_i dot q_-i,j)^2,
+loss_i(r) = sum_G ((sum_(j in G) o_j - sum_(j in G) p_j)^2),
+score(r) = sum_i normalized_weight_i loss_i(r).
+```
+
+Each `G` is a maximal consecutive training-fold eigenspace whose adjacent
+normalized eigenvalue gaps are no greater than `64 D epsilon`. A resolved
+axis is therefore a singleton group and retains the componentwise loss. An
+unresolved repeated eigenspace is scored only through its total projection,
+which is invariant under any orthonormal basis change inside that subspace.
+At represented precision, the final group receives the probability mass left
+after all preceding groups for both observed and expected shares. The grouped
+shares therefore retain total mass exactly; in particular, a single group
+spanning every axis has observed and expected mass one and contributes exactly
+zero loss for every candidate.
+This dimension-scaled machine-precision rule affects candidate scoring only;
+it is not a rank decision and does not alter or regularize the tensor or its
+reported eigendecomposition.
+
+The lowest score wins. An exact score tie selects the lexicographically smaller
+ratio vector, independent of candidate order. At least two positive-weight
+samples are required; no random search, candidate generation, regularization,
+or implicit ratio inference occurs. Weight normalization uses two fixed-state
+passes and no sample-sized scratch vector. D=1/D=2/D=3 decompositions use
+fixed-size nalgebra matrices, and leave-one-out folds use only stack-owned
+fixed-size tensor and spectral state. Heap allocations are limited to a fixed
+number of owned result and candidate-work vectors, independent of sample
+count; no allocation occurs per held-out sample. A dedicated serial integration
+test warms each policy, measures actual allocator calls around only
+`try_estimate`, and requires identical counts for four and sixteen samples under
+both fixed and cross-validated ratio policies.
+
+Per-sample outlier influence is the rotation-invariant normalized Frobenius
+change `||C-C_-i||_F/sqrt(2)`. A zero-weight sample has zero influence; removing
+the sole positive sample is explicitly assigned influence one because no
+leave-one-out estimate exists. The exact PSD trace-one expression lies in
+`[0,1]`. A finite computed value in `(1, 1 + 64 D^2 epsilon]` is recorded as
+one; a larger overshoot is a structured numerical error rather than a hidden
+clamp. Diagnostics retain every candidate score and sample influence, the
+largest influence and first corresponding sample, positive sample count,
+maximum normalized weight, tensor correlation scale, spectral path, eigengaps,
+axis confidence, isotropy decision and threshold, selection kind, and selected
+maximum ratio.
+
+The estimator does not build a `GlobalAnisotropy`, infer absolute lengths,
+modify local trends, compile geological controls, or refit a field. Those
+operations require later caller policy or requirements.
 
 ## Local positive-definite trends
 

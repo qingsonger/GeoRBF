@@ -44,6 +44,10 @@
 //! SPD anisotropic kernels, with an everywhere-nonzero policy-bounded constant
 //! background, complete query gradient/Hessian product rules, explicit CPD
 //! rejection, and allocation-free pointwise coverage diagnostics.
+//! Sign-invariant weighted orientation tensors estimate deterministic global
+//! principal axes and explicit or bounded cross-validated relative axis ratios,
+//! with eigengap, isotropy, weight-concentration, and leave-one-out influence
+//! diagnostics; they never infer an absolute correlation length or refit a field.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -67,6 +71,7 @@ pub mod local_trend;
 pub mod model;
 pub mod normal_observations;
 pub mod orientation;
+pub mod orientation_tensor;
 pub mod polynomial;
 pub mod problem_ir;
 pub mod project;
@@ -166,6 +171,12 @@ pub use normal_observations::{
 pub use orientation::{
     LinearOrientation, OrientationAngleField, OrientationError, OrientationPolarity,
     PlanarOrientation, SupportedOrientationDimension,
+};
+pub use orientation_tensor::{
+    AxisRatioCandidateScore, AxisRatioSelectionKind, OrientationTensorDiagnostics,
+    OrientationTensorError, OrientationTensorEstimate, OrientationTensorEstimator,
+    OrientationTensorInfluence, OrientationTensorSample, OrientationTensorSpectralBackend,
+    PrincipalAxisRatios,
 };
 pub use polynomial::{MultiIndex, PolynomialOutput, PolynomialSpace, PolynomialSpaceError};
 pub use problem_ir::{

@@ -16,6 +16,9 @@ workspace = true
 clarabel = { version = "=0.11.1", default-features = false, features = ["serde"] }
 nalgebra = { version = "=0.35.0", default-features = false, features = ["std"] }
 
+[dev-dependencies]
+allocation-counter = "=0.8.1"
+
 [[bench]]
 name = "radial_kernel_calculus"
 harness = false
@@ -34,6 +37,10 @@ harness = false
 
 [[bench]]
 name = "global_anisotropy"
+harness = false
+
+[[bench]]
+name = "orientation_tensor"
 harness = false
 
 [[bench]]
