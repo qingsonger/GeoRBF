@@ -11,6 +11,7 @@ records, benchmark reports, Git, and GitHub.
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
 - Implementation code/test/documentation head: `1291c6d`
+- Stable PR-linked evidence head: `22760ef`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are integrated
 - Registry state in this change: `implemented`
 
@@ -41,15 +42,21 @@ records, benchmark reports, Git, and GitHub.
 - The release-mode focused benchmark smoke passes at approximately 10.7 us for
   four controls and 38.7 us for sixteen controls on this development machine.
 - Warning-denying `georbf` all-target/all-feature Clippy passes.
-- The complete standard gate is pending on the stable PR-linked evidence head.
-  No pending check is claimed as passed.
+- Exact stable head `22760ef` passed the complete standard gate: workspace
+  format, warning-denying workspace all-target/all-feature Clippy, all workspace
+  tests with all features, workspace Rustdoc, all 58 requirement checks, and
+  complete diff whitespace validation.
+- This final handoff-only update changes no production code, test, manifest,
+  schema, CI, build input, API, numerical behavior, dependency, or benchmark,
+  so the immutable `22760ef` full gate is the applicable final evidence.
 
 ## Next task boundary
 
-Run the complete standard gate once on the stable PR-linked evidence head,
-record the exact successful head, push, and stop. Independent mathematical/
-numerical Review of Draft PR #109 must start in a fresh task; do not repair or
-integrate in this Implement task.
+Independent mathematical/numerical Review of Draft PR #109 must start in a
+fresh task. The reviewer must receive only the requirement summary/dependency
+closure, Issue #108 criteria, ANISOTROPY and ADR-0005/ADR-0008 contracts, PR
+diff, and validation/benchmark evidence. Do not repair, mark ready, merge,
+integrate, or start another requirement in this Implement task.
 
 ## Durable evidence
 
