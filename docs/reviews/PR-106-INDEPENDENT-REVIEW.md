@@ -664,3 +664,130 @@ verify these repairs and the complete PR diff before any Ready or integration
 action. Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI has not run
 and is not claimed as passed; the unavailable/deferred check list remains
 unchanged.
+
+## Independent re-review after ANISO002-REV-005/006/007 repair
+
+- Re-reviewed base: `d34458f6c29d1b56f2832ddac9356d28a87a3f8f`
+- Re-reviewed repair code/test/normative-document head:
+  `b634751d6545957d0d65039fb344108ad67169df`
+- Re-reviewed final Repair handoff head:
+  `ae7983c8d13b3ab3c5a44cc0aa9b3c60ee7a0008`
+- Re-review date: 2026-07-22
+- Result: ANISO002-REV-005 and ANISO002-REV-006 are closed;
+  ANISO002-REV-007 production behavior is repaired but its regression evidence
+  is insufficient; P2 ANISO002-REV-008 and P3 ANISO002-REV-009 require Repair
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-ANISO-002 summary and integrated dependency closure, Issue #105 criteria
+and exclusions, the M6 plan, ANISOTROPY and ADR-0009/ADR-0010 contracts, the
+complete exact PR and ANISO002-REV-005/006/007 Repair diffs, directly relevant
+source, Rustdoc, tests, example, benchmark, CI wiring, registry entry, handoff,
+and validation evidence. It inherited no Implement or Repair reasoning and
+made no repository, Git, or GitHub change.
+
+The reviewer verified a clean worktree, exact local/upstream/GitHub PR head,
+merge base, and Repair head. The tail `b634751..ae7983c` changes only the
+requirement summary, review record, and bounded handoff Markdown.
+
+### Prior-finding closure
+
+- ANISO002-REV-005 is closed. Every finite binary64 factor decomposes into an
+  integer significand and exponent in `[-1074,971]`. The triple-product base
+  exponent is `-3222`, and the greatest possible six-term accumulated bit
+  offset is at most 6296, below the fixed 6400-bit accumulator capacity.
+  Independent boundary probes and the public/private regressions confirm exact
+  signed product and triple-product decisions below the binary64 range.
+- ANISO002-REV-006 is closed. Construction checks both every positive
+  maximum-scaled square and that square divided by the same represented sum
+  later used for expected shares. The third share for
+  `[2^537,2^537,1]` becomes zero after division by represented sum two and is
+  rejected structurally.
+- ANISO002-REV-007 is closed for production behavior by source inspection:
+  weight normalization and every fold use fixed scalar, array, `Matrix2`, or
+  `Matrix3` state, while the owned result and candidate vectors have counts
+  independent of sample count. Its required independent regression evidence
+  remains incomplete as ANISO002-REV-009 below.
+
+### ANISO002-REV-008 - P2: fixed PSD search rejects valid extreme directions
+
+Affected code and contract:
+
+- `crates/georbf/src/orientation_tensor.rs:1083-1107`
+- `docs/architecture/ANISOTROPY.md:103-110`
+
+For a valid D=2 unit direction represented by `[1,2^-538]`, the squared second
+component underflows while normalization retains represented components
+`[1,2^-538]`. A unit-weight sample therefore produces
+
+```text
+C = [[1, z],
+     [z, 0]], z = 2^-538.
+```
+
+Exact dyadic certification correctly rejects its determinant `-z^2`. A PSD
+represented closure requires the off-diagonal entry to round to zero. The
+fixed loop tests only scales `2^-1` through `2^-64`; its final off-diagonal is
+still the nonzero value `2^-602`, so every candidate remains exactly
+indefinite. Because the implementation writes `*tensor` only after an accepted
+candidate, it retains the original matrix and returns
+`NonFiniteNumericalResult("positive-semidefinite tensor representation")` for
+this valid input. An independent binary64 probe found the first accepted scale
+at `2^-537`, outside the fixed search.
+
+Repair must add a public fixed-ratio D=2 regression using one sample
+`[1.0, 2.0_f64.powi(-538)]`, requiring success, represented trace one, and
+exact represented PSD. It must replace the absolute 64-step assumption with a
+bounded construction that covers the complete accepted binary64 domain while
+retaining the greatest certified represented correlation factor. It must not
+introduce clipping, jitter, a pseudoinverse, hidden regularization, or an
+input-invalidity fallback.
+
+### ANISO002-REV-009 - P3: allocation regression counts annotations
+
+Affected code and test:
+
+- `crates/georbf/src/orientation_tensor.rs:38-46`
+- manual markers at `crates/georbf/src/orientation_tensor.rs:572-573`,
+  `:1520-1524`, `:1556-1557`, and `:1643-1644`
+- `crates/georbf/src/orientation_tensor.rs:1696-1730`
+
+`EXPLICIT_ALLOCATION_ATTEMPTS` changes only when production code manually calls
+`record_allocation_attempt`; it does not observe the allocator. An unannotated
+`Vec`, `Box`, or heap-backed backend reintroduced inside either held-out loop
+would leave the asserted counts unchanged. The current test therefore does not
+independently prove or protect the sample-count-independent allocation property
+required by ANISO002-REV-007, even though the reviewed production path currently
+has that property.
+
+Repair must replace or supplement the annotation counter with a serial test
+that observes actual allocator calls around only `try_estimate`, with estimator
+and input construction plus warm-up outside the measured region. It must
+compare four and sixteen samples for both fixed and cross-validated policies.
+
+No P0, P1, or additional P2/P3 finding was identified.
+
+### Re-review validation and disposition
+
+- The isolated reviewer executed the existing focused binaries: all 16 public
+  orientation-tensor tests and both private exact-dyadic/allocation tests
+  passed. The runnable example and optimized benchmark smoke passed; the
+  reviewer's benchmark checksum was `1.00428812046557887e4`.
+- Independent IEEE-754 probes verified ANISO002-REV-005/006 boundaries and
+  reproduced ANISO002-REV-008. Direct source and nalgebra fixed-matrix review
+  established the current production allocation behavior and
+  ANISO002-REV-009.
+- Complete and Repair diff whitespace validation passed. Exact final Repair
+  handoff head `ae7983c` passed the Draft Ubuntu correctness CI. Exact code
+  head `b634751` retains its recorded complete local standard gate; the later
+  tail is Markdown only.
+- The reviewer did not perform a fresh Cargo build, Clippy, workspace test,
+  Rustdoc, or full requirement gate and did not claim those checks. Ready-only
+  Windows, Ubuntu, macOS, and benchmark-smoke CI did not run. The recorded
+  unavailable/deferred check list remains unchanged.
+
+PR #106 remains Draft and REQ-ANISO-002 remains `implemented`, not
+`integrated`. Open a fresh bounded Repair task for ANISO002-REV-008 and
+ANISO002-REV-009 only. The Repair must also provide the actual-allocation
+regression needed to complete ANISO002-REV-007 closure. Do not repair
+production code, mark the PR Ready, merge it, or begin another requirement in
+this Review task.
