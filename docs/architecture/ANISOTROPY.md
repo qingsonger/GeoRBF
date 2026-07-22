@@ -362,12 +362,13 @@ gradient, or Hessian term; demanded derivatives need not be individually
 representable before the complete term is scaled by the other weight and fixed
 kernel. Opposite-sign factor sums use compensated direct arithmetic and never
 promote equality of rounded logarithms to mathematical exact-zero provenance.
-Fixed Gaussian kernel values likewise retain their analytic logarithmic scale,
-so a represented Gaussian zero does not erase a contribution made representable
-by the two weight factors. Only a mathematically exact-zero complete query jet
-or center weight skips fixed-kernel evaluation; compact regional support remains
-exact and argument-symmetric even if an irrelevant transformed separation would
-overflow.
+Fixed Gaussian kernel values, gradients, and Hessians likewise retain analytic
+signed logarithmic scale through complete mixture-term formation, so a
+represented Gaussian value or derivative zero does not erase a contribution
+made representable by the two weight factors. Only a mathematically exact-zero
+complete query jet or center weight skips fixed-kernel evaluation; compact
+regional support remains exact and argument-symmetric even if an irrelevant
+transformed separation would overflow.
 
 Diagnostics retain the resolved axes, paired lengths, explicit/reference
 provenance, original reference-gradient norms and low-confidence flags,

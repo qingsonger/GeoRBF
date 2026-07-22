@@ -1009,14 +1009,24 @@ fn fixed_gaussian_underflow_does_not_erase_representable_mixture_value()
         .exp();
     assert!(expected.is_finite() && expected != 0.0);
 
-    let actual = compiled
-        .mixture()
-        .try_evaluate(
-            point([0.0])?,
-            point([separation])?,
-            KernelDerivativeOrder::Value,
-        )?
-        .value();
-    assert_close(actual, expected, expected * 1024.0 * f64::EPSILON);
+    let actual = compiled.mixture().try_evaluate(
+        point([0.0])?,
+        point([separation])?,
+        KernelDerivativeOrder::Second,
+    )?;
+    assert_close(actual.value(), expected, expected * 1024.0 * f64::EPSILON);
+    let expected_gradient = separation * expected;
+    assert_close(
+        actual.gradient().ok_or("missing gradient")?[0],
+        expected_gradient,
+        expected_gradient * 1024.0 * f64::EPSILON,
+    );
+    let expected_hessian =
+        (separation * separation - 1.0 - influence_radius.recip().powi(2)) * expected;
+    assert_close(
+        actual.hessian().ok_or("missing Hessian")?[0][0],
+        expected_hessian,
+        expected_hessian * 1024.0 * f64::EPSILON,
+    );
     Ok(())
 }

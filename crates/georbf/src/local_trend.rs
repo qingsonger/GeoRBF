@@ -919,9 +919,9 @@ where
     /// mathematically exactly zero is skipped before its fixed kernel is
     /// evaluated. Gaussian factors that merely underflow individually retain
     /// their logarithmic scale through the complete represented contribution,
-    /// including the fixed Gaussian kernel value. Weight derivatives are not
-    /// required to be individually representable before the complete mixture
-    /// term is formed.
+    /// including the fixed Gaussian kernel value, gradient, and Hessian. Weight
+    /// and fixed-Gaussian derivatives are not required to be individually
+    /// representable before the complete mixture term is formed.
     ///
     /// # Errors
     ///
@@ -953,14 +953,14 @@ where
             if center_weight.stable.value.exact_zero {
                 continue;
             }
-            let (kernel, stable_kernel_value) =
+            let stable_kernel =
                 component_kernel_jet(component, query, center, demanded, component_index)?;
 
             let value_term = checked_stable_terms(
                 &[
                     query_weight.stable.value,
                     center_weight.stable.value,
-                    stable_kernel_value,
+                    stable_kernel.value,
                 ],
                 &[],
                 component_index,
@@ -974,21 +974,24 @@ where
             )?;
 
             if demanded >= KernelDerivativeOrder::First {
-                let kernel_gradient = kernel.first_derivative(KernelArgument::Query);
-                for axis in 0..D {
+                for (axis, gradient_entry) in gradient.iter_mut().enumerate() {
                     let weight_term = checked_stable_terms(
                         &[
                             center_weight.stable.value,
                             query_weight.stable.gradient[axis],
-                            stable_kernel_value,
+                            stable_kernel.value,
                         ],
                         &[],
                         component_index,
                         LocalTrendQuantity::Gradient { axis },
                     )?;
                     let kernel_term = checked_stable_terms(
-                        &[center_weight.stable.value, query_weight.stable.value],
-                        &[kernel_gradient[axis]],
+                        &[
+                            center_weight.stable.value,
+                            query_weight.stable.value,
+                            stable_kernel.gradient[axis],
+                        ],
+                        &[],
                         component_index,
                         LocalTrendQuantity::Gradient { axis },
                     )?;
@@ -998,8 +1001,8 @@ where
                         component_index,
                         LocalTrendQuantity::Gradient { axis },
                     )?;
-                    gradient[axis] = checked_add(
-                        gradient[axis],
+                    *gradient_entry = checked_add(
+                        *gradient_entry,
                         contribution,
                         component_index,
                         LocalTrendQuantity::Gradient { axis },
@@ -1007,15 +1010,11 @@ where
                 }
 
                 if demanded >= KernelDerivativeOrder::Second {
-                    let kernel_hessian =
-                        kernel.second_derivative([KernelArgument::Query, KernelArgument::Query]);
                     accumulate_component_hessian(
                         &mut hessian,
                         query_weight,
                         center_weight.stable.value,
-                        stable_kernel_value,
-                        kernel_gradient,
-                        kernel_hessian,
+                        stable_kernel,
                         component_index,
                     )?;
                 }
@@ -1465,6 +1464,13 @@ where
 
 #[derive(Clone, Copy)]
 struct StableWeightJet<const D: usize> {
+    value: StableFactor,
+    gradient: [StableFactor; D],
+    hessian: [[StableFactor; D]; D],
+}
+
+#[derive(Clone, Copy)]
+struct StableKernelJet<const D: usize> {
     value: StableFactor,
     gradient: [StableFactor; D],
     hessian: [[StableFactor; D]; D],
@@ -2137,13 +2143,14 @@ where
     })
 }
 
-fn stable_kernel_value<const D: usize>(
+fn stable_kernel_jet<const D: usize>(
     kernel: KernelDefinition<D>,
     query: Point<D>,
     center: Point<D>,
     anisotropy: &GlobalAnisotropy<D>,
-    represented: f64,
-) -> Result<StableFactor, KernelDefinitionEvaluationError<D>>
+    represented: SpatialKernelJet<D>,
+    demanded: KernelDerivativeOrder,
+) -> Result<StableKernelJet<D>, KernelDefinitionEvaluationError<D>>
 where
     Dim<D>: SupportedDimension,
 {
@@ -2153,9 +2160,78 @@ where
                 .try_transform_separation(query, center)
                 .map_err(KernelDefinitionEvaluationError::Anisotropy)?;
             let scaled = separation.radius() / gaussian.length_scale();
-            Ok(StableFactor::from_gaussian(1.0, -0.5 * scaled * scaled))
+            let value = StableFactor::from_gaussian(1.0, -0.5 * scaled * scaled);
+            let transformed = match separation.unit_displacement() {
+                Some(unit) => std::array::from_fn(|axis| unit[axis] * separation.radius()),
+                None => [0.0; D],
+            };
+            let inverse_length = gaussian.length_scale().recip();
+            let inverse_length_squared = inverse_length * inverse_length;
+            let scaled_projections = if demanded >= KernelDerivativeOrder::First {
+                std::array::from_fn(|axis| {
+                    (0..D)
+                        .map(|row| {
+                            StableFactor::from_factors(&[
+                                anisotropy.transform()[row][axis],
+                                transformed[row],
+                                inverse_length_squared,
+                            ])
+                        })
+                        .fold(StableFactor::ZERO, StableFactor::sum)
+                })
+            } else {
+                [StableFactor::ZERO; D]
+            };
+            let gradient = if demanded >= KernelDerivativeOrder::First {
+                scaled_projections.map(|projection| value.product(projection.negated()))
+            } else {
+                [StableFactor::ZERO; D]
+            };
+            let hessian = if demanded >= KernelDerivativeOrder::Second {
+                std::array::from_fn(|row| {
+                    std::array::from_fn(|column| {
+                        let curvature = (0..D)
+                            .map(|axis| {
+                                StableFactor::from_factors(&[
+                                    -inverse_length_squared,
+                                    anisotropy.transform()[axis][row],
+                                    anisotropy.transform()[axis][column],
+                                ])
+                            })
+                            .fold(StableFactor::ZERO, StableFactor::sum);
+                        value.product(
+                            scaled_projections[row]
+                                .product(scaled_projections[column])
+                                .sum(curvature),
+                        )
+                    })
+                })
+            } else {
+                [[StableFactor::ZERO; D]; D]
+            };
+            Ok(StableKernelJet {
+                value,
+                gradient,
+                hessian,
+            })
         }
-        _ => Ok(StableFactor::from_factors(&[represented])),
+        _ => Ok(StableKernelJet {
+            value: StableFactor::from_factors(&[represented.value()]),
+            gradient: if demanded >= KernelDerivativeOrder::First {
+                represented
+                    .first_derivative(KernelArgument::Query)
+                    .map(|entry| StableFactor::from_factors(&[entry]))
+            } else {
+                [StableFactor::ZERO; D]
+            },
+            hessian: if demanded >= KernelDerivativeOrder::Second {
+                represented
+                    .second_derivative([KernelArgument::Query, KernelArgument::Query])
+                    .map(|row| row.map(|entry| StableFactor::from_factors(&[entry])))
+            } else {
+                [[StableFactor::ZERO; D]; D]
+            },
+        }),
     }
 }
 
@@ -2165,7 +2241,7 @@ fn component_kernel_jet<const D: usize>(
     center: Point<D>,
     demanded: KernelDerivativeOrder,
     component_index: usize,
-) -> Result<(SpatialKernelJet<D>, StableFactor), LocalTrendEvaluationError<D>>
+) -> Result<StableKernelJet<D>, LocalTrendEvaluationError<D>>
 where
     Dim<D>: SupportedDimension,
 {
@@ -2176,18 +2252,18 @@ where
             component: component_index,
             source,
         })?;
-    let stable_value = stable_kernel_value(
+    stable_kernel_jet(
         component.kernel,
         query,
         center,
         &component.anisotropy,
-        kernel.value(),
+        kernel,
+        demanded,
     )
     .map_err(|source| LocalTrendEvaluationError::Kernel {
         component: component_index,
         source,
-    })?;
-    Ok((kernel, stable_value))
+    })
 }
 
 fn checked_add<const D: usize>(
@@ -2209,43 +2285,53 @@ fn accumulate_component_hessian<const D: usize>(
     total: &mut [[f64; D]; D],
     query_weight: WeightJet<D>,
     center_weight: StableFactor,
-    kernel_value: StableFactor,
-    kernel_gradient: [f64; D],
-    kernel_hessian: [[f64; D]; D],
+    kernel: StableKernelJet<D>,
     component: usize,
 ) -> Result<(), LocalTrendEvaluationError<D>>
 where
     Dim<D>: SupportedDimension,
 {
-    for row in 0..D {
-        for column in 0..D {
+    for (row, total_row) in total.iter_mut().enumerate() {
+        for (column, total_entry) in total_row.iter_mut().enumerate() {
             let quantity = LocalTrendQuantity::Hessian { row, column };
             let terms = [
                 checked_stable_terms(
                     &[
                         center_weight,
                         query_weight.stable.hessian[row][column],
-                        kernel_value,
+                        kernel.value,
                     ],
                     &[],
                     component,
                     quantity,
                 )?,
                 checked_stable_terms(
-                    &[center_weight, query_weight.stable.gradient[row]],
-                    &[kernel_gradient[column]],
+                    &[
+                        center_weight,
+                        query_weight.stable.gradient[row],
+                        kernel.gradient[column],
+                    ],
+                    &[],
                     component,
                     quantity,
                 )?,
                 checked_stable_terms(
-                    &[center_weight, query_weight.stable.gradient[column]],
-                    &[kernel_gradient[row]],
+                    &[
+                        center_weight,
+                        query_weight.stable.gradient[column],
+                        kernel.gradient[row],
+                    ],
+                    &[],
                     component,
                     quantity,
                 )?,
                 checked_stable_terms(
-                    &[center_weight, query_weight.stable.value],
-                    &[kernel_hessian[row][column]],
+                    &[
+                        center_weight,
+                        query_weight.stable.value,
+                        kernel.hessian[row][column],
+                    ],
+                    &[],
                     component,
                     quantity,
                 )?,
@@ -2253,7 +2339,7 @@ where
             let inside = terms
                 .into_iter()
                 .try_fold(0.0, |sum, term| checked_add(sum, term, component, quantity))?;
-            total[row][column] = checked_add(total[row][column], inside, component, quantity)?;
+            *total_entry = checked_add(*total_entry, inside, component, quantity)?;
         }
     }
     Ok(())
