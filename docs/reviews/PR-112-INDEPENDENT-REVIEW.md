@@ -164,6 +164,7 @@ whitespace validation. It verified that the tail after stable full-gate head
 - Squash merge: `07dd290840b7531c57acb583a678e07a8ae64f00`
 - Post-merge `main` CI run: 29976326673
 - Integration-state branch: `codex/req-aniso-003-integration-state`
+- Integration-state pull request: #113
 
 Ready CI run 29975641751 passed the complete Windows, Ubuntu, and macOS
 workspace gate on exact Ready head `556b254`, including every configured

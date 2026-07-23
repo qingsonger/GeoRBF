@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-ANISO-003, Issue #111
 - Implementation pull request: #112, squash-merged as `07dd290`
 - Integration-state branch: `codex/req-aniso-003-integration-state`
-- Integration-state pull request: pending creation
+- Integration-state pull request: #113 (Draft until exact Ready CI is green)
 - Initial reviewed head: `a698362`
 - Repair code/test head: `4426a30`
 - Clean re-reviewed head: `c6b2c26`
@@ -65,9 +65,8 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-Create the isolated integration-state pull request, record its number in the
-review, history index, and this handoff, then run the complete local standard
-gate. Mark that PR Ready, wait for exact Ready-head Windows, Ubuntu, macOS, and
+Run the complete local standard gate on the final integration-state head. Mark
+PR #113 Ready, wait for exact Ready-head Windows, Ubuntu, macOS, and
 benchmark-smoke CI, merge only if green, and stop. Do not start another
 requirement.
 
@@ -75,6 +74,7 @@ requirement.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #111
 - Merged implementation: GitHub PR #112
+- Integration-state pull request: GitHub PR #113
 - Independent review and Repair evidence:
   `docs/reviews/PR-112-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-ANISO-003.md`
