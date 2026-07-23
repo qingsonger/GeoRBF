@@ -1862,7 +1862,7 @@ benchmark-smoke workload to pass before one squash merge.
 - Squash merge: `9c7eb2aa0d2c7ad97855288f2fa2ed404a1db7ee`
 - Post-merge `main` CI run: 29971918657
 - Integration-state branch: `codex/req-trend-002-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #110
 
 Ready CI run 29971311450 passed the complete Windows, Ubuntu, and macOS
 workspace gate on exact Ready head `a73562c`, including every configured

@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-TREND-002, Issue #108
 - Implementation pull request: #109, squash-merged as `9c7eb2a`
 - Integration-state branch: `codex/req-trend-002-integration-state`
-- Integration-state pull request: pending (Draft until exact Ready CI is green)
+- Integration-state pull request: #110 (Draft until exact Ready CI is green)
 - Independently reviewed implementation evidence head: `0108447`
 - Clean re-review evidence / exact Ready head: `a73562c`
 - Eleventh Repair code/test head: `0952729`
@@ -76,7 +76,7 @@ task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #108
 - Merged implementation: GitHub PR #109
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #110
 - Independent review, findings, and Repair evidence:
   `docs/reviews/PR-109-INDEPENDENT-REVIEW.md`
 - Requirement summary and benchmark baseline: `changes/REQ-TREND-002.md`
