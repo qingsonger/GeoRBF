@@ -5,9 +5,11 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/115
 - Branch: `codex/req-spike-003-sparse-backends`
 - Reviewed head: `2ad68e530d11a9486f3a48e3437b15115c32329e`
+- Repair head re-reviewed:
+  `7257e67873b1fddd22d6a122f57e5cb92c354bda`
 - Base head: `244e8877ad3833b02bb32c0a8e3ea1e729119f74`
 - Review date: 2026-07-23
-- Result: one P1 and one P2 finding require Repair
+- Result: original P1 and P2 closed; one new P2 finding requires Repair
 
 ## Scope and independence
 
@@ -190,3 +192,87 @@ REQ-SPIKE-003 remains `implemented`, not `integrated`. A fresh isolated
 mathematical and numerical re-review must inspect the complete repaired PR diff
 and exact Repair head before the PR can be marked ready. This Repair does not
 begin REQ-SPARSE-001.
+
+## Fresh independent re-review
+
+A new read-only project `math_reviewer` independently reviewed exact Repair
+implementation head `7257e67873b1fddd22d6a122f57e5cb92c354bda`
+against base `244e8877ad3833b02bb32c0a8e3ea1e729119f74`. It received
+only the bounded requirement summary and integrated dependency closure, Issue
+#114 acceptance criteria and exclusions, the M7 plan, normative solver policy
+and ADR, the complete exact-head diff, harness and benchmark evidence, and
+validation state. It inherited no Implement or Repair reasoning and made no
+repository or remote change.
+
+The reviewer closed SPIKE003-REV-001. The hand-derived regression independently
+specifies the exact matrix, CSC arrays, and right-hand side at
+`spikes/sparse-backends/src/main.rs:830-916`. It reads both candidates' actual
+CSC pointers, row indices, and values, computes the product from candidate
+storage, and solves through the candidate factorization paths at
+`spikes/sparse-backends/src/main.rs:546-619`.
+
+The reviewer also closed SPIKE003-REV-002. Solver measurements are accurately
+labeled as end-to-end construction, factorization, solve, residual and analytic
+review, and checksum work at `spikes/sparse-backends/src/main.rs:19,701-721`.
+The ADR and benchmark report make no isolated-factorization conclusion.
+
+### P2 SPIKE003-REV-003: index construction is omitted from the explicit phase name
+
+The repaired phase constant at
+`spikes/sparse-backends/src/main.rs:18` is
+`query_filter_canonicalize_checksum_end_to_end`. Each timed iteration at
+`spikes/sparse-backends/src/main.rs:681-693`, however, calls `indexed_pairs`,
+which constructs the complete Kiddo tree at
+`spikes/sparse-backends/src/main.rs:263-268` or bulk-loads the Rstar tree at
+`spikes/sparse-backends/src/main.rs:296-302` before querying it.
+
+The same omission appears in `spikes/sparse-backends/README.md:65-66`,
+`docs/benchmarks/REQ-SPIKE-003.md:26-40`, and
+`docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md:108-113`. The recorded
+numbers are valid construct-plus-query measurements, but the explicit phase
+name and prose describe only query, filtering, canonicalization, and checksum
+work. Construction costs differ between the two candidate data structures, so
+the omission makes the benchmark interpretation materially incomplete.
+
+Required Repair: relabel the unchanged timing region everywhere as an explicit
+construct/query/filter/canonicalize/checksum end-to-end phase. Strengthen the
+schema regression at `spikes/sparse-backends/src/main.rs:1030-1037` to require
+the construction component rather than only an `_end_to_end` suffix. The
+existing timing numbers may be retained if the timed code and phase boundary
+remain unchanged; rerun them if the phase boundary changes.
+
+No other P0, P1, P2, or P3 finding was identified.
+
+## Re-review truth and validation
+
+- For `phi(q) = (1-q)^4(4q+1)`, the independent values are
+  `phi(0) = 1`, `phi(1/2) = 3/16`, and `phi(1) = 0`. The hand matrix has
+  eigenvalues `1` and `1 +/- 3*sqrt(2)/16`, all positive, and maps
+  `[1, 2, 3]` to `[11/8, 11/4, 27/8]`.
+- The strict squared-distance predicate and zero value at normalized distance
+  one agree at the support boundary. The unit-grid support radius 1.75 permits
+  at most 27 full-row nonzeros and 14 stored upper pairs per point.
+- The reported backward error is the dimensionless original-unit quantity
+  `||b-Ax||_inf / (||A||_inf ||x||_inf + ||b||_inf)`.
+- Independent faer source inspection confirmed that its default LLT dynamic
+  regularization threshold and replacement value are both zero. The harness
+  contains no jitter, pseudoinverse, densification, or backend fallback.
+- The independent reviewer passed all 10 locked all-feature tests, a locked
+  smoke run, exact direct-version review, and the complete base-to-Repair-head
+  whitespace check. Two cold-build attempts timed out before the same locked
+  test command completed successfully with a separate temporary target.
+- The parent Review task independently passed the same 10 locked all-feature
+  tests, the optimized locked release smoke workload, all 58 requirement
+  checks, and the complete base-to-Repair-head whitespace check.
+- Exact Repair head `7257e67` retains the complete stable standard gate and
+  focused cross-product evidence recorded above. Ready-only Windows, Ubuntu,
+  macOS, and benchmark-smoke CI remains unexecuted and is not claimed.
+- This re-review changes only this evidence record and the bounded handoff. It
+  changes no production or spike code, test, manifest, schema, CI, build input,
+  dependency, benchmark result, or numerical behavior.
+
+PR #115 remains Draft and REQ-SPIKE-003 remains `implemented`, not
+`integrated`. Open a fresh Repair task limited to SPIKE003-REV-003, update the
+phase label, documentation, and regression, run focused and stable-head checks,
+push, and stop for another fresh independent re-review. Do not mark the PR
+ready, merge it, or begin REQ-SPARSE-001.
