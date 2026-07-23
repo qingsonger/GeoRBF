@@ -670,7 +670,7 @@ requirements:
     cpp_api: "N/A: dependency spike exposes no C++ API"
     python_api: "N/A: dependency spike exposes no Python API"
     benchmark: implemented
-    status: implemented
+    status: integrated
 
   - id: REQ-SPARSE-001
     title: Compact-support sparse fitting and evaluation

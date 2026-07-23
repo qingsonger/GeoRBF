@@ -44,6 +44,7 @@ available in Git history through commit `a2be099`.
 | REQ-ANISO-002 | #105 | #106 | #107 | `docs/reviews/PR-106-INDEPENDENT-REVIEW.md` |
 | REQ-TREND-002 | #108 | #109 | #110 | `docs/reviews/PR-109-INDEPENDENT-REVIEW.md` |
 | REQ-ANISO-003 | #111 | #112 | #113 | `docs/reviews/PR-112-INDEPENDENT-REVIEW.md` |
+| REQ-SPIKE-003 | #114 | #115 | #116 | `docs/reviews/PR-115-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
@@ -65,5 +66,7 @@ REQ-NORMAL-001, REQ-TANGENT-001, REQ-THICK-001, and REQ-THICK-002 are
 integrated M5 requirements. This integration-state change adds
 REQ-PROJECT-001, completing M5. This integration-state change adds
 REQ-TREND-001 as the first integrated M6 requirement, REQ-ANISO-002 as the
-second, REQ-TREND-002 as the third, and REQ-ANISO-003 as the fourth; the next
-eligible atomic requirement must be selected by the registry in a fresh task.
+second, REQ-TREND-002 as the third, and REQ-ANISO-003 as the fourth. This
+integration-state change adds REQ-SPIKE-003 as the first integrated M7
+requirement; the next eligible atomic requirement must be selected by the
+registry in a fresh task.

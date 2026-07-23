@@ -383,3 +383,30 @@ and does not invalidate that gate. REQ-SPIKE-003 remains `implemented` until
 PR #115 passes the complete exact Ready-head Windows, Ubuntu, and macOS matrix
 with every benchmark smoke, merges exactly once, and the isolated integration
 state is recorded.
+
+## Integration evidence
+
+- Exact Ready evidence head:
+  `60527129d29dd9eab0e2e6a2d1fcad2dfd5e7e82`
+- Ready CI run: 29984412613
+- Squash merge: `97fabfa213721309bf5431d1f041fe0a66a4011b`
+- Post-merge `main` CI run: 29985301861
+- Integration-state branch: `codex/req-spike-003-integration-state`
+- Integration-state pull request: #116
+
+Ready CI run 29984412613 passed the complete Windows, Ubuntu, and macOS
+workspace gate on exact Ready head `6052712`, including every configured
+backend combination, every benchmark-smoke workload, and requirement
+validation. PR #115 then squash-merged exactly once as `97fabfa`; Issue #114
+closed as completed. Post-merge `main` CI run 29985301861 passed the same
+complete three-platform gate on exact merge commit `97fabfa`.
+
+The isolated integration-state change updates only the requirement registry,
+this review evidence, the completed-history index, and the bounded handoff. It
+changes no production code, test, manifest, schema, CI, build input, public
+API, numerical behavior, dependency, tag, or release. The requirement may be
+recorded as `integrated` in this change because implementation, tests,
+documentation, applicable interfaces, diagnostics, independent review, exact
+Ready-head CI, the implementation merge, and post-merge `main` CI are complete.
+The integration-state pull request itself must still pass its complete local
+standard gate and exact Ready-head CI before it merges.
