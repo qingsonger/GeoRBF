@@ -565,7 +565,7 @@ begin REQ-CENTER-001.
 - Squash merge: `ce93a9862690399c36de7c34dcfd4cd4dbf2ee8c`
 - Post-merge `main` CI run: 29999737528
 - Integration-state branch: `codex/req-sparse-001-integration-state`
-- Integration-state pull request: pending creation
+- Integration-state pull request: #119
 
 Ready CI run 29998141180 passed the complete Windows, Ubuntu, and macOS
 workspace gate on exact Ready head `4c436b6`, including every configured
