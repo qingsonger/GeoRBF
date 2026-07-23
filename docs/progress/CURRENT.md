@@ -18,6 +18,7 @@ records, benchmark reports, Git, and GitHub.
 - Handoff-repair post-merge `main` CI: run 30050847919
 - Merge-stable handoff branch:
   `codex/issue-123-center-handoff-integration-state`
+- Merge-stable handoff pull request: #125; consult GitHub for its live state
 - Dependencies: REQ-SOLVE-001 and REQ-MODEL-001 are integrated
 - Registry status: `integrated`
 
@@ -89,9 +90,8 @@ records, benchmark reports, Git, and GitHub.
 
 Perform the mandatory preflight first.
 
-- If GitHub has an open pull request for
-  `codex/issue-123-center-handoff-integration-state`, start a fresh Review and
-  handle only that pull request. Independently review its one-file
+- If GitHub PR #125 is open, start a fresh Review and handle only that pull
+  request. Independently review its one-file
   documentation-only delta against `2eb618b`. If no P0--P3 finding remains,
   mark it Ready, wait for complete Windows, Ubuntu, and macOS benchmark-smoke
   CI on that exact Ready head, and merge exactly once only when green.
@@ -111,6 +111,7 @@ Do not begin REQ-TUNE-001 in the integration-state Review task.
 - Merged handoff repair: GitHub PR #124
 - Merge-stable handoff branch:
   `codex/issue-123-center-handoff-integration-state`
+- Merge-stable handoff integration state: GitHub PR #125
 - Handoff repair review: `docs/reviews/PR-124-INDEPENDENT-REVIEW.md`
 - Independent review: `docs/reviews/PR-121-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-CENTER-001.md`
