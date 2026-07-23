@@ -276,6 +276,11 @@ separate later requirements that map to this one Rust source of truth.
 Dense assembly computes only required symmetric work in blocks and reuses
 per-thread storage. Compact-support paths use a neighborhood index and sparse
 storage, reject nonrepresentable candidate bounds, retain stored-nonzero,
-density, coverage, memory, ordering, and original-unit residual evidence, and
-never densify or fall back. Performance changes are accepted only with
-fixed-data baselines and documented hardware and thread settings.
+density, exact-support coverage independent of numerically zero functional
+actions, ordering, and original-unit residual evidence, and never densify or
+fall back. Their explicit memory review sums every simultaneously live logical
+component: index construction, accepted-pair and reflected-entry capacities,
+canonical equality capacities, row work, retained CSC and right-hand side,
+the complete borrowed solve system, backend CSC copy, conservative factor
+fill, vectors, and exact residual work. Performance changes are accepted only
+with fixed-data baselines and documented hardware and thread settings.

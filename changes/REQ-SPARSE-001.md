@@ -20,10 +20,14 @@ full symmetric CSC without a dense intermediate.
 
 `SparseFitOptions` requires an explicit nonzero memory limit and selected
 `FaerLlt` factorization. Diagnostics retain indexed terms, raw candidate hits,
-exact supported pairs, isolated and minimum/maximum row coverage, stored
-nonzeros, density, retained payload, effective limit, faer 0.24.4, AMD
-ordering, conservative worst-case factor fill, and exact original-unit
-residual evidence. The fixed acceptance tolerance is
+exact supported pairs, exact-support row coverage independent of numeric kernel
+zeros, stored nonzeros, density, effective limit, faer 0.24.4, AMD ordering,
+and exact original-unit residual evidence. Assembly memory evidence separately
+sums the retained index, canonical equality capacities, CSC, right-hand side,
+accepted-pair, reflected-entry, row-buffer, and bulk-load payloads at each
+checked stage. Solve evidence adds the complete borrowed retained system,
+backend CSC copy, conservative dense lower-triangle factor fill, vectors, and
+exact accumulators. The fixed acceptance tolerance is
 `128 * dimension * epsilon`. Singular systems, nonrepresentable neighborhoods,
 allocation and memory limits, cancellation, unsupported thread counts,
 nonfinite solutions, and residual failures are structured errors. No jitter,
@@ -39,14 +43,18 @@ index and coefficients remain immutable, cloneable, deterministic, and
 `Send + Sync`; third-party point, tree, matrix, and factorization types are not
 public.
 
-Six independent integration tests cover the hand-derived three-point
+Nine independent integration tests cover the hand-derived three-point
 Wendland C2 CSC and analytic solution; the exact support-boundary structural
 zero; dense-sparse coefficient/value/gradient/Hessian parity in D=1/D=2/D=3;
-mixed Value and DirectionalDerivative representers; local-center evaluation
-counts; conservative anisotropic candidates with exact support filtering;
-512-point storage scaling and coverage; and explicit cancellation,
-memory-limit, canonical conflict, and singular-factorization failures.
-Existing field, model, and execution suites remain green.
+mixed and co-located Value and DirectionalDerivative representers, including
+an exact-zero action retained by the support-coverage graph; local-center
+evaluation counts; conservative anisotropic candidates with exact support
+filtering; repeated complete CSC and diagnostic determinism; 64-point versus
+512-point bounded-neighbor growth; exact assembly and solve memory sums with
+limits between retained, assembly-peak, and solve-peak payloads; hard canonical
+conflict; assembly and solve cancellation; nonrepresentable candidate radius;
+and singular-factorization rejection. Existing field, model, and execution
+suites remain green.
 
 The production re-audit retains the exact versions and default-disabled
 features selected by ADR-0012: rstar 0.13.0 and faer 0.24.4 with `std` and

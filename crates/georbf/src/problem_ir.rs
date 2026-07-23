@@ -1544,6 +1544,59 @@ impl CanonicalProblem {
     pub const fn memory_estimate(&self) -> CanonicalMemoryEstimate {
         self.memory_estimate
     }
+
+    pub(crate) fn equality_payload_capacity_bytes(&self) -> Option<usize> {
+        if !self.linear_bounds.is_empty()
+            || !self.cones.is_empty()
+            || !self.soft_objectives.is_empty()
+        {
+            return None;
+        }
+
+        let mut bytes = self
+            .variable_space
+            .blocks
+            .capacity()
+            .checked_mul(std::mem::size_of::<LocatedVariableBlock>())?;
+        for located in &self.variable_space.blocks {
+            bytes = bytes.checked_add(located.block.name.capacity())?;
+        }
+        bytes = bytes.checked_add(
+            self.equalities
+                .capacity()
+                .checked_mul(std::mem::size_of::<CanonicalEquality>())?,
+        )?;
+        for equality in &self.equalities {
+            bytes = bytes.checked_add(
+                equality
+                    .row
+                    .terms
+                    .capacity()
+                    .checked_mul(std::mem::size_of::<AffineTerm>())?,
+            )?;
+            let provenance = &equality.provenance;
+            bytes = bytes
+                .checked_add(provenance.source.path.capacity())?
+                .checked_add(provenance.original_units.capacity())?
+                .checked_add(provenance.field_path.capacity())?
+                .checked_add(
+                    provenance
+                        .constraint_group
+                        .as_ref()
+                        .map_or(0, String::capacity),
+                )?;
+        }
+        for capacity in [
+            self.scaling.variable.capacity(),
+            self.scaling.equality.capacity(),
+            self.scaling.linear_bound.capacity(),
+            self.scaling.cone.capacity(),
+            self.scaling.soft_objective.capacity(),
+        ] {
+            bytes = bytes.checked_add(capacity.checked_mul(std::mem::size_of::<f64>())?)?;
+        }
+        Some(bytes)
+    }
 }
 
 /// Storage category used by allocation diagnostics.

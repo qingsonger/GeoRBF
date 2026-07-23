@@ -29,7 +29,8 @@ use crate::kernel::Wendland;
 use crate::kernel_calculus::{KernelCalculusError, RadialSeparation};
 use crate::model::{KernelDefinition, KernelDefinitionEvaluationError};
 use crate::problem_ir::{
-    AffineExpression, AffineTerm, CanonicalProblem, ExecutionOptions, VariableBlock,
+    AffineExpression, AffineTerm, CanonicalEquality, CanonicalProblem, ExecutionOptions,
+    VariableBlock,
 };
 use crate::solver::ExactDotAccumulator;
 
@@ -194,6 +195,42 @@ pub struct CompactNeighborhoodDiagnostics {
     pub maximum_row_neighbors: usize,
 }
 
+/// Checked retained and peak logical-memory evidence for sparse assembly.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[must_use]
+pub struct SparseAssemblyMemoryDiagnostics {
+    /// Retained immutable neighborhood-index payload.
+    pub retained_index_bytes: usize,
+    /// Retained canonical equality payload, including allocation capacities.
+    pub retained_canonical_bytes: usize,
+    /// Retained CSC allocation capacities.
+    pub retained_matrix_bytes: usize,
+    /// Retained right-hand-side allocation capacity.
+    pub retained_rhs_bytes: usize,
+    /// Temporary accepted-pair allocation capacity at the assembly peak.
+    pub temporary_neighbor_pairs_bytes: usize,
+    /// Temporary reflected-entry allocation capacity at the assembly peak.
+    pub temporary_entries_bytes: usize,
+    /// Temporary canonical row-offset allocation capacity at the assembly peak.
+    pub temporary_row_offsets_bytes: usize,
+    /// Temporary support-coverage allocation capacity at the assembly peak.
+    pub temporary_row_neighbors_bytes: usize,
+    /// Temporary bulk-load item payload during index construction.
+    pub temporary_index_items_bytes: usize,
+    /// Conservative canonical payload checked before canonical allocation.
+    pub canonicalization_payload_upper_bound_bytes: usize,
+    /// Sum of the four retained logical components.
+    pub estimated_retained_bytes: usize,
+    /// Index plus temporary bulk-load items.
+    pub index_construction_peak_bytes: usize,
+    /// Simultaneously live index, pairs, entries, row buffers, and canonical payload.
+    pub canonicalization_peak_bytes: usize,
+    /// Simultaneously live retained storage and assembly temporaries.
+    pub storage_materialization_peak_bytes: usize,
+    /// Maximum of every explicitly checked assembly-stage sum.
+    pub estimated_peak_bytes: usize,
+}
+
 /// Sparse field-assembly evidence.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[must_use]
@@ -210,6 +247,8 @@ pub struct SparseFieldAssemblyDiagnostics {
     pub maximum_absolute_entry: f64,
     /// Checked conservative logical sparse-payload estimate.
     pub estimated_storage_bytes: usize,
+    /// Checked retained and assembly-peak logical memory evidence.
+    pub memory: SparseAssemblyMemoryDiagnostics,
     /// Effective explicit memory limit.
     pub memory_limit_bytes: usize,
     /// Neighborhood and coverage evidence.
@@ -678,6 +717,15 @@ where
                 memory_limit_bytes,
             ),
         )?;
+        let retained_index_bytes = retained_index_payload_bytes::<D>(neighborhood.indexed_terms)?;
+        let mut checked_assembly_peak =
+            index_construction_peak_bytes::<D>(neighborhood.indexed_terms)?;
+        let initial_pair_bytes = capacity_bytes::<NeighborPair, D>(centers)?;
+        observe_assembly_peak(
+            &mut checked_assembly_peak,
+            &[retained_index_bytes, initial_pair_bytes],
+            memory_limit_bytes,
+        )?;
         let mut pairs = try_with_capacity(
             centers,
             SparseStorage::NeighborPairs,
@@ -724,6 +772,8 @@ where
                             },
                             SparseStorage::NeighborPairs,
                             memory_limit_bytes,
+                            retained_index_bytes,
+                            &mut checked_assembly_peak,
                         )?;
                     }
                 }
@@ -734,8 +784,25 @@ where
         pairs.dedup_by_key(|pair| (pair.row, pair.column));
 
         let definition = KernelDefinition::from(kernel);
+        let entry_capacity = pairs
+            .len()
+            .checked_mul(2)
+            .ok_or(SparseFieldAssemblyError::CountOverflow)?;
+        let pair_capacity_bytes = capacity_bytes::<NeighborPair, D>(pairs.capacity())?;
+        let entry_capacity_bytes = capacity_bytes::<SparseEntry, D>(entry_capacity)?;
+        let row_neighbor_bytes = capacity_bytes::<usize, D>(centers)?;
+        observe_assembly_peak(
+            &mut checked_assembly_peak,
+            &[
+                retained_index_bytes,
+                pair_capacity_bytes,
+                entry_capacity_bytes,
+                row_neighbor_bytes,
+            ],
+            memory_limit_bytes,
+        )?;
         let mut entries = try_with_capacity(
-            pairs.len().saturating_mul(2),
+            entry_capacity,
             SparseStorage::Entries,
             assembly_allocation::<D>,
         )?;
@@ -772,35 +839,27 @@ where
                         source,
                     }))
                 })?;
-            if value != 0.0 {
-                maximum_absolute_entry = maximum_absolute_entry.max(value.abs());
-                try_push_limited(
-                    &mut entries,
-                    SparseEntry {
-                        row: pair.row,
-                        column: pair.column,
-                        value,
-                    },
-                    SparseStorage::Entries,
-                    memory_limit_bytes,
-                )?;
-                row_neighbors[pair.row] = row_neighbors[pair.row]
+            row_neighbors[pair.row] = row_neighbors[pair.row]
+                .checked_add(1)
+                .ok_or(SparseFieldAssemblyError::CountOverflow)?;
+            if pair.row != pair.column {
+                row_neighbors[pair.column] = row_neighbors[pair.column]
                     .checked_add(1)
                     .ok_or(SparseFieldAssemblyError::CountOverflow)?;
+            }
+            if value != 0.0 {
+                maximum_absolute_entry = maximum_absolute_entry.max(value.abs());
+                entries.push(SparseEntry {
+                    row: pair.row,
+                    column: pair.column,
+                    value,
+                });
                 if pair.row != pair.column {
-                    try_push_limited(
-                        &mut entries,
-                        SparseEntry {
-                            row: pair.column,
-                            column: pair.row,
-                            value,
-                        },
-                        SparseStorage::Entries,
-                        memory_limit_bytes,
-                    )?;
-                    row_neighbors[pair.column] = row_neighbors[pair.column]
-                        .checked_add(1)
-                        .ok_or(SparseFieldAssemblyError::CountOverflow)?;
+                    entries.push(SparseEntry {
+                        row: pair.column,
+                        column: pair.row,
+                        value,
+                    });
                 }
             }
             progress.advance(ExecutionStage::KernelAssembly)?;
@@ -813,7 +872,36 @@ where
             return Err(SparseFieldAssemblyError::NotSymmetric { row: 0, column: 0 });
         }
 
+        let row_offset_count = centers
+            .checked_add(1)
+            .ok_or(SparseFieldAssemblyError::CountOverflow)?;
+        let row_offset_bytes = capacity_bytes::<usize, D>(row_offset_count)?;
+        observe_assembly_peak(
+            &mut checked_assembly_peak,
+            &[
+                retained_index_bytes,
+                pair_capacity_bytes,
+                capacity_bytes::<SparseEntry, D>(entries.capacity())?,
+                capacity_bytes::<usize, D>(row_neighbors.capacity())?,
+                row_offset_bytes,
+            ],
+            memory_limit_bytes,
+        )?;
         let row_offsets = row_offsets(centers, &entries)?;
+        let canonical_upper_bound =
+            canonical_equality_payload_upper_bound(self, centers, entries.len())?;
+        observe_assembly_peak(
+            &mut checked_assembly_peak,
+            &[
+                retained_index_bytes,
+                pair_capacity_bytes,
+                capacity_bytes::<SparseEntry, D>(entries.capacity())?,
+                capacity_bytes::<usize, D>(row_neighbors.capacity())?,
+                capacity_bytes::<usize, D>(row_offsets.capacity())?,
+                canonical_upper_bound,
+            ],
+            memory_limit_bytes,
+        )?;
         let mut next_row = 0_usize;
         let canonical = self
             .semantic_problem()
@@ -856,10 +944,41 @@ where
                 )))
             })?;
         progress.advance(ExecutionStage::Canonicalization)?;
+        let retained_canonical_bytes = canonical
+            .equality_payload_capacity_bytes()
+            .ok_or(SparseFieldAssemblyError::CountOverflow)?;
+        observe_assembly_peak(
+            &mut checked_assembly_peak,
+            &[
+                retained_index_bytes,
+                pair_capacity_bytes,
+                capacity_bytes::<SparseEntry, D>(entries.capacity())?,
+                capacity_bytes::<usize, D>(row_neighbors.capacity())?,
+                capacity_bytes::<usize, D>(row_offsets.capacity())?,
+                retained_canonical_bytes,
+            ],
+            memory_limit_bytes,
+        )?;
 
         review_exact_symmetry(centers, &entries)?;
         progress.advance(ExecutionStage::SymmetryReview)?;
 
+        let rhs_target_bytes = capacity_bytes::<f64, D>(centers)?;
+        let matrix_target_bytes = matrix_payload_bytes::<D>(centers, entries.len())?;
+        observe_assembly_peak(
+            &mut checked_assembly_peak,
+            &[
+                retained_index_bytes,
+                pair_capacity_bytes,
+                capacity_bytes::<SparseEntry, D>(entries.capacity())?,
+                capacity_bytes::<usize, D>(row_neighbors.capacity())?,
+                capacity_bytes::<usize, D>(row_offsets.capacity())?,
+                retained_canonical_bytes,
+                rhs_target_bytes,
+                matrix_target_bytes,
+            ],
+            memory_limit_bytes,
+        )?;
         let mut rhs = try_filled(
             centers,
             0.0_f64,
@@ -869,17 +988,71 @@ where
         for (row, equality) in canonical.equalities().iter().enumerate() {
             rhs[row] = equality.rhs();
         }
+        let temporary_entries_bytes = capacity_bytes::<SparseEntry, D>(entries.capacity())?;
         entries.sort_unstable_by_key(|entry| (entry.column, entry.row));
         let matrix = materialize_csc(centers, entries)?;
         progress.advance(ExecutionStage::SparseStorage)?;
 
         let stored_nonzeros = matrix.values.len();
-        let estimated_storage_bytes =
-            retained_storage_bytes(centers, neighborhood.indexed_terms, stored_nonzeros)?;
-        enforce_assembly_limit(estimated_storage_bytes, memory_limit_bytes)?;
+        let retained_matrix_bytes = matrix_capacity_bytes::<D>(&matrix)?;
+        let retained_rhs_bytes = capacity_bytes::<f64, D>(rhs.capacity())?;
+        let temporary_neighbor_pairs_bytes = capacity_bytes::<NeighborPair, D>(pairs.capacity())?;
+        let temporary_row_offsets_bytes = capacity_bytes::<usize, D>(row_offsets.capacity())?;
+        let temporary_row_neighbors_bytes = capacity_bytes::<usize, D>(row_neighbors.capacity())?;
+        let estimated_storage_bytes = checked_sum_assembly::<D>(&[
+            retained_index_bytes,
+            retained_canonical_bytes,
+            retained_matrix_bytes,
+            retained_rhs_bytes,
+        ])?;
+        let storage_materialization_peak_bytes = checked_sum_assembly::<D>(&[
+            estimated_storage_bytes,
+            temporary_neighbor_pairs_bytes,
+            temporary_entries_bytes,
+            temporary_row_offsets_bytes,
+            temporary_row_neighbors_bytes,
+        ])?;
+        let temporary_index_items_bytes =
+            capacity_bytes::<IndexedAtom, D>(neighborhood.indexed_terms)?;
+        let index_construction_peak_bytes =
+            checked_sum_assembly::<D>(&[retained_index_bytes, temporary_index_items_bytes])?;
+        let canonicalization_peak_bytes = checked_sum_assembly::<D>(&[
+            retained_index_bytes,
+            temporary_neighbor_pairs_bytes,
+            temporary_entries_bytes,
+            temporary_row_offsets_bytes,
+            temporary_row_neighbors_bytes,
+            canonical_upper_bound,
+        ])?;
+        let estimated_peak_bytes = index_construction_peak_bytes
+            .max(canonicalization_peak_bytes)
+            .max(storage_materialization_peak_bytes);
+        observe_assembly_peak(
+            &mut checked_assembly_peak,
+            &[estimated_peak_bytes],
+            memory_limit_bytes,
+        )?;
+        debug_assert_eq!(checked_assembly_peak, estimated_peak_bytes);
         let isolated_centers = row_neighbors.iter().filter(|&&count| count <= 1).count();
         let minimum_row_neighbors = row_neighbors.iter().copied().min().unwrap_or(0);
         let maximum_row_neighbors = row_neighbors.iter().copied().max().unwrap_or(0);
+        let memory = SparseAssemblyMemoryDiagnostics {
+            retained_index_bytes,
+            retained_canonical_bytes,
+            retained_matrix_bytes,
+            retained_rhs_bytes,
+            temporary_neighbor_pairs_bytes,
+            temporary_entries_bytes,
+            temporary_row_offsets_bytes,
+            temporary_row_neighbors_bytes,
+            temporary_index_items_bytes,
+            canonicalization_payload_upper_bound_bytes: canonical_upper_bound,
+            estimated_retained_bytes: estimated_storage_bytes,
+            index_construction_peak_bytes,
+            canonicalization_peak_bytes,
+            storage_materialization_peak_bytes,
+            estimated_peak_bytes,
+        };
         let diagnostics = SparseFieldAssemblyDiagnostics {
             system_dimension: centers,
             kernel_entry_evaluations: pairs.len(),
@@ -887,6 +1060,7 @@ where
             density: density(centers, stored_nonzeros)?,
             maximum_absolute_entry,
             estimated_storage_bytes,
+            memory,
             memory_limit_bytes,
             neighborhood: CompactNeighborhoodDiagnostics {
                 indexed_terms: neighborhood.indexed_terms,
@@ -923,12 +1097,30 @@ pub struct SparseResidualDiagnostics {
     pub original_backward_error: f64,
 }
 
+/// Checked retained and peak logical-memory evidence for sparse solving.
+#[derive(Clone, Debug, PartialEq)]
+#[must_use]
+pub struct SparseSolveMemoryDiagnostics {
+    /// Complete retained sparse system while the borrowed solve is active.
+    pub retained_system_bytes: usize,
+    /// Backend-owned checked CSC copy.
+    pub backend_matrix_bytes: usize,
+    /// Conservative dense lower-triangle factorization payload.
+    pub factorization_bytes: usize,
+    /// Right-hand sides, solutions, residual work, and exact accumulators.
+    pub working_vector_bytes: usize,
+    /// Sum of every simultaneously live solve component.
+    pub estimated_peak_bytes: usize,
+}
+
 /// Complete evidence for one accepted sparse solution.
 #[derive(Clone, Debug, PartialEq)]
 #[must_use]
 pub struct SparseSolveDiagnostics {
     /// Conservative checked peak payload including dense worst-case fill.
     pub estimated_peak_memory_bytes: usize,
+    /// Checked retained-system and solve-work memory breakdown.
+    pub memory: SparseSolveMemoryDiagnostics,
     /// Effective explicit memory limit.
     pub memory_limit_bytes: usize,
     /// Requested factorization.
@@ -1123,8 +1315,8 @@ where
     )?;
     let dimension = system.matrix.dimension;
     let limit = effective_memory_limit(system.execution, system.options);
-    let estimated_peak_memory_bytes =
-        estimate_sparse_peak_bytes(dimension, system.matrix.values.len())?;
+    let memory = estimate_sparse_peak_bytes(system)?;
+    let estimated_peak_memory_bytes = memory.estimated_peak_bytes;
     if estimated_peak_memory_bytes > limit {
         return Err(SparseSolveError::MemoryLimitExceeded {
             estimated_peak_bytes: estimated_peak_memory_bytes,
@@ -1180,6 +1372,7 @@ where
     progress.advance(ExecutionStage::ResidualReview)?;
     let diagnostics = SparseSolveDiagnostics {
         estimated_peak_memory_bytes,
+        memory,
         memory_limit_bytes: limit,
         requested_factorization: system.options.factorization,
         actual_factorization: system.options.factorization,
@@ -1333,6 +1526,8 @@ fn try_push_limited<const D: usize, T>(
     value: T,
     storage: SparseStorage,
     memory_limit_bytes: usize,
+    fixed_live_bytes: usize,
+    checked_peak_bytes: &mut usize,
 ) -> Result<(), SparseFieldAssemblyError<D>>
 where
     Dim<D>: SupportedDimension,
@@ -1341,17 +1536,110 @@ where
         .len()
         .checked_add(1)
         .ok_or(SparseFieldAssemblyError::CountOverflow)?;
-    let bytes = requested
-        .checked_mul(size_of::<T>())
-        .ok_or(SparseFieldAssemblyError::CountOverflow)?;
-    enforce_assembly_limit(bytes, memory_limit_bytes)?;
     if values.len() == values.capacity() {
+        let target_capacity = values
+            .capacity()
+            .max(1)
+            .checked_mul(2)
+            .map(|capacity| capacity.max(requested))
+            .ok_or(SparseFieldAssemblyError::CountOverflow)?;
+        observe_assembly_peak(
+            checked_peak_bytes,
+            &[fixed_live_bytes, capacity_bytes::<T, D>(target_capacity)?],
+            memory_limit_bytes,
+        )?;
         values
-            .try_reserve(1)
+            .try_reserve_exact(target_capacity - values.len())
             .map_err(|_| SparseFieldAssemblyError::AllocationFailed { storage, requested })?;
     }
+    observe_assembly_peak(
+        checked_peak_bytes,
+        &[fixed_live_bytes, capacity_bytes::<T, D>(values.capacity())?],
+        memory_limit_bytes,
+    )?;
     values.push(value);
     Ok(())
+}
+
+fn capacity_bytes<T, const D: usize>(capacity: usize) -> Result<usize, SparseFieldAssemblyError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    capacity
+        .checked_mul(size_of::<T>())
+        .ok_or(SparseFieldAssemblyError::CountOverflow)
+}
+
+fn checked_sum_assembly<const D: usize>(
+    components: &[usize],
+) -> Result<usize, SparseFieldAssemblyError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    components.iter().try_fold(0_usize, |total, component| {
+        total
+            .checked_add(*component)
+            .ok_or(SparseFieldAssemblyError::CountOverflow)
+    })
+}
+
+fn observe_assembly_peak<const D: usize>(
+    checked_peak_bytes: &mut usize,
+    components: &[usize],
+    memory_limit_bytes: usize,
+) -> Result<(), SparseFieldAssemblyError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let live_bytes = checked_sum_assembly::<D>(components)?;
+    enforce_assembly_limit(live_bytes, memory_limit_bytes)?;
+    *checked_peak_bytes = (*checked_peak_bytes).max(live_bytes);
+    Ok(())
+}
+
+fn canonical_equality_payload_upper_bound<const D: usize>(
+    problem: &FieldProblem<D>,
+    dimension: usize,
+    nonzeros: usize,
+) -> Result<usize, SparseFieldAssemblyError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    let equality_capacity = dimension
+        .checked_next_power_of_two()
+        .ok_or(SparseFieldAssemblyError::CountOverflow)?
+        .max(4);
+    let mut bytes = equality_capacity
+        .checked_mul(size_of::<CanonicalEquality>())
+        .and_then(|part| {
+            nonzeros
+                .checked_mul(size_of::<AffineTerm>())
+                .and_then(|terms| part.checked_add(terms))
+        })
+        .and_then(|total| {
+            size_of::<VariableBlock>()
+                .checked_mul(2)
+                .and_then(|blocks| total.checked_add(blocks))
+        })
+        .and_then(|total| total.checked_add(size_of::<usize>()))
+        .and_then(|total| total.checked_add("center_weights".len()))
+        .and_then(|total| {
+            dimension
+                .checked_mul(2)
+                .and_then(|count| count.checked_mul(size_of::<f64>()))
+                .and_then(|scaling| total.checked_add(scaling))
+        })
+        .ok_or(SparseFieldAssemblyError::CountOverflow)?;
+    for constraint in problem.semantic_problem().constraints() {
+        let provenance = constraint.provenance();
+        bytes = bytes
+            .checked_add(provenance.source().path().len())
+            .and_then(|total| total.checked_add(provenance.original_units().len()))
+            .and_then(|total| total.checked_add(provenance.field_path().len()))
+            .and_then(|total| total.checked_add(provenance.constraint_group().map_or(0, str::len)))
+            .ok_or(SparseFieldAssemblyError::CountOverflow)?;
+    }
+    Ok(bytes)
 }
 
 fn row_offsets<const D: usize>(
@@ -1467,33 +1755,35 @@ where
     })
 }
 
-fn retained_storage_bytes<const D: usize>(
+fn matrix_payload_bytes<const D: usize>(
     dimension: usize,
-    indexed_terms: usize,
     nonzeros: usize,
 ) -> Result<usize, SparseFieldAssemblyError<D>>
 where
     Dim<D>: SupportedDimension,
 {
-    let index_bytes = retained_index_payload_bytes::<D>(indexed_terms)?;
-    Some(index_bytes)
-        .and_then(|bytes| {
-            dimension
-                .checked_add(1)?
-                .checked_mul(size_of::<usize>())
-                .and_then(|part| bytes.checked_add(part))
-        })
+    dimension
+        .checked_add(1)
+        .and_then(|count| count.checked_mul(size_of::<usize>()))
         .and_then(|bytes| {
             nonzeros
                 .checked_mul(size_of::<usize>() + size_of::<f64>())
                 .and_then(|part| bytes.checked_add(part))
         })
-        .and_then(|bytes| {
-            dimension
-                .checked_mul(size_of::<f64>())
-                .and_then(|part| bytes.checked_add(part))
-        })
         .ok_or(SparseFieldAssemblyError::CountOverflow)
+}
+
+fn matrix_capacity_bytes<const D: usize>(
+    matrix: &SparseFieldMatrix,
+) -> Result<usize, SparseFieldAssemblyError<D>>
+where
+    Dim<D>: SupportedDimension,
+{
+    checked_sum_assembly::<D>(&[
+        capacity_bytes::<usize, D>(matrix.column_pointers.capacity())?,
+        capacity_bytes::<usize, D>(matrix.row_indices.capacity())?,
+        capacity_bytes::<f64, D>(matrix.values.capacity())?,
+    ])
 }
 
 fn retained_index_payload_bytes<const D: usize>(
@@ -1542,12 +1832,16 @@ where
     Ok(f64::from(nonzeros_u32) / dense)
 }
 
-fn estimate_sparse_peak_bytes(
-    dimension: usize,
-    nonzeros: usize,
-) -> Result<usize, SparseSolveError> {
+fn estimate_sparse_peak_bytes<const D: usize>(
+    system: &SparseFieldSystem<D>,
+) -> Result<SparseSolveMemoryDiagnostics, SparseSolveError>
+where
+    Dim<D>: SupportedDimension,
+{
+    let dimension = system.matrix.dimension;
+    let nonzeros = system.matrix.values.len();
     let overflow = || SparseSolveError::MemoryEstimateOverflow { dimension };
-    let input = dimension
+    let backend_matrix_bytes = dimension
         .checked_add(1)
         .and_then(|count| count.checked_mul(size_of::<usize>()))
         .and_then(|bytes| {
@@ -1556,12 +1850,12 @@ fn estimate_sparse_peak_bytes(
                 .and_then(|part| bytes.checked_add(part))
         })
         .ok_or_else(overflow)?;
-    let dense_fill = dimension
+    let factorization_bytes = dimension
         .checked_mul(dimension.checked_add(1).ok_or_else(overflow)?)
         .and_then(|count| count.checked_div(2))
         .and_then(|count| count.checked_mul(size_of::<usize>() + size_of::<f64>()))
         .ok_or_else(overflow)?;
-    let vectors = dimension
+    let working_vector_bytes = dimension
         .checked_mul(
             6_usize
                 .checked_mul(size_of::<f64>())
@@ -1569,11 +1863,19 @@ fn estimate_sparse_peak_bytes(
                 .ok_or_else(overflow)?,
         )
         .ok_or_else(overflow)?;
-    input
-        .checked_mul(2)
-        .and_then(|bytes| bytes.checked_add(dense_fill))
-        .and_then(|bytes| bytes.checked_add(vectors))
-        .ok_or_else(overflow)
+    let retained_system_bytes = system.diagnostics.estimated_storage_bytes;
+    let estimated_peak_bytes = retained_system_bytes
+        .checked_add(backend_matrix_bytes)
+        .and_then(|bytes| bytes.checked_add(factorization_bytes))
+        .and_then(|bytes| bytes.checked_add(working_vector_bytes))
+        .ok_or_else(overflow)?;
+    Ok(SparseSolveMemoryDiagnostics {
+        retained_system_bytes,
+        backend_matrix_bytes,
+        factorization_bytes,
+        working_vector_bytes,
+        estimated_peak_bytes,
+    })
 }
 
 fn try_copy_usize(

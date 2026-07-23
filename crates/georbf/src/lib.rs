@@ -219,10 +219,11 @@ pub use solver::{
     try_solve_field_with_control,
 };
 pub use sparse::{
-    CompactNeighborhoodDiagnostics, CompactNeighborhoodError, SparseFactorization,
-    SparseFieldAssemblyDiagnostics, SparseFieldAssemblyError, SparseFieldMatrix, SparseFieldSystem,
-    SparseFitOptions, SparseResidualDiagnostics, SparseSolution, SparseSolveDiagnostics,
-    SparseSolveError, SparseStorage, try_solve_sparse_field, try_solve_sparse_field_with_control,
+    CompactNeighborhoodDiagnostics, CompactNeighborhoodError, SparseAssemblyMemoryDiagnostics,
+    SparseFactorization, SparseFieldAssemblyDiagnostics, SparseFieldAssemblyError,
+    SparseFieldMatrix, SparseFieldSystem, SparseFitOptions, SparseResidualDiagnostics,
+    SparseSolution, SparseSolveDiagnostics, SparseSolveError, SparseSolveMemoryDiagnostics,
+    SparseStorage, try_solve_sparse_field, try_solve_sparse_field_with_control,
 };
 pub use tangent_observations::{
     DerivativeGaugeAnchor, TangentObservation, TangentObservationError, TangentProblem,

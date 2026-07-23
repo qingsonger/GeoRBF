@@ -56,12 +56,18 @@ calculation proves `radius < support_radius`.
 Sparse assembly evaluates only sorted unique support-neighbor representer
 pairs, reflects one finite value exactly, compiles the same hard equalities,
 and materializes sorted-unique full symmetric CSC without a dense intermediate.
+Support coverage is derived from that exact-support pair graph, not from
+whether a particular functional action happens to evaluate to zero.
 Sparse solving copies that validated storage once into the private faer
 boundary, selects lower-triangle LLT with AMD ordering, and independently
 reviews the solution with the fixed exact-binary accumulator in original
 units. The residual tolerance is `128*n*epsilon`. A conservative peak payload
-includes two CSC copies, vectors, exact residual accumulators, and a dense
-lower-triangle upper bound for symbolic/numeric fill before backend dispatch.
+checks and records the sum at each assembly stage, including the retained
+index, accepted-pair and reflected-entry capacities, canonical equality
+capacities, row work, CSC, and right-hand side. Solve review adds the complete
+borrowed retained system, one backend CSC copy, vectors, exact residual
+accumulators, and a dense lower-triangle upper bound for symbolic/numeric fill
+before backend dispatch.
 Failure is explicit: no equilibration, refinement, regularization, jitter,
 diagonal substitution, pseudoinverse, densification, constraint relaxation,
 or factorization fallback is enabled.
