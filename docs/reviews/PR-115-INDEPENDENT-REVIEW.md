@@ -392,7 +392,7 @@ state is recorded.
 - Squash merge: `97fabfa213721309bf5431d1f041fe0a66a4011b`
 - Post-merge `main` CI run: 29985301861
 - Integration-state branch: `codex/req-spike-003-integration-state`
-- Integration-state pull request: pending creation
+- Integration-state pull request: #116
 
 Ready CI run 29984412613 passed the complete Windows, Ubuntu, and macOS
 workspace gate on exact Ready head `6052712`, including every configured

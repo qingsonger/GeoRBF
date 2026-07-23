@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-SPIKE-003, closed Issue #114
 - Implementation pull request: #115, squash-merged as `97fabfa`
 - Integration-state branch: `codex/req-spike-003-integration-state`
-- Integration-state pull request: pending creation
+- Integration-state pull request: #116 (Draft until exact Ready CI is green)
 - Repair implementation and stable full-gate head: `83ba364`
 - Exact Ready head: `6052712`
 - Closed findings: P1 SPIKE003-REV-001, P2 SPIKE003-REV-002, and
@@ -60,17 +60,15 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-Create the isolated integration-state pull request, record its number in the
-review, history index, and this handoff, then run the complete local standard
-gate. Mark that PR Ready, wait for exact Ready-head Windows, Ubuntu, macOS, and
-benchmark-smoke CI, merge only if green, and stop. Do not start
-REQ-SPARSE-001.
+Run the complete local standard gate on the final integration-state head. Mark
+PR #116 Ready, wait for exact Ready-head Windows, Ubuntu, macOS, and
+benchmark-smoke CI, merge only if green, and stop. Do not start REQ-SPARSE-001.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: closed GitHub Issue #114
 - Merged implementation: GitHub PR #115
-- Integration-state pull request: pending creation
+- Integration-state pull request: GitHub PR #116
 - Requirement summary: `changes/REQ-SPIKE-003.md`
 - Independent review: `docs/reviews/PR-115-INDEPENDENT-REVIEW.md`
 - Reproducible harness: `spikes/sparse-backends/`
