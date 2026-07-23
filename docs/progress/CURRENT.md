@@ -6,13 +6,14 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; Repair required
+- Mode: Repair complete; fresh independent re-review required
 - Requirement: REQ-ANISO-003, Issue #111
 - Branch: `codex/req-aniso-003-export-diagnostics`
 - Draft pull request: #112
 - Base: `main` at `37cb91d` after REQ-TREND-002 integration
 - Reviewed head: `a698362`
-- Stable full-gate head: `98c72dc`
+- Repair head: `4426a30`
+- Stable full-gate head: `4426a30`
 - Dependencies: REQ-ANISO-002 and REQ-TREND-002 are integrated
 - Registry state in this change: `in_progress`
 
@@ -39,16 +40,18 @@ records, benchmark reports, Git, and GitHub.
 - A fresh read-only project `math_reviewer` reviewed the bounded requirement,
   integrated dependency closure, Issue #111, M6 plan, ANISOTROPY and
   ADR-0005/ADR-0008 contracts, complete PR diff, tests, and validation evidence.
-- ANISO003-REV-001 (P2) is open: the required independent diagnostic-schema
-  test does not assert exported axis components and provenance, axis-length
-  pairing, ellipsoid tolerance, exact per-control condition numbers, or the
-  summary maximum condition number.
+- Repair head `4426a30` addresses ANISO003-REV-001 by extending the independent
+  diagnostic-schema test with exact exported axis components and provenance,
+  axis-length pairing, ellipsoid tolerance, per-control condition numbers, and
+  the summary maximum condition number.
 - Independent truth for the existing orthogonal test fixtures is condition two
   for the `(3, 1.5)` spheroid, four for the `[4, 1]` ellipsoid, one for the
   isotropic background, and four for the mixture summary. The expected axes are
   spheroid `(1, 0)` and caller-ordered ellipsoid `(-1, 0)`, `(0, 1)`.
 - No other P0-P3 finding was identified. Durable evidence is in
   `docs/reviews/PR-112-INDEPENDENT-REVIEW.md`.
+- The finding is not self-closed: a fresh read-only independent re-review must
+  confirm the repair and check the repaired head for new findings.
 
 ## Validation state
 
@@ -56,27 +59,25 @@ records, benchmark reports, Git, and GitHub.
   low-confidence, direction-jump, coverage, dimension, and error-path cases.
 - The module's compile-fail D=4 Rustdoc test passes.
 - Focused warning-denying Clippy and the runnable example pass.
-- Exact stable head `98c72dc` passed workspace format, warning-denying workspace
+- Exact repair head `4426a30` passed workspace format, warning-denying workspace
   all-target/all-feature Clippy, all-feature workspace tests, all workspace
   Rustdoc tests, all 58 requirement checks, and complete diff whitespace
   validation.
-- The final evidence-tail update changes only Markdown validation records. It
-  changes no production code, test, manifest, registry, schema, CI, build input,
-  API, numerical behavior, or dependency, so the immutable `98c72dc` full gate
-  remains applicable.
-- This Review task passed the four focused integration tests, the D=4
-  compile-fail Rustdoc test, the runnable example, and diff whitespace
-  validation on reviewed head `a698362`. Draft Ubuntu CI is green on that head.
+- The Repair passed all four focused integration tests, the D=4 compile-fail
+  Rustdoc test, the runnable example, and warning-denying focused Clippy.
+- The repair changes only the independent test; production code, API,
+  numerical behavior, manifests, registry state, schema, CI, and dependencies
+  are unchanged.
 
 ## Next task boundary
 
-Open a fresh Repair task for only ANISO003-REV-001 on PR #112. Extend the
-existing diagnostic-schema test with exact axis/provenance, pairing, tolerance,
-per-control condition-number, and summary-maximum assertions. Change production
-code only if that regression exposes a defect. Run focused checks and one final
-complete standard gate after the last test or code change, update review
-evidence and this handoff, commit, push, and stop for fresh independent
-re-review. Do not start another requirement.
+Open a fresh Review/re-review task for only PR #112 and REQ-ANISO-003. Supply a
+fresh read-only project `math_reviewer` with the bounded requirement and
+dependency summaries, normative documents, Issue #111, complete repaired PR
+diff, original finding, and validation evidence. Independently confirm whether
+ANISO003-REV-001 is closed and check for new P0-P3 findings. If clean, follow
+the mandatory ready-CI-merge-integration sequence; if any finding remains,
+record it and stop for another Repair. Do not start another requirement.
 
 ## Durable evidence
 

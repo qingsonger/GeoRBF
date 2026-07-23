@@ -5,11 +5,12 @@
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/112
 - Branch: `codex/req-aniso-003-export-diagnostics`
 - Reviewed head: `a698362a420dfe3743471cefe2fa14a52b76e991`
-- Stable full-gate head: `98c72dcda7a348fdcded0d0daa5703c87d192c9a`
+- Repair head: `4426a303f5f9e22985514330a8f8194dd7ea887d`
+- Stable full-gate head: `4426a303f5f9e22985514330a8f8194dd7ea887d`
 - Base head: `37cb91d`
 - Review date: 2026-07-23
-- Result: P2 finding ANISO003-REV-001 requires Repair; no other P0-P3
-  finding was identified
+- Result: Repair evidence recorded for ANISO003-REV-001; fresh independent
+  re-review is required before the finding can be closed
 
 ## Scope and independence
 
@@ -69,6 +70,32 @@ is indicated by this finding unless the new regression exposes one.
 
 No additional P0, P1, P2, or P3 finding was identified.
 
+## Repair evidence
+
+Repair head `4426a30` changes only the independent
+`diagnostic_schema_preserves_controls_background_weights_and_coverage` test.
+It adds exact assertions for:
+
+- the spheroid axis `(1, 0)`, explicit provenance, and paired lengths
+  `(3, 1.5)`;
+- the caller-ordered ellipsoid axes `(-1, 0)` and `(0, 1)`, explicit
+  provenance for both, paired lengths `[4, 1]`, and the caller's exact
+  `8 epsilon` orthogonality tolerance;
+- per-control condition numbers two and four; and
+- the mixture summary maximum condition number four.
+
+The regression passes against the existing implementation, so this Repair
+changes no production code, API, numerical behavior, manifest, registry,
+schema, or dependency. All four focused diagnostic integration tests and
+warning-denying focused Clippy pass. Exact repair head `4426a30` also passes
+workspace format, warning-denying workspace all-target/all-feature Clippy,
+all-feature workspace tests, all workspace Rustdoc tests, all 58 requirement
+checks, and complete diff whitespace validation.
+
+This evidence shows the requested regression was added but does not
+self-resolve the independent finding. A fresh read-only re-review must confirm
+ANISO003-REV-001 is closed and check for new P0-P3 findings.
+
 ## Validation and disposition
 
 - The parent Review task passed all four public `anisotropy_diagnostics`
@@ -77,15 +104,10 @@ No additional P0, P1, P2, or P3 finding was identified.
 - Draft CI passed its configured Ubuntu correctness gate on the same reviewed
   head. The Ready-only Windows, Ubuntu, macOS, and benchmark-smoke matrix was
   skipped as designed and is not claimed as passed.
-- Exact stable head `98c72dc` retains the complete Implement gate: workspace
-  format, warning-denying all-target/all-feature Clippy, all-feature workspace
-  tests, workspace Rustdoc, all 58 requirement checks, and complete diff
-  whitespace validation. The tail through reviewed head `a698362` changes only
-  Markdown validation evidence.
-- The full workspace gate was not rerun in this Review task. Nextest, deny,
-  audit, semver, Miri, sanitizers, fuzzing, mutation testing, and API/ABI/schema
-  snapshots remain unavailable or deferred. No unexecuted check is claimed as
-  passed.
+- Exact repair head `4426a30` now supplies the complete stable full gate.
+  Nextest, deny, audit, semver, Miri, sanitizers, fuzzing, mutation testing,
+  and API/ABI/schema snapshots remain unavailable or deferred. No unexecuted
+  check is claimed as passed.
 - Signed weights and squared coverage have the documented dimensions and
   independent hand calculation. The export preserves the strict-background
   diagonal-congruence SPD proof, adds no CPD path, changes no Hessian
@@ -93,7 +115,6 @@ No additional P0, P1, P2, or P3 finding was identified.
   refit, or field mutation.
 
 PR #112 remains Draft and REQ-ANISO-003 remains `in_progress`, not integrated.
-A fresh Repair task must address only ANISO003-REV-001, run the focused tests
-and one complete stable-head standard gate after its final test change, update
-this record and the bounded handoff, push, and stop for fresh independent
-re-review. Do not begin another requirement.
+A fresh Review task must independently re-review repair head `4426a30`, confirm
+whether ANISO003-REV-001 is closed, and check for new findings. Do not begin
+another requirement.

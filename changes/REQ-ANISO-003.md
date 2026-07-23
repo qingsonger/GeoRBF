@@ -42,11 +42,13 @@ rejection, and `Send + Sync`. A runnable example demonstrates format-neutral
 point sampling. The benchmark obligation is N/A because diagnostic export is
 an explicit owned operation outside evaluation hot paths.
 
-Exact stable head `98c72dc` passed workspace format, warning-denying workspace
-all-target/all-feature Clippy, all-feature workspace tests, all workspace
-Rustdoc tests, all 58 requirement checks, and complete diff whitespace
-validation. The following evidence-tail commit changes Markdown only and does
-not invalidate that immutable full gate.
+Repair head `4426a30` extends the independent diagnostic-schema regression
+with exact resolved axes and provenance, axis-length pairing, ellipsoid
+tolerance, both control condition numbers, and the summary maximum. It changes
+no production code. That exact tree passed workspace format, warning-denying
+workspace all-target/all-feature Clippy, all-feature workspace tests, all
+workspace Rustdoc tests, all 58 requirement checks, and complete diff
+whitespace validation.
 
 Rust is implemented. CLI and versioned schemas are N/A until M8 persistence
 and complete-CLI requirements. C, C++, and Python are N/A until M9 adapter and
