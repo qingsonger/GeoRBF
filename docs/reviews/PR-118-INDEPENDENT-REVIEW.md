@@ -7,8 +7,10 @@
 - Reviewed head: `806bbff67753de37322d1e1d9298e69610438eea`
 - Base head: `c6696f2b75a0b492f10bccb90f8ef3059e3f8eb9`
 - Stable implementation gate head: `a0fd9fe`
+- Repair implementation and gate head: `a24699525aa811f2a55b3eecf880eb64e685ee76`
 - Review date: 2026-07-23
-- Result: one P1 and two P2 findings require Repair; no P0 or P3 finding
+- Result: the original review found one P1 and two P2 findings; Repair
+  addressed all three, pending fresh independent re-review
 
 ## Scope and independence
 
@@ -121,6 +123,46 @@ regressions actually establish.
 
 No other P0, P1, P2, or P3 finding was identified.
 
+## Repair evidence
+
+Repair commit `a24699525aa811f2a55b3eecf880eb64e685ee76`
+addresses only SPARSE001-REV-001, SPARSE001-REV-002, and
+SPARSE001-REV-003:
+
+- SPARSE001-REV-001: assembly now checks aggregate live payloads before index,
+  pair, entry, row, canonical, right-hand-side, and CSC allocation stages.
+  Public diagnostics separately sum retained index, canonical allocation
+  capacities, CSC, right-hand side, pair, entry, row, and bulk-load
+  components, and record the maximum checked stage. Sparse solve adds the
+  complete retained borrowed system to its backend CSC, conservative dense
+  factor fill, vector, and exact-accumulator sum. The
+  `peak_memory_diagnostics_and_stage_limits_are_exact` regression proves every
+  published sum, rejects an assembly limit equal to retained storage, permits
+  assembly at the assembly peak, and rejects solve at that same limit.
+- SPARSE001-REV-002: support coverage now increments from every sorted unique
+  exact-support pair before kernel action zero filtering. The
+  `exact_support_coverage_includes_zero_colocated_actions` regression uses
+  co-located Value and DirectionalDerivative representers, requires three
+  upper-triangle support pairs and an exact-zero cross action, and requires
+  zero isolated centers with two neighbors in both rows.
+- SPARSE001-REV-003: the sparse suite now repeats and compares complete CSC,
+  right-hand side, and diagnostics; requires the source-aware hard canonical
+  conflict for repeated locations with distinct targets; exercises
+  solve-stage cancellation and memory rejection; rejects an otherwise finite
+  fixture whose candidate radius is unrepresentable; and compares fixed 64-
+  and 512-point grids with bounded nonzeros per point and growth materially
+  below dense-square storage. The change fragment now names only directly
+  exercised coverage.
+
+The repaired suite has nine all-feature sparse integration tests. It passed
+alongside warning-denying all-target Clippy, and the 64-point release benchmark
+smoke retained 352 nonzeros with finite stable phase checksums. After the last
+production, test, architecture, and change-fragment edit, exact head
+`a24699525aa811f2a55b3eecf880eb64e685ee76` passed the complete standard
+workspace gate: format, warning-denying workspace/all-target/all-feature
+Clippy, all-feature workspace tests, workspace doctests, and the 58-requirement
+registry check.
+
 ## Independent truth review
 
 - The Wendland kernels used by the sparse path are strictly positive definite
@@ -169,8 +211,6 @@ No other P0, P1, P2, or P3 finding was identified.
   as passed.
 
 PR #118 remains Draft and REQ-SPARSE-001 remains `planned`, not `integrated`.
-A fresh Repair task must address only SPARSE001-REV-001,
-SPARSE001-REV-002, and SPARSE001-REV-003, add the required regressions, rerun
-focused checks and one complete stable-head standard gate, update this review
-evidence and the bounded handoff, push, and stop for fresh independent
-re-review. Do not mark the PR ready, merge it, or begin REQ-CENTER-001.
+A fresh independent re-review task must verify all three repairs and check for
+new P0-P3 findings on the repaired head. This Repair does not mark the PR
+ready, merge it, or begin REQ-CENTER-001.

@@ -6,59 +6,60 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; Repair required
+- Mode: Repair complete; fresh independent re-review required
 - Requirement: REQ-SPARSE-001
 - Issue: #117
 - Branch: `codex/req-sparse-001-compact-support`
 - Draft pull request: #118
-- Reviewed implementation head: `806bbff`
-- Stable implementation gate head: `a0fd9fe`
-- Review findings: P1 SPARSE001-REV-001; P2 SPARSE001-REV-002 and
-  SPARSE001-REV-003
+- Original reviewed head: `806bbff`
+- Repair implementation and stable gate head: `a246995`
+- Original findings repaired: P1 SPARSE001-REV-001; P2 SPARSE001-REV-002
+  and SPARSE001-REV-003
 - Dependencies: REQ-SPIKE-003, REQ-FIELD-001, and REQ-KERNEL-004 are integrated
 - Registry status: `planned` until review, Ready CI, merge, and integration
 
-## Independent review result
+## Repair result
 
-- SPARSE001-REV-001 (P1): assembly and solve memory estimates omit
-  simultaneously live canonical, neighborhood-index, and temporary payloads.
-  The explicit limit and claimed conservative peak can therefore undercount
-  the operation's logical live memory.
-- SPARSE001-REV-002 (P2): row support coverage increments only for nonzero
-  kernel actions rather than accepted exact-support pairs. Co-located Value and
-  DirectionalDerivative representers can be falsely reported as isolated.
-- SPARSE001-REV-003 (P2): the change fragment overstates canonical-conflict and
-  failure coverage; deterministic ordering, solve-stage memory/cancellation,
-  a sparse nonfinite boundary, and a multi-size subquadratic comparison lack
+- SPARSE001-REV-001: assembly diagnostics now expose and sum retained index,
+  canonical capacities, CSC, right-hand side, pair, entry, row, and bulk-load
+  components per checked stage. Solve includes the complete retained borrowed
+  system beside backend CSC, dense-fill bound, vectors, and exact residual
+  work. Limits at retained, assembly-peak, and solve-peak boundaries have
   direct regressions.
-- The reviewer found no other formula, sign, dimension, SPD/CPD, strict-support,
-  anisotropy-bound, residual, hidden fallback/regularization, Hessian-
-  capability, or interface-disposition defect.
+- SPARSE001-REV-002: support coverage is derived from accepted exact-support
+  pairs before numeric-zero filtering. A co-located Value and
+  DirectionalDerivative regression requires the zero action to retain two
+  support neighbors per row with no isolated center.
+- SPARSE001-REV-003: direct regressions now cover complete CSC/diagnostic
+  repeat determinism, hard canonical conflict, solve cancellation and memory
+  rejection, an unrepresentable candidate radius, and fixed 64- versus
+  512-point bounded-neighbor growth. The change fragment is narrowed to direct
+  evidence.
 
 ## Evidence state
 
-- A fresh isolated read-only `math_reviewer` inspected exact head `806bbff`
-  against base `c6696f2` and recorded all three findings in
-  `docs/reviews/PR-118-INDEPENDENT-REVIEW.md`.
-- Both reviewer and parent passed all six all-feature sparse integration tests.
-  The parent also passed all 58 requirement checks and the complete PR
-  whitespace check.
-- Draft CI run 29990525588 passed its configured Ubuntu correctness job on
-  exact reviewed head `806bbff`; the Ready-only three-platform and
-  benchmark-smoke matrix was skipped as designed and is not claimed.
-- Stable implementation head `a0fd9fe` retains the complete five-check local
-  gate and release benchmark smoke recorded by Implement. This Review changes
-  only the review record, registry document index, and bounded handoff.
+- Exact repair head `a24699525aa811f2a55b3eecf880eb64e685ee76` passed all
+  nine all-feature sparse integration tests and warning-denying all-target
+  Clippy.
+- The 64-point release benchmark smoke passed after the final production
+  change with 352 stored nonzeros and finite checksums for assembly, solve,
+  and local evaluation.
+- The same exact head passed the complete five-check standard gate: format,
+  warning-denying workspace/all-target/all-feature Clippy, all-feature
+  workspace tests, workspace doctests, and all 58 requirement checks.
+- The subsequent handoff commit changes only review evidence and this bounded
+  handoff; it does not change production, tests, manifests, schema, CI, or
+  build inputs and therefore does not invalidate the stable gate.
 
 ## Next task boundary
 
-Open a fresh Repair task for Draft PR #118. Address only SPARSE001-REV-001,
-SPARSE001-REV-002, and SPARSE001-REV-003 from the independent review. Add the
-specified memory-peak, exact-support coverage, deterministic/conflict/failure,
-and multi-size scaling regressions; implement the smallest complete repairs;
-rerun focused checks and one complete stable-head standard gate; update review
-evidence and this bounded handoff; push; and stop for fresh independent
-re-review. Do not mark the PR ready, merge it, or begin REQ-CENTER-001.
+Open a fresh Review/re-review task for Draft PR #118. Supply a new isolated
+read-only `math_reviewer` with the bounded requirement summary, dependency
+closure, normative documents and ADR, complete repaired PR diff, and exact
+validation evidence. Verify all three original findings are closed and inspect
+for new P0-P3 findings. If any finding remains, record it and stop without
+repairing production code. If the re-review is clean, follow the repository's
+separate ready-head CI and integration sequence. Do not begin REQ-CENTER-001.
 
 ## Durable evidence
 
