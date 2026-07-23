@@ -44,6 +44,9 @@
 //! SPD anisotropic kernels, with an everywhere-nonzero policy-bounded constant
 //! background, complete query gradient/Hessian product rules, explicit CPD
 //! rejection, and allocation-free pointwise coverage diagnostics.
+//! Ordered regional controls compile spheroidal or ellipsoidal fixed metrics,
+//! compact C2 region tapers, and normalized immutable reference-field
+//! gradients into that same strictly positive-definite mixture primitive.
 //! Sign-invariant weighted orientation tensors estimate deterministic global
 //! principal axes and explicit or bounded cross-validated relative axis ratios,
 //! with eigengap, isotropy, weight-concentration, and leave-one-out influence
@@ -80,6 +83,7 @@ pub mod tangent_observations;
 pub mod thickness;
 pub mod thickness_validation;
 pub mod transform;
+pub mod trend_controls;
 pub mod units;
 
 pub use anisotropy::{
@@ -156,7 +160,7 @@ pub use linear_constraints::{
 pub use local_trend::{
     LocalTrendComponent, LocalTrendConstructionError, LocalTrendCoverage, LocalTrendDiagnostics,
     LocalTrendEvaluation, LocalTrendEvaluationError, LocalTrendMixture, LocalTrendQuantity,
-    OperationalDomain, SmoothSpatialWeight,
+    OperationalDomain, SmoothRegion, SmoothSpatialWeight,
 };
 pub use model::{
     FittedField, FittedFieldCapabilities, FittedFieldComponent, FittedFieldDiagnostics,
@@ -214,4 +218,11 @@ pub use thickness_validation::{
     ThicknessIntersectionFailure,
 };
 pub use transform::{AffineNormalization, TransformError, TransformOperation};
+pub use trend_controls::{
+    CompiledTrendControls, LocalTrendBackground, LocalTrendControl, ResolvedTrendDirection,
+    ResolvedTrendDirectionSource, ResolvedTrendOrientation, TrendCompilationDiagnostics,
+    TrendControlCompilationError, TrendControlDiagnostics, TrendControlOrientation,
+    TrendControlPolicy, TrendControlPolicyError, TrendControlStorage, TrendDirectionSource,
+    try_compile_local_trend_controls,
+};
 pub use units::{AngleUnit, LengthUnit, UnitError};
