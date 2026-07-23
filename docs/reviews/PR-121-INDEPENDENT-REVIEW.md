@@ -6,11 +6,17 @@
 - Branch: `codex/req-center-001-rank-safe-centers`
 - Base head: `aa128ed87236c85aa6d310127ad05c70c0a2092b`
 - Reviewed head: `63a9f9035ec280124ea0fc230692b3c271436f59`
+- Re-reviewed Repair head:
+  `75110a549ca4c8033b3a1d6207765e3a1817f349`
 - Stable implementation gate head:
   `bf850a8f9a4b673425724e71abc46d955258cd6e`
+- Stable Repair gate head:
+  `75110a549ca4c8033b3a1d6207765e3a1817f349`
 - Draft CI run: 30004560859
+- Repair Draft CI run: 30009925065
 - Review date: 2026-07-23
-- Result: one P1, one P2, and two P3 findings require Repair
+- Result: clean fresh re-review; all four findings closed and no P0--P3
+  finding remains
 
 ## Scope and independence
 
@@ -185,3 +191,62 @@ PR #121 remains Draft and REQ-CENTER-001 remains `planned`. A fresh task must
 use an isolated `math_reviewer` to confirm the four findings are closed and
 check the complete repaired diff for new P0--P3 findings before any Ready,
 full-platform CI, merge, or integration-state action.
+
+## Fresh independent re-review
+
+A new isolated read-only project `math_reviewer` independently reviewed exact
+Repair head `75110a549ca4c8033b3a1d6207765e3a1817f349` against base
+`aa128ed87236c85aa6d310127ad05c70c0a2092b`. It received only the bounded
+requirement summary and integrated dependency closure, Issue #120 acceptance
+criteria and exclusions, the M7 plan, applicable architecture, solver, and CPD
+contracts, the prior findings and Repair evidence, benchmark evidence, and the
+complete 13-file base-to-head diff. It inherited no implementation reasoning
+and made no repository or remote change.
+
+The re-review closed every prior finding:
+
+- CENTER001-REV-001 is closed. The selected candidate now uses the local
+  threshold `n * epsilon * abs(K_ii)`. Under `K -> D K D`, both its Schur pivot
+  and threshold scale by `D_ii^2`. The residual- and power-greedy regressions
+  require full rank for both `diag(1, 2^-100)` and its congruently scaled
+  identity.
+- CENTER001-REV-002 is closed. Construction requires an explicit
+  `KernelDefiniteness`, and a CPD declaration returns the dedicated typed
+  error with its order before candidate, pivot, generic rank, or Cholesky
+  work. The order-one `-r` fixture independently verifies `Q^T Z = 0` and
+  `Z^T K Z = 1` before requiring that capability rejection.
+- CENTER001-REV-003 is closed. The `[-1, 0, 1]` fixture starts at the middle
+  candidate, resolves the exactly tied endpoints through the documented seed
+  key, and requires identical repeated indices and diagnostics.
+- CENTER001-REV-004 is closed. Table-driven independent regressions require
+  all four Gram/target length and nonfinite structured errors, and the
+  requirement evidence now names only the exercised cases.
+
+The reviewer also checked formulae, signs, dimensions, SPD and CPD
+classification, scale-aware decisions, deterministic ties, hard failure
+behavior, allocations and explicit memory policy, hidden regularization or
+fallback, interface dispositions, benchmark routing, and the complete repaired
+diff. It found no new P0, P1, P2, or P3 issue. Every strategy still receives
+the authoritative eight-pass equilibration, RRQR, bounded-SVD, and checked
+Cholesky review with `Regularization::None`; no jitter, pseudoinverse,
+candidate skipping, or factorization fallback exists.
+
+The isolated reviewer and parent Review task independently passed:
+
+- all 13 center-selection integration tests;
+- the center-selection rustdoc example;
+- the five-strategy release benchmark smoke;
+- the 58-requirement registry check; and
+- the complete base-to-head whitespace check.
+
+Repair Draft CI run 30009925065 passed the configured Ubuntu correctness job
+on exact Repair head `75110a5`; its Ready-only matrix was skipped as designed.
+The stable Repair head already passed the complete standard local gate after
+the last production and test change. This re-review evidence commit changes
+only this review record and the bounded handoff, so that immutable complete
+gate remains valid.
+
+The fresh re-review is clean. PR #121 may now enter the mandatory Ready ->
+exact-head Windows/Ubuntu/macOS plus benchmark-smoke CI -> single merge ->
+isolated truthful integration-state sequence. REQ-CENTER-001 remains `planned`
+until that sequence completes.

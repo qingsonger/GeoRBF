@@ -6,48 +6,41 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair / REQ-CENTER-001 complete; awaiting fresh independent re-review
+- Mode: Review / REQ-CENTER-001 clean fresh re-review; Ready CI pending
 - Requirement: REQ-CENTER-001, open Issue #120
 - Branch: `codex/req-center-001-rank-safe-centers`
-- Pull request: #121 (Draft; four recorded findings repaired locally)
+- Pull request: #121 (Draft; clean re-review authorizes Ready transition)
 - Dependencies: REQ-SOLVE-001 and REQ-MODEL-001 are integrated
 - Registry status: `planned`
 
-## Repair outcome
+## Fresh re-review outcome
 
-- CENTER001-REV-001: replaced the global-diagonal threshold with the selected
-  candidate-local `n * epsilon * abs(K_ii)` rule and added residual/power
-  regressions for `diag(1, 2^-100)` and its congruently scaled identity.
-- CENTER001-REV-002: made `KernelDefiniteness` explicit at construction,
-  narrowed the atomic capability to SPD, and added an order-one `-r` CPD truth
-  fixture that requires typed rejection before generic numerical work.
-- CENTER001-REV-003: added the symmetric `[-1, 0, 1]` seeded farthest exact-tie
-  and repeated-result regression.
-- CENTER001-REV-004: added table-driven Gram/target length and nonfinite-input
-  regressions and narrowed all evidence claims accordingly.
+- An isolated read-only project `math_reviewer` reviewed base `aa128ed8`
+  through exact Repair head `75110a5`.
+- CENTER001-REV-001 through CENTER001-REV-004 are independently closed.
+- The complete repaired 13-file PR diff has no remaining or new P0--P3
+  finding.
 
-## Repair validation
+## Review validation
 
-- The initial focused run reproduced CENTER001-REV-001 exactly:
-  `diag(1, 2^-100)` failed at rank one against the unrelated global threshold.
-- After the last production and test change, all 13 center-selection tests,
-  the center-selection rustdoc example, the five-strategy release benchmark
-  smoke, `cargo xtask requirements check`, and `git diff --check` passed.
+- The isolated reviewer and parent Review task independently passed all 13
+  center-selection tests, the center-selection rustdoc example, the
+  five-strategy release benchmark smoke, the 58-requirement registry check,
+  and the complete PR whitespace check.
 - The stable Repair tree passed the complete standard gate: format,
   warning-denying workspace/all-target/all-feature Clippy, all-feature
   workspace tests, workspace doctests, and the 58-requirement registry check.
-- Draft CI for the pushed Repair head and Ready-only Windows/Ubuntu/macOS plus
-  benchmark-smoke CI are not yet claimed.
+- Draft CI run 30009925065 passed Ubuntu on exact Repair head `75110a5`.
+- The re-review evidence tail changes only this review record and bounded
+  handoff, so the immutable stable-head complete gate remains valid.
 
 ## Next task boundary
 
-A fresh Review/re-review task must inspect only PR #121. It must create an
-isolated read-only `math_reviewer`, confirm CENTER001-REV-001 through
-CENTER001-REV-004 are closed, and review the complete repaired diff for new
-findings. If any P0--P3 finding remains, record it and stop. Only a clean
-re-review may continue with the repository's Ready -> exact-head
-Windows/Ubuntu/macOS and benchmark-smoke CI -> merge -> isolated truthful
-integration-state sequence. Do not repair in that task or begin REQ-TUNE-001.
+Push this documentation-only clean re-review evidence, mark PR #121 Ready, and
+wait for the Windows/Ubuntu/macOS and complete benchmark-smoke CI on that exact
+Ready head. Merge exactly once only if the whole matrix is green, then record
+the truthful integration state through an isolated documentation-only change.
+Do not begin REQ-TUNE-001.
 
 ## Durable evidence
 
