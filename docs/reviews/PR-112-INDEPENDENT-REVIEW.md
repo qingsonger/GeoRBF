@@ -156,8 +156,28 @@ Clippy, the runnable example, all 58 requirement checks, and complete diff
 whitespace validation. It verified that the tail after stable full-gate head
 `4426a30` changes only Markdown evidence.
 
-PR #112 remains Draft and REQ-ANISO-003 remains `in_progress`, not integrated.
-This clean evidence-only conclusion must be committed and pushed before the PR
-is marked Ready. Integration still requires complete Windows, Ubuntu, and
-macOS Ready-head CI with every benchmark-smoke workload, one merge, post-merge
-`main` CI, and an isolated integration-state change.
+## Integration evidence
+
+- Exact Ready evidence head:
+  `556b2540b2e26265ccca3d83040ca728aa623a8e`
+- Ready CI run: 29975641751
+- Squash merge: `07dd290840b7531c57acb583a678e07a8ae64f00`
+- Post-merge `main` CI run: 29976326673
+- Integration-state branch: `codex/req-aniso-003-integration-state`
+
+Ready CI run 29975641751 passed the complete Windows, Ubuntu, and macOS
+workspace gate on exact Ready head `556b254`, including every configured
+backend combination, every benchmark-smoke workload, and requirement
+validation. PR #112 then squash-merged exactly once as `07dd290`; Issue #111
+closed as completed. Post-merge `main` CI run 29976326673 passed the same
+complete three-platform gate on exact merge commit `07dd290`.
+
+The isolated integration-state change updates only the requirement registry,
+this review evidence, the completed-history index, and the bounded handoff. It
+changes no production code, test, manifest, schema, CI, build input, public
+API, numerical behavior, dependency, tag, or release. The requirement may be
+recorded as `integrated` in this change because implementation, tests,
+documentation, interfaces, diagnostics, independent review, exact Ready-head
+CI, the implementation merge, and post-merge `main` CI are now complete. The
+integration-state pull request itself must still pass its local standard gate
+and exact Ready-head CI before it merges.

@@ -6,94 +6,83 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Clean independent re-review; Ready CI and integration required
+- Mode: Integration state / REQ-ANISO-003 complete
 - Requirement: REQ-ANISO-003, Issue #111
-- Branch: `codex/req-aniso-003-export-diagnostics`
-- Draft pull request: #112
-- Base: `main` at `37cb91d` after REQ-TREND-002 integration
-- Reviewed head: `a698362`
-- Repair head: `4426a30`
+- Implementation pull request: #112, squash-merged as `07dd290`
+- Integration-state branch: `codex/req-aniso-003-integration-state`
+- Integration-state pull request: pending creation
+- Initial reviewed head: `a698362`
+- Repair code/test head: `4426a30`
 - Clean re-reviewed head: `c6b2c26`
+- Exact Ready head: `556b254`
 - Stable full-gate head: `4426a30`
+- Review state: ANISO003-REV-001 is independently closed; the complete PR has
+  no remaining P0-P3 finding
 - Dependencies: REQ-ANISO-002 and REQ-TREND-002 are integrated
-- Registry state in this change: `in_progress`
+- Registry state in this change: `integrated`
 
-## Scope and implementation
+## Integration result
 
-- Adds deterministic owned, renderer-neutral anisotropy diagnostic exports for
-  exactly D=1, D=2, and D=3 without changing or refitting the compiled local
-  SPD mixture.
-- Exports caller-ordered control positions, honest spheroidal or ellipsoidal
-  resolved axes and lengths, source confidence, signed strengths, influence
-  radii, optional compact regions, condition numbers, and sign-invariant
-  adjacent direction jumps.
-- Exports strict-background policy/condition evidence and caller-ordered sample
-  positions with every signed mixture weight, aggregate squared coverage,
-  background contribution, active-component count, and domain membership.
-- Exports source-aware low-confidence reference directions as control/axis
-  region records. Explicit directions are excluded and an absent compact region
-  remains explicit.
-- No GUI, VTK, encoder, versioned schema, CLI, binding, solver, or numerical
-  dependency is added. Schema/CLI work remains M8 and adapters remain M9.
-
-## Independent review state
-
-- A fresh isolated read-only project `math_reviewer` re-reviewed exact head
-  `c6b2c26` from the bounded requirement and dependency summaries, Issue #111,
-  M6 plan, ANISOTROPY and ADR-0005/ADR-0008 contracts, complete repaired PR
-  diff, original finding, tests, and validation evidence.
-- Repair head `4426a30` addresses ANISO003-REV-001 by extending the independent
-  diagnostic-schema test with exact exported axis components and provenance,
-  axis-length pairing, ellipsoid tolerance, per-control condition numbers, and
-  the summary maximum condition number.
-- Independent truth for the existing orthogonal test fixtures is condition two
-  for the `(3, 1.5)` spheroid, four for the `[4, 1]` ellipsoid, one for the
-  isotropic background, and four for the mixture summary. The expected axes are
-  spheroid `(1, 0)` and caller-ordered ellipsoid `(-1, 0)`, `(0, 1)`.
-- No other P0-P3 finding was identified. Durable evidence is in
-  `docs/reviews/PR-112-INDEPENDENT-REVIEW.md`.
-- The fresh reviewer independently closed ANISO003-REV-001 and found no new
-  P0-P3 issue in the complete PR.
+- A fresh isolated read-only project `math_reviewer` independently closed
+  ANISO003-REV-001 and found no P0-P3 issue in the complete repaired PR.
+- Independent orthogonal-metric truth gives condition two for the `(3, 1.5)`
+  spheroid, four for the `[4, 1]` ellipsoid, one for the isotropic background,
+  and four for the mixture summary. The regression preserves the spheroid axis
+  `(1, 0)` and caller-ordered ellipsoid axes `(-1, 0)`, `(0, 1)`, their
+  provenance, paired lengths, and explicit tolerance.
+- Signed sample weights, squared coverage, axial direction jumps, deterministic
+  order, structured errors, and fallible export allocations satisfy the
+  reviewed contract.
+- The fixed-SPD diagonal-congruence construction and strict background remain
+  unchanged. No CPD path, jitter, clipping, regularization, pseudoinverse,
+  refit, field mutation, or unconditional Hessian capability is introduced.
+- Exact Ready head `556b254` passed complete Windows, Ubuntu, and macOS CI run
+  29975641751, including every configured backend combination, benchmark
+  smoke, and requirement validation.
+- PR #112 squash-merged exactly once as `07dd290`; Issue #111 closed as
+  completed. Post-merge `main` CI run 29976326673 passed the same complete
+  three-platform gate on exact merge commit `07dd290`.
+- This isolated integration-state change updates only the registry, review
+  evidence, history index, and bounded handoff. It changes no production code,
+  test, manifest, schema, CI, build input, API, numerical behavior, dependency,
+  tag, or release.
 
 ## Validation state
 
-- Focused `anisotropy_diagnostics` integration tests pass all four schema,
-  low-confidence, direction-jump, coverage, dimension, and error-path cases.
-- The module's compile-fail D=4 Rustdoc test passes.
-- Focused warning-denying Clippy and the runnable example pass.
-- Exact repair head `4426a30` passed workspace format, warning-denying workspace
-  all-target/all-feature Clippy, all-feature workspace tests, all workspace
-  Rustdoc tests, all 58 requirement checks, and complete diff whitespace
-  validation.
-- The Repair passed all four focused integration tests, the D=4 compile-fail
-  Rustdoc test, the runnable example, and warning-denying focused Clippy.
-- The isolated re-review passed those same focused tests, Clippy, example, all
-  58 requirement checks, and complete diff whitespace validation.
-- Draft Ubuntu CI run 29975187579 passed on exact re-reviewed head `c6b2c26`;
-  the Ready-only three-platform and benchmark-smoke matrix has not yet run.
-- The repair changes only the independent test; production code, API,
-  numerical behavior, manifests, registry state, schema, CI, and dependencies
-  are unchanged.
+- Exact stable production/test head `4426a30` passed workspace format,
+  warning-denying workspace all-target/all-feature Clippy, all-feature
+  workspace tests, all workspace Rustdoc tests, all 58 requirement checks, and
+  complete diff whitespace validation.
+- The isolated re-review passed all four public `anisotropy_diagnostics`
+  integration tests, the D=4 compile-fail Rustdoc test, warning-denying focused
+  Clippy, the runnable example, all 58 requirement checks, and complete diff
+  whitespace validation.
+- Exact Ready-head run 29975641751 and post-merge `main` run 29976326673 are
+  both green on Windows, Ubuntu, and macOS, including every configured
+  benchmark smoke.
+- The isolated integration-state tree must pass the complete local standard
+  gate and exact Ready-head CI before it merges.
 
 ## Next task boundary
 
-Commit and push this evidence-only clean re-review conclusion, synchronize the
-PR evidence, and mark PR #112 Ready. Wait for the complete Windows, Ubuntu, and
-macOS matrix with every benchmark smoke on that exact Ready head. Merge exactly
-once only if it is green, wait for the exact merge commit's complete `main` CI,
-then record truthful integration through an isolated integration-state change.
-Do not start another requirement.
+Create the isolated integration-state pull request, record its number in the
+review, history index, and this handoff, then run the complete local standard
+gate. Mark that PR Ready, wait for exact Ready-head Windows, Ubuntu, macOS, and
+benchmark-smoke CI, merge only if green, and stop. Do not start another
+requirement.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #111
+- Acceptance criteria and exclusions: closed GitHub Issue #111
+- Merged implementation: GitHub PR #112
+- Independent review and Repair evidence:
+  `docs/reviews/PR-112-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-ANISO-003.md`
 - Public implementation and Rustdoc:
   `crates/georbf/src/anisotropy_diagnostics.rs`
 - Independent tests: `crates/georbf/tests/anisotropy_diagnostics.rs`
 - Runnable example: `crates/georbf/examples/anisotropy_diagnostics.rs`
 - Mathematical contract: `docs/architecture/ANISOTROPY.md`, ADR-0005, ADR-0008
-- Independent review: `docs/reviews/PR-112-INDEPENDENT-REVIEW.md`
 
 ## Checks not yet available
 
