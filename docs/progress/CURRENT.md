@@ -11,6 +11,7 @@ records, benchmark reports, Git, and GitHub.
 - Branch: `codex/req-aniso-003-export-diagnostics`
 - Draft pull request: #112
 - Base: `main` at `37cb91d` after REQ-TREND-002 integration
+- Stable full-gate head: `98c72dc`
 - Dependencies: REQ-ANISO-002 and REQ-TREND-002 are integrated
 - Registry state in this change: `in_progress`
 
@@ -38,8 +39,14 @@ records, benchmark reports, Git, and GitHub.
   low-confidence, direction-jump, coverage, dimension, and error-path cases.
 - The module's compile-fail D=4 Rustdoc test passes.
 - Focused warning-denying Clippy and the runnable example pass.
-- The complete stable-head standard gate remains pending until the final code,
-  tests, documentation, registry, and handoff are stable.
+- Exact stable head `98c72dc` passed workspace format, warning-denying workspace
+  all-target/all-feature Clippy, all-feature workspace tests, all workspace
+  Rustdoc tests, all 58 requirement checks, and complete diff whitespace
+  validation.
+- The final evidence-tail update changes only Markdown validation records. It
+  changes no production code, test, manifest, registry, schema, CI, build input,
+  API, numerical behavior, or dependency, so the immutable `98c72dc` full gate
+  remains applicable.
 
 ## Next task boundary
 

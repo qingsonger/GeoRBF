@@ -42,6 +42,12 @@ rejection, and `Send + Sync`. A runnable example demonstrates format-neutral
 point sampling. The benchmark obligation is N/A because diagnostic export is
 an explicit owned operation outside evaluation hot paths.
 
+Exact stable head `98c72dc` passed workspace format, warning-denying workspace
+all-target/all-feature Clippy, all-feature workspace tests, all workspace
+Rustdoc tests, all 58 requirement checks, and complete diff whitespace
+validation. The following evidence-tail commit changes Markdown only and does
+not invalidate that immutable full gate.
+
 Rust is implemented. CLI and versioned schemas are N/A until M8 persistence
 and complete-CLI requirements. C, C++, and Python are N/A until M9 adapter and
 API-freeze requirements. GUI, VTK, persistence encoders, topology inference,
