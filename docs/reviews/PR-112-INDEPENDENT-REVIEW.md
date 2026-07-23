@@ -6,11 +6,11 @@
 - Branch: `codex/req-aniso-003-export-diagnostics`
 - Reviewed head: `a698362a420dfe3743471cefe2fa14a52b76e991`
 - Repair head: `4426a303f5f9e22985514330a8f8194dd7ea887d`
+- Re-reviewed head: `c6b2c2632e72af0c18820d08b4e27b2f91029301`
 - Stable full-gate head: `4426a303f5f9e22985514330a8f8194dd7ea887d`
 - Base head: `37cb91d`
 - Review date: 2026-07-23
-- Result: Repair evidence recorded for ANISO003-REV-001; fresh independent
-  re-review is required before the finding can be closed
+- Result: ANISO003-REV-001 independently closed; no P0-P3 finding remains
 
 ## Scope and independence
 
@@ -92,18 +92,54 @@ workspace format, warning-denying workspace all-target/all-feature Clippy,
 all-feature workspace tests, all workspace Rustdoc tests, all 58 requirement
 checks, and complete diff whitespace validation.
 
-This evidence shows the requested regression was added but does not
-self-resolve the independent finding. A fresh read-only re-review must confirm
-ANISO003-REV-001 is closed and check for new P0-P3 findings.
+This evidence did not self-resolve the independent finding. A fresh read-only
+re-review subsequently confirmed that the repair closes ANISO003-REV-001 and
+introduced no new P0-P3 finding.
+
+## Independent re-review
+
+A fresh isolated read-only project `math_reviewer` re-reviewed exact head
+`c6b2c26`. It received only the bounded requirement and dependency summaries,
+Issue #111, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008 contracts, the
+complete repaired PR diff, the original finding, and validation evidence. It
+inherited no Implement or Repair reasoning and changed no repository, Git, or
+GitHub state.
+
+ANISO003-REV-001 is closed. The repaired schema regression now independently
+asserts the exact spheroid and ellipsoid axes, explicit provenance, caller
+axis-length pairing, ellipsoid tolerance, both control condition numbers, and
+the mixture summary maximum. For the orthogonal fixtures, rows
+`u_i^T / ell_i` have singular values `1 / ell_i`; therefore the `(3, 1.5)`
+spheroid has condition two, the `[4, 1]` ellipsoid has condition four, the
+isotropic background has condition one, and the mixture maximum is four.
+
+The reviewer also independently confirmed the signed sample weight
+`-1.5 exp(-1/2) = -0.90979598956895014`, squared-weight coverage
+`5.0777287426357454`, antipodal zero jump, and orthogonal `pi/2` jump. Control,
+component, sample, and low-confidence records preserve their required
+deterministic order. Export uses the existing value-only weight path with
+structured sample/component errors and fallible reservations. It does not
+change the fixed-SPD mixture proof, add a CPD path, alter Hessian capability,
+or introduce clipping, jitter, regularization, a pseudoinverse, refitting, or
+field mutation.
+
+Center kernel limits, polynomial spaces, RRQR/SVD rank decisions, hard
+constraints, infeasibility, and solver behavior are not applicable because
+this export neither evaluates a fixed kernel nor assembles or solves a field
+system. CLI and versioned schemas remain M8 work; C, C++, and Python adapters
+remain M9 work.
+
+No P0-P3 finding remains.
 
 ## Validation and disposition
 
 - The parent Review task passed all four public `anisotropy_diagnostics`
   integration tests, the D=4 compile-fail Rustdoc test, the runnable example,
   and complete diff whitespace validation on reviewed head `a698362`.
-- Draft CI passed its configured Ubuntu correctness gate on the same reviewed
-  head. The Ready-only Windows, Ubuntu, macOS, and benchmark-smoke matrix was
-  skipped as designed and is not claimed as passed.
+- Draft CI run 29975187579 passed its configured Ubuntu correctness gate on
+  exact re-reviewed evidence head `c6b2c26`. The Ready-only Windows, Ubuntu,
+  macOS, and benchmark-smoke matrix was skipped as designed and is not claimed
+  as passed.
 - Exact repair head `4426a30` now supplies the complete stable full gate.
   Nextest, deny, audit, semver, Miri, sanitizers, fuzzing, mutation testing,
   and API/ABI/schema snapshots remain unavailable or deferred. No unexecuted
@@ -114,7 +150,14 @@ ANISO003-REV-001 is closed and check for new P0-P3 findings.
   capability, and performs no jitter, clipping, pseudoinverse, regularization,
   refit, or field mutation.
 
+The isolated re-review passed all four public `anisotropy_diagnostics`
+integration tests, the D=4 compile-fail Rustdoc test, warning-denying focused
+Clippy, the runnable example, all 58 requirement checks, and complete diff
+whitespace validation. It verified that the tail after stable full-gate head
+`4426a30` changes only Markdown evidence.
+
 PR #112 remains Draft and REQ-ANISO-003 remains `in_progress`, not integrated.
-A fresh Review task must independently re-review repair head `4426a30`, confirm
-whether ANISO003-REV-001 is closed, and check for new findings. Do not begin
-another requirement.
+This clean evidence-only conclusion must be committed and pushed before the PR
+is marked Ready. Integration still requires complete Windows, Ubuntu, and
+macOS Ready-head CI with every benchmark-smoke workload, one merge, post-merge
+`main` CI, and an isolated integration-state change.

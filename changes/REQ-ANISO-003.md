@@ -50,10 +50,19 @@ workspace all-target/all-feature Clippy, all-feature workspace tests, all
 workspace Rustdoc tests, all 58 requirement checks, and complete diff
 whitespace validation.
 
+A fresh isolated read-only `math_reviewer` re-reviewed exact evidence head
+`c6b2c26`, independently confirmed those axis and condition-number truths,
+closed ANISO003-REV-001, and found no remaining P0-P3 issue in the complete PR.
+The reviewer passed the focused integration tests, D=4 compile-fail Rustdoc,
+warning-denying focused Clippy, runnable example, requirement validation, and
+complete diff whitespace. Ready-head three-platform and benchmark-smoke CI,
+the implementation merge, and isolated integration-state evidence remain
+required before the registry may become `integrated`.
+
 Rust is implemented. CLI and versioned schemas are N/A until M8 persistence
 and complete-CLI requirements. C, C++, and Python are N/A until M9 adapter and
 API-freeze requirements. GUI, VTK, persistence encoders, topology inference,
 new numerical dependencies, unsafe code, hidden jitter, clipping,
 regularization, and pseudoinverses are outside this requirement. Independent
-Review and integration remain required before the registry may become
-`integrated`.
+Review is complete; integration remains required before the registry may
+become `integrated`.

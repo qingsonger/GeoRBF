@@ -6,13 +6,14 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required
+- Mode: Clean independent re-review; Ready CI and integration required
 - Requirement: REQ-ANISO-003, Issue #111
 - Branch: `codex/req-aniso-003-export-diagnostics`
 - Draft pull request: #112
 - Base: `main` at `37cb91d` after REQ-TREND-002 integration
 - Reviewed head: `a698362`
 - Repair head: `4426a30`
+- Clean re-reviewed head: `c6b2c26`
 - Stable full-gate head: `4426a30`
 - Dependencies: REQ-ANISO-002 and REQ-TREND-002 are integrated
 - Registry state in this change: `in_progress`
@@ -37,9 +38,10 @@ records, benchmark reports, Git, and GitHub.
 
 ## Independent review state
 
-- A fresh read-only project `math_reviewer` reviewed the bounded requirement,
-  integrated dependency closure, Issue #111, M6 plan, ANISOTROPY and
-  ADR-0005/ADR-0008 contracts, complete PR diff, tests, and validation evidence.
+- A fresh isolated read-only project `math_reviewer` re-reviewed exact head
+  `c6b2c26` from the bounded requirement and dependency summaries, Issue #111,
+  M6 plan, ANISOTROPY and ADR-0005/ADR-0008 contracts, complete repaired PR
+  diff, original finding, tests, and validation evidence.
 - Repair head `4426a30` addresses ANISO003-REV-001 by extending the independent
   diagnostic-schema test with exact exported axis components and provenance,
   axis-length pairing, ellipsoid tolerance, per-control condition numbers, and
@@ -50,8 +52,8 @@ records, benchmark reports, Git, and GitHub.
   spheroid `(1, 0)` and caller-ordered ellipsoid `(-1, 0)`, `(0, 1)`.
 - No other P0-P3 finding was identified. Durable evidence is in
   `docs/reviews/PR-112-INDEPENDENT-REVIEW.md`.
-- The finding is not self-closed: a fresh read-only independent re-review must
-  confirm the repair and check the repaired head for new findings.
+- The fresh reviewer independently closed ANISO003-REV-001 and found no new
+  P0-P3 issue in the complete PR.
 
 ## Validation state
 
@@ -65,19 +67,22 @@ records, benchmark reports, Git, and GitHub.
   validation.
 - The Repair passed all four focused integration tests, the D=4 compile-fail
   Rustdoc test, the runnable example, and warning-denying focused Clippy.
+- The isolated re-review passed those same focused tests, Clippy, example, all
+  58 requirement checks, and complete diff whitespace validation.
+- Draft Ubuntu CI run 29975187579 passed on exact re-reviewed head `c6b2c26`;
+  the Ready-only three-platform and benchmark-smoke matrix has not yet run.
 - The repair changes only the independent test; production code, API,
   numerical behavior, manifests, registry state, schema, CI, and dependencies
   are unchanged.
 
 ## Next task boundary
 
-Open a fresh Review/re-review task for only PR #112 and REQ-ANISO-003. Supply a
-fresh read-only project `math_reviewer` with the bounded requirement and
-dependency summaries, normative documents, Issue #111, complete repaired PR
-diff, original finding, and validation evidence. Independently confirm whether
-ANISO003-REV-001 is closed and check for new P0-P3 findings. If clean, follow
-the mandatory ready-CI-merge-integration sequence; if any finding remains,
-record it and stop for another Repair. Do not start another requirement.
+Commit and push this evidence-only clean re-review conclusion, synchronize the
+PR evidence, and mark PR #112 Ready. Wait for the complete Windows, Ubuntu, and
+macOS matrix with every benchmark smoke on that exact Ready head. Merge exactly
+once only if it is green, wait for the exact merge commit's complete `main` CI,
+then record truthful integration through an isolated integration-state change.
+Do not start another requirement.
 
 ## Durable evidence
 
