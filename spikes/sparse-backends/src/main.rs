@@ -13,6 +13,10 @@ use faer::prelude::Solve;
 const DIMENSION: usize = 3;
 const SUPPORT_RADIUS: f64 = 1.75;
 const ACCEPTED_BACKWARD_ERROR: f64 = 1.0e-10;
+const BENCHMARK_HEADER: &str =
+    "kind,phase,candidate,points,nonzeros_or_pairs,iterations,nanoseconds,checksum,residual";
+const INDEX_BENCHMARK_PHASE: &str = "query_filter_canonicalize_checksum_end_to_end";
+const SOLVER_BENCHMARK_PHASE: &str = "construct_factor_solve_review_checksum_end_to_end";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum SpatialIndex {
@@ -149,6 +153,18 @@ struct SolveReport {
     stored_nonzeros: usize,
     residual_infinity: f64,
     backward_error: f64,
+}
+
+#[cfg(test)]
+#[derive(Clone, Debug, PartialEq)]
+struct CscInspection {
+    rows: usize,
+    columns: usize,
+    column_pointers: Vec<usize>,
+    row_indices: Vec<usize>,
+    values: Vec<f64>,
+    product: Vec<f64>,
+    solution: Vec<f64>,
 }
 
 fn validate_points_and_radius(points: &[[f64; DIMENSION]], radius: f64) -> Result<f64, String> {
@@ -520,11 +536,100 @@ fn solve_sprs(case: &SparseCase) -> Result<(Vec<f64>, usize), String> {
     for entry in &case.entries {
         triplets.add_triplet(entry.row, entry.column, entry.value);
     }
-    let matrix = triplets.to_csc();
+    let matrix: sprs::CsMat<f64> = triplets.to_csc();
     let stored_nonzeros = matrix.nnz();
     let factor = sprs_ldl::LdlNumeric::new(matrix.view())
         .map_err(|error| format!("sprs LDL rejected system: {error:?}"))?;
     Ok((factor.solve(&case.right_hand_side), stored_nonzeros))
+}
+
+#[cfg(all(test, feature = "faer-backend"))]
+fn inspect_faer_csc(case: &SparseCase, vector: &[f64]) -> Result<CscInspection, String> {
+    use faer::{
+        Side,
+        sparse::{SparseColMat, Triplet},
+    };
+
+    let triplets = case
+        .entries
+        .iter()
+        .map(|entry| Triplet::new(entry.row, entry.column, entry.value))
+        .collect::<Vec<_>>();
+    let matrix = SparseColMat::<usize, f64>::try_new_from_triplets(
+        case.dimension,
+        case.dimension,
+        &triplets,
+    )
+    .map_err(|error| format!("faer CSC construction failed: {error:?}"))?;
+    let column_pointers = matrix.col_ptr().to_vec();
+    let row_indices = matrix.row_idx().to_vec();
+    let values = matrix.val().to_vec();
+    let mut product = vec![0.0; matrix.nrows()];
+    for column in 0..matrix.ncols() {
+        for position in column_pointers[column]..column_pointers[column + 1] {
+            let row = row_indices[position];
+            product[row] = values[position].mul_add(vector[column], product[row]);
+        }
+    }
+    let factor = matrix
+        .sp_cholesky(Side::Lower)
+        .map_err(|error| format!("faer sparse Cholesky rejected system: {error:?}"))?;
+    let right_hand_side = faer::Col::from_fn(case.dimension, |row| case.right_hand_side[row]);
+    let solution = factor.solve(&right_hand_side);
+    Ok(CscInspection {
+        rows: matrix.nrows(),
+        columns: matrix.ncols(),
+        column_pointers,
+        row_indices,
+        values,
+        product,
+        solution: (0..case.dimension).map(|index| solution[index]).collect(),
+    })
+}
+
+#[cfg(all(test, feature = "sprs-backend"))]
+fn inspect_sprs_csc(case: &SparseCase, vector: &[f64]) -> Result<CscInspection, String> {
+    let mut triplets =
+        sprs::TriMat::with_capacity((case.dimension, case.dimension), case.entries.len());
+    for entry in &case.entries {
+        triplets.add_triplet(entry.row, entry.column, entry.value);
+    }
+    let matrix: sprs::CsMat<f64> = triplets.to_csc();
+    let column_pointers = matrix.indptr().raw_storage().to_vec();
+    let row_indices = matrix.indices().to_vec();
+    let values = matrix.data().to_vec();
+    let mut product = vec![0.0; matrix.rows()];
+    for column in 0..matrix.cols() {
+        for position in column_pointers[column]..column_pointers[column + 1] {
+            let row = row_indices[position];
+            product[row] = values[position].mul_add(vector[column], product[row]);
+        }
+    }
+    let factor = sprs_ldl::LdlNumeric::new(matrix.view())
+        .map_err(|error| format!("sprs LDL rejected system: {error:?}"))?;
+    Ok(CscInspection {
+        rows: matrix.rows(),
+        columns: matrix.cols(),
+        column_pointers,
+        row_indices,
+        values,
+        product,
+        solution: factor.solve(&case.right_hand_side),
+    })
+}
+
+#[cfg(test)]
+fn inspect_backend_csc(
+    case: &SparseCase,
+    vector: &[f64],
+    backend: SparseBackend,
+) -> Result<CscInspection, String> {
+    match backend {
+        #[cfg(feature = "faer-backend")]
+        SparseBackend::Faer => inspect_faer_csc(case, vector),
+        #[cfg(feature = "sprs-backend")]
+        SparseBackend::Sprs => inspect_sprs_csc(case, vector),
+    }
 }
 
 fn grid_points(side: usize) -> Result<Vec<[f64; DIMENSION]>, String> {
@@ -622,13 +727,13 @@ fn run_benchmark(smoke: bool) -> Result<(), String> {
     } else {
         (&[6, 8, 10], 3)
     };
-    println!("kind,candidate,points,nonzeros_or_pairs,iterations,nanoseconds,checksum,residual");
+    println!("{BENCHMARK_HEADER}");
     for &side in sides {
         let points = grid_points(side)?;
         for &index in SpatialIndex::ALL {
             let (elapsed, pair_count, checksum) = time_index(&points, index, iterations)?;
             println!(
-                "index,{},{},{pair_count},{iterations},{},{checksum:.17e},0",
+                "index,{INDEX_BENCHMARK_PHASE},{},{},{pair_count},{iterations},{},{checksum:.17e},0",
                 index.label(),
                 points.len(),
                 elapsed.as_nanos()
@@ -638,7 +743,7 @@ fn run_benchmark(smoke: bool) -> Result<(), String> {
         for &backend in SparseBackend::ALL {
             let (elapsed, report, checksum) = time_backend(&case, backend, iterations)?;
             println!(
-                "solve,{},{},{},{iterations},{},{checksum:.17e},{:.17e}",
+                "solve,{SOLVER_BENCHMARK_PHASE},{},{},{},{iterations},{},{checksum:.17e},{:.17e}",
                 backend.label(),
                 points.len(),
                 report.stored_nonzeros,
@@ -718,6 +823,98 @@ mod sparse_spike_cases {
         }
         let product = sparse_matrix_vector_product(case.dimension, &case.entries, &case.truth)?;
         assert_eq!(product, case.right_hand_side);
+        Ok(())
+    }
+
+    #[test]
+    fn hand_derived_wendland_csc_truth_agrees_for_every_backend() -> Result<(), String> {
+        let off_diagonal = 3.0 / 16.0;
+        let points = [
+            [0.0, 0.0, 0.0],
+            [SUPPORT_RADIUS * 0.5, 0.0, 0.0],
+            [SUPPORT_RADIUS, 0.0, 0.0],
+        ];
+        let pairs = brute_force_pairs(&points, SUPPORT_RADIUS)?;
+        let entries = assemble_wendland_c2(&pairs, SUPPORT_RADIUS)?;
+        let truth = vec![1.0, 2.0, 3.0];
+        let expected_product = vec![11.0 / 8.0, 11.0 / 4.0, 27.0 / 8.0];
+        let case = SparseCase::new(3, entries, expected_product.clone(), truth.clone())?;
+        let expected_column_pointers = vec![0, 2, 5, 7];
+        let expected_row_indices = vec![0, 1, 0, 1, 2, 1, 2];
+        let expected_values = vec![
+            1.0,
+            off_diagonal,
+            off_diagonal,
+            1.0,
+            off_diagonal,
+            off_diagonal,
+            1.0,
+        ];
+
+        for &backend in SparseBackend::ALL {
+            let inspection = inspect_backend_csc(&case, &truth, backend)?;
+            assert_eq!((inspection.rows, inspection.columns), (3, 3));
+            assert_eq!(
+                inspection.column_pointers,
+                expected_column_pointers,
+                "{} column pointers",
+                backend.label()
+            );
+            assert_eq!(
+                inspection.row_indices,
+                expected_row_indices,
+                "{} row indices",
+                backend.label()
+            );
+            assert_eq!(
+                inspection.values,
+                expected_values,
+                "{} stored values and symmetry",
+                backend.label()
+            );
+            assert!(
+                inspection
+                    .column_pointers
+                    .windows(2)
+                    .all(|window| window[0] < window[1]),
+                "{} monotone column pointers",
+                backend.label()
+            );
+            for column in 0..inspection.columns {
+                let start = inspection.column_pointers[column];
+                let end = inspection.column_pointers[column + 1];
+                assert!(
+                    inspection.row_indices[start..end]
+                        .windows(2)
+                        .all(|window| window[0] < window[1]),
+                    "{} sorted unique rows in column {column}",
+                    backend.label()
+                );
+                for position in start..end {
+                    let row = inspection.row_indices[position];
+                    let transpose_start = inspection.column_pointers[row];
+                    let transpose_end = inspection.column_pointers[row + 1];
+                    let transpose_offset = inspection.row_indices[transpose_start..transpose_end]
+                        .binary_search(&column)
+                        .map_err(|_| {
+                            format!("{} missing transpose of ({row}, {column})", backend.label())
+                        })?;
+                    assert_eq!(
+                        inspection.values[position].to_bits(),
+                        inspection.values[transpose_start + transpose_offset].to_bits(),
+                        "{} symmetry at ({row}, {column})",
+                        backend.label()
+                    );
+                }
+            }
+            assert_eq!(
+                inspection.product,
+                expected_product,
+                "{} candidate-storage matrix-vector product",
+                backend.label()
+            );
+            assert_solution_close(&inspection.solution, &truth, 1.0e-12, backend.label());
+        }
         Ok(())
     }
 
@@ -827,6 +1024,17 @@ mod sparse_spike_cases {
             );
         }
         Ok(())
+    }
+
+    #[test]
+    fn benchmark_output_schema_names_explicit_end_to_end_phases() {
+        assert_eq!(
+            BENCHMARK_HEADER,
+            "kind,phase,candidate,points,nonzeros_or_pairs,iterations,nanoseconds,checksum,residual"
+        );
+        assert!(INDEX_BENCHMARK_PHASE.ends_with("_end_to_end"));
+        assert!(SOLVER_BENCHMARK_PHASE.ends_with("_end_to_end"));
+        assert!(SOLVER_BENCHMARK_PHASE.contains("construct_factor_solve_review"));
     }
 
     #[cfg(feature = "kiddo-index")]

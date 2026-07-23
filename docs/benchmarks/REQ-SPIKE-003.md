@@ -23,17 +23,24 @@ axis-aligned fixture. The timed comparison uses an explicit 128-entry bucket
 only so this fixed fixture can finish; ADR-0012 rejects that bounded workaround
 for arbitrary production data.
 
-Three consecutive runs on 2026-07-23 produced these total times for three
-iterations:
+The CSV schema has an explicit `phase` field. Index rows use
+`query_filter_canonicalize_checksum_end_to_end`; solver rows use
+`construct_factor_solve_review_checksum_end_to_end`. The latter includes
+triplet allocation, CSC construction, factorization, solve, residual and
+analytic-truth review, and checksum accumulation. It is not an isolated
+factorization measurement.
+
+Three consecutive repaired-harness runs on 2026-07-23 produced these
+end-to-end total times for three iterations:
 
 | Operation | Points | Stored pairs/nonzeros | Candidate A | Candidate B |
 | --- | ---: | ---: | ---: | ---: |
-| Fixed-radius index | 216 | 2,156 pairs | kiddo: 1.0149--1.3044 ms | rstar: 0.9615--1.0887 ms |
-| Fixed-radius index | 512 | 5,580 pairs | kiddo: 2.2709--2.9989 ms | rstar: 2.2309--2.7713 ms |
-| Fixed-radius index | 1,000 | 11,476 pairs | kiddo: 4.8760--6.0248 ms | rstar: 6.5732--8.0464 ms |
-| CSC factor and solve | 216 | 4,096 nonzeros | faer: 1.6899--2.0256 ms | sprs: 1.3485--1.6228 ms |
-| CSC factor and solve | 512 | 10,648 nonzeros | faer: 5.4346--6.6258 ms | sprs: 5.2117--6.4961 ms |
-| CSC factor and solve | 1,000 | 21,952 nonzeros | faer: 9.3249--13.1647 ms | sprs: 16.9863--21.7024 ms |
+| Index query/filter/canonicalize/checksum end-to-end | 216 | 2,156 pairs | kiddo: 1.0809--1.2810 ms | rstar: 1.0303--1.8420 ms |
+| Index query/filter/canonicalize/checksum end-to-end | 512 | 5,580 pairs | kiddo: 2.5387--2.7266 ms | rstar: 2.5854--3.1917 ms |
+| Index query/filter/canonicalize/checksum end-to-end | 1,000 | 11,476 pairs | kiddo: 5.4623--5.8904 ms | rstar: 7.0874--7.7953 ms |
+| Construct/factor/solve/review/checksum end-to-end | 216 | 4,096 nonzeros | faer: 1.8281--2.3884 ms | sprs: 1.5554--2.1961 ms |
+| Construct/factor/solve/review/checksum end-to-end | 512 | 10,648 nonzeros | faer: 6.6789--7.1249 ms | sprs: 5.6569--6.4836 ms |
+| Construct/factor/solve/review/checksum end-to-end | 1,000 | 21,952 nonzeros | faer: 10.0695--11.7819 ms | sprs: 17.6333--24.8979 ms |
 
 Every index candidate produced the same pair count and bit-identical checksum:
 `5.19426000000000000e5`, `3.16567350000000000e6`, and

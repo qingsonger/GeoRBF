@@ -48,6 +48,13 @@ original-unit infinity residual, backward error, and analytic solution. A
 singular inconsistent system must fail. No jitter, diagonal adjustment,
 regularization, pseudoinverse, dense fallback, or backend switch exists.
 
+A hand-derived three-point case separately fixes
+`phi(0) = 1`, `phi(1/2) = 3/16`, and `phi(1) = 0`. It checks each candidate's
+actual CSC shape, column pointers, sorted unique row indices, stored values and
+symmetry, storage-level matrix-vector product, and recovered solution without
+using the harness kernel, assembly, or row-major matrix-vector helpers to
+create the expected values.
+
 Kiddo's public default `KdTree<f64, 3>` alias has a leaf bucket of 32 and
 panics on the valid 10-by-10-by-10 axis-aligned fixture when too many points
 share one coordinate. A dedicated expected-panic regression preserves that
@@ -55,7 +62,11 @@ evidence. The comparison path uses an explicit bucket of 128 only so the fixed
 benchmark can finish; this bounded workaround is not an accepted production
 policy. Rstar requires no equivalent data-dependent capacity assumption.
 
-The scaling workload reports index time, factorization/solve time, strict pair
-count, stored nonzeros, deterministic checksum, and original-unit residual.
-Its fixed data and one process make repeat comparisons reproducible; timings
-remain machine-local selection evidence, not a stable performance API.
+The scaling workload reports explicit end-to-end phases. Index rows time query,
+strict filtering, canonicalization, and checksum work. Solver rows time triplet
+allocation, CSC construction, factorization, solve, original-unit and analytic
+review, and checksum work. It also reports strict pair count, stored nonzeros,
+deterministic checksum, and original-unit residual. Its fixed data and one
+process make repeat comparisons reproducible; timings remain machine-local
+selection evidence, not a stable performance API or isolated factorization
+measurement.

@@ -19,7 +19,10 @@ The excluded reproducible harness compares rstar 0.13.0 with kiddo 5.3.2 for
 fixed-radius D=3 neighborhoods, and faer 0.24.4 with sprs 0.11.4 plus
 sprs-ldl 0.10.0 for CSC factorization and solve. All candidates receive the
 same strict-support Wendland C2 grid fixture and independent brute-force,
-matrix-vector, analytic-solution, and original-unit residual truth.
+analytic-solution, and original-unit residual truth. A separate hand-derived
+three-point Wendland system fixes the exact CSC contents and matrix-vector
+result independently of the harness kernel, assembly, and row-major
+matrix-vector helpers.
 
 ## Decision
 
@@ -69,13 +72,17 @@ a public third-party matrix type.
 
 ## Correctness and deterministic evidence
 
-Eight combined-feature tests pass. Both spatial indices reproduce the complete
+Ten combined-feature tests pass. Both spatial indices reproduce the complete
 brute-force pair set, including exact exclusion at the support boundary.
 Candidate results are canonicalized before comparison, and repeated pair lists
 are identical. The 512-point scaling case retains no more than 14 upper-triangle
 pairs per point; the full symmetric fixture retains no more than 27 nonzeros
-per point. Sparse matrix-vector truth is formed independently of both storage
-libraries.
+per point. The hand-derived fixture requires
+`A = [[1, 3/16, 0], [3/16, 1, 3/16], [0, 3/16, 1]]` and
+`A * [1, 2, 3] = [11/8, 11/4, 27/8]`. For both candidates it verifies the
+actual CSC shape, monotone column pointers, sorted unique row indices, exact
+stored values and symmetry, storage-level matrix-vector result, and recovered
+solution.
 
 Both factorization candidates recover the known solution for every tested
 finite SPD fixture. The largest recorded original-unit infinity residual is
@@ -98,18 +105,21 @@ precondition or panic.
 
 Three consecutive optimized Windows runs used one process and three iterations
 at 216, 512, and 1,000 points. Candidate pair and nonzero counts were identical.
-Rstar index totals were `0.9615--1.0887 ms`, `2.2309--2.7713 ms`, and
-`6.5732--8.0464 ms`; kiddo totals were `1.0149--1.3044 ms`,
-`2.2709--2.9989 ms`, and `4.8760--6.0248 ms`. Kiddo was faster at 1,000 points,
-but that advantage does not offset its valid-input panic and fixed-bucket
-precondition.
+The output schema names each measured phase explicitly. Rstar's end-to-end
+query/filter/canonicalize/checksum totals were `1.0303--1.8420 ms`,
+`2.5854--3.1917 ms`, and `7.0874--7.7953 ms`; kiddo totals were
+`1.0809--1.2810 ms`, `2.5387--2.7266 ms`, and `5.4623--5.8904 ms`. Kiddo's
+largest end-to-end index row was faster, but that advantage does not offset its
+valid-input panic and fixed-bucket precondition.
 
-Faer factor-and-solve totals were `1.6899--2.0256 ms`,
-`5.4346--6.6258 ms`, and `9.3249--13.1647 ms`. Sprs/sprs-ldl totals were
-`1.3485--1.6228 ms`, `5.2117--6.4961 ms`, and `16.9863--21.7024 ms`.
-The small cases overlap or favor sprs; faer is materially faster at the largest
-measured case. These measurements select a direction and are not a production
-performance promise.
+Faer's end-to-end triplet/CSC-construction, factorization, solve, review, and
+checksum totals were `1.8281--2.3884 ms`, `6.6789--7.1249 ms`, and
+`10.0695--11.7819 ms`. Sprs/sprs-ldl totals were `1.5554--2.1961 ms`,
+`5.6569--6.4836 ms`, and `17.6333--24.8979 ms`. The complete harness path
+overlaps or favors sprs in the small cases and favors faer at the largest
+measured case. The measurement does not isolate factorization speed; it is one
+directional input alongside correctness, failure behavior, licensing,
+maintenance, and platform evidence, not a production performance promise.
 
 The minimal faer+rstar graph contains 47 external packages, 3,518,941 bytes of
 cached crate archives, and a 2,808,832-byte x86_64 Windows release harness. The
