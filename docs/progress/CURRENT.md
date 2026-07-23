@@ -6,70 +6,66 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement
+- Mode: Review complete; Repair required
 - Requirement: REQ-SPIKE-003, Issue #114
 - Branch: `codex/req-spike-003-sparse-backends`
 - Draft pull request: #115
-- Initial implementation head: `7cae556`
+- Reviewed implementation head: `2ad68e5`
 - Stable full-gate head: `255bac8`
+- Review findings: P1 SPIKE003-REV-001 and P2 SPIKE003-REV-002
 - Dependencies: REQ-KERNEL-004 and its complete closure are integrated
 - Registry state: `implemented`
 
-## Scoped implementation
+## Independent review result
 
-- Added an excluded exact-version harness comparing rstar 0.13.0 and
-  kiddo 5.3.2 against independent brute-force strict-radius truth, and
-  faer 0.24.4 against sprs 0.11.4 plus sprs-ldl 0.10.0 on identical
-  canonical CSC Wendland C2 systems.
-- Eight combined-feature regressions cover exact support-boundary exclusion,
-  deterministic pair ordering, sparse symmetry and locality, independent
-  matrix-vector and analytic-solution truth, finite original-unit residuals,
-  singular and malformed failures, repeated reports, scaling, and kiddo's
-  valid-input default-bucket panic.
-- ADR-0012 selects rstar, CSC, and faer sparse LLT for later private production
-  adoption. It rejects a fixed kiddo bucket as a user-input safety policy and
-  rejects sprs-ldl's LGPL-2.1 production dependency.
-- CI now covers all four minimal feature cross-products, all features, both
-  missing-capability compile failures, formatting, warning-denying Clippy, and
-  the release smoke workload on the existing Draft/Ready platform policy.
-- No production dependency, sparse adapter, fitted-field behavior, public API,
-  schema, regularization, pseudoinverse, densification, or fallback is added.
+- SPIKE003-REV-001: the claimed independent matrix-vector truth is circular.
+  `SparseCase::from_points` creates the right-hand side with the same helper
+  that the only matrix-vector assertion calls again. Neither backend's actual
+  CSC column pointers, row indices, values, or storage-level matrix-vector
+  result is checked.
+- SPIKE003-REV-002: the published factor-and-solve timings include triplet
+  allocation, CSC construction, factorization, solve, residual recomputation,
+  and analytic-truth review. The benchmark report and ADR label and interpret
+  them too narrowly.
+- The reviewer otherwise confirmed the D=3 Wendland C2 formula and SPD fixture,
+  strict support behavior, pair-count bounds, dimensionless original-unit
+  backward error, explicit singular failure, absence of hidden regularization
+  or fallback, dependency graph, and truthful interface N/A dispositions.
 
 ## Evidence state
 
-- The all-feature harness and all four minimal index/backend combinations pass.
-  Candidate index pair sets match brute force exactly; both solver paths recover
-  analytic truth and reject the singular inconsistent fixture.
-- Exact head `255bac8` passed workspace formatting, warning-denying workspace
-  all-target/all-feature Clippy, all-feature workspace tests, all workspace
-  Rustdoc tests, all 58 requirement checks, and complete diff whitespace
-  validation. The subsequent handoff-only commit changes no production code,
-  test, manifest, schema, CI, build input, dependency, or numerical behavior.
-- Three optimized Windows runs cover 216, 512, and 1,000 points. Pair and
-  nonzero counts and per-candidate checksums are deterministic. Faer is
-  materially faster at the largest solve; kiddo is faster at the largest index
-  case but its public default alias panics on that valid axis-aligned input.
-- Exact-version dependency, license, MSRV, maintenance, unsafe/native exposure,
-  archive size, binary size, OSV, and repository-advisory evidence is recorded
-  in ADR-0012 and `docs/benchmarks/REQ-SPIKE-003.md`.
-- The combined 76-package OSV query found only RUSTSEC-2024-0436 for
-  unmaintained `paste 1.0.15`; no memory-safety severity is reported. Rstar,
-  sprs, and kiddo repositories report no security advisory.
+- A fresh isolated read-only project `math_reviewer` reviewed exact head
+  `2ad68e5` against base `244e887` and recorded both findings in
+  `docs/reviews/PR-115-INDEPENDENT-REVIEW.md`.
+- The reviewer passed all eight locked all-feature harness tests, the locked
+  release smoke workload, exact-version metadata and dependency-tree review,
+  requirement show/dependency checks, and the complete PR whitespace check.
+- The parent Review task independently passed the eight all-feature harness
+  tests, all 58 requirement checks, and the complete PR whitespace check.
+- Draft CI run 29979880254 passed the configured Ubuntu gate on exact reviewed
+  head `2ad68e5`. Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI was
+  skipped as designed and is not claimed.
+- Stable implementation head `255bac8` passed the complete standard local gate.
+  Commits after it through this Review evidence change only handoff, review,
+  and registry-document-index Markdown/YAML evidence; they do not change code,
+  tests, manifests, CI, dependencies, or numerical behavior.
 
 ## Next task boundary
 
-Open a fresh independent Review task for Draft PR #115. Supply only the
-REQ-SPIKE-003 summary and dependency closure, Issue #114 criteria, M7 plan,
-SOLVER_POLICY and ADR-0012 contracts, complete PR diff, benchmark/audit
-evidence, and exact validation results to a read-only reviewer. Record P0-P3
-findings without repairing production or spike code in that task. Do not start
-REQ-SPARSE-001.
+Open a fresh Repair task for Draft PR #115. Address only SPIKE003-REV-001 and
+SPIKE003-REV-002 from `docs/reviews/PR-115-INDEPENDENT-REVIEW.md`. Add the
+hand-derived three-point Wendland/CSC/matrix-vector regression and truthful
+benchmark phase labeling or phase separation, rerun the fixed benchmark
+evidence, focused checks, and one complete stable-head standard gate, update
+review evidence and this bounded handoff, push, and stop for a fresh independent
+re-review. Do not mark the PR ready, merge it, or begin REQ-SPARSE-001.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #114
 - Draft implementation: GitHub PR #115
 - Requirement summary: `changes/REQ-SPIKE-003.md`
+- Independent review: `docs/reviews/PR-115-INDEPENDENT-REVIEW.md`
 - Reproducible harness: `spikes/sparse-backends/`
 - Selection decision:
   `docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md`

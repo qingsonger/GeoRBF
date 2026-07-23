@@ -663,7 +663,7 @@ requirements:
     issue: 114
     pull_request: 115
     tests: [sparse-spike-cases, scaling, platform-build]
-    docs: [docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md, docs/architecture/SOLVER_POLICY.md, docs/benchmarks/REQ-SPIKE-003.md, spikes/sparse-backends/README.md]
+    docs: [docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md, docs/architecture/SOLVER_POLICY.md, docs/benchmarks/REQ-SPIKE-003.md, docs/reviews/PR-115-INDEPENDENT-REVIEW.md, spikes/sparse-backends/README.md]
     rust_api: "N/A: dependency spike exposes no user API"
     cli: "N/A: dependency spike exposes no command"
     c_api: "N/A: dependency spike exposes no ABI"
