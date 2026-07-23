@@ -11,6 +11,7 @@ records, benchmark reports, Git, and GitHub.
 - Branch: `codex/req-spike-003-sparse-backends`
 - Draft pull request: #115
 - Initial implementation head: `7cae556`
+- Stable full-gate head: `255bac8`
 - Dependencies: REQ-KERNEL-004 and its complete closure are integrated
 - Registry state: `implemented`
 
@@ -39,6 +40,11 @@ records, benchmark reports, Git, and GitHub.
 - The all-feature harness and all four minimal index/backend combinations pass.
   Candidate index pair sets match brute force exactly; both solver paths recover
   analytic truth and reject the singular inconsistent fixture.
+- Exact head `255bac8` passed workspace formatting, warning-denying workspace
+  all-target/all-feature Clippy, all-feature workspace tests, all workspace
+  Rustdoc tests, all 58 requirement checks, and complete diff whitespace
+  validation. The subsequent handoff-only commit changes no production code,
+  test, manifest, schema, CI, build input, dependency, or numerical behavior.
 - Three optimized Windows runs cover 216, 512, and 1,000 points. Pair and
   nonzero counts and per-candidate checksums are deterministic. Faer is
   materially faster at the largest solve; kiddo is faster at the largest index
@@ -52,10 +58,12 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-Run the complete standard workspace gate on the final stable implementation
-tree, commit and push the registry and bounded handoff evidence, and stop.
-Independent Review of Draft PR #115 must occur in a fresh task with a
-read-only reviewer; do not start REQ-SPARSE-001.
+Open a fresh independent Review task for Draft PR #115. Supply only the
+REQ-SPIKE-003 summary and dependency closure, Issue #114 criteria, M7 plan,
+SOLVER_POLICY and ADR-0012 contracts, complete PR diff, benchmark/audit
+evidence, and exact validation results to a read-only reviewer. Record P0-P3
+findings without repairing production or spike code in that task. Do not start
+REQ-SPARSE-001.
 
 ## Durable evidence
 
