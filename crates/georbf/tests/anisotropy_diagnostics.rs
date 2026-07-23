@@ -88,6 +88,84 @@ where
     ))
 }
 
+fn assert_schema_orientations(
+    export: &AnisotropyDiagnosticExport<2>,
+) -> Result<(), Box<dyn Error>> {
+    assert_eq!(
+        export.controls()[0].condition_number().to_bits(),
+        2.0_f64.to_bits()
+    );
+    let (spheroid_principal, axial_length, transverse_length) =
+        match export.controls()[0].orientation() {
+            AnisotropyControlOrientation::Spheroidal {
+                principal_axis,
+                axial_length,
+                transverse_length,
+            } => (principal_axis, axial_length, transverse_length),
+            AnisotropyControlOrientation::Ellipsoidal { .. } => {
+                return Err("the first control must remain spheroidal".into());
+            }
+        };
+    assert_eq!(
+        spheroid_principal
+            .direction()
+            .components()
+            .map(f64::to_bits),
+        [1.0_f64.to_bits(), 0.0_f64.to_bits()]
+    );
+    assert_eq!(
+        spheroid_principal.source(),
+        ResolvedTrendDirectionSource::Explicit
+    );
+    assert_eq!(axial_length.to_bits(), 3.0_f64.to_bits());
+    assert_eq!(transverse_length.to_bits(), 1.5_f64.to_bits());
+
+    assert_eq!(
+        export.controls()[1].condition_number().to_bits(),
+        4.0_f64.to_bits()
+    );
+    let (ellipsoid_axes, axis_lengths, orthogonality_tolerance) =
+        match export.controls()[1].orientation() {
+            AnisotropyControlOrientation::Ellipsoidal {
+                principal_axes,
+                axis_lengths,
+                orthogonality_tolerance,
+            } => (principal_axes, axis_lengths, orthogonality_tolerance),
+            AnisotropyControlOrientation::Spheroidal { .. } => {
+                return Err("the second control must remain ellipsoidal".into());
+            }
+        };
+    assert_eq!(
+        ellipsoid_axes[0].direction().components().map(f64::to_bits),
+        [(-1.0_f64).to_bits(), 0.0_f64.to_bits()]
+    );
+    assert_eq!(
+        ellipsoid_axes[1].direction().components().map(f64::to_bits),
+        [0.0_f64.to_bits(), 1.0_f64.to_bits()]
+    );
+    assert!(
+        ellipsoid_axes
+            .iter()
+            .all(|axis| axis.source() == ResolvedTrendDirectionSource::Explicit)
+    );
+    assert_eq!(
+        axis_lengths.map(f64::to_bits),
+        [4.0_f64.to_bits(), 1.0_f64.to_bits()]
+    );
+    assert_eq!(
+        orthogonality_tolerance.to_bits(),
+        (8.0 * f64::EPSILON).to_bits()
+    );
+    assert_eq!(
+        export
+            .summary()
+            .maximum_anisotropy_condition_number()
+            .to_bits(),
+        4.0_f64.to_bits()
+    );
+    Ok(())
+}
+
 #[test]
 fn diagnostic_schema_preserves_controls_background_weights_and_coverage()
 -> Result<(), Box<dyn Error>> {
@@ -130,21 +208,7 @@ fn diagnostic_schema_preserves_controls_background_weights_and_coverage()
         export.controls()[1].strength().to_bits(),
         (-1.5_f64).to_bits()
     );
-    assert!(export.controls()[0].condition_number() >= 1.0);
-    assert!(matches!(
-        export.controls()[0].orientation(),
-        AnisotropyControlOrientation::Spheroidal {
-            axial_length,
-            transverse_length,
-            ..
-        } if axial_length.to_bits() == 3.0_f64.to_bits()
-            && transverse_length.to_bits() == 1.5_f64.to_bits()
-    ));
-    assert!(matches!(
-        export.controls()[1].orientation(),
-        AnisotropyControlOrientation::Ellipsoidal { axis_lengths, .. }
-            if axis_lengths.map(f64::to_bits) == [4.0_f64.to_bits(), 1.0_f64.to_bits()]
-    ));
+    assert_schema_orientations(&export)?;
 
     let background = export.background();
     assert_eq!(background.component_index(), 0);
