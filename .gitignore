@@ -2,6 +2,7 @@
 /spikes/rank-backends/target/
 /spikes/factorization-backends/target/
 /spikes/convex-backends/target/
+/spikes/sparse-backends/target/
 /.idea/
 /.vscode/
 *.pdb

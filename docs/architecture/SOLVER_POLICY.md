@@ -32,6 +32,18 @@ equilibration, refinement, tolerances, limits, and thread count must be explicit
 and recorded; no backend setting may relax a hard constraint or change the
 objective silently. ADR-0011 records the mapping and selection evidence.
 
+REQ-SPIKE-003 selects the rstar 0.13 release line for later immutable
+support-neighborhood indexing, canonical CSC at the private sparse-solver
+boundary, and the faer 0.24 release line for later checked sparse LLT. The
+spike pins exact candidates only in an excluded harness. Production adoption
+must independently recompute the strict compact-support predicate, sort and
+deduplicate stable center pairs, assemble without densification, validate
+symmetry and finiteness, enforce explicit memory and serial-execution policy,
+and review every solution in original units. A failed pivot, factorization, or
+residual is explicit; no jitter, regularization, pseudoinverse, densification,
+or backend fallback is authorized. ADR-0012 records the selection and the
+rejected valid-input panic and LGPL alternatives.
+
 Each spike reviews correctness, scaling, maintenance, license, MSRV, unsafe
 use, platforms, binary size, alternatives, and deterministic behavior, then
 produces an ADR before dependency lock-in.

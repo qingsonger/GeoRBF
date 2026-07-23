@@ -89,6 +89,35 @@ jobs:
           grep -Fq "enable at least one convex backend feature" <<< "$output"
       - name: Smoke-test convex-backend spike
         run: cargo run --manifest-path spikes/convex-backends/Cargo.toml --release -- --smoke
+      - name: Lint compact-sparse spike
+        run: |
+          cargo fmt --manifest-path spikes/sparse-backends/Cargo.toml -- --check
+          cargo clippy --manifest-path spikes/sparse-backends/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Test compact-sparse feature configurations
+        run: |
+          cargo test --manifest-path spikes/sparse-backends/Cargo.toml --all-features
+          cargo test --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features faer-backend,kiddo-index
+          cargo test --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features faer-backend,rstar-index
+          cargo test --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features sprs-backend,kiddo-index
+          cargo test --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features sprs-backend,rstar-index
+      - name: Reject compact-sparse spike without a factorization backend
+        shell: bash
+        run: |
+          if output=$(cargo check --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features rstar-index 2>&1); then
+            echo "compact-sparse spike unexpectedly accepted a missing factorization backend" >&2
+            exit 1
+          fi
+          grep -Fq "enable at least one sparse factorization backend feature" <<< "$output"
+      - name: Reject compact-sparse spike without a spatial index
+        shell: bash
+        run: |
+          if output=$(cargo check --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features faer-backend 2>&1); then
+            echo "compact-sparse spike unexpectedly accepted a missing spatial index" >&2
+            exit 1
+          fi
+          grep -Fq "enable at least one spatial index feature" <<< "$output"
+      - name: Smoke-test compact-sparse spike
+        run: cargo run --manifest-path spikes/sparse-backends/Cargo.toml --release --all-features -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check
 
@@ -167,6 +196,35 @@ jobs:
           grep -Fq "enable at least one convex backend feature" <<< "$output"
       - name: Smoke-test convex-backend spike
         run: cargo run --manifest-path spikes/convex-backends/Cargo.toml --release -- --smoke
+      - name: Lint compact-sparse spike
+        run: |
+          cargo fmt --manifest-path spikes/sparse-backends/Cargo.toml -- --check
+          cargo clippy --manifest-path spikes/sparse-backends/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Test compact-sparse feature configurations
+        run: |
+          cargo test --manifest-path spikes/sparse-backends/Cargo.toml --all-features
+          cargo test --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features faer-backend,kiddo-index
+          cargo test --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features faer-backend,rstar-index
+          cargo test --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features sprs-backend,kiddo-index
+          cargo test --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features sprs-backend,rstar-index
+      - name: Reject compact-sparse spike without a factorization backend
+        shell: bash
+        run: |
+          if output=$(cargo check --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features rstar-index 2>&1); then
+            echo "compact-sparse spike unexpectedly accepted a missing factorization backend" >&2
+            exit 1
+          fi
+          grep -Fq "enable at least one sparse factorization backend feature" <<< "$output"
+      - name: Reject compact-sparse spike without a spatial index
+        shell: bash
+        run: |
+          if output=$(cargo check --manifest-path spikes/sparse-backends/Cargo.toml --no-default-features --features faer-backend 2>&1); then
+            echo "compact-sparse spike unexpectedly accepted a missing spatial index" >&2
+            exit 1
+          fi
+          grep -Fq "enable at least one spatial index feature" <<< "$output"
+      - name: Smoke-test compact-sparse spike
+        run: cargo run --manifest-path spikes/sparse-backends/Cargo.toml --release --all-features -- --smoke
       - name: Smoke-test radial kernel calculus benchmark
         run: cargo bench -p georbf --bench radial_kernel_calculus -- --smoke
       - name: Smoke-test polyharmonic spline benchmark

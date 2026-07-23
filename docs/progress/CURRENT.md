@@ -6,83 +6,79 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-ANISO-003 complete
-- Requirement: REQ-ANISO-003, Issue #111
-- Implementation pull request: #112, squash-merged as `07dd290`
-- Integration-state branch: `codex/req-aniso-003-integration-state`
-- Integration-state pull request: #113 (Draft until exact Ready CI is green)
-- Initial reviewed head: `a698362`
-- Repair code/test head: `4426a30`
-- Clean re-reviewed head: `c6b2c26`
-- Exact Ready head: `556b254`
-- Stable full-gate head: `4426a30`
-- Review state: ANISO003-REV-001 is independently closed; the complete PR has
-  no remaining P0-P3 finding
-- Dependencies: REQ-ANISO-002 and REQ-TREND-002 are integrated
-- Registry state in this change: `integrated`
+- Mode: Clean independent re-review; Ready CI and integration required
+- Requirement: REQ-SPIKE-003, Issue #114
+- Branch: `codex/req-spike-003-sparse-backends`
+- Draft pull request: #115
+- Repair implementation and stable full-gate head: `83ba364`
+- Closed findings: P1 SPIKE003-REV-001, P2 SPIKE003-REV-002, and
+  P2 SPIKE003-REV-003
+- Review state: the complete repaired PR has no remaining P0-P3 finding
+- Dependencies: REQ-KERNEL-004 and its complete closure are integrated
+- Registry state: `implemented`
 
-## Integration result
+## Independent re-review result
 
-- A fresh isolated read-only project `math_reviewer` independently closed
-  ANISO003-REV-001 and found no P0-P3 issue in the complete repaired PR.
-- Independent orthogonal-metric truth gives condition two for the `(3, 1.5)`
-  spheroid, four for the `[4, 1]` ellipsoid, one for the isotropic background,
-  and four for the mixture summary. The regression preserves the spheroid axis
-  `(1, 0)` and caller-ordered ellipsoid axes `(-1, 0)`, `(0, 1)`, their
-  provenance, paired lengths, and explicit tolerance.
-- Signed sample weights, squared coverage, axial direction jumps, deterministic
-  order, structured errors, and fallible export allocations satisfy the
-  reviewed contract.
-- The fixed-SPD diagonal-congruence construction and strict background remain
-  unchanged. No CPD path, jitter, clipping, regularization, pseudoinverse,
-  refit, field mutation, or unconditional Hessian capability is introduced.
-- Exact Ready head `556b254` passed complete Windows, Ubuntu, and macOS CI run
-  29975641751, including every configured backend combination, benchmark
-  smoke, and requirement validation.
-- PR #112 squash-merged exactly once as `07dd290`; Issue #111 closed as
-  completed. Post-merge `main` CI run 29976326673 passed the same complete
-  three-platform gate on exact merge commit `07dd290`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, numerical behavior, dependency,
-  tag, or release.
+- The preceding isolated `math_reviewer` closed SPIKE003-REV-001. The hand-derived
+  three-point truth checks both candidates' actual CSC arrays, storage-level
+  matrix-vector result, and recovered solution independently of the harness
+  kernel, assembly, and row-major matrix-vector helpers.
+- The reviewer also closed SPIKE003-REV-002. Solver rows truthfully describe
+  construct/factor/solve/review/checksum end-to-end totals, and no isolated
+  factorization-speed conclusion remains.
+- A fresh isolated `math_reviewer` closed SPIKE003-REV-003. Index rows and
+  every evidence surface use the explicit
+  construct/query/filter/canonicalize/checksum end-to-end phase, and the schema
+  regression requires that exact construction-bearing label.
+- The timed control flow and boundary are unchanged, so the existing fixed
+  three-trial Windows ranges remain valid. No query-only performance claim
+  remains.
+- Exact comparison with the unique brute-force pair oracle, pair sorting and
+  deduplication, and sorted-unique CSC checks satisfy duplicate prevention. No
+  new P0-P3 finding was identified in the complete PR diff.
 
-## Validation state
+## Evidence state
 
-- Exact stable production/test head `4426a30` passed workspace format,
-  warning-denying workspace all-target/all-feature Clippy, all-feature
-  workspace tests, all workspace Rustdoc tests, all 58 requirement checks, and
-  complete diff whitespace validation.
-- The isolated re-review passed all four public `anisotropy_diagnostics`
-  integration tests, the D=4 compile-fail Rustdoc test, warning-denying focused
-  Clippy, the runnable example, all 58 requirement checks, and complete diff
-  whitespace validation.
-- Exact Ready-head run 29975641751 and post-merge `main` run 29976326673 are
-  both green on Windows, Ubuntu, and macOS, including every configured
-  benchmark smoke.
-- The isolated integration-state tree must pass the complete local standard
-  gate and exact Ready-head CI before it merges.
+- Exact Repair head `83ba364` passed sparse-harness formatting, warning-denying
+  all-target/all-feature Clippy, all 10 combined-feature tests, all four minimal
+  feature cross-products, both negative configurations, and the optimized
+  release smoke workload with the corrected index phase label.
+- The construction, query, filter, canonicalization, checksum, fixture, and
+  iteration timing region is unchanged; no benchmark rerun was required.
+- Exact Repair head `83ba364` passed the complete standard local gate and all
+  58 requirement checks.
+- The reviewer independently passed all 10 locked all-feature tests, the
+  optimized locked smoke workload, exact dependency review, compact
+  requirement/dependency checks, and whitespace validation.
+- The parent Review independently passed the same 10 all-feature tests, the
+  optimized release smoke workload, all 58 requirement checks, and whitespace
+  validation.
+- The tail after `83ba364` changes only this bounded handoff and the
+  review-evidence Markdown; it does not invalidate the stable code/test/build
+  gate.
+- Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI remains unexecuted
+  and is not claimed. PR #115 remains Draft.
 
 ## Next task boundary
 
-Run the complete local standard gate on the final integration-state head. Mark
-PR #113 Ready, wait for exact Ready-head Windows, Ubuntu, macOS, and
-benchmark-smoke CI, merge only if green, and stop. Do not start another
-requirement.
+Commit and push this evidence-only clean re-review conclusion, synchronize PR
+evidence, and mark PR #115 Ready. Wait for the complete Windows, Ubuntu, and
+macOS matrix with every benchmark smoke on that exact Ready head. Merge exactly
+once only if it is green, wait for the exact merge commit's complete `main` CI,
+then record truthful integration through an isolated integration-state change.
+Do not begin REQ-SPARSE-001.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #111
-- Merged implementation: GitHub PR #112
-- Integration-state pull request: GitHub PR #113
-- Independent review and Repair evidence:
-  `docs/reviews/PR-112-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-ANISO-003.md`
-- Public implementation and Rustdoc:
-  `crates/georbf/src/anisotropy_diagnostics.rs`
-- Independent tests: `crates/georbf/tests/anisotropy_diagnostics.rs`
-- Runnable example: `crates/georbf/examples/anisotropy_diagnostics.rs`
-- Mathematical contract: `docs/architecture/ANISOTROPY.md`, ADR-0005, ADR-0008
+- Acceptance criteria and exclusions: GitHub Issue #114
+- Draft implementation: GitHub PR #115
+- Requirement summary: `changes/REQ-SPIKE-003.md`
+- Independent review: `docs/reviews/PR-115-INDEPENDENT-REVIEW.md`
+- Reproducible harness: `spikes/sparse-backends/`
+- Selection decision:
+  `docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md`
+- Scaling and size evidence: `docs/benchmarks/REQ-SPIKE-003.md`
+- Numerical policy: `docs/architecture/SOLVER_POLICY.md`
 
 ## Checks not yet available
 

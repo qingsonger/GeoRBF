@@ -660,17 +660,17 @@ requirements:
     dependencies: [REQ-KERNEL-004]
     milestone: M7-v0.7.0
     priority: P0
-    issue: null
-    pull_request: null
+    issue: 114
+    pull_request: 115
     tests: [sparse-spike-cases, scaling, platform-build]
-    docs: [docs/adr, docs/architecture/SOLVER_POLICY.md]
+    docs: [docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md, docs/architecture/SOLVER_POLICY.md, docs/benchmarks/REQ-SPIKE-003.md, docs/reviews/PR-115-INDEPENDENT-REVIEW.md, spikes/sparse-backends/README.md]
     rust_api: "N/A: dependency spike exposes no user API"
     cli: "N/A: dependency spike exposes no command"
     c_api: "N/A: dependency spike exposes no ABI"
     cpp_api: "N/A: dependency spike exposes no C++ API"
     python_api: "N/A: dependency spike exposes no Python API"
-    benchmark: planned
-    status: planned
+    benchmark: implemented
+    status: implemented
 
   - id: REQ-SPARSE-001
     title: Compact-support sparse fitting and evaluation

@@ -10,6 +10,7 @@ exclude = [
     "spikes/convex-backends",
     "spikes/factorization-backends",
     "spikes/rank-backends",
+    "spikes/sparse-backends",
 ]
 resolver = "3"
 
