@@ -255,6 +255,8 @@ jobs:
         run: cargo bench -p georbf --bench dense_equality_solver -- --smoke
       - name: Smoke-test immutable fitted-field benchmark
         run: cargo bench -p georbf --bench fitted_field_evaluation -- --smoke
+      - name: Smoke-test compact sparse field benchmark
+        run: cargo bench -p georbf --bench compact_sparse_field -- --smoke
       - name: Smoke-test linear semantic compilation benchmark
         run: cargo bench -p georbf --bench linear_constraint_compilation -- --smoke
       - name: Smoke-test canonical convex solver benchmark

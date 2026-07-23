@@ -903,7 +903,7 @@ where
     }
 }
 
-fn observation_at<const D: usize>(
+pub(crate) fn observation_at<const D: usize>(
     semantic: &SemanticProblemIr<D>,
     index: usize,
 ) -> Option<&ObservationFunctional<D>>
@@ -917,7 +917,7 @@ where
     Some(expression.functional())
 }
 
-fn validate_capabilities<const D: usize, E>(
+pub(crate) fn validate_capabilities<const D: usize, E>(
     metadata: KernelMetadata<'_>,
     observation_index: usize,
     observation: &ObservationFunctional<D>,

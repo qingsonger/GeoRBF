@@ -11,9 +11,12 @@
 //! plus provenance-preserving semantic and solver-neutral canonical problem
 //! intermediate representations and symmetric dense hard-equality field
 //! assembly, plus checked dense equality solving with explicit numerical
-//! policy and original-unit diagnostics, and immutable fitted fields with
-//! capability-gated original-coordinate value, gradient, and Hessian
-//! evaluation, plus stable source-aware structured error codes for adapter and
+//! policy and original-unit diagnostics. Wendland fields also support
+//! deterministic support-neighbor assembly into GeoRBF-owned sorted CSC,
+//! checked private sparse LLT, exact original-unit residual review, and
+//! immutable local-center evaluation without densification. Immutable fitted
+//! fields have capability-gated original-coordinate value, gradient, and
+//! Hessian evaluation, plus stable source-aware structured error codes for adapter and
 //! orchestration boundaries, and caller-owned cancellation, deterministic
 //! progress, and explicit serial-execution controls for assembly and solving,
 //! plus provenance-preserving fixed, unknown, and prior level variables with
@@ -84,6 +87,7 @@ pub mod polynomial;
 pub mod problem_ir;
 pub mod project;
 pub mod solver;
+pub mod sparse;
 pub mod tangent_observations;
 pub mod thickness;
 pub mod thickness_validation;
@@ -174,9 +178,10 @@ pub use local_trend::{
     OperationalDomain, SmoothRegion, SmoothSpatialWeight,
 };
 pub use model::{
-    FittedField, FittedFieldCapabilities, FittedFieldComponent, FittedFieldDiagnostics,
-    FittedFieldEvaluation, FittedFieldEvaluationError, FittedFieldFitError, FittedFieldOutput,
-    FittedFieldRecord, FittedFieldSecondOrderEvaluation, FittedFieldStorage, KernelDefinition,
+    FittedField, FittedFieldAssemblyDiagnostics, FittedFieldCapabilities, FittedFieldComponent,
+    FittedFieldDiagnostics, FittedFieldEvaluation, FittedFieldEvaluationError, FittedFieldFitError,
+    FittedFieldOutput, FittedFieldRecord, FittedFieldSecondOrderEvaluation,
+    FittedFieldSolveDiagnostics, FittedFieldStorage, KernelDefinition,
     KernelDefinitionEvaluationError,
 };
 pub use normal_observations::{
@@ -212,6 +217,13 @@ pub use solver::{
     DenseResidualDiagnostics, DenseSolution, DenseSolveDiagnostics, DenseSolveError,
     DenseSolveOptions, DenseSolverConfigurationError, Regularization, try_solve_field,
     try_solve_field_with_control,
+};
+pub use sparse::{
+    CompactNeighborhoodDiagnostics, CompactNeighborhoodError, SparseAssemblyMemoryDiagnostics,
+    SparseFactorization, SparseFieldAssemblyDiagnostics, SparseFieldAssemblyError,
+    SparseFieldMatrix, SparseFieldSystem, SparseFitOptions, SparseResidualDiagnostics,
+    SparseSolution, SparseSolveDiagnostics, SparseSolveError, SparseSolveMemoryDiagnostics,
+    SparseStorage, try_solve_sparse_field, try_solve_sparse_field_with_control,
 };
 pub use tangent_observations::{
     DerivativeGaugeAnchor, TangentObservation, TangentObservationError, TangentProblem,

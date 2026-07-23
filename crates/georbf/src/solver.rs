@@ -1951,7 +1951,7 @@ const EXACT_PRODUCT_MIN_EXPONENT: i32 = -2148;
 const EXACT_DOT_LIMBS: usize = 67;
 
 #[derive(Clone)]
-struct ExactDotAccumulator {
+pub(crate) struct ExactDotAccumulator {
     words: [u64; EXACT_DOT_LIMBS],
 }
 
@@ -1964,7 +1964,7 @@ impl Default for ExactDotAccumulator {
 }
 
 impl ExactDotAccumulator {
-    fn try_add_product(&mut self, first: f64, second: f64) -> Option<()> {
+    pub(crate) fn try_add_product(&mut self, first: f64, second: f64) -> Option<()> {
         if first == 0.0 || second == 0.0 {
             return Some(());
         }
@@ -1981,7 +1981,7 @@ impl ExactDotAccumulator {
         )
     }
 
-    fn try_abs_f64(&self) -> Option<f64> {
+    pub(crate) fn try_abs_f64(&self) -> Option<f64> {
         let mut magnitude = self.words;
         if magnitude[EXACT_DOT_LIMBS - 1] >> 63 != 0 {
             twos_complement_in_place(&mut magnitude);

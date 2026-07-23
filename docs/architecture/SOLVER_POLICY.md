@@ -44,6 +44,41 @@ residual is explicit; no jitter, regularization, pseudoinverse, densification,
 or backend fallback is authorized. ADR-0012 records the selection and the
 rejected valid-input panic and LGPL alternatives.
 
+`REQ-SPARSE-001` adopts rstar 0.13.0 and faer 0.24.4 with the exact
+default-disabled feature sets reviewed by ADR-0012. GeoRBF lifts D=1/D=2
+locations into a private three-coordinate index with zero padding, because
+rstar rejects one-coordinate trees, while exact support truth remains in the
+original compile-time dimension. Global anisotropy uses a conservative
+Euclidean candidate radius derived from the retained inverse transform; every
+candidate is then accepted only after the existing stable transformed-radius
+calculation proves `radius < support_radius`.
+
+Sparse assembly evaluates only sorted unique support-neighbor representer
+pairs, reflects one finite value exactly, compiles the same hard equalities,
+and materializes sorted-unique full symmetric CSC without a dense intermediate.
+Support coverage is derived from that exact-support pair graph, not from
+whether a particular functional action happens to evaluate to zero.
+Sparse solving copies that validated storage once into the private faer
+boundary, selects lower-triangle LLT with AMD ordering, and independently
+reviews the solution with the fixed exact-binary accumulator in original
+units. The residual tolerance is `128*n*epsilon`. A conservative peak payload
+checks and records the sum at each assembly stage, including the retained
+index, accepted-pair and reflected-entry capacities, all reserved canonical
+relation-vector capacities, equality row work and provenance strings, scaling,
+CSC, and right-hand side. Solve review adds the complete borrowed retained
+system, one backend CSC copy, vectors, exact residual accumulators, and a dense
+fill bound before backend dispatch. The pinned faer 0.24.4 adapter reproduces
+its AMD and complete symbolic-analysis `StackReq`, bounds both possible
+retained symbolic representations by two dense index patterns plus
+dimension-sized metadata, bounds numeric supernodal panel storage by a dense
+square, and bounds numeric scratch by the permuted CSC copy, two dense value
+workspaces, and dimension-sized indices. It checks separate
+symbolic-factorization, numeric-factorization, and solve-and-review peaks and
+enforces their maximum before constructing backend storage. Failure is
+explicit: no equilibration, refinement, regularization, jitter, diagonal
+substitution, pseudoinverse, densification, constraint relaxation, or
+factorization fallback is enabled.
+
 Each spike reviews correctness, scaling, maintenance, license, MSRV, unsafe
 use, platforms, binary size, alternatives, and deterministic behavior, then
 produces an ADR before dependency lock-in.
