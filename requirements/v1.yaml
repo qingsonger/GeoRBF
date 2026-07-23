@@ -697,7 +697,7 @@ requirements:
     milestone: M7-v0.7.0
     priority: P1
     issue: 120
-    pull_request: null
+    pull_request: 121
     tests: [strategy-truth, deterministic-seed, hard-rank, insufficient-basis]
     docs: [docs/architecture/ARCHITECTURE.md, docs/architecture/SOLVER_POLICY.md, docs/benchmarks/REQ-CENTER-001.md, rustdoc]
     rust_api: implemented

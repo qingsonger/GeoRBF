@@ -9,7 +9,7 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement / REQ-CENTER-001 complete
 - Requirement: REQ-CENTER-001, open Issue #120
 - Branch: `codex/req-center-001-rank-safe-centers`
-- Pull request: pending Draft creation after the stable implementation commit
+- Pull request: #121 (Draft, awaiting fresh independent Review)
 - Dependencies: REQ-SOLVE-001 and REQ-MODEL-001 are integrated
 - Registry status: `planned` until independent Review, Ready CI, merge, and
   isolated integration-state evidence complete
@@ -56,6 +56,7 @@ production code or begin REQ-TUNE-001.
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #120
+- Draft implementation: GitHub PR #121
 - Requirement summary: `changes/REQ-CENTER-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - Numerical policy: `docs/architecture/SOLVER_POLICY.md`

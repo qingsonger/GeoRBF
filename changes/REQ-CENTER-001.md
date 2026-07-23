@@ -1,7 +1,8 @@
 # REQ-CENTER-001
 
 Issue #120 defines the acceptance criteria and exclusions for rank-safe center
-selection. The Rust core now exposes one GeoRBF-owned
+selection; Draft PR #121 carries the implementation for independent Review.
+The Rust core now exposes one GeoRBF-owned
 `CenterSelectionProblem<D>` for exactly D=1, D=2, and D=3. It validates finite
 candidate locations, an aligned finite target-residual vector, and a finite
 exact-symmetric row-major Gram matrix without exposing nalgebra types.
