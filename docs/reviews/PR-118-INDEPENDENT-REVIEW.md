@@ -8,9 +8,13 @@
 - Base head: `c6696f2b75a0b492f10bccb90f8ef3059e3f8eb9`
 - Stable implementation gate head: `a0fd9fe`
 - Repair implementation and gate head: `a24699525aa811f2a55b3eecf880eb64e685ee76`
+- Second Repair implementation and gate head:
+  `eca914287138baa42fddd09313596be60aa4a681`
 - Review date: 2026-07-23
-- Result: the original review found one P1 and two P2 findings; Repair
-  addressed all three, pending fresh independent re-review
+- Result: the original review found one P1 and two P2 findings; the first
+  Repair closed both P2 findings, while fresh re-review retained one P1 and
+  added one evidence-only P3. The second Repair addresses both remaining
+  findings, pending fresh independent re-review.
 
 ## Scope and independence
 
@@ -306,3 +310,46 @@ standard gate after the last production or test change, update this evidence
 and the bounded handoff, push, and stop for another fresh independent
 re-review. This Review does not repair production code, mark the PR ready,
 merge it, or begin REQ-CENTER-001.
+
+## Second Repair evidence
+
+- Exact implementation and stable-gate head:
+  `eca914287138baa42fddd09313596be60aa4a681`.
+- SPARSE001-REV-001: the equality-only retained-payload calculation now adds
+  the allocated capacities of all four canonical relation vectors. The
+  pre-allocation bound reserves the same conservative capacity for
+  `CanonicalEquality`, `CanonicalLinearBound`,
+  `CanonicalSecondOrderCone`, and `CanonicalSoftObjective`, so both assembly
+  and the solve-retained-system base include the three logically empty
+  relation buffers.
+- The internal
+  `equality_payload_counts_every_reserved_canonical_capacity` regression
+  independently sums variable-block vectors and names, all four relation
+  vectors, equality term vectors, every provenance string, and all five
+  scaling vectors. It confirms that the three non-equality vectors are empty
+  but allocated, then requires the public-to-sparse retained calculation to
+  equal that independent sum.
+- The sparse memory regression sets an assembly limit strictly between the old
+  and corrected canonicalization peaks and requires the corrected preflight to
+  reject it. A separate 64-row fixture sets the inherited limit strictly
+  between the old and corrected solve peaks, confirms corrected assembly fits,
+  and requires solve to reject the complete corrected retained-system sum.
+- SPARSE001-REV-004: the independent-truth evidence now states that the
+  implementation accumulates `b-A*x` and that the published infinity norm and
+  backward error are sign invariant. Production residual behavior is
+  unchanged.
+
+Focused validation on the Repair worktree passed all 44 all-feature core unit
+tests, all nine all-feature sparse integration tests, format, and
+warning-denying all-target/all-feature Clippy. After the last production or
+test change, exact head `eca914287138baa42fddd09313596be60aa4a681` passed the
+complete standard workspace gate: format, warning-denying
+workspace/all-target/all-feature Clippy, all-feature workspace tests,
+workspace doctests, and the 58-requirement registry check.
+
+The second Repair changes no sparse support predicate, kernel action, CSC
+value, factorization, solution, residual accumulation, tolerance, fallback, or
+regularization policy. PR #118 remains Draft and REQ-SPARSE-001 remains
+`planned`. A fresh independent Review/re-review must confirm both repairs and
+check for new P0-P3 findings before any Ready transition, complete
+three-platform and benchmark-smoke CI, merge, or integration-state update.
