@@ -375,6 +375,7 @@ where
     Dim<D>: SupportedDimension,
 {
     radius: f64,
+    displacement: [f64; D],
     unit_displacement: Option<[f64; D]>,
 }
 
@@ -429,6 +430,7 @@ where
         if scale == 0.0 {
             return Ok(Self {
                 radius: 0.0,
+                displacement,
                 unit_displacement: None,
             });
         }
@@ -448,6 +450,7 @@ where
         let unit_displacement = displacement.map(|component| (component / scale) / scaled_norm);
         Ok(Self {
             radius,
+            displacement,
             unit_displacement: Some(unit_displacement),
         })
     }
@@ -468,6 +471,10 @@ where
     #[must_use]
     pub const fn unit_displacement(&self) -> Option<&[f64; D]> {
         self.unit_displacement.as_ref()
+    }
+
+    pub(crate) const fn displacement(&self) -> &[f64; D] {
+        &self.displacement
     }
 
     fn location(&self) -> RadialJetLocation {

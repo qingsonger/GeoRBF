@@ -1267,3 +1267,49 @@ fn fixed_gaussian_inverse_length_square_survives_complete_term_scaling()
     assert_close(actual, expected, expected.abs() * 1024.0 * f64::EPSILON);
     Ok(())
 }
+
+#[test]
+fn fixed_gaussian_gradient_preserves_transverse_displacement_before_scaling()
+-> Result<(), Box<dyn Error>> {
+    let strength = 1.0e154_f64;
+    let influence_radius = 1.0e161_f64;
+    let fixed_kernel_length = 1.0e160_f64;
+    let evaluation_point = point([1.0e160, 1.0e-170])?;
+    let control = LocalTrendControl::new(
+        evaluation_point,
+        KernelDefinition::from(Gaussian::try_new(fixed_kernel_length)?),
+        TrendControlOrientation::Spheroidal {
+            principal_axis: TrendDirectionSource::Explicit(direction([1.0, 0.0])?),
+            axial_length: 1.0,
+            transverse_length: 1.0,
+        },
+        influence_radius,
+        strength,
+        None,
+    );
+    let compiled = try_compile_local_trend_controls(
+        background()?,
+        &[control],
+        None,
+        domain(influence_radius)?,
+        0.25,
+        policy(1.0e-12, 1.0, 1.0)?,
+    )?;
+
+    // Independently evaluated with 300-decimal arithmetic from the exact
+    // represented inputs above:
+    // -strength^2 * exp(-0.5 * ||x / R||^2 - 0.5 * ||x / L||^2)
+    //     * x[1] / L^2.
+    let expected = -6.035_055_754_270_406e-183_f64;
+    let actual = compiled
+        .mixture()
+        .try_evaluate(
+            evaluation_point,
+            point([0.0, 0.0])?,
+            KernelDerivativeOrder::First,
+        )?
+        .gradient()
+        .ok_or("missing gradient")?[1];
+    assert_close(actual, expected, expected.abs() * 1024.0 * f64::EPSILON);
+    Ok(())
+}

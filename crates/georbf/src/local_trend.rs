@@ -2150,10 +2150,7 @@ where
             .map_err(KernelDefinitionEvaluationError::Anisotropy)?;
         let scaled = separation.radius() / gaussian.length_scale();
         let value = StableFactor::from_gaussian(1.0, -0.5 * scaled * scaled);
-        let transformed = match separation.unit_displacement() {
-            Some(unit) => std::array::from_fn(|axis| unit[axis] * separation.radius()),
-            None => [0.0; D],
-        };
+        let transformed = separation.displacement();
         let inverse_length = gaussian.length_scale().recip();
         let scaled_projections = if demanded >= KernelDerivativeOrder::First {
             std::array::from_fn(|axis| {
