@@ -7,9 +7,11 @@
 - Reviewed head: `2ad68e530d11a9486f3a48e3437b15115c32329e`
 - Repair head re-reviewed:
   `7257e67873b1fddd22d6a122f57e5cb92c354bda`
+- Final Repair head re-reviewed:
+  `83ba364da69477d13510f7304c255e3c28cbdae6`
 - Base head: `244e8877ad3833b02bb32c0a8e3ea1e729119f74`
 - Review date: 2026-07-23
-- Result: original P1 and P2 closed; one new P2 finding requires Repair
+- Result: all three findings closed; no P0-P3 finding remains
 
 ## Scope and independence
 
@@ -323,3 +325,61 @@ REQ-SPIKE-003 remains `implemented`, not `integrated`. A fresh isolated
 mathematical and numerical re-review must inspect exact Repair head `83ba364`
 before the PR can be marked ready. This Repair does not merge the PR or begin
 REQ-SPARSE-001.
+
+## Fresh independent closure of SPIKE003-REV-003
+
+A new isolated read-only project `math_reviewer` independently reviewed exact
+Repair implementation head
+`83ba364da69477d13510f7304c255e3c28cbdae6` against base
+`244e8877ad3833b02bb32c0a8e3ea1e729119f74`. It received only the bounded
+requirement summary and integrated dependency closure, Issue #114 acceptance
+criteria and exclusions, the M7 plan, normative solver policy and ADR, the
+complete exact-head diff, harness and benchmark evidence, the three prior
+findings, and recorded validation. It inherited no Implement or Repair
+reasoning and made no repository or remote change.
+
+SPIKE003-REV-003 is closed. The index phase is exactly
+`construct_query_filter_canonicalize_checksum_end_to_end` at
+`spikes/sparse-backends/src/main.rs:18`, and the schema regression requires
+that complete label at `spikes/sparse-backends/src/main.rs:1030-1042`. The
+timed interval at `spikes/sparse-backends/src/main.rs:681-693` begins before
+`indexed_pairs`, which constructs Kiddo at lines 263-268 or bulk-loads Rstar
+at lines 296-302, and ends after checksum accumulation. ADR-0012, the
+benchmark report, harness README, and change fragment all explicitly include
+construction. The diff from `7257e67` to `83ba364` does not change the timing
+control flow or boundary, so the existing fixed measurements remain valid.
+
+No new P0, P1, P2, or P3 finding was identified. Exact comparison with the
+unique brute-force pair oracle, explicit pair sorting and deduplication, and
+sorted-unique CSC row checks cover duplicate prevention. A separate
+coincident-coordinate fixture is not an additional Issue #114 acceptance
+item.
+
+Independent truth and validation included:
+
+- `phi(q) = (1-q)^4(4q+1)` has
+  `phi(0) = 1`, `phi(1/2) = 3/16`, and `phi(1) = 0`; the hand matrix has
+  eigenvalues `1` and `1 +/- 3*sqrt(2)/16`, all positive, and maps
+  `[1, 2, 3]` to `[11/8, 11/4, 27/8]`.
+- Both candidate CSC paths expose the expected arrays, storage-level product,
+  symmetry, and recovered solution. Strict squared-distance filtering excludes
+  the support boundary, and the unit-grid radius permits at most 27 full-row
+  nonzeros and 14 stored upper pairs per point.
+- The reported backward error is the dimensionless original-unit quantity
+  `||b-Ax||_inf / (||A||_inf ||x||_inf + ||b||_inf)`. Faer's default LLT
+  dynamic-regularization threshold and replacement value are zero. No jitter,
+  pseudoinverse, densification, regularization, or backend fallback appears.
+- The reviewer passed all 10 locked all-feature tests, the locked optimized
+  all-feature smoke workload with both repaired index labels, exact direct
+  dependency review, compact requirement and dependency checks, and complete
+  base-to-Repair-head whitespace validation.
+- The parent Review task independently passed the same 10 all-feature tests,
+  optimized release smoke workload, all 58 requirement checks, and complete
+  base-to-Repair-head whitespace validation.
+
+Exact Repair head `83ba364` retains its recorded complete stable standard gate.
+The tail through this clean re-review conclusion changes only Markdown evidence
+and does not invalidate that gate. REQ-SPIKE-003 remains `implemented` until
+PR #115 passes the complete exact Ready-head Windows, Ubuntu, and macOS matrix
+with every benchmark smoke, merges exactly once, and the isolated integration
+state is recorded.

@@ -6,17 +6,18 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required
+- Mode: Clean independent re-review; Ready CI and integration required
 - Requirement: REQ-SPIKE-003, Issue #114
 - Branch: `codex/req-spike-003-sparse-backends`
 - Draft pull request: #115
 - Repair implementation and stable full-gate head: `83ba364`
-- Closed findings: P1 SPIKE003-REV-001 and P2 SPIKE003-REV-002
-- Repaired pending independent closure: P2 SPIKE003-REV-003
+- Closed findings: P1 SPIKE003-REV-001, P2 SPIKE003-REV-002, and
+  P2 SPIKE003-REV-003
+- Review state: the complete repaired PR has no remaining P0-P3 finding
 - Dependencies: REQ-KERNEL-004 and its complete closure are integrated
 - Registry state: `implemented`
 
-## Repair result
+## Independent re-review result
 
 - The preceding isolated `math_reviewer` closed SPIKE003-REV-001. The hand-derived
   three-point truth checks both candidates' actual CSC arrays, storage-level
@@ -25,12 +26,16 @@ records, benchmark reports, Git, and GitHub.
 - The reviewer also closed SPIKE003-REV-002. Solver rows truthfully describe
   construct/factor/solve/review/checksum end-to-end totals, and no isolated
   factorization-speed conclusion remains.
-- SPIKE003-REV-003 is repaired. Index rows and every evidence surface now use
-  the explicit construct/query/filter/canonicalize/checksum end-to-end phase,
-  and the schema regression requires that exact construction-bearing label.
+- A fresh isolated `math_reviewer` closed SPIKE003-REV-003. Index rows and
+  every evidence surface use the explicit
+  construct/query/filter/canonicalize/checksum end-to-end phase, and the schema
+  regression requires that exact construction-bearing label.
 - The timed control flow and boundary are unchanged, so the existing fixed
   three-trial Windows ranges remain valid. No query-only performance claim
-  remains. The PR stays Draft pending fresh independent re-review.
+  remains.
+- Exact comparison with the unique brute-force pair oracle, pair sorting and
+  deduplication, and sorted-unique CSC checks satisfy duplicate prevention. No
+  new P0-P3 finding was identified in the complete PR diff.
 
 ## Evidence state
 
@@ -42,20 +47,26 @@ records, benchmark reports, Git, and GitHub.
   iteration timing region is unchanged; no benchmark rerun was required.
 - Exact Repair head `83ba364` passed the complete standard local gate and all
   58 requirement checks.
-- The pending Repair tail changes only this bounded handoff and the
+- The reviewer independently passed all 10 locked all-feature tests, the
+  optimized locked smoke workload, exact dependency review, compact
+  requirement/dependency checks, and whitespace validation.
+- The parent Review independently passed the same 10 all-feature tests, the
+  optimized release smoke workload, all 58 requirement checks, and whitespace
+  validation.
+- The tail after `83ba364` changes only this bounded handoff and the
   review-evidence Markdown; it does not invalidate the stable code/test/build
-  gate on `83ba364`.
+  gate.
 - Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI remains unexecuted
   and is not claimed. PR #115 remains Draft.
 
 ## Next task boundary
 
-Open a fresh Review task for Draft PR #115. Use an isolated `math_reviewer` to
-verify that exact Repair head `83ba364` closes SPIKE003-REV-003 and to inspect
-the complete PR diff for new P0-P3 findings. If any finding remains, record it
-and stop for another fresh Repair. Do not mark the PR ready, merge it, or begin
-REQ-SPARSE-001 unless that independent re-review is clean and the repository's
-separate ready-head integration sequence is followed.
+Commit and push this evidence-only clean re-review conclusion, synchronize PR
+evidence, and mark PR #115 Ready. Wait for the complete Windows, Ubuntu, and
+macOS matrix with every benchmark smoke on that exact Ready head. Merge exactly
+once only if it is green, wait for the exact merge commit's complete `main` CI,
+then record truthful integration through an isolated integration-state change.
+Do not begin REQ-SPARSE-001.
 
 ## Durable evidence
 
