@@ -21,8 +21,10 @@ missing-capability compile failures, and a release smoke workload.
 
 The repaired solver timings are explicitly end-to-end
 triplet/CSC-construction, factorization, solve, residual and analytic review,
-and checksum measurements. They are dependency-selection evidence and do not
-claim isolated factorization speed.
+and checksum measurements. Index timings are explicitly end-to-end candidate
+construction, query, strict filtering, canonicalization, and checksum
+measurements. They are dependency-selection evidence and do not claim isolated
+factorization speed or query-only performance.
 
 The audit records current releases, maintenance, permissive and LGPL license
 differences, declared and missing MSRVs, unsafe and native-code exposure, one

@@ -15,7 +15,7 @@ const SUPPORT_RADIUS: f64 = 1.75;
 const ACCEPTED_BACKWARD_ERROR: f64 = 1.0e-10;
 const BENCHMARK_HEADER: &str =
     "kind,phase,candidate,points,nonzeros_or_pairs,iterations,nanoseconds,checksum,residual";
-const INDEX_BENCHMARK_PHASE: &str = "query_filter_canonicalize_checksum_end_to_end";
+const INDEX_BENCHMARK_PHASE: &str = "construct_query_filter_canonicalize_checksum_end_to_end";
 const SOLVER_BENCHMARK_PHASE: &str = "construct_factor_solve_review_checksum_end_to_end";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1032,9 +1032,14 @@ mod sparse_spike_cases {
             BENCHMARK_HEADER,
             "kind,phase,candidate,points,nonzeros_or_pairs,iterations,nanoseconds,checksum,residual"
         );
-        assert!(INDEX_BENCHMARK_PHASE.ends_with("_end_to_end"));
-        assert!(SOLVER_BENCHMARK_PHASE.ends_with("_end_to_end"));
-        assert!(SOLVER_BENCHMARK_PHASE.contains("construct_factor_solve_review"));
+        assert_eq!(
+            INDEX_BENCHMARK_PHASE,
+            "construct_query_filter_canonicalize_checksum_end_to_end"
+        );
+        assert_eq!(
+            SOLVER_BENCHMARK_PHASE,
+            "construct_factor_solve_review_checksum_end_to_end"
+        );
     }
 
     #[cfg(feature = "kiddo-index")]

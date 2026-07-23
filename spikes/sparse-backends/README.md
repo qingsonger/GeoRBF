@@ -62,11 +62,11 @@ evidence. The comparison path uses an explicit bucket of 128 only so the fixed
 benchmark can finish; this bounded workaround is not an accepted production
 policy. Rstar requires no equivalent data-dependent capacity assumption.
 
-The scaling workload reports explicit end-to-end phases. Index rows time query,
-strict filtering, canonicalization, and checksum work. Solver rows time triplet
-allocation, CSC construction, factorization, solve, original-unit and analytic
-review, and checksum work. It also reports strict pair count, stored nonzeros,
-deterministic checksum, and original-unit residual. Its fixed data and one
-process make repeat comparisons reproducible; timings remain machine-local
-selection evidence, not a stable performance API or isolated factorization
-measurement.
+The scaling workload reports explicit end-to-end phases. Index rows time index
+construction, query, strict filtering, canonicalization, and checksum work.
+Solver rows time triplet allocation, CSC construction, factorization, solve,
+original-unit and analytic review, and checksum work. It also reports strict
+pair count, stored nonzeros, deterministic checksum, and original-unit
+residual. Its fixed data and one process make repeat comparisons reproducible;
+timings remain machine-local selection evidence, not a stable performance API
+or isolated factorization measurement.

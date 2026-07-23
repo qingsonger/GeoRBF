@@ -106,11 +106,12 @@ precondition or panic.
 Three consecutive optimized Windows runs used one process and three iterations
 at 216, 512, and 1,000 points. Candidate pair and nonzero counts were identical.
 The output schema names each measured phase explicitly. Rstar's end-to-end
-query/filter/canonicalize/checksum totals were `1.0303--1.8420 ms`,
-`2.5854--3.1917 ms`, and `7.0874--7.7953 ms`; kiddo totals were
-`1.0809--1.2810 ms`, `2.5387--2.7266 ms`, and `5.4623--5.8904 ms`. Kiddo's
-largest end-to-end index row was faster, but that advantage does not offset its
-valid-input panic and fixed-bucket precondition.
+construct/query/filter/canonicalize/checksum totals were `1.0303--1.8420 ms`,
+`2.5854--3.1917 ms`, and `7.0874--7.7953 ms`; kiddo's equivalent totals were
+`1.0809--1.2810 ms`, `2.5387--2.7266 ms`, and `5.4623--5.8904 ms`. Each
+iteration constructs the complete candidate index before querying it. Kiddo's
+largest end-to-end index row was faster, but that advantage does not offset
+its valid-input panic and fixed-bucket precondition.
 
 Faer's end-to-end triplet/CSC-construction, factorization, solve, review, and
 checksum totals were `1.8281--2.3884 ms`, `6.6789--7.1249 ms`, and
