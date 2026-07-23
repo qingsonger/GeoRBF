@@ -6,60 +6,58 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required
+- Mode: Review/re-review complete; Repair required
 - Requirement: REQ-SPARSE-001
 - Issue: #117
 - Branch: `codex/req-sparse-001-compact-support`
 - Draft pull request: #118
-- Original reviewed head: `806bbff`
+- Re-reviewed evidence head: `244a04a`
 - Repair implementation and stable gate head: `a246995`
-- Original findings repaired: P1 SPARSE001-REV-001; P2 SPARSE001-REV-002
-  and SPARSE001-REV-003
+- Open findings: P1 SPARSE001-REV-001 and P3 SPARSE001-REV-004
+- Closed findings: P2 SPARSE001-REV-002; the non-memory portions of P2
+  SPARSE001-REV-003
 - Dependencies: REQ-SPIKE-003, REQ-FIELD-001, and REQ-KERNEL-004 are integrated
-- Registry status: `planned` until review, Ready CI, merge, and integration
+- Registry status: `planned`; Ready CI and integration are forbidden while
+  findings remain
 
-## Repair result
+## Re-review result
 
-- SPARSE001-REV-001: assembly diagnostics now expose and sum retained index,
-  canonical capacities, CSC, right-hand side, pair, entry, row, and bulk-load
-  components per checked stage. Solve includes the complete retained borrowed
-  system beside backend CSC, dense-fill bound, vectors, and exact residual
-  work. Limits at retained, assembly-peak, and solve-peak boundaries have
-  direct regressions.
-- SPARSE001-REV-002: support coverage is derived from accepted exact-support
-  pairs before numeric-zero filtering. A co-located Value and
-  DirectionalDerivative regression requires the zero action to retain two
-  support neighbors per row with no isolated center.
-- SPARSE001-REV-003: direct regressions now cover complete CSC/diagnostic
-  repeat determinism, hard canonical conflict, solve cancellation and memory
-  rejection, an unrepresentable candidate radius, and fixed 64- versus
-  512-point bounded-neighbor growth. The change fragment is narrowed to direct
-  evidence.
+- SPARSE001-REV-001 remains open. Equality-only canonical compilation reserves
+  capacity for empty linear-bound, cone, and soft-objective vectors, but
+  `equality_payload_capacity_bytes`, sparse pre-allocation review, assembly
+  diagnostics, and retained solve payload omit those live allocations.
+- SPARSE001-REV-004 is a new evidence-only P3. The implementation accumulates
+  `b-A*x`; the review record currently states `A*x-b`. The accepted norm is
+  sign invariant, so production behavior is unaffected.
+- Exact-support coverage, deterministic CSC/diagnostics, hard conflict,
+  cancellation, nonrepresentable candidate radius, and two-size sparse-growth
+  repairs are independently confirmed.
+- No other P0-P3 finding was identified. PR #118 must remain Draft.
 
 ## Evidence state
 
-- Exact repair head `a24699525aa811f2a55b3eecf880eb64e685ee76` passed all
-  nine all-feature sparse integration tests and warning-denying all-target
-  Clippy.
-- The 64-point release benchmark smoke passed after the final production
-  change with 352 stored nonzeros and finite checksums for assembly, solve,
-  and local evaluation.
-- The same exact head passed the complete five-check standard gate: format,
-  warning-denying workspace/all-target/all-feature Clippy, all-feature
-  workspace tests, workspace doctests, and all 58 requirement checks.
-- The subsequent handoff commit changes only review evidence and this bounded
-  handoff; it does not change production, tests, manifests, schema, CI, or
-  build inputs and therefore does not invalidate the stable gate.
+- Exact repair head `a24699525aa811f2a55b3eecf880eb64e685ee76` retains the
+  recorded nine-test focused evidence, warning-denying Clippy, 64-point
+  benchmark smoke, and complete five-check standard gate.
+- Draft CI run 29992714121 passed its Ubuntu correctness job on exact
+  re-reviewed head `244a04a`; the Ready-only three-platform and benchmark
+  matrix was skipped and is not claimed.
+- This Review changes only review evidence and the bounded handoff. It does not
+  change production, tests, manifests, schema, CI, or build inputs and
+  therefore does not invalidate the stable implementation gate.
 
 ## Next task boundary
 
-Open a fresh Review/re-review task for Draft PR #118. Supply a new isolated
-read-only `math_reviewer` with the bounded requirement summary, dependency
-closure, normative documents and ADR, complete repaired PR diff, and exact
-validation evidence. Verify all three original findings are closed and inspect
-for new P0-P3 findings. If any finding remains, record it and stop without
-repairing production code. If the re-review is clean, follow the repository's
-separate ready-head CI and integration sequence. Do not begin REQ-CENTER-001.
+Open a fresh Repair task for Draft PR #118. Address only
+SPARSE001-REV-001 and SPARSE001-REV-004. Count every canonical relation
+vector's allocated capacity in equality-only preflight, retained diagnostics,
+assembly peaks, and solve peaks. Add an independent canonical-capacity sum plus
+assembly- and solve-stage limits between the old and corrected peaks. Correct
+the residual-sign evidence without changing behavior. Run focused checks while
+iterating and the complete standard gate once after the last production or
+test change. Update review evidence and this bounded handoff, commit, push, and
+stop for another fresh independent re-review. Do not mark PR #118 Ready, merge
+it, or begin REQ-CENTER-001.
 
 ## Durable evidence
 

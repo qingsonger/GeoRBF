@@ -214,3 +214,94 @@ PR #118 remains Draft and REQ-SPARSE-001 remains `planned`, not `integrated`.
 A fresh independent re-review task must verify all three repairs and check for
 new P0-P3 findings on the repaired head. This Repair does not mark the PR
 ready, merge it, or begin REQ-CENTER-001.
+
+## Fresh independent re-review after the first Repair
+
+- Re-reviewed base: `c6696f2b75a0b492f10bccb90f8ef3059e3f8eb9`
+- Re-reviewed evidence head:
+  `244a04a5e2d10315d76a668b2122cc895ff0e43c`
+- Repair implementation and stable gate head:
+  `a24699525aa811f2a55b3eecf880eb64e685ee76`
+- Draft CI run: 29992714121
+- Result: one P1 remains open and one new P3 evidence finding was identified
+
+A new isolated read-only project `math_reviewer` independently inspected the
+complete five-commit base-to-head diff. It received only the bounded
+requirement summary and integrated dependency closure, Issue #117 acceptance
+criteria and exclusions, the M7 plan, architecture and solver policy,
+ADR-0012, the original findings, the complete repaired diff, and exact test,
+benchmark, and stable-gate evidence. It inherited no Implement or Repair
+reasoning and made no repository or remote change.
+
+SPARSE001-REV-002 is closed. Exact-support row coverage is updated before
+numeric-zero filtering, and the co-located Value and
+DirectionalDerivative regression proves that an exact-zero action remains in
+the support graph.
+
+SPARSE001-REV-003 is closed for deterministic complete CSC and diagnostic
+comparison, hard conflict, assembly and solve cancellation, solve memory
+rejection, an unrepresentable candidate radius, and two-size bounded-neighbor
+growth. Its memory-coverage claim remains dependent on the still-open
+SPARSE001-REV-001 below.
+
+### P1 SPARSE001-REV-001 remains open: canonical relation buffers are omitted
+
+`SemanticProblemIr::try_compile` reserves `constraints.len()` capacity for
+equalities, linear bounds, cones, and soft objectives at
+`crates/georbf/src/problem_ir.rs:516-549`. A field problem populates only
+equalities, but the other three vectors remain logically empty with allocated
+capacity. `CanonicalProblem::equality_payload_capacity_bytes` verifies that
+those vectors are empty but omits their capacities at
+`crates/georbf/src/problem_ir.rs:1548-1598`. The sparse pre-allocation bound at
+`crates/georbf/src/sparse.rs:1600-1642` omits the same buffers.
+
+Assembly therefore enforces and publishes an incomplete canonical payload at
+`crates/georbf/src/sparse.rs:947-961` and
+`crates/georbf/src/sparse.rs:1002-1054`, while solve inherits the undercount
+through `retained_system_bytes` at `crates/georbf/src/sparse.rs:1866-1877`.
+The missing simultaneous payload is at least the capacities of
+`CanonicalLinearBound`, `CanonicalSecondOrderCone`, and
+`CanonicalSoftObjective`. A caller limit between the reported and actual live
+payload can still succeed, so the complete borrowed-system and exact-memory
+claims in `changes/REQ-SPARSE-001.md` are not yet true.
+
+Required Repair: include every canonical vector's allocated capacity in the
+checked equality-only payload and pre-allocation bound. Add an internal
+independent sum over all canonical vector, string, and scaling capacities,
+including the three empty relation buffers, and require
+`equality_payload_capacity_bytes` to equal it. Add an assembly limit between
+the old and corrected canonicalization peaks and require
+`MemoryLimitExceeded`; use the corrected assembly result to require the
+analogous solve-stage rejection.
+
+### P3 SPARSE001-REV-004: residual-sign evidence is inaccurate
+
+`crates/georbf/src/sparse.rs:1914-1925` accumulates `b - A*x`, while this
+record's independent-truth section states `A*x-b`. The exposed infinity norm
+and backward error are sign invariant, so numerical acceptance is unchanged,
+but the evidence is factually inaccurate.
+
+Required Repair: state `b-A*x`, or explicitly state that the norm is sign
+invariant. No behavioral regression is required because the public diagnostic
+does not expose the residual sign.
+
+No other P0, P1, P2, or P3 finding was identified. Independent truth checks
+confirmed the Wendland SPD and strict-support contracts, the CPD exclusion,
+the conservative anisotropy candidate bound, exact symmetric action
+reflection, explicit LLT failure, absence of hidden regularization or fallback,
+the original-unit backward-error normalization and tolerance, D=1/D=2/D=3
+embedding, normalization chain rules, center capabilities, interface
+dispositions, benchmark scope, and truthful non-integrated registry state.
+
+Draft CI run 29992714121 passed its configured Ubuntu correctness job on exact
+re-reviewed head `244a04a`; the Ready-only Windows, Ubuntu, macOS, and
+benchmark-smoke matrix was skipped as designed and is not claimed as passed.
+The worktree remained clean throughout the independent review.
+
+PR #118 must remain Draft and REQ-SPARSE-001 remains `planned`. A fresh Repair
+task must address only SPARSE001-REV-001 and SPARSE001-REV-004, add the
+specified memory regressions, run focused checks and one complete stable-head
+standard gate after the last production or test change, update this evidence
+and the bounded handoff, push, and stop for another fresh independent
+re-review. This Review does not repair production code, mark the PR ready,
+merge it, or begin REQ-CENTER-001.
