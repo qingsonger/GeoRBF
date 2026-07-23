@@ -1853,3 +1853,30 @@ No P0-P3 finding remains. PR #109 may be marked Ready only after this
 evidence-only conclusion is committed and pushed. Integration still requires
 the complete exact-Ready-head Windows, Ubuntu, and macOS workspace and every
 benchmark-smoke workload to pass before one squash merge.
+
+## Integration evidence
+
+- Exact Ready evidence head:
+  `a73562c683e234a1ea7ff6a0917e8e63914ce503`
+- Ready CI run: 29971311450
+- Squash merge: `9c7eb2aa0d2c7ad97855288f2fa2ed404a1db7ee`
+- Post-merge `main` CI run: 29971918657
+- Integration-state branch: `codex/req-trend-002-integration-state`
+- Integration-state pull request: pending
+
+Ready CI run 29971311450 passed the complete Windows, Ubuntu, and macOS
+workspace gate on exact Ready head `a73562c`, including every configured
+backend combination, every benchmark-smoke workload, and requirement
+validation. PR #109 then squash-merged exactly once as `9c7eb2a`; Issue #108
+closed as completed. Post-merge `main` CI run 29971918657 passed the same
+complete three-platform gate on exact merge commit `9c7eb2a`.
+
+The isolated integration-state change updates only the requirement registry,
+this review evidence, the completed-history index, and the bounded handoff. It
+changes no production code, test, manifest, schema, CI, build input, public
+API, numerical behavior, dependency, tag, or release. The requirement may be
+recorded as `integrated` in this change because implementation, tests,
+documentation, interfaces, diagnostics, benchmarks, independent review, exact
+Ready-head CI, the implementation merge, and post-merge `main` CI are now
+complete. The integration-state pull request itself must still pass its local
+standard gate and exact Ready-head CI before it merges.

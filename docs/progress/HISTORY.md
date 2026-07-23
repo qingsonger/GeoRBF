@@ -42,6 +42,7 @@ available in Git history through commit `a2be099`.
 | REQ-PROJECT-001 | #99 | #100 | #101 | `docs/reviews/PR-100-INDEPENDENT-REVIEW.md` |
 | REQ-TREND-001 | #102 | #103 | #104 | `docs/reviews/PR-103-INDEPENDENT-REVIEW.md` |
 | REQ-ANISO-002 | #105 | #106 | #107 | `docs/reviews/PR-106-INDEPENDENT-REVIEW.md` |
+| REQ-TREND-002 | #108 | #109 | pending | `docs/reviews/PR-109-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
@@ -62,6 +63,6 @@ REQ-CONVEX-001, and REQ-INFEAS-001 are integrated. M4 is complete.
 REQ-NORMAL-001, REQ-TANGENT-001, REQ-THICK-001, and REQ-THICK-002 are
 integrated M5 requirements. This integration-state change adds
 REQ-PROJECT-001, completing M5. This integration-state change adds
-REQ-TREND-001 as the first integrated M6 requirement and REQ-ANISO-002 as the
-second; the next eligible atomic requirement must be selected by the registry
-in a fresh task.
+REQ-TREND-001 as the first integrated M6 requirement, REQ-ANISO-002 as the
+second, and REQ-TREND-002 as the third; the next eligible atomic requirement
+must be selected by the registry in a fresh task.
