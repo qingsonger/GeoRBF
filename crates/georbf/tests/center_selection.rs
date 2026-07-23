@@ -5,12 +5,14 @@ use std::num::NonZeroUsize;
 
 use georbf::{
     CenterSelectionError, CenterSelectionKind, CenterSelectionOptions, CenterSelectionProblem,
-    CenterSelectionStrategy, DenseRankDecision, DenseSolveError, Point,
+    CenterSelectionStrategy, CpdOrder, DenseRankDecision, DenseSolveError, KernelDefiniteness,
+    Point,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
 
 const MEMORY_LIMIT: usize = 64 * 1024 * 1024;
+const SPD: KernelDefiniteness = KernelDefiniteness::StrictlyPositiveDefinite;
 
 fn options(strategy: CenterSelectionStrategy) -> Result<CenterSelectionOptions, Box<dyn Error>> {
     Ok(CenterSelectionOptions::new(
@@ -19,8 +21,8 @@ fn options(strategy: CenterSelectionStrategy) -> Result<CenterSelectionOptions, 
     ))
 }
 
-fn rejected(
-    result: Result<georbf::CenterSelection, CenterSelectionError>,
+fn rejected<T>(
+    result: Result<T, CenterSelectionError>,
     message: &'static str,
 ) -> Result<CenterSelectionError, Box<dyn Error>> {
     match result {
@@ -42,7 +44,7 @@ where
     for index in 0..count {
         gram[index * count + index] = diagonal[index];
     }
-    CenterSelectionProblem::try_from_row_major(locations, gram, targets)
+    CenterSelectionProblem::try_from_row_major(SPD, locations, gram, targets)
 }
 
 fn gaussian_problem() -> Result<CenterSelectionProblem<1>, Box<dyn Error>> {
@@ -58,6 +60,7 @@ fn gaussian_problem() -> Result<CenterSelectionProblem<1>, Box<dyn Error>> {
         }
     }
     Ok(CenterSelectionProblem::try_from_row_major(
+        SPD,
         locations,
         gram,
         vec![1.0, -2.0, 0.5, 3.0],
@@ -94,6 +97,30 @@ fn farthest_point_matches_independent_one_dimensional_truth() -> TestResult {
         CenterSelectionKind::FarthestPoint
     );
     assert_eq!(selection.diagnostics().seed, Some(0));
+    Ok(())
+}
+
+#[test]
+fn farthest_point_seeded_exact_tie_is_repeatable() -> TestResult {
+    let problem = diagonal_problem(
+        vec![
+            Point::try_new([-1.0])?,
+            Point::try_new([0.0])?,
+            Point::try_new([1.0])?,
+        ],
+        &[1.0, 1.0, 1.0],
+        vec![0.0; 3],
+    )?;
+    let request = options(CenterSelectionStrategy::FarthestPoint {
+        count: NonZeroUsize::new(3).ok_or("count")?,
+        seed: 1,
+    })?;
+    let first = problem.try_select(&request)?;
+    let second = problem.try_select(&request)?;
+
+    assert_eq!(first.indices(), &[1, 2, 0]);
+    assert_eq!(first, second);
+    assert_eq!(first.diagnostics().seed, Some(1));
     Ok(())
 }
 
@@ -136,6 +163,36 @@ fn power_greedy_matches_diagonal_schur_truth() -> TestResult {
 }
 
 #[test]
+fn greedy_rank_classification_is_invariant_under_basis_scaling() -> TestResult {
+    let small = 2.0_f64.powi(-100);
+    let locations = vec![Point::try_new([0.0])?, Point::try_new([1.0])?];
+    let scaled = diagonal_problem(locations.clone(), &[1.0, small], vec![2.0, 1.0])?;
+    let identity = diagonal_problem(locations, &[1.0, 1.0], vec![2.0, 1.0])?;
+
+    for strategy in [
+        CenterSelectionStrategy::ResidualGreedy {
+            count: NonZeroUsize::new(2).ok_or("count")?,
+            seed: 7,
+        },
+        CenterSelectionStrategy::PowerGreedy {
+            count: NonZeroUsize::new(2).ok_or("count")?,
+            seed: 7,
+        },
+    ] {
+        let request = options(strategy)?;
+        for problem in [&scaled, &identity] {
+            let selection = problem.try_select(&request)?;
+            assert_eq!(selection.indices().len(), 2);
+            assert_eq!(
+                selection.diagnostics().rank.decision,
+                DenseRankDecision::FullRank
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn seeded_ties_are_repeatable_and_seed_is_recorded() -> TestResult {
     let locations = (0_u32..5)
         .map(|index| Point::try_new([f64::from(index)]))
@@ -163,6 +220,7 @@ fn seeded_ties_are_repeatable_and_seed_is_recorded() -> TestResult {
 #[test]
 fn duplicate_basis_is_rejected_without_jitter_or_pseudoinverse() -> TestResult {
     let problem = CenterSelectionProblem::try_from_row_major(
+        SPD,
         vec![Point::try_new([0.0])?, Point::try_new([0.0])?],
         vec![1.0, 1.0, 1.0, 1.0],
         vec![1.0, 1.0],
@@ -200,11 +258,12 @@ fn duplicate_basis_is_rejected_without_jitter_or_pseudoinverse() -> TestResult {
 #[test]
 fn malformed_and_insufficient_requests_are_structured() -> TestResult {
     assert!(matches!(
-        CenterSelectionProblem::<1>::try_from_row_major(Vec::new(), Vec::new(), Vec::new()),
+        CenterSelectionProblem::<1>::try_from_row_major(SPD, Vec::new(), Vec::new(), Vec::new()),
         Err(CenterSelectionError::EmptyCandidates)
     ));
     assert!(matches!(
         CenterSelectionProblem::try_from_row_major(
+            SPD,
             vec![Point::try_new([0.0])?, Point::try_new([1.0])?],
             vec![1.0, 0.5, 0.25, 1.0],
             vec![0.0, 0.0],
@@ -227,6 +286,104 @@ fn malformed_and_insufficient_requests_are_structured() -> TestResult {
             seed: 0,
         })?),
         Err(CenterSelectionError::CountExceedsCandidates { .. })
+    ));
+    Ok(())
+}
+
+#[test]
+fn malformed_gram_target_shapes_and_values_are_structured() -> TestResult {
+    #[derive(Clone, Copy)]
+    enum Expected {
+        GramLength,
+        TargetLength,
+        NonFiniteGram,
+        NonFiniteTarget,
+    }
+
+    let cases = [
+        (
+            "Gram length",
+            vec![1.0, 0.0, 0.0],
+            vec![0.0, 0.0],
+            Expected::GramLength,
+        ),
+        (
+            "target length",
+            vec![1.0, 0.0, 0.0, 1.0],
+            vec![0.0],
+            Expected::TargetLength,
+        ),
+        (
+            "nonfinite Gram",
+            vec![1.0, f64::NAN, f64::NAN, 1.0],
+            vec![0.0, 0.0],
+            Expected::NonFiniteGram,
+        ),
+        (
+            "nonfinite target",
+            vec![1.0, 0.0, 0.0, 1.0],
+            vec![0.0, f64::INFINITY],
+            Expected::NonFiniteTarget,
+        ),
+    ];
+
+    for (name, gram, targets, expected) in cases {
+        let error = rejected(
+            CenterSelectionProblem::try_from_row_major(
+                SPD,
+                vec![Point::try_new([0.0])?, Point::try_new([1.0])?],
+                gram,
+                targets,
+            ),
+            "malformed center-selection problem must be rejected",
+        )?;
+        let matched = match expected {
+            Expected::GramLength => {
+                matches!(error, CenterSelectionError::GramLengthMismatch { .. })
+            }
+            Expected::TargetLength => {
+                matches!(error, CenterSelectionError::TargetLengthMismatch { .. })
+            }
+            Expected::NonFiniteGram => {
+                matches!(error, CenterSelectionError::NonFiniteGram { .. })
+            }
+            Expected::NonFiniteTarget => {
+                matches!(error, CenterSelectionError::NonFiniteTarget { .. })
+            }
+        };
+        assert!(matched, "{name} returned {error}");
+    }
+    Ok(())
+}
+
+#[test]
+fn cpd_candidate_gram_is_rejected_at_the_typed_capability_boundary() -> TestResult {
+    let order = CpdOrder::try_new(1)?;
+    let gram = vec![0.0, -1.0, -1.0, 0.0];
+    let inverse_root_two = 1.0 / 2.0_f64.sqrt();
+    let null_vector = [inverse_root_two, -inverse_root_two];
+    let polynomial_action = [1.0, 1.0];
+    let polynomial_residual =
+        polynomial_action[0] * null_vector[0] + polynomial_action[1] * null_vector[1];
+    let projected_energy =
+        null_vector[0] * (gram[1] * null_vector[1]) + null_vector[1] * (gram[2] * null_vector[0]);
+    assert_eq!(polynomial_residual.to_bits(), 0.0_f64.to_bits());
+    assert!((projected_energy - 1.0).abs() <= 2.0 * f64::EPSILON);
+
+    let error = rejected(
+        CenterSelectionProblem::try_from_row_major(
+            KernelDefiniteness::ConditionallyPositiveDefinite { order },
+            vec![Point::try_new([0.0])?, Point::try_new([1.0])?],
+            gram,
+            vec![0.0, 0.0],
+        ),
+        "CPD input must fail before generic basis review",
+    )?;
+    assert!(matches!(
+        error,
+        CenterSelectionError::ConditionallyPositiveDefiniteUnsupported {
+            order: rejected_order
+        } if rejected_order == order
     ));
     Ok(())
 }

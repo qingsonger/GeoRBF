@@ -3,6 +3,9 @@
 //! Selection is deliberately separate from semantic constraints, field
 //! assembly, and fitting. A selection returns stable candidate indices; it
 //! never removes observations, relaxes a hard relation, or refits a model.
+//! The current atomic capability is explicitly limited to strictly
+//! positive-definite kernels; CPD input is rejected before selection because
+//! it requires polynomial actions and projected-positive review.
 
 use std::error::Error;
 use std::fmt;
@@ -10,6 +13,7 @@ use std::num::NonZeroUsize;
 
 use crate::dimension::{Dim, SupportedDimension};
 use crate::geometry::Point;
+use crate::kernel::{CpdOrder, KernelDefiniteness};
 use crate::solver::{
     ConditionPolicy, DenseEqualitySystem, DenseEqualitySystemError, DenseFactorization,
     DenseRankDiagnostics, DenseSolveError, DenseSolveOptions, DenseSolverConfigurationError,
@@ -127,11 +131,13 @@ impl CenterSelectionOptions {
 /// use std::num::NonZeroUsize;
 ///
 /// use georbf::{
-///     CenterSelectionOptions, CenterSelectionProblem, CenterSelectionStrategy, Point,
+///     CenterSelectionOptions, CenterSelectionProblem, CenterSelectionStrategy,
+///     KernelDefiniteness, Point,
 /// };
 ///
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let problem = CenterSelectionProblem::try_from_row_major(
+///     KernelDefiniteness::StrictlyPositiveDefinite,
 ///     vec![
 ///         Point::try_new([0.0])?,
 ///         Point::try_new([1.0])?,
@@ -178,14 +184,22 @@ where
     ///
     /// Returns a structured error for empty candidates, shape overflow,
     /// length mismatch, nonfinite values, or a matrix that is not exactly
-    /// symmetric. Positive definiteness is reviewed on the selected principal
-    /// matrix; it is never fabricated by jitter or diagonal substitution.
+    /// symmetric. This atomic selector supports only kernels declared strictly
+    /// positive definite. A conditionally positive-definite declaration is
+    /// rejected at this typed boundary because selection would additionally
+    /// require complete polynomial actions and projected-positive review.
+    /// Positive definiteness is reviewed on the selected principal matrix; it
+    /// is never fabricated by jitter or diagonal substitution.
     #[allow(clippy::float_cmp)]
     pub fn try_from_row_major(
+        definiteness: KernelDefiniteness,
         locations: Vec<Point<D>>,
         gram: Vec<f64>,
         targets: Vec<f64>,
     ) -> Result<Self, CenterSelectionError> {
+        if let KernelDefiniteness::ConditionallyPositiveDefinite { order } = definiteness {
+            return Err(CenterSelectionError::ConditionallyPositiveDefiniteUnsupported { order });
+        }
         let candidates = locations.len();
         if candidates == 0 {
             return Err(CenterSelectionError::EmptyCandidates);
@@ -235,6 +249,12 @@ where
             gram,
             targets,
         })
+    }
+
+    /// Returns the only definiteness classification supported by this problem.
+    #[must_use]
+    pub const fn definiteness(&self) -> KernelDefiniteness {
+        KernelDefiniteness::StrictlyPositiveDefinite
     }
 
     /// Returns the number of candidates.
@@ -339,8 +359,10 @@ where
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[must_use]
 pub struct CenterGreedyDiagnostics {
-    /// Scale-aware pivot threshold `n * epsilon * max_i(abs(K_ii))`.
-    pub pivot_threshold: f64,
+    /// Smallest candidate-local threshold `n * epsilon * abs(K_ii)` applied.
+    pub minimum_pivot_threshold: f64,
+    /// Largest candidate-local threshold `n * epsilon * abs(K_ii)` applied.
+    pub maximum_pivot_threshold: f64,
     /// Smallest strictly accepted squared pivot.
     pub minimum_accepted_pivot: f64,
     /// Largest strictly accepted squared pivot.
@@ -410,6 +432,11 @@ pub enum CenterSelectionStorage {
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum CenterSelectionError {
+    /// CPD selection requires polynomial actions and projected-positive review.
+    ConditionallyPositiveDefiniteUnsupported {
+        /// Declared positive CPD order.
+        order: CpdOrder,
+    },
     /// No candidate was supplied.
     EmptyCandidates,
     /// Candidate-square shape arithmetic overflowed.
@@ -530,6 +557,11 @@ pub enum CenterSelectionError {
 impl fmt::Display for CenterSelectionError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ConditionallyPositiveDefiniteUnsupported { order } => write!(
+                formatter,
+                "center selection supports only strictly positive-definite kernels; conditionally positive-definite order {} requires polynomial actions and projected-positive review",
+                order.get()
+            ),
             Self::EmptyCandidates => formatter.write_str("center selection requires candidates"),
             Self::ShapeOverflow { candidates } => write!(
                 formatter,
@@ -753,18 +785,8 @@ fn kernel_greedy(
     seed: u64,
     score: GreedyScore,
 ) -> Result<GreedyOutcome, CenterSelectionError> {
-    let diagonal_max = (0..candidates)
-        .map(|index| gram[index * candidates + index].abs())
-        .fold(0.0_f64, f64::max);
     let candidate_scale = u32::try_from(candidates)
         .map_err(|_| CenterSelectionError::ShapeOverflow { candidates })?;
-    let pivot_threshold = f64::from(candidate_scale) * f64::EPSILON * diagonal_max;
-    if !pivot_threshold.is_finite() {
-        return Err(CenterSelectionError::NonFiniteGreedyUpdate {
-            candidate: 0,
-            step: 0,
-        });
-    }
     let basis_entries = candidates
         .checked_mul(count)
         .ok_or(CenterSelectionError::ShapeOverflow { candidates })?;
@@ -785,6 +807,8 @@ fn kernel_greedy(
     membership.resize(candidates, false);
     let mut indices = Vec::new();
     try_reserve_exact(&mut indices, count, CenterSelectionStorage::Indices)?;
+    let mut minimum_pivot_threshold = f64::INFINITY;
+    let mut maximum_pivot_threshold = 0.0_f64;
     let mut minimum_accepted_pivot = f64::INFINITY;
     let mut maximum_accepted_pivot = 0.0_f64;
 
@@ -798,6 +822,14 @@ fn kernel_greedy(
             candidates,
         })?;
         let pivot = schur_diagonal(gram, &basis, candidates, count, chosen, step);
+        let pivot_threshold =
+            f64::from(candidate_scale) * f64::EPSILON * gram[chosen * candidates + chosen].abs();
+        if !pivot_threshold.is_finite() {
+            return Err(CenterSelectionError::NonFiniteGreedyUpdate {
+                candidate: chosen,
+                step,
+            });
+        }
         if !pivot.is_finite() || pivot <= pivot_threshold {
             return Err(CenterSelectionError::InsufficientBasisRank {
                 selected: step,
@@ -836,6 +868,8 @@ fn kernel_greedy(
         }
         membership[chosen] = true;
         indices.push(chosen);
+        minimum_pivot_threshold = minimum_pivot_threshold.min(pivot_threshold);
+        maximum_pivot_threshold = maximum_pivot_threshold.max(pivot_threshold);
         minimum_accepted_pivot = minimum_accepted_pivot.min(pivot);
         maximum_accepted_pivot = maximum_accepted_pivot.max(pivot);
     }
@@ -843,7 +877,8 @@ fn kernel_greedy(
     Ok(GreedyOutcome {
         indices,
         diagnostics: CenterGreedyDiagnostics {
-            pivot_threshold,
+            minimum_pivot_threshold,
+            maximum_pivot_threshold,
             minimum_accepted_pivot,
             maximum_accepted_pivot,
         },

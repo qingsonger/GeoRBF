@@ -149,12 +149,19 @@ CPD diagnostics. It does not factor, solve, regularize, select centers, construc
 geological semantics, or expose nalgebra types.
 
 The center-selection layer is a separate, pre-assembly numerical primitive.
-`CenterSelectionProblem<D>` owns explicit finite candidate locations, a finite
+`CenterSelectionProblem<D>` is constructed from an explicit
+kernel-definiteness declaration and owns finite candidate locations, a finite
 exact-symmetric row-major candidate Gram matrix, and aligned initial target
-residuals. It returns stable candidate indices and diagnostics; it does not
-consume or mutate `FieldProblem<D>`, remove semantic observations, convert hard
-relations to soft ones, fit coefficients, or select a solver. This separation
-keeps center placement from becoming an implicit constraint rewrite.
+residuals. The current atomic capability accepts only strictly
+positive-definite input. A CPD declaration is rejected with its positive order
+at the typed construction boundary, before any greedy pivot, generic rank
+review, or factorization, because a valid CPD selector additionally requires
+complete polynomial actions `Q`, a verified null space, and projected-positive
+review of `Z^T K Z`. It returns stable candidate indices and diagnostics; it
+does not consume or mutate `FieldProblem<D>`, remove semantic observations,
+convert hard relations to soft ones, fit coefficients, or select a solver.
+This separation keeps center placement from becoming an implicit constraint
+rewrite.
 
 All-representer selection preserves input order. User-provided selection
 preserves an explicitly validated unique index order. Farthest-point traversal
@@ -164,7 +171,10 @@ incremental Newton--Cholesky columns: residual-greedy maximizes the current
 absolute interpolation residual, while power-greedy maximizes the current
 Schur-complement diagonal. Seeded SplitMix64 keys break exact score ties
 without mutable global randomness. A pivot must be strictly greater than
-`candidate_count * epsilon * max_i(abs(K_ii))`; the implementation never adds
+the selected candidate's local threshold
+`candidate_count * epsilon * abs(K_ii)`. Under an equivalent nonzero basis
+scaling `K -> D K D`, both that candidate's Schur pivot and threshold scale by
+`D_ii^2`, preserving the rank classification. The implementation never adds
 jitter, substitutes a diagonal, or skips a deficient requested step.
 
 Every proposed selection, including all-representer, user-provided, and

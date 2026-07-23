@@ -692,13 +692,13 @@ requirements:
 
   - id: REQ-CENTER-001
     title: Rank-safe center selection
-    description: Implement all-representer, user-provided, farthest-point, residual-greedy, and power-greedy strategies with deterministic seeds and hard-rank protection or explicit basis-rank errors.
+    description: Implement all-representer, user-provided, farthest-point, residual-greedy, and power-greedy strategies for explicitly classified strictly positive-definite candidate bases, with deterministic seeds, scale-invariant hard-rank protection, typed CPD rejection, or explicit basis-rank errors.
     dependencies: [REQ-SOLVE-001, REQ-MODEL-001]
     milestone: M7-v0.7.0
     priority: P1
     issue: 120
     pull_request: 121
-    tests: [strategy-truth, deterministic-seed, hard-rank, insufficient-basis]
+    tests: [strategy-truth, deterministic-seed, hard-rank, scaling-invariance, spd-capability, malformed-input, insufficient-basis]
     docs: [docs/architecture/ARCHITECTURE.md, docs/architecture/SOLVER_POLICY.md, docs/benchmarks/REQ-CENTER-001.md, rustdoc]
     rust_api: implemented
     cli: "N/A: complete fitting CLI and versioned schemas are deferred to M8"

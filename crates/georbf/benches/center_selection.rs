@@ -5,7 +5,10 @@ use std::hint::black_box;
 use std::num::NonZeroUsize;
 use std::time::Instant;
 
-use georbf::{CenterSelectionOptions, CenterSelectionProblem, CenterSelectionStrategy, Point};
+use georbf::{
+    CenterSelectionOptions, CenterSelectionProblem, CenterSelectionStrategy, KernelDefiniteness,
+    Point,
+};
 
 const MEMORY_LIMIT: usize = 512 * 1024 * 1024;
 
@@ -28,7 +31,10 @@ fn fixture(count: usize) -> Result<CenterSelectionProblem<1>, Box<dyn Error>> {
         }
     }
     Ok(CenterSelectionProblem::try_from_row_major(
-        locations, gram, targets,
+        KernelDefiniteness::StrictlyPositiveDefinite,
+        locations,
+        gram,
+        targets,
     )?)
 }
 

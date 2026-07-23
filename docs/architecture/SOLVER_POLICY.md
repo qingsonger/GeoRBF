@@ -253,9 +253,14 @@ future policy, not a placeholder success path in the current API.
 ## Rank-safe center selection
 
 `REQ-CENTER-001` adds no solver or numerical dependency. It accepts an explicit
-GeoRBF-owned symmetric candidate Gram matrix and supports all-representer,
-ordered user-provided, seeded farthest-point, seeded residual-greedy, and
-seeded power-greedy selection. The selection layer is side-effect free: it
+GeoRBF-owned symmetric candidate Gram matrix plus a kernel-definiteness
+declaration and supports all-representer, ordered user-provided, seeded
+farthest-point, seeded residual-greedy, and seeded power-greedy selection for
+strictly positive-definite input. CPD input is rejected at this typed boundary
+with its declared order before pivot, generic rank, or factorization work. A
+future CPD selector must instead supply complete polynomial actions `Q`, verify
+their rank and null space, and review positivity of `Z^T K Z`; raw-`K`
+Cholesky is not a CPD rank test. The selection layer is side-effect free: it
 returns indices and evidence but does not rewrite a semantic problem, relax a
 hard equality, or fit a model.
 
@@ -264,10 +269,13 @@ Newton--Cholesky construction. At step `j`, the squared basis pivot is
 `K_ii - sum_l L_il^2`. Residual-greedy selects the largest absolute current
 interpolation residual and applies its normalized Newton column; power-greedy
 selects the largest squared pivot. A pivot is accepted only when it is finite
-and strictly greater than
-`candidate_count * epsilon * max_i(abs(K_ii))`. Farthest-point selection uses
-stable Euclidean `hypot` accumulation. All exact score ties use deterministic
-seeded keys; there is no global random state.
+and strictly greater than the selected candidate's local threshold
+`candidate_count * epsilon * abs(K_ii)`. This relative rule scales by
+`D_ii^2` together with the Schur pivot under an equivalent nonzero congruence
+`K -> D K D`; a differently scaled unrelated candidate cannot reject an
+independent basis member. Farthest-point selection uses stable Euclidean
+`hypot` accumulation. All exact score ties use deterministic seeded keys;
+there is no global random state.
 
 The pivot check is not the final rank decision. Every selected principal Gram
 matrix is independently reviewed by the existing eight-pass equilibration,

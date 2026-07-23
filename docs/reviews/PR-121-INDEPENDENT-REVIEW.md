@@ -151,3 +151,37 @@ standard gate after the last production or test change, update this record and
 the bounded handoff, push, and stop for another fresh independent re-review.
 This Review does not repair production code, mark the PR ready, merge it, or
 begin REQ-TUNE-001.
+
+## Repair evidence
+
+The fresh Repair task addressed only the four recorded findings:
+
+- CENTER001-REV-001: greedy pivot acceptance now uses the selected
+  candidate-local threshold `n * epsilon * abs(K_ii)`. The independent
+  `diag(1, 2^-100)` fixture and its congruently scaled identity counterpart
+  receive the same full-rank classification under both residual- and
+  power-greedy selection.
+- CENTER001-REV-002: `CenterSelectionProblem::try_from_row_major` now requires
+  `KernelDefiniteness` and supports only the explicitly declared SPD path. The
+  order-one two-center `k(r) = -r` regression independently verifies
+  `Q^T Z = 0` and `Z^T K Z = 1`, then requires the dedicated typed CPD
+  capability error before generic pivot, rank, or factorization work.
+- CENTER001-REV-003: the symmetric D=1 `[-1, 0, 1]` fixture starts from the
+  middle point, fixes the seeded choice between exactly tied endpoints, and
+  requires identical repeated selection and diagnostics.
+- CENTER001-REV-004: a table-driven regression now requires
+  `GramLengthMismatch`, `TargetLengthMismatch`, `NonFiniteGram`, and
+  `NonFiniteTarget` for their independent malformed inputs.
+
+After the last production and test change, the Repair task passed the 13-test
+center-selection executable, its rustdoc example, the five-strategy release
+benchmark smoke, the complete standard workspace gate, the 58-requirement
+registry check, and `git diff --check`. The standard gate comprised format,
+warning-denying all-target/all-feature Clippy, all-feature workspace tests,
+and workspace doctests.
+
+This Repair records closure evidence but is not an independent re-review.
+PR #121 remains Draft and REQ-CENTER-001 remains `planned`. A fresh task must
+use an isolated `math_reviewer` to confirm the four findings are closed and
+check the complete repaired diff for new P0--P3 findings before any Ready,
+full-platform CI, merge, or integration-state action.

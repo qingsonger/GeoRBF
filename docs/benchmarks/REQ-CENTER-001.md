@@ -10,10 +10,12 @@ The deterministic D=1 fixture uses 160 ordered candidate locations, the
 strictly positive-definite Gram matrix
 `K_ij = exp(-0.5 * (x_i - x_j)^2)`, finite trigonometric target residuals, a
 fixed `0x5eed` seed, one process, one thread, and a 512 MiB explicit numerical
-review limit. All-representer reviews 160 centers; the other four strategies
-review 48. Timings include strategy work, selected-principal-matrix
-materialization, eight-pass equilibration, RRQR, bounded SVD, checked
-Cholesky, and zero-right-hand-side residual review.
+review limit. The fixture supplies the public strictly-positive-definite
+classification explicitly; CPD selection is outside this benchmark because
+the atomic API rejects it before numerical work. All-representer reviews 160
+centers; the other four strategies review 48. Timings include strategy work,
+selected-principal-matrix materialization, eight-pass equilibration, RRQR,
+bounded SVD, checked Cholesky, and zero-right-hand-side residual review.
 
 Baseline environment: Microsoft Windows, 12th Gen Intel Core i7-1260P,
 `x86_64-pc-windows-msvc`, Rust 1.96.1, one benchmark process and one thread.
