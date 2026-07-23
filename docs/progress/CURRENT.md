@@ -6,75 +6,64 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review/re-review complete; fresh Repair required
+- Mode: Repair complete; fresh independent re-review required
 - Requirement: REQ-SPARSE-001
 - Issue: #117
 - Branch: `codex/req-sparse-001-compact-support`
 - Draft pull request: #118
-- Freshly re-reviewed evidence head:
-  `f7c832181ff6529ca554fd212afe60580f7d7633`
-- Second Repair implementation and stable gate head:
-  `eca914287138baa42fddd09313596be60aa4a681`
-- Open finding: P1 SPARSE001-REV-005
+- Third Repair implementation and stable gate head:
+  `85d7e99356fe3790f2a0d63430b78a4f68ad8a0f`
+- Finding addressed pending fresh re-review: P1 SPARSE001-REV-005
 - Closed findings: P1 SPARSE001-REV-001, P2 SPARSE001-REV-002, P2
   SPARSE001-REV-003, and P3 SPARSE001-REV-004
 - Dependencies: REQ-SPIKE-003, REQ-FIELD-001, and REQ-KERNEL-004 are integrated
-- Registry status: `planned`; Ready CI and integration are forbidden while
-  SPARSE001-REV-005 remains open
+- Registry status: `planned`; Ready CI and integration remain forbidden until
+  a fresh independent re-review is clean
 
-## Fresh re-review result
+## Third Repair result
 
-- The isolated project `math_reviewer` independently confirmed
-  SPARSE001-REV-001 and SPARSE001-REV-004 are closed; the two previously
-  closed findings remain closed.
-- New P1 SPARSE001-REV-005: the explicit sparse-solve peak estimate omits
-  faer AMD and symbolic-analysis scratch, retained symbolic structures, and
-  numeric scratch.
-- For a permitted 64-by-64 all-supported system, pinned faer 0.24.4 requests
-  approximately 118,072 bytes of AMD scratch alone on the reviewed 64-bit
-  targets. The current dense-factor and working-vector allowance totals only
-  70,656 bytes.
-- A caller limit between the reported and actual logical peak can pass
-  preflight and enter backend allocation above the explicit limit. The
-  architecture, solver-policy, and change-fragment complete-peak claims are
-  therefore not yet true.
+- Pinned faer 0.24.4 AMD and complete symbolic-analysis `StackReq` requests are
+  reproduced from dimension and stored nonzeros before backend dispatch.
+- Checked conservative bounds now include retained symbolic structures,
+  numeric-factor storage, and numeric scratch.
+- Diagnostics and enforcement distinguish symbolic-factorization,
+  numeric-factorization, and solve-and-review peaks.
+- The 64-by-64 all-supported regression independently obtains faer's AMD
+  request for 4,096 entries, permits assembly at a limit between the old and
+  corrected solve peaks, and rejects solve after only the `Started` progress
+  event.
 
 ## Evidence state
 
 - Exact stable implementation head
-  `eca914287138baa42fddd09313596be60aa4a681` passed all 44 all-feature core
-  unit tests, all nine all-feature sparse integration tests, and
+  `85d7e99356fe3790f2a0d63430b78a4f68ad8a0f` passed all 44 all-feature core
+  unit tests, all ten all-feature sparse integration tests, format, and
   warning-denying all-target/all-feature Clippy.
 - After the last production or test change, that same exact head passed the
   complete standard workspace gate: format, warning-denying
   workspace/all-target/all-feature Clippy, all-feature workspace tests,
   workspace doctests, and the 58-requirement registry check.
-- The subsequent handoff update changes only review evidence and
-  `docs/progress/CURRENT.md`; it does not invalidate the stable implementation
+- This subsequent handoff update changes only review evidence and
+  `docs/progress/CURRENT.md`; it does not invalidate that stable implementation
   gate.
-- The independent reviewer passed all nine all-feature sparse integration
-  tests, the canonical reserved-capacity unit regression, and the complete PR
-  whitespace check. Exact faer 0.24.4 and rstar 0.13.0 feature resolution was
-  confirmed.
-- Draft CI run 29994904719 passed its Ubuntu correctness job on exact
-  re-reviewed head `f7c8321`. Ready-only Windows/Ubuntu/macOS and
-  benchmark-smoke CI has not run and is not claimed.
+- Draft CI for the Repair head has not yet completed and is not claimed.
+  Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI has not run and is not
+  claimed.
 
 ## Next task boundary
 
-Open a fresh Repair task for PR #118 and address only
-SPARSE001-REV-005. Account with checked conservative arithmetic for pinned
-faer 0.24.4 AMD and symbolic-analysis scratch, retained symbolic structures,
-numeric-factor storage, and numeric scratch before backend dispatch. Add an
-internal 64-by-64 all-supported Wendland regression that independently obtains
-or reproduces the AMD scratch request, places a limit strictly between the old
-and corrected solve peaks, permits assembly, and requires
-`SparseSolveError::MemoryLimitExceeded` before any factorization progress
-event. Run focused checks during repair, then the complete standard workspace
-gate once on the stable head after the final production or test change.
-Update the review evidence and bounded handoff, commit, push, and stop for a
-fresh independent re-review. Do not mark the PR Ready or begin
-REQ-CENTER-001.
+Open a fresh Review/re-review task for PR #118. Supply the isolated project
+`math_reviewer` only the bounded requirement summary and dependency closure,
+Issue #117 criteria, M7 plan, applicable architecture and solver policy,
+ADR-0012, the complete PR diff, prior finding SPARSE001-REV-005, and exact
+validation evidence. Independently verify the new faer workspace bounds and
+64-by-64 between-limit regression, confirm whether SPARSE001-REV-005 is closed,
+and check for new P0-P3 findings. If any finding remains, record it and stop
+without repairing production code. If the review is clean, follow the
+mandatory integration sequence: synchronize evidence, mark PR #118 ready,
+wait for complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact
+ready head, merge only if all are green, then record integration state in an
+isolated change. Do not begin REQ-CENTER-001 in that task.
 
 ## Durable evidence
 

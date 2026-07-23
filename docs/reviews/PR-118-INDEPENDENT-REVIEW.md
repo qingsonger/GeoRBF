@@ -452,3 +452,41 @@ focused checks and one complete stable-head standard gate after the last
 production or test change, update this evidence and the bounded handoff, push,
 and stop for another fresh independent re-review. This Review does not repair
 production code, mark the PR ready, merge it, or begin REQ-CENTER-001.
+
+## Third Repair evidence
+
+- Exact Repair implementation and stable-gate head:
+  `85d7e99356fe3790f2a0d63430b78a4f68ad8a0f`.
+- Scope: only P1 SPARSE001-REV-005.
+
+The sparse preflight now reproduces pinned faer 0.24.4's public AMD and
+complete symbolic-analysis `StackReq` from the matrix dimension and stored
+nonzeros. Checked conservative arithmetic separately bounds retained
+simplicial or supernodal symbolic structures, numeric-factor storage, and
+numeric-factorization scratch. Diagnostics expose each component and the
+symbolic-factorization, numeric-factorization, and solve-and-review peaks; the
+maximum is enforced before backend CSC construction.
+
+The new 64-by-64 all-supported Wendland regression independently calls faer's
+AMD scratch API for all 4,096 stored entries and requires the diagnostic to
+match its request. It constructs a limit strictly above both assembly and the
+old solve estimate but below the corrected solve peak, confirms assembly
+succeeds, and requires `SparseSolveError::MemoryLimitExceeded`. Its progress
+sink observes only `ExecutionStage::Started`, proving neither memory-review nor
+factorization success is published before rejection.
+
+Focused validation passed all 44 all-feature core unit tests, all ten
+all-feature sparse integration tests, format, and warning-denying
+all-target/all-feature Clippy. After the last production or test change, exact
+head `85d7e99356fe3790f2a0d63430b78a4f68ad8a0f` passed the complete standard
+workspace gate: format, warning-denying workspace/all-target/all-feature
+Clippy, all-feature workspace tests, workspace doctests, and the
+58-requirement registry check.
+
+This Repair changes no support predicate, kernel action, CSC value,
+factorization choice, solution, residual formula or tolerance, regularization,
+fallback, interface disposition, or registry integration state. PR #118
+remains Draft and REQ-SPARSE-001 remains `planned`. SPARSE001-REV-005 is
+addressed but is not recorded as independently closed; a fresh re-review task
+must verify this exact Repair and check for new P0-P3 findings. This task does
+not mark the PR ready, merge it, or begin REQ-CENTER-001.
