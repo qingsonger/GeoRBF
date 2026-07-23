@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-SPARSE-001
 - Issue: #117
 - Branch: `codex/req-sparse-001-compact-support`
-- Draft pull request: pending creation
+- Draft pull request: #118
 - Dependencies: REQ-SPIKE-003, REQ-FIELD-001, and REQ-KERNEL-004 are integrated
 - Registry status: `planned` until review, Ready CI, merge, and integration
 
@@ -59,6 +59,7 @@ begin REQ-CENTER-001 in that Review task.
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #117
+- Draft implementation: GitHub PR #118
 - Requirement summary: `changes/REQ-SPARSE-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - Numerical policy: `docs/architecture/SOLVER_POLICY.md`

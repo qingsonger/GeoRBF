@@ -679,7 +679,7 @@ requirements:
     milestone: M7-v0.7.0
     priority: P0
     issue: 117
-    pull_request: null
+    pull_request: 118
     tests: [dense-sparse-parity, support-boundaries, memory-scaling, coverage]
     docs: [docs/architecture/ARCHITECTURE.md, rustdoc]
     rust_api: implemented

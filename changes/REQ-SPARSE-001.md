@@ -1,7 +1,8 @@
 # REQ-SPARSE-001
 
 Issue #117 defines the acceptance criteria and exclusions for the first
-production compact-support sparse path. The Rust core now assembles the same
+production compact-support sparse path; Draft PR #118 carries the
+implementation for independent Review. The Rust core now assembles the same
 hard-equality `FieldProblem<D>` directly into GeoRBF-owned sorted-unique CSC for
 exactly D=1, D=2, and D=3, solves it through private checked faer sparse LLT,
 and retains one immutable support index inside the existing `FittedField<D>`
