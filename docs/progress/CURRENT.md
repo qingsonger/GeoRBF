@@ -6,62 +6,58 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Fresh tenth re-review complete; P1 Repair required
+- Mode: Eleventh Repair complete; fresh independent re-review required
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
 - Latest independently re-reviewed code/test/contract head: `2a25f44`
-- Reviewed pre-evidence head: `8593ec5`
-- Stable full-gate head: `2a25f44`
+- Latest independent-review evidence head: `f5228b5`
+- Eleventh Repair code/test head: `0952729`
+- Stable full-gate head: `0952729`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are
   integrated
 - Registry state in this change: `implemented`
 
-## Fresh independent re-review result
+## Eleventh Repair result
 
-- A fresh isolated read-only `math_reviewer` independently re-reviewed exact
-  code/test/contract head `2a25f44` and the evidence-only tail through
-  `8593ec5` without inheriting Repair reasoning.
-- TREND002-REV-016 is closed. The non-regional residual-aware Gaussian state
-  and separately scaled diagonal factors retain the independently derived
-  positive approximately `1.2750102220326992e128` Hessian.
-- TREND002-REV-017 is closed. Two represented reciprocal-length factors remain
-  separate through complete fixed-Gaussian derivative scaling and retain the
-  independently derived approximately `-3.67879441171431e-93` Hessian.
-- New P1 TREND002-REV-018 remains. The stable fixed-Gaussian path reconstructs
-  transformed displacement as `unit * radius`, so normalization can underflow
-  a small represented transverse component to exact zero before two accepted
-  large spatial weights make its gradient contribution representable.
-- The accepted D=2 compiled-control counterexample returns zero instead of the
-  independent approximately `-6.035055754270406e-183` second gradient.
-- PR #109 remains Draft and the requirement remains `implemented`.
+- The exact public D=2 compiled-control regression first reproduced
+  TREND002-REV-018 on the pre-Repair head: expected approximately
+  `-6.035055754270406e-183` for the second gradient, actual exact zero.
+- `RadialSeparation` now retains its original represented transformed
+  displacement internally. The stable fixed-Gaussian path uses those
+  components directly instead of reconstructing them through a normalized
+  unit vector whose transverse component can underflow.
+- The repaired regression retains the independent gradient within
+  `1024 * EPSILON` relative tolerance. Public APIs, formulae, fixed-SPD
+  structure, demand bounds, and non-Gaussian paths are unchanged.
+- This Repair records evidence but does not independently close
+  TREND002-REV-018. PR #109 remains Draft and the requirement remains
+  `implemented`.
 
 ## Validation state
 
-- This Review passed all nineteen public `trend_controls` tests, all
-  fifteen `local_trend` integration tests, all five private local-trend
-  regressions, both exact tenth-Repair regressions, and complete diff
-  whitespace validation.
-- Independent 300-digit arithmetic and a temporary public-API test reproduced
-  TREND002-REV-018's finite truth and current exact-zero result. The temporary
-  test was removed and the worktree restored before recording evidence.
-- Exact stable head `2a25f44` passed workspace format, warning-denying workspace
-  all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
-  all 58 requirement checks, and complete diff whitespace validation.
-- The evidence tail after `2a25f44` changes only the requirement change
+- Focused validation passed the exact regression, all twenty public
+  `trend_controls` tests, all fifteen public `local_trend` integration tests,
+  all five private local-trend regressions, all eleven kernel-calculus tests,
+  all thirteen anisotropy tests, and complete diff whitespace validation.
+- Exact stable head `0952729` passed workspace format, warning-denying workspace
+  all-target/all-feature Clippy, all-feature workspace tests, all 35 workspace
+  Rustdoc tests, all 58 requirement checks, and complete diff whitespace
+  validation.
+- The evidence tail after `0952729` changes only the requirement change
   fragment, independent-review record, and bounded Markdown handoff. Ready-only
   Windows/Ubuntu/macOS and benchmark-smoke CI remain intentionally unexecuted
   while PR #109 is Draft.
 
 ## Next task boundary
 
-A fresh Repair task must address only TREND002-REV-018. First add the exact
-public D=2 compiled-control regression, then preserve the original transformed
-separation components or mathematically equivalent signed-log scale without
-reconstructing them through normalized unit components. Run focused checks and
-one final stable-head standard gate, update the review evidence and bounded
-handoff, push, and stop for another fresh independent re-review. Do not mark
-PR #109 Ready, merge it, or begin another requirement.
+A fresh Review/re-review task must create an isolated read-only project
+`math_reviewer` to independently verify TREND002-REV-018 against exact Repair
+head `0952729` and inspect the complete PR diff for new P0-P3 findings. It must
+not inherit this Repair reasoning or repair production code. If findings
+remain, record them and stop. Only a clean re-review may continue through the
+repository's mandatory Ready, exact-head three-platform and benchmark-smoke CI,
+and single-merge integration sequence. Do not begin another requirement.
 
 ## Durable evidence
 

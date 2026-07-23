@@ -82,8 +82,13 @@ Gaussian state and retains the same positive Hessian. A fixed-Gaussian
 counterexample with length `1e200` and two `1e154` spatial weights retains two
 represented reciprocal-length factors through complete-term scaling and
 recovers the independent approximately `-3.67879441171431e-93` Hessian instead
-of only the `-2^-1074` background term. A runnable example demonstrates
-regional compilation and Hessian evaluation.
+of only the `-2^-1074` background term. A D=2 fixed-Gaussian counterexample
+also preserves the original represented transverse transformed displacement
+instead of reconstructing it through an underflowed normalized unit component;
+after complete scaling by two `1e154` spatial weights it recovers the
+independent approximately `-6.035055754270406e-183` second gradient instead of
+zero. A runnable example demonstrates regional compilation and Hessian
+evaluation.
 
 Rust is implemented. CLI and versioned schemas are N/A until M8 defines the
 persisted control representation and complete data CLI. C, C++, and Python are

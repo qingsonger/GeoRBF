@@ -1730,3 +1730,40 @@ required regression before the smallest production repair, run focused checks
 and one final stable-head standard gate, update evidence, push, and stop for
 another fresh independent re-review. This Review task does not repair
 production code, mark the PR Ready, merge it, or begin another requirement.
+
+## Eleventh Repair of TREND002-REV-018
+
+Exact eleventh Repair code/test head:
+`095272909709eec631b4a5a58609d0f336824d16`.
+
+The required public D=2 compiled-control regression was added before the
+production change. On the pre-Repair head it reproduced the independent
+expected second gradient `-6.03505575427040589e-183` and the current exact-zero
+result. The permanent test uses the review's represented query and control
+location `[1e160, 1e-170]`, zero kernel center, fixed Gaussian length `1e160`,
+influence radius `1e161`, strength `1e154`, identity fixed anisotropy, no
+region, and a valid constant strict background.
+
+The smallest production repair retains the original transformed displacement
+inside the existing `RadialSeparation` value and exposes it only within the
+crate. The stable fixed-Gaussian path now uses those represented components
+directly instead of reconstructing them as `unit_displacement * radius`.
+Radius and unit-vector calculations, public APIs, Gaussian formulae,
+fixed-SPD mixture structure, derivative demand, and all non-Gaussian paths are
+unchanged. The regression now retains the independently evaluated finite
+gradient within `1024 * EPSILON` relative tolerance.
+
+Focused validation passed the exact regression, all twenty public
+`trend_controls` tests, all fifteen public `local_trend` integration tests,
+all five private local-trend regressions, all eleven public kernel-calculus
+tests, all thirteen public anisotropy tests, and complete diff whitespace
+validation. Exact stable Repair head `0952729` then passed workspace format,
+warning-denying workspace all-target/all-feature Clippy, all-feature workspace
+tests, all 35 workspace Rustdoc tests, all 58 requirement checks, and complete
+diff whitespace validation.
+
+This section records Repair evidence only and does not independently close
+TREND002-REV-018. PR #109 remains Draft and REQ-TREND-002 remains
+`implemented`, not `integrated`. A fresh isolated mathematical and numerical
+re-review of the complete PR and exact Repair head is required next. This
+Repair does not mark the PR Ready, merge it, or begin another requirement.
