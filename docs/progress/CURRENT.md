@@ -6,72 +6,71 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Clean independent re-review; Ready CI and integration required
-- Requirement: REQ-SPIKE-003, Issue #114
-- Branch: `codex/req-spike-003-sparse-backends`
-- Draft pull request: #115
+- Mode: Integration state / REQ-SPIKE-003 complete
+- Requirement: REQ-SPIKE-003, closed Issue #114
+- Implementation pull request: #115, squash-merged as `97fabfa`
+- Integration-state branch: `codex/req-spike-003-integration-state`
+- Integration-state pull request: pending creation
 - Repair implementation and stable full-gate head: `83ba364`
+- Exact Ready head: `6052712`
 - Closed findings: P1 SPIKE003-REV-001, P2 SPIKE003-REV-002, and
   P2 SPIKE003-REV-003
 - Review state: the complete repaired PR has no remaining P0-P3 finding
 - Dependencies: REQ-KERNEL-004 and its complete closure are integrated
-- Registry state: `implemented`
+- Registry state in this change: `integrated`
 
-## Independent re-review result
+## Integration result
 
-- The preceding isolated `math_reviewer` closed SPIKE003-REV-001. The hand-derived
-  three-point truth checks both candidates' actual CSC arrays, storage-level
-  matrix-vector result, and recovered solution independently of the harness
-  kernel, assembly, and row-major matrix-vector helpers.
-- The reviewer also closed SPIKE003-REV-002. Solver rows truthfully describe
-  construct/factor/solve/review/checksum end-to-end totals, and no isolated
-  factorization-speed conclusion remains.
-- A fresh isolated `math_reviewer` closed SPIKE003-REV-003. Index rows and
-  every evidence surface use the explicit
-  construct/query/filter/canonicalize/checksum end-to-end phase, and the schema
-  regression requires that exact construction-bearing label.
-- The timed control flow and boundary are unchanged, so the existing fixed
-  three-trial Windows ranges remain valid. No query-only performance claim
-  remains.
+- The isolated `math_reviewer` independently closed all three findings and
+  found no new P0-P3 issue in the complete repaired PR.
 - Exact comparison with the unique brute-force pair oracle, pair sorting and
-  deduplication, and sorted-unique CSC checks satisfy duplicate prevention. No
-  new P0-P3 finding was identified in the complete PR diff.
+  deduplication, and sorted-unique CSC checks satisfy neighborhood and storage
+  truth. The hand-derived three-point fixture independently verifies both
+  candidate CSC arrays, storage products, symmetry, and recovered solution.
+- Index rows truthfully cover construct/query/filter/canonicalize/checksum
+  end-to-end work. Solver rows truthfully cover
+  construct/factor/solve/review/checksum end-to-end work. No query-only or
+  isolated-factorization performance claim remains.
+- Exact Ready head `6052712` passed complete Windows, Ubuntu, and macOS CI run
+  29984412613, including every configured backend combination, benchmark
+  smoke, and requirement validation.
+- PR #115 squash-merged exactly once as `97fabfa`; Issue #114 closed as
+  completed. Post-merge `main` CI run 29985301861 passed the same complete
+  three-platform gate on exact merge commit `97fabfa`.
+- This isolated integration-state change updates only the registry, review
+  evidence, completed-history index, and bounded handoff. It changes no
+  production code, test, manifest, schema, CI, build input, API, numerical
+  behavior, dependency, tag, or release.
 
-## Evidence state
+## Validation state
 
-- Exact Repair head `83ba364` passed sparse-harness formatting, warning-denying
-  all-target/all-feature Clippy, all 10 combined-feature tests, all four minimal
-  feature cross-products, both negative configurations, and the optimized
-  release smoke workload with the corrected index phase label.
-- The construction, query, filter, canonicalization, checksum, fixture, and
-  iteration timing region is unchanged; no benchmark rerun was required.
-- Exact Repair head `83ba364` passed the complete standard local gate and all
-  58 requirement checks.
-- The reviewer independently passed all 10 locked all-feature tests, the
-  optimized locked smoke workload, exact dependency review, compact
+- Exact Repair head `83ba364` passed sparse-harness formatting,
+  warning-denying all-target/all-feature Clippy, all 10 combined-feature tests,
+  all four minimal feature cross-products, both negative configurations, the
+  optimized release smoke workload, the complete local standard gate, all 58
+  requirement checks, and whitespace validation.
+- The isolated re-review independently passed all 10 locked all-feature tests,
+  the optimized locked smoke workload, exact dependency review, compact
   requirement/dependency checks, and whitespace validation.
-- The parent Review independently passed the same 10 all-feature tests, the
-  optimized release smoke workload, all 58 requirement checks, and whitespace
-  validation.
-- The tail after `83ba364` changes only this bounded handoff and the
-  review-evidence Markdown; it does not invalidate the stable code/test/build
-  gate.
-- Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI remains unexecuted
-  and is not claimed. PR #115 remains Draft.
+- Exact Ready-head run 29984412613 and post-merge `main` run 29985301861 are
+  both green on Windows, Ubuntu, and macOS, including every configured
+  benchmark smoke.
+- The isolated integration-state tree must pass the complete local standard
+  gate and exact Ready-head CI before it merges.
 
 ## Next task boundary
 
-Commit and push this evidence-only clean re-review conclusion, synchronize PR
-evidence, and mark PR #115 Ready. Wait for the complete Windows, Ubuntu, and
-macOS matrix with every benchmark smoke on that exact Ready head. Merge exactly
-once only if it is green, wait for the exact merge commit's complete `main` CI,
-then record truthful integration through an isolated integration-state change.
-Do not begin REQ-SPARSE-001.
+Create the isolated integration-state pull request, record its number in the
+review, history index, and this handoff, then run the complete local standard
+gate. Mark that PR Ready, wait for exact Ready-head Windows, Ubuntu, macOS, and
+benchmark-smoke CI, merge only if green, and stop. Do not start
+REQ-SPARSE-001.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #114
-- Draft implementation: GitHub PR #115
+- Acceptance criteria and exclusions: closed GitHub Issue #114
+- Merged implementation: GitHub PR #115
+- Integration-state pull request: pending creation
 - Requirement summary: `changes/REQ-SPIKE-003.md`
 - Independent review: `docs/reviews/PR-115-INDEPENDENT-REVIEW.md`
 - Reproducible harness: `spikes/sparse-backends/`
