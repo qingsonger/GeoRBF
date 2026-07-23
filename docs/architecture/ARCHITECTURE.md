@@ -280,7 +280,8 @@ density, exact-support coverage independent of numerically zero functional
 actions, ordering, and original-unit residual evidence, and never densify or
 fall back. Their explicit memory review sums every simultaneously live logical
 component: index construction, accepted-pair and reflected-entry capacities,
-canonical equality capacities, row work, retained CSC and right-hand side,
-the complete borrowed solve system, backend CSC copy, conservative factor
-fill, vectors, and exact residual work. Performance changes are accepted only
-with fixed-data baselines and documented hardware and thread settings.
+all reserved canonical relation-vector capacities, equality row work and
+provenance strings, scaling, retained CSC and right-hand side, the complete
+borrowed solve system, backend CSC copy, conservative factor fill, vectors,
+and exact residual work. Performance changes are accepted only with fixed-data
+baselines and documented hardware and thread settings.

@@ -63,11 +63,11 @@ boundary, selects lower-triangle LLT with AMD ordering, and independently
 reviews the solution with the fixed exact-binary accumulator in original
 units. The residual tolerance is `128*n*epsilon`. A conservative peak payload
 checks and records the sum at each assembly stage, including the retained
-index, accepted-pair and reflected-entry capacities, canonical equality
-capacities, row work, CSC, and right-hand side. Solve review adds the complete
-borrowed retained system, one backend CSC copy, vectors, exact residual
-accumulators, and a dense lower-triangle upper bound for symbolic/numeric fill
-before backend dispatch.
+index, accepted-pair and reflected-entry capacities, all reserved canonical
+relation-vector capacities, equality row work and provenance strings, scaling,
+CSC, and right-hand side. Solve review adds the complete borrowed retained
+system, one backend CSC copy, vectors, exact residual accumulators, and a dense
+lower-triangle upper bound for symbolic/numeric fill before backend dispatch.
 Failure is explicit: no equilibration, refinement, regularization, jitter,
 diagonal substitution, pseudoinverse, densification, constraint relaxation,
 or factorization fallback is enabled.

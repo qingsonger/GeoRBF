@@ -1,19 +1,21 @@
 //! Independent truth and failure-path tests for compact sparse fields.
 
 use std::error::Error;
+use std::mem::size_of;
 use std::num::NonZeroUsize;
 
 use georbf::{
     AffineNormalization, AngleUnit, AnisotropyConditionPolicy, AxisOrder, CancellationToken,
-    CanonicalizationError, CenterRepresenter, ConditionPolicy, CoordinateMetadata, CrsMetadata,
-    DenseFactorization, DenseSolveOptions, Enforcement, ExecutionControl, ExecutionError,
-    ExecutionOperation, ExecutionOptions, FieldAssemblyError, FieldProblem, FittedField,
-    FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm, GlobalAnisotropy,
-    Handedness, KernelDefinition, LengthUnit, ObservationFunctional, ObservationId, Point,
-    ProblemIrError, Regularization, SemanticConstraint, SemanticExpression, SemanticProblemIr,
-    SemanticProvenance, SemanticRelation, SourceLocation, SparseFactorization,
-    SparseFieldAssemblyError, SparseFitOptions, SparseSolveError, UnitDirection, VerticalDirection,
-    Wendland, WendlandSmoothness, try_solve_sparse_field, try_solve_sparse_field_with_control,
+    CanonicalLinearBound, CanonicalSecondOrderCone, CanonicalSoftObjective, CanonicalizationError,
+    CenterRepresenter, ConditionPolicy, CoordinateMetadata, CrsMetadata, DenseFactorization,
+    DenseSolveOptions, Enforcement, ExecutionControl, ExecutionError, ExecutionOperation,
+    ExecutionOptions, FieldAssemblyError, FieldProblem, FittedField, FunctionalAtom,
+    FunctionalExpr, FunctionalProvenance, FunctionalTerm, GlobalAnisotropy, Handedness,
+    KernelDefinition, LengthUnit, ObservationFunctional, ObservationId, Point, ProblemIrError,
+    Regularization, SemanticConstraint, SemanticExpression, SemanticProblemIr, SemanticProvenance,
+    SemanticRelation, SourceLocation, SparseFactorization, SparseFieldAssemblyError,
+    SparseFitOptions, SparseSolveError, UnitDirection, VerticalDirection, Wendland,
+    WendlandSmoothness, try_solve_sparse_field, try_solve_sparse_field_with_control,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -516,6 +518,66 @@ fn deterministic_csc_diagnostics_conflicts_and_nonfinite_boundaries_are_explicit
     Ok(())
 }
 
+fn canonical_relation_item_bytes() -> usize {
+    size_of::<CanonicalLinearBound>()
+        + size_of::<CanonicalSecondOrderCone>()
+        + size_of::<CanonicalSoftObjective>()
+}
+
+fn assert_corrected_canonicalization_limit(
+    points: &[[f64; 1]],
+    targets: &[f64],
+    kernel: Wendland,
+    corrected_peak: usize,
+) -> TestResult {
+    let omitted_bytes = points.len().next_power_of_two().max(4) * canonical_relation_item_bytes();
+    let old_peak = corrected_peak - omitted_bytes;
+    let limit = old_peak + omitted_bytes / 2;
+    assert!(old_peak < limit && limit < corrected_peak);
+    assert!(matches!(
+        value_problem(points, targets)?.try_assemble_sparse(
+            kernel,
+            None,
+            sparse_options_with_limit(limit),
+        ),
+        Err(SparseFieldAssemblyError::MemoryLimitExceeded {
+            estimated_bytes,
+            limit_bytes,
+        }) if estimated_bytes == corrected_peak && limit_bytes == limit
+    ));
+    Ok(())
+}
+
+fn assert_corrected_solve_limit(kernel: Wendland) -> TestResult {
+    let points = (0..64)
+        .map(|index| [f64::from(index) * 0.5])
+        .collect::<Vec<_>>();
+    let targets = vec![0.0; points.len()];
+    let wide =
+        value_problem(&points, &targets)?.try_assemble_sparse(kernel, None, sparse_options())?;
+    let solution = try_solve_sparse_field(&wide)?;
+    let memory = &solution.diagnostics().memory;
+    let omitted_bytes = points.len() * canonical_relation_item_bytes();
+    let old_peak = memory.estimated_peak_bytes - omitted_bytes;
+    let limit = old_peak + omitted_bytes / 2;
+    assert!(old_peak < limit && limit < memory.estimated_peak_bytes);
+    assert!(limit >= wide.diagnostics().memory.estimated_peak_bytes);
+
+    let limited = value_problem(&points, &targets)?.try_assemble_sparse(
+        kernel,
+        None,
+        sparse_options_with_limit(limit),
+    )?;
+    assert!(matches!(
+        try_solve_sparse_field(&limited),
+        Err(SparseSolveError::MemoryLimitExceeded {
+            estimated_peak_bytes,
+            limit_bytes,
+        }) if estimated_peak_bytes == memory.estimated_peak_bytes && limit_bytes == limit
+    ));
+    Ok(())
+}
+
 #[test]
 fn peak_memory_diagnostics_and_stage_limits_are_exact() -> TestResult {
     let points = [[0.0], [0.5], [1.0], [1.5], [2.0]];
@@ -565,6 +627,13 @@ fn peak_memory_diagnostics_and_stage_limits_are_exact() -> TestResult {
     );
     assert!(memory.estimated_peak_bytes > memory.estimated_retained_bytes);
 
+    assert_corrected_canonicalization_limit(
+        &points,
+        &targets,
+        kernel,
+        memory.canonicalization_peak_bytes,
+    )?;
+
     let retained_limit = memory.estimated_retained_bytes;
     assert!(matches!(
         value_problem(&points, &targets)?.try_assemble_sparse(
@@ -588,6 +657,8 @@ fn peak_memory_diagnostics_and_stage_limits_are_exact() -> TestResult {
             + solve_memory.working_vector_bytes
     );
     assert!(solve_memory.estimated_peak_bytes > memory.estimated_peak_bytes);
+
+    assert_corrected_solve_limit(kernel)?;
 
     let assembly_limit = memory.estimated_peak_bytes;
     let solve_limited = value_problem(&points, &targets)?.try_assemble_sparse(

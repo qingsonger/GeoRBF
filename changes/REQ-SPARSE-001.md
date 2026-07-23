@@ -23,7 +23,8 @@ full symmetric CSC without a dense intermediate.
 exact supported pairs, exact-support row coverage independent of numeric kernel
 zeros, stored nonzeros, density, effective limit, faer 0.24.4, AMD ordering,
 and exact original-unit residual evidence. Assembly memory evidence separately
-sums the retained index, canonical equality capacities, CSC, right-hand side,
+sums the retained index, every reserved canonical relation-vector capacity,
+equality row and provenance-string capacities, scaling, CSC, right-hand side,
 accepted-pair, reflected-entry, row-buffer, and bulk-load payloads at each
 checked stage. Solve evidence adds the complete borrowed retained system,
 backend CSC copy, conservative dense lower-triangle factor fill, vectors, and
@@ -54,7 +55,10 @@ filtering; repeated complete CSC and diagnostic determinism; 64-point versus
 limits between retained, assembly-peak, and solve-peak payloads; hard canonical
 conflict; assembly and solve cancellation; nonrepresentable candidate radius;
 and singular-factorization rejection. Existing field, model, and execution
-suites remain green.
+suites remain green. An internal canonical-IR regression independently sums
+all relation-vector, equality-term, provenance-string, variable-block, and
+scaling capacities, including the three logically empty but reserved relation
+buffers, and requires the retained equality-only payload to match.
 
 The production re-audit retains the exact versions and default-disabled
 features selected by ADR-0012: rstar 0.13.0 and faer 0.24.4 with `std` and

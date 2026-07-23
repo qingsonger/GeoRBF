@@ -176,8 +176,9 @@ registry check.
 - Faer's lower LLT path uses the requested AMD ordering and exposes no jitter,
   regularization, pseudoinverse, densification, hard-to-soft conversion,
   constraint relaxation, backend switch, or factorization fallback.
-- Original-unit residuals use the unchanged CSC system and the documented
-  `128*n*epsilon` tolerance with the expected `A*x-b` sign convention.
+- Original-unit residuals use the unchanged CSC system, accumulate `b-A*x`,
+  and apply the documented sign-invariant infinity norm and
+  `128*n*epsilon` backward-error tolerance.
 - The retained index preserves immutable local-center evaluation. Existing
   kernel capability and center-limit checks govern value, gradient, and
   Hessian calls in D=1, D=2, and D=3.
@@ -276,10 +277,10 @@ analogous solve-stage rejection.
 
 ### P3 SPARSE001-REV-004: residual-sign evidence is inaccurate
 
-`crates/georbf/src/sparse.rs:1914-1925` accumulates `b - A*x`, while this
-record's independent-truth section states `A*x-b`. The exposed infinity norm
-and backward error are sign invariant, so numerical acceptance is unchanged,
-but the evidence is factually inaccurate.
+`crates/georbf/src/sparse.rs:1914-1925` accumulates `b - A*x`, while before
+this Repair the record's independent-truth section stated `A*x-b`. The exposed
+infinity norm and backward error are sign invariant, so numerical acceptance
+is unchanged, but that evidence was factually inaccurate.
 
 Required Repair: state `b-A*x`, or explicitly state that the norm is sign
 invariant. No behavioral regression is required because the public diagnostic

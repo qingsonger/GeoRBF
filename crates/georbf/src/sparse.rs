@@ -29,8 +29,8 @@ use crate::kernel::Wendland;
 use crate::kernel_calculus::{KernelCalculusError, RadialSeparation};
 use crate::model::{KernelDefinition, KernelDefinitionEvaluationError};
 use crate::problem_ir::{
-    AffineExpression, AffineTerm, CanonicalEquality, CanonicalProblem, ExecutionOptions,
-    VariableBlock,
+    AffineExpression, AffineTerm, CanonicalEquality, CanonicalLinearBound, CanonicalProblem,
+    CanonicalSecondOrderCone, CanonicalSoftObjective, ExecutionOptions, VariableBlock,
 };
 use crate::solver::ExactDotAccumulator;
 
@@ -1605,12 +1605,17 @@ fn canonical_equality_payload_upper_bound<const D: usize>(
 where
     Dim<D>: SupportedDimension,
 {
-    let equality_capacity = dimension
+    let relation_capacity = dimension
         .checked_next_power_of_two()
         .ok_or(SparseFieldAssemblyError::CountOverflow)?
         .max(4);
-    let mut bytes = equality_capacity
-        .checked_mul(size_of::<CanonicalEquality>())
+    let relation_item_bytes = size_of::<CanonicalEquality>()
+        .checked_add(size_of::<CanonicalLinearBound>())
+        .and_then(|bytes| bytes.checked_add(size_of::<CanonicalSecondOrderCone>()))
+        .and_then(|bytes| bytes.checked_add(size_of::<CanonicalSoftObjective>()))
+        .ok_or(SparseFieldAssemblyError::CountOverflow)?;
+    let mut bytes = relation_capacity
+        .checked_mul(relation_item_bytes)
         .and_then(|part| {
             nonzeros
                 .checked_mul(size_of::<AffineTerm>())

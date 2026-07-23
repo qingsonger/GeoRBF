@@ -1561,11 +1561,22 @@ impl CanonicalProblem {
         for located in &self.variable_space.blocks {
             bytes = bytes.checked_add(located.block.name.capacity())?;
         }
-        bytes = bytes.checked_add(
+        for relation_bytes in [
             self.equalities
                 .capacity()
                 .checked_mul(std::mem::size_of::<CanonicalEquality>())?,
-        )?;
+            self.linear_bounds
+                .capacity()
+                .checked_mul(std::mem::size_of::<CanonicalLinearBound>())?,
+            self.cones
+                .capacity()
+                .checked_mul(std::mem::size_of::<CanonicalSecondOrderCone>())?,
+            self.soft_objectives
+                .capacity()
+                .checked_mul(std::mem::size_of::<CanonicalSoftObjective>())?,
+        ] {
+            bytes = bytes.checked_add(relation_bytes)?;
+        }
         for equality in &self.equalities {
             bytes = bytes.checked_add(
                 equality
@@ -2556,5 +2567,93 @@ mod tests {
             },
             Enforcement::Hard,
         )
+    }
+
+    #[test]
+    fn equality_payload_counts_every_reserved_canonical_capacity() -> TestResult {
+        let mut constraints = Vec::new();
+        for index in 0..2_usize {
+            let provenance = SemanticProvenance::try_new(
+                ObservationId::new(u64::try_from(index)? + 1),
+                SourceLocation::try_new(
+                    format!("input-{index}.yaml"),
+                    NonZeroUsize::new(index + 1).ok_or("source line")?,
+                )?,
+                "metres".to_owned(),
+                format!("fields.scalar[{index}]"),
+                Some(format!("group-{index}")),
+            )?;
+            constraints.push(SemanticConstraint::try_new(
+                provenance,
+                SemanticRelation::Equality {
+                    expression: test_expression()?,
+                    target: 0.0,
+                },
+                Enforcement::Hard,
+            )?);
+        }
+        let problem = SemanticProblemIr::try_new(constraints, ExecutionOptions::default())?;
+        let canonical = problem.try_compile::<ProblemIrError>(
+            [VariableBlock::try_new(
+                "z".to_owned(),
+                NonZeroUsize::new(2).ok_or("variable count")?,
+            )?],
+            |_, provenance| {
+                let variable = usize::try_from(provenance.observation_id().identifier() - 1)
+                    .map_err(|_| ProblemIrError::VariableCountOverflow)?;
+                AffineExpression::try_new([AffineTerm::try_new(variable, 1.0)?], 0.0)
+            },
+        )?;
+
+        assert!(canonical.linear_bounds.is_empty());
+        assert!(canonical.cones.is_empty());
+        assert!(canonical.soft_objectives.is_empty());
+        assert!(canonical.linear_bounds.capacity() >= 2);
+        assert!(canonical.cones.capacity() >= 2);
+        assert!(canonical.soft_objectives.capacity() >= 2);
+
+        let mut independent_bytes = canonical.variable_space.blocks.capacity()
+            * std::mem::size_of::<LocatedVariableBlock>();
+        independent_bytes += canonical
+            .variable_space
+            .blocks
+            .iter()
+            .map(|located| located.block.name.capacity())
+            .sum::<usize>();
+        independent_bytes +=
+            canonical.equalities.capacity() * std::mem::size_of::<CanonicalEquality>();
+        independent_bytes +=
+            canonical.linear_bounds.capacity() * std::mem::size_of::<CanonicalLinearBound>();
+        independent_bytes +=
+            canonical.cones.capacity() * std::mem::size_of::<CanonicalSecondOrderCone>();
+        independent_bytes +=
+            canonical.soft_objectives.capacity() * std::mem::size_of::<CanonicalSoftObjective>();
+        for equality in &canonical.equalities {
+            independent_bytes += equality.row.terms.capacity() * std::mem::size_of::<AffineTerm>();
+            independent_bytes += equality.provenance.source.path.capacity();
+            independent_bytes += equality.provenance.original_units.capacity();
+            independent_bytes += equality.provenance.field_path.capacity();
+            independent_bytes += equality
+                .provenance
+                .constraint_group
+                .as_ref()
+                .map_or(0, String::capacity);
+        }
+        independent_bytes += [
+            canonical.scaling.variable.capacity(),
+            canonical.scaling.equality.capacity(),
+            canonical.scaling.linear_bound.capacity(),
+            canonical.scaling.cone.capacity(),
+            canonical.scaling.soft_objective.capacity(),
+        ]
+        .into_iter()
+        .sum::<usize>()
+            * std::mem::size_of::<f64>();
+
+        assert_eq!(
+            canonical.equality_payload_capacity_bytes(),
+            Some(independent_bytes)
+        );
+        Ok(())
     }
 }
