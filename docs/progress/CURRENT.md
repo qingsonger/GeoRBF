@@ -6,20 +6,32 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / REQ-CENTER-001 clean fresh re-review; Ready CI pending
-- Requirement: REQ-CENTER-001, open Issue #120
-- Branch: `codex/req-center-001-rank-safe-centers`
-- Pull request: #121 (Draft; clean re-review authorizes Ready transition)
+- Mode: Integration state / REQ-CENTER-001 complete
+- Requirement: REQ-CENTER-001, closed Issue #120
+- Implementation pull request: #121, squash-merged as `474988b`
+- Integration-state branch: `codex/req-center-001-integration-state`
+- Integration-state pull request: pending creation
+- Exact Ready head: `4c9525f`
 - Dependencies: REQ-SOLVE-001 and REQ-MODEL-001 are integrated
-- Registry status: `planned`
+- Registry status in this change: `integrated`
 
-## Fresh re-review outcome
+## Integration result
 
 - An isolated read-only project `math_reviewer` reviewed base `aa128ed8`
   through exact Repair head `75110a5`.
 - CENTER001-REV-001 through CENTER001-REV-004 are independently closed.
 - The complete repaired 13-file PR diff has no remaining or new P0--P3
   finding.
+- Exact Ready head `4c9525f` passed complete Windows, Ubuntu, and macOS CI run
+  30013183746, including every configured backend combination, benchmark
+  smoke, and requirement validation.
+- PR #121 squash-merged exactly once as `474988b`; Issue #120 closed as
+  completed. Post-merge `main` CI run 30015158750 passed the same complete
+  three-platform gate on exact merge commit `474988b`.
+- This isolated integration-state change updates only the registry, review
+  evidence, completed-history index, and bounded handoff. It changes no
+  production code, test, manifest, schema, CI, build input, API, numerical
+  behavior, dependency, tag, or release.
 
 ## Review validation
 
@@ -31,21 +43,25 @@ records, benchmark reports, Git, and GitHub.
   warning-denying workspace/all-target/all-feature Clippy, all-feature
   workspace tests, workspace doctests, and the 58-requirement registry check.
 - Draft CI run 30009925065 passed Ubuntu on exact Repair head `75110a5`.
-- The re-review evidence tail changes only this review record and bounded
-  handoff, so the immutable stable-head complete gate remains valid.
+- Exact Ready-head run 30013183746 and post-merge `main` run 30015158750 are
+  both green on Windows, Ubuntu, and macOS, including every configured
+  benchmark smoke.
+- The isolated integration-state tree must pass the complete local standard
+  gate and exact Ready-head CI before it merges.
 
 ## Next task boundary
 
-Push this documentation-only clean re-review evidence, mark PR #121 Ready, and
-wait for the Windows/Ubuntu/macOS and complete benchmark-smoke CI on that exact
-Ready head. Merge exactly once only if the whole matrix is green, then record
-the truthful integration state through an isolated documentation-only change.
-Do not begin REQ-TUNE-001.
+Create the isolated integration-state pull request, link its number in this
+handoff and completed-history index, and run the complete standard local gate
+on the final head. Mark that PR Ready, wait for exact-head
+Windows/Ubuntu/macOS and benchmark-smoke CI, merge only if green, and stop. Do
+not begin REQ-TUNE-001.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #120
-- Draft implementation: GitHub PR #121
+- Acceptance criteria and exclusions: closed GitHub Issue #120
+- Merged implementation: GitHub PR #121
+- Integration-state pull request: pending creation
 - Independent review: `docs/reviews/PR-121-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-CENTER-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
