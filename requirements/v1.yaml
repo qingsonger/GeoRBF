@@ -642,17 +642,17 @@ requirements:
     dependencies: [REQ-ANISO-002, REQ-TREND-002]
     milestone: M6-v0.6.0
     priority: P1
-    issue: null
+    issue: 111
     pull_request: null
     tests: [diagnostic-schema, low-confidence, direction-jump]
     docs: [docs/architecture/ANISOTROPY.md, rustdoc]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
+    rust_api: implemented
+    cli: "N/A: versioned schemas and the complete data CLI are M8 work"
+    c_api: "N/A: bindings follow Rust API and schema freeze in M9"
+    cpp_api: "N/A: bindings follow Rust API and schema freeze in M9"
+    python_api: "N/A: bindings follow Rust API and schema freeze in M9"
     benchmark: "N/A: diagnostics are explicit export operations"
-    status: planned
+    status: in_progress
 
   - id: REQ-SPIKE-003
     title: Sparse assembly and solver backend spike

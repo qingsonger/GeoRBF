@@ -51,11 +51,16 @@
 //! principal axes and explicit or bounded cross-validated relative axis ratios,
 //! with eigengap, isotropy, weight-concentration, and leave-one-out influence
 //! diagnostics; they never infer an absolute correlation length or refit a field.
+//! Renderer-neutral anisotropy diagnostic exports combine resolved local axes,
+//! lengths, source confidence, condition numbers, strict-background evidence,
+//! signed pointwise weights, coverage, and direction jumps without defining a
+//! persistence schema, GUI, or VTK representation.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
 pub mod anisotropy;
+pub mod anisotropy_diagnostics;
 pub mod convex;
 pub mod coordinates;
 pub mod cpd;
@@ -88,6 +93,12 @@ pub mod units;
 
 pub use anisotropy::{
     AnisotropyConditionPolicy, AnisotropyDiagnostics, AnisotropyError, GlobalAnisotropy,
+};
+pub use anisotropy_diagnostics::{
+    AnisotropyBackgroundRecord, AnisotropyControlOrientation, AnisotropyControlRecord,
+    AnisotropyDiagnosticExport, AnisotropyDiagnosticExportError, AnisotropyDiagnosticStorage,
+    AnisotropyDiagnosticSummary, AnisotropySampleRecord, LowConfidenceTrendRegion,
+    try_export_anisotropy_diagnostics,
 };
 pub use convex::{
     ConvexBackendStatus, ConvexCertificateDiagnostics, ConvexConstraintDiagnostics,

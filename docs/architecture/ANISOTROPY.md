@@ -384,3 +384,52 @@ solver change, persistence, or field mutation; and no jitter, regularization,
 pseudoinverse, eigenvalue clipping, or CPD polynomial workaround. Versioned
 schemas and the complete CLI remain M8 work. C, C++, and Python adapters remain
 M9 work.
+
+## Renderer-neutral diagnostic export
+
+`REQ-ANISO-003` combines the immutable evidence from one
+`CompiledTrendControls<D>` into an owned, deterministic Rust export without
+changing the compiled SPD mixture. Control records remain in caller order and
+mixture component zero remains the explicit strict background. Each control
+record identifies both indices and retains its position, signed strength,
+influence radius, optional compact C2 region, fixed-metric condition number,
+and sign-invariant adjacent primary-direction jump and policy-exceedance flag.
+
+Resolved orientation remains an honest tagged choice. An ellipsoid exports all
+caller-ordered resolved axes and paired lengths. A spheroid exports its unique
+principal axis, axial length, and shared orthogonal-complement length; it does
+not invent a basis inside the non-unique transverse subspace. Direction
+provenance and reference-gradient confidence remain attached to every resolved
+axis.
+
+For each caller-supplied sample position, the export evaluates every signed
+spatial basis weight in local-mixture component order and retains the existing
+coverage evidence:
+
+```text
+weights(x) = [b_0(x), ..., b_R(x)],
+coverage(x) = sum_r b_r(x)^2.
+```
+
+The point record also carries the strictly positive background square, active
+represented component count, and declared-domain membership. Weight evaluation
+uses the same demand-bounded value path as the mixture and returns structured
+sample and component context on non-representable input. Owned control, sample,
+weight, and confidence-region allocations use fallible reservation.
+
+Strict-background export retains its component index, absolute constant weight,
+explicit policy minimum, policy ratio, and fixed-metric condition number. The
+summary retains the mixture-wide maximum fixed-metric condition number and the
+compiler's maximum jump, low-confidence count, and jump-exceedance count. These
+are evidence only; export introduces no cutoff and does not alter a control.
+
+Every low-confidence reference-field direction additionally produces one
+source-aware region record in control/axis order. It retains the control and
+axis indices, sampling position, reference field identifier, original gradient
+norm, and optional compact region. `None` remains an explicit unbounded
+Gaussian support rather than an invented finite box. Explicit directions never
+produce low-confidence region records.
+
+These owned records are a format-neutral Rust API, not a versioned persistence
+schema. They require no GUI or VTK and add no encoder. Versioned schemas and CLI
+commands remain M8 work; C, C++, and Python adapter parity remains M9 work.

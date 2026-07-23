@@ -6,85 +6,57 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-TREND-002 complete
-- Requirement: REQ-TREND-002, Issue #108
-- Implementation pull request: #109, squash-merged as `9c7eb2a`
-- Integration-state branch: `codex/req-trend-002-integration-state`
-- Integration-state pull request: #110 (Draft until exact Ready CI is green)
-- Independently reviewed implementation evidence head: `0108447`
-- Clean re-review evidence / exact Ready head: `a73562c`
-- Eleventh Repair code/test head: `0952729`
-- Stable full-gate head: `0952729`
-- Review state: TREND002-REV-001 through TREND002-REV-018 are independently
-  closed; the complete PR has no remaining P0-P3 finding
-- Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are
-  integrated
-- Registry state in this change: `integrated`
+- Mode: Implement
+- Requirement: REQ-ANISO-003, Issue #111
+- Branch: `codex/req-aniso-003-export-diagnostics`
+- Pull request: pending initial push
+- Base: `main` at `37cb91d` after REQ-TREND-002 integration
+- Dependencies: REQ-ANISO-002 and REQ-TREND-002 are integrated
+- Registry state in this change: `in_progress`
 
-## Integration result
+## Scope and implementation
 
-- A fresh isolated read-only `math_reviewer` independently closed
-  TREND002-REV-018 and found no P0-P3 issue in the complete repaired PR.
-- Independent 300-decimal arithmetic gives
-  `-6.035055754270405679245...e-183`, rounding to the permanent regression's
-  `-6.035055754270406e-183` binary64 oracle. The test passes within
-  `1024 * EPSILON`.
-- The original represented transformed displacement now reaches the stable
-  fixed-Gaussian evaluator directly; the underflowing normalized-unit-vector
-  reconstruction is gone. Public APIs, formulae, fixed-SPD structure, demand
-  bounds, and non-Gaussian paths are unchanged.
-- Formulae, product rules, fixed-SPD/CPD classification, C2 boundaries,
-  Hessian capabilities, explicit policies, deterministic diagnostics,
-  allocation behavior, interface dispositions, and absence of hidden
-  regularization satisfy the reviewed scope.
-- Exact Ready head `a73562c` passed complete Windows, Ubuntu, and macOS CI run
-  29971311450, including every configured backend combination, benchmark
-  smoke, and requirement validation.
-- PR #109 squash-merged exactly once as `9c7eb2a`; Issue #108 closed as
-  completed. Post-merge `main` CI run 29971918657 passed the same complete
-  three-platform gate on exact merge commit `9c7eb2a`.
-- This isolated integration-state change updates only the registry, review
-  evidence, history index, and bounded handoff. It changes no production code,
-  test, manifest, schema, CI, build input, API, numerical behavior, dependency,
-  tag, or release.
+- Adds deterministic owned, renderer-neutral anisotropy diagnostic exports for
+  exactly D=1, D=2, and D=3 without changing or refitting the compiled local
+  SPD mixture.
+- Exports caller-ordered control positions, honest spheroidal or ellipsoidal
+  resolved axes and lengths, source confidence, signed strengths, influence
+  radii, optional compact regions, condition numbers, and sign-invariant
+  adjacent direction jumps.
+- Exports strict-background policy/condition evidence and caller-ordered sample
+  positions with every signed mixture weight, aggregate squared coverage,
+  background contribution, active-component count, and domain membership.
+- Exports source-aware low-confidence reference directions as control/axis
+  region records. Explicit directions are excluded and an absent compact region
+  remains explicit.
+- No GUI, VTK, encoder, versioned schema, CLI, binding, solver, or numerical
+  dependency is added. Schema/CLI work remains M8 and adapters remain M9.
 
 ## Validation state
 
-- The isolated reviewer passed the exact regression, all twenty public
-  `trend_controls` tests, all fifteen public and five private `local_trend`
-  tests, all eleven kernel-calculus tests, all thirteen anisotropy tests, the
-  example, optimized benchmark smoke, all 58 requirement checks, and complete
-  Repair/evidence-tail diff whitespace validation.
-- Exact stable head `0952729` passed workspace format, warning-denying workspace
-  all-target/all-feature Clippy, all-feature workspace tests, all 35 workspace
-  Rustdoc tests, all 58 requirement checks, and complete diff whitespace
-  validation.
-- Exact Ready-head run 29971311450 and post-merge `main` run 29971918657 are
-  both green on Windows, Ubuntu, and macOS, including every configured
-  benchmark smoke.
-- The isolated integration-state tree must pass the complete local standard
-  gate and exact Ready-head CI before it merges.
+- Focused `anisotropy_diagnostics` integration tests pass all four schema,
+  low-confidence, direction-jump, coverage, dimension, and error-path cases.
+- The module's compile-fail D=4 Rustdoc test passes.
+- Focused warning-denying Clippy and the runnable example pass.
+- The complete stable-head standard gate remains pending until the final code,
+  tests, documentation, registry, and handoff are stable.
 
 ## Next task boundary
 
-After the isolated integration-state pull request is green and merged, open a
-fresh task and perform the mandatory preflight. Use
-`cargo xtask requirements next`; do not start another requirement in this
-task.
+After this implementation is committed, pushed, and attached to a Draft PR,
+open a fresh Review task for only REQ-ANISO-003. The reviewer must receive the
+requirement/dependency summaries, Issue #111, M6 plan, ANISOTROPY and
+ADR-0005/ADR-0008 contracts, PR diff, and exact validation evidence. Do not
+repair production code or start the next requirement in that Review task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #108
-- Merged implementation: GitHub PR #109
-- Integration-state pull request: GitHub PR #110
-- Independent review, findings, and Repair evidence:
-  `docs/reviews/PR-109-INDEPENDENT-REVIEW.md`
-- Requirement summary and benchmark baseline: `changes/REQ-TREND-002.md`
-- Public implementation and Rustdoc: `crates/georbf/src/trend_controls.rs`,
-  `crates/georbf/src/local_trend.rs`
-- Independent property/error tests: `crates/georbf/tests/trend_controls.rs`
-- Runnable example: `crates/georbf/examples/trend_controls.rs`
-- Focused benchmark: `crates/georbf/benches/trend_control_compilation.rs`
+- Acceptance criteria and exclusions: GitHub Issue #111
+- Requirement summary: `changes/REQ-ANISO-003.md`
+- Public implementation and Rustdoc:
+  `crates/georbf/src/anisotropy_diagnostics.rs`
+- Independent tests: `crates/georbf/tests/anisotropy_diagnostics.rs`
+- Runnable example: `crates/georbf/examples/anisotropy_diagnostics.rs`
 - Mathematical contract: `docs/architecture/ANISOTROPY.md`, ADR-0005, ADR-0008
 
 ## Checks not yet available
