@@ -680,7 +680,7 @@ requirements:
     priority: P0
     issue: 117
     pull_request: 118
-    tests: [dense-sparse-parity, support-boundaries, memory-scaling, coverage]
+    tests: [dense-sparse-parity, support-boundaries, memory-scaling, backend-workspace-limits, coverage]
     docs: [docs/architecture/ARCHITECTURE.md, docs/reviews/PR-118-INDEPENDENT-REVIEW.md, rustdoc]
     rust_api: implemented
     cli: "N/A: complete fitting CLI and schemas are deferred to M8"

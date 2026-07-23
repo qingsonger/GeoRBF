@@ -282,6 +282,10 @@ fall back. Their explicit memory review sums every simultaneously live logical
 component: index construction, accepted-pair and reflected-entry capacities,
 all reserved canonical relation-vector capacities, equality row work and
 provenance strings, scaling, retained CSC and right-hand side, the complete
-borrowed solve system, backend CSC copy, conservative factor fill, vectors,
-and exact residual work. Performance changes are accepted only with fixed-data
-baselines and documented hardware and thread settings.
+borrowed solve system, backend CSC copy, pinned-backend AMD and symbolic
+analysis scratch, retained symbolic structures, conservative numeric-factor
+storage and factorization scratch, solve vectors, and exact residual work.
+The solver checks the symbolic-factorization, numeric-factorization, and
+solve-and-review peaks separately before backend dispatch. Performance changes
+are accepted only with fixed-data baselines and documented hardware and thread
+settings.

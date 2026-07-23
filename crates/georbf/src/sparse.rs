@@ -8,7 +8,10 @@ use std::fmt;
 use std::mem::size_of;
 use std::num::NonZeroUsize;
 
+use faer::dyn_stack::StackReq;
 use faer::prelude::Solve;
+use faer::sparse::linalg::amd;
+use faer::sparse::linalg::cholesky::{simplicial, supernodal};
 use faer::sparse::{SparseColMat, SymbolicSparseColMat};
 use faer::{Col, Side};
 use rstar::primitives::GeomWithData;
@@ -1105,11 +1108,27 @@ pub struct SparseSolveMemoryDiagnostics {
     pub retained_system_bytes: usize,
     /// Backend-owned checked CSC copy.
     pub backend_matrix_bytes: usize,
-    /// Conservative dense lower-triangle factorization payload.
+    /// Pinned faer AMD ordering scratch request.
+    pub amd_ordering_scratch_bytes: usize,
+    /// Complete pinned faer symbolic-analysis scratch request.
+    pub symbolic_analysis_scratch_bytes: usize,
+    /// Conservative retained symbolic-factor structure payload.
+    pub symbolic_factor_bytes: usize,
+    /// Conservative retained numeric-factor payload.
+    pub numeric_factor_bytes: usize,
+    /// Sum of retained symbolic and numeric factor payloads.
     pub factorization_bytes: usize,
+    /// Conservative numeric-factorization scratch payload.
+    pub numeric_factorization_scratch_bytes: usize,
     /// Right-hand sides, solutions, residual work, and exact accumulators.
     pub working_vector_bytes: usize,
-    /// Sum of every simultaneously live solve component.
+    /// Conservative peak while faer constructs the symbolic factor.
+    pub symbolic_factorization_peak_bytes: usize,
+    /// Conservative peak while faer constructs the numeric factor.
+    pub numeric_factorization_peak_bytes: usize,
+    /// Conservative peak while faer solves and `GeoRBF` reviews the residual.
+    pub solve_and_review_peak_bytes: usize,
+    /// Maximum of every checked solve-stage peak.
     pub estimated_peak_bytes: usize,
 }
 
@@ -1855,11 +1874,7 @@ where
                 .and_then(|part| bytes.checked_add(part))
         })
         .ok_or_else(overflow)?;
-    let factorization_bytes = dimension
-        .checked_mul(dimension.checked_add(1).ok_or_else(overflow)?)
-        .and_then(|count| count.checked_div(2))
-        .and_then(|count| count.checked_mul(size_of::<usize>() + size_of::<f64>()))
-        .ok_or_else(overflow)?;
+    let faer = estimate_faer_memory_bounds(dimension, nonzeros, backend_matrix_bytes)?;
     let working_vector_bytes = dimension
         .checked_mul(
             6_usize
@@ -1869,18 +1884,163 @@ where
         )
         .ok_or_else(overflow)?;
     let retained_system_bytes = system.diagnostics.estimated_storage_bytes;
-    let estimated_peak_bytes = retained_system_bytes
-        .checked_add(backend_matrix_bytes)
-        .and_then(|bytes| bytes.checked_add(factorization_bytes))
-        .and_then(|bytes| bytes.checked_add(working_vector_bytes))
-        .ok_or_else(overflow)?;
+    let symbolic_factorization_peak_bytes = checked_solve_sum(
+        dimension,
+        &[
+            retained_system_bytes,
+            backend_matrix_bytes,
+            faer.symbolic_analysis_scratch,
+            faer.symbolic_factor,
+        ],
+    )?;
+    let numeric_factorization_peak_bytes = checked_solve_sum(
+        dimension,
+        &[
+            retained_system_bytes,
+            backend_matrix_bytes,
+            faer.symbolic_factor,
+            faer.numeric_factor,
+            faer.numeric_factorization_scratch,
+        ],
+    )?;
+    let solve_and_review_peak_bytes = checked_solve_sum(
+        dimension,
+        &[
+            retained_system_bytes,
+            backend_matrix_bytes,
+            faer.symbolic_factor,
+            faer.numeric_factor,
+            working_vector_bytes,
+        ],
+    )?;
+    let estimated_peak_bytes = symbolic_factorization_peak_bytes
+        .max(numeric_factorization_peak_bytes)
+        .max(solve_and_review_peak_bytes);
     Ok(SparseSolveMemoryDiagnostics {
         retained_system_bytes,
         backend_matrix_bytes,
-        factorization_bytes,
+        amd_ordering_scratch_bytes: faer.amd_ordering_scratch,
+        symbolic_analysis_scratch_bytes: faer.symbolic_analysis_scratch,
+        symbolic_factor_bytes: faer.symbolic_factor,
+        numeric_factor_bytes: faer.numeric_factor,
+        factorization_bytes: faer.factorization,
+        numeric_factorization_scratch_bytes: faer.numeric_factorization_scratch,
         working_vector_bytes,
+        symbolic_factorization_peak_bytes,
+        numeric_factorization_peak_bytes,
+        solve_and_review_peak_bytes,
         estimated_peak_bytes,
     })
+}
+
+struct FaerMemoryBounds {
+    amd_ordering_scratch: usize,
+    symbolic_analysis_scratch: usize,
+    symbolic_factor: usize,
+    numeric_factor: usize,
+    factorization: usize,
+    numeric_factorization_scratch: usize,
+}
+
+fn estimate_faer_memory_bounds(
+    dimension: usize,
+    nonzeros: usize,
+    backend_matrix_bytes: usize,
+) -> Result<FaerMemoryBounds, SparseSolveError> {
+    let overflow = || SparseSolveError::MemoryEstimateOverflow { dimension };
+    let amd_ordering_scratch = amd::order_maybe_unsorted_scratch::<usize>(dimension, nonzeros);
+    let amd_ordering_scratch_bytes = checked_stack_req_bytes(amd_ordering_scratch, dimension)?;
+    let symbolic_analysis_scratch_bytes =
+        faer_symbolic_analysis_scratch_bytes(dimension, nonzeros)?;
+    let dense_items = dimension.checked_mul(dimension).ok_or_else(overflow)?;
+    // The pinned faer symbolic factor retains two permutations. Its
+    // supernodal representation additionally retains at most two dense index
+    // patterns plus eight dimension-sized pointer/count arrays. This also
+    // bounds the smaller simplicial representation.
+    let symbolic_factor_items = dense_items
+        .checked_mul(2)
+        .and_then(|count| {
+            dimension
+                .checked_mul(8)
+                .and_then(|part| count.checked_add(part))
+        })
+        .and_then(|count| count.checked_add(8))
+        .ok_or_else(overflow)?;
+    let symbolic_factor_bytes = symbolic_factor_items
+        .checked_mul(size_of::<usize>())
+        .ok_or_else(overflow)?;
+    // Faer's numeric factor stores at most one full dense square of values,
+    // including supernodal panel padding.
+    let numeric_factor_bytes = dense_items
+        .checked_mul(size_of::<f64>())
+        .ok_or_else(overflow)?;
+    let factorization_bytes = symbolic_factor_bytes
+        .checked_add(numeric_factor_bytes)
+        .ok_or_else(overflow)?;
+    // The pinned numeric LLT scratch first holds a permuted CSC copy. Its
+    // largest supernodal update additionally needs at most two dense value
+    // workspaces plus three dimension-sized index arrays. This also bounds
+    // the simplicial numeric path.
+    let numeric_factorization_scratch_bytes = dense_items
+        .checked_mul(2)
+        .and_then(|count| count.checked_mul(size_of::<f64>()))
+        .and_then(|bytes| {
+            dimension
+                .checked_mul(3)
+                .and_then(|count| count.checked_mul(size_of::<usize>()))
+                .and_then(|part| bytes.checked_add(part))
+        })
+        .and_then(|bytes| bytes.checked_add(backend_matrix_bytes))
+        .ok_or_else(overflow)?;
+    Ok(FaerMemoryBounds {
+        amd_ordering_scratch: amd_ordering_scratch_bytes,
+        symbolic_analysis_scratch: symbolic_analysis_scratch_bytes,
+        symbolic_factor: symbolic_factor_bytes,
+        numeric_factor: numeric_factor_bytes,
+        factorization: factorization_bytes,
+        numeric_factorization_scratch: numeric_factorization_scratch_bytes,
+    })
+}
+
+fn checked_stack_req_bytes(request: StackReq, dimension: usize) -> Result<usize, SparseSolveError> {
+    if request.align_bytes() == 0 {
+        return Err(SparseSolveError::MemoryEstimateOverflow { dimension });
+    }
+    Ok(request.size_bytes())
+}
+
+fn faer_symbolic_analysis_scratch_bytes(
+    dimension: usize,
+    nonzeros: usize,
+) -> Result<usize, SparseSolveError> {
+    let dimension_scratch = StackReq::new::<usize>(dimension);
+    let matrix_scratch = StackReq::new::<usize>(
+        dimension
+            .checked_add(1)
+            .ok_or(SparseSolveError::MemoryEstimateOverflow { dimension })?,
+    )
+    .and(StackReq::new::<usize>(nonzeros));
+    let factor_scratch =
+        supernodal::factorize_supernodal_symbolic_cholesky_scratch::<usize>(dimension)
+            .or(simplicial::factorize_simplicial_symbolic_cholesky_scratch::<usize>(dimension));
+    let post_ordering_scratch = StackReq::all_of(&[
+        matrix_scratch,
+        dimension_scratch,
+        dimension_scratch,
+        dimension_scratch,
+        factor_scratch,
+    ]);
+    checked_stack_req_bytes(
+        amd::order_maybe_unsorted_scratch::<usize>(dimension, nonzeros).or(post_ordering_scratch),
+        dimension,
+    )
+}
+
+fn checked_solve_sum(dimension: usize, components: &[usize]) -> Result<usize, SparseSolveError> {
+    components
+        .iter()
+        .try_fold(0_usize, |sum, component| sum.checked_add(*component))
+        .ok_or(SparseSolveError::MemoryEstimateOverflow { dimension })
 }
 
 fn try_copy_usize(

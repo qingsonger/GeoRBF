@@ -67,10 +67,17 @@ index, accepted-pair and reflected-entry capacities, all reserved canonical
 relation-vector capacities, equality row work and provenance strings, scaling,
 CSC, and right-hand side. Solve review adds the complete borrowed retained
 system, one backend CSC copy, vectors, exact residual accumulators, and a dense
-lower-triangle upper bound for symbolic/numeric fill before backend dispatch.
-Failure is explicit: no equilibration, refinement, regularization, jitter,
-diagonal substitution, pseudoinverse, densification, constraint relaxation,
-or factorization fallback is enabled.
+fill bound before backend dispatch. The pinned faer 0.24.4 adapter reproduces
+its AMD and complete symbolic-analysis `StackReq`, bounds both possible
+retained symbolic representations by two dense index patterns plus
+dimension-sized metadata, bounds numeric supernodal panel storage by a dense
+square, and bounds numeric scratch by the permuted CSC copy, two dense value
+workspaces, and dimension-sized indices. It checks separate
+symbolic-factorization, numeric-factorization, and solve-and-review peaks and
+enforces their maximum before constructing backend storage. Failure is
+explicit: no equilibration, refinement, regularization, jitter, diagonal
+substitution, pseudoinverse, densification, constraint relaxation, or
+factorization fallback is enabled.
 
 Each spike reviews correctness, scaling, maintenance, license, MSRV, unsafe
 use, platforms, binary size, alternatives, and deterministic behavior, then

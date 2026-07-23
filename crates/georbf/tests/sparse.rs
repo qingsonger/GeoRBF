@@ -3,24 +3,50 @@
 use std::error::Error;
 use std::mem::size_of;
 use std::num::NonZeroUsize;
+use std::sync::Mutex;
 
+use faer::sparse::linalg::amd;
 use georbf::{
     AffineNormalization, AngleUnit, AnisotropyConditionPolicy, AxisOrder, CancellationToken,
     CanonicalLinearBound, CanonicalSecondOrderCone, CanonicalSoftObjective, CanonicalizationError,
     CenterRepresenter, ConditionPolicy, CoordinateMetadata, CrsMetadata, DenseFactorization,
     DenseSolveOptions, Enforcement, ExecutionControl, ExecutionError, ExecutionOperation,
-    ExecutionOptions, FieldAssemblyError, FieldProblem, FittedField, FunctionalAtom,
-    FunctionalExpr, FunctionalProvenance, FunctionalTerm, GlobalAnisotropy, Handedness,
-    KernelDefinition, LengthUnit, ObservationFunctional, ObservationId, Point, ProblemIrError,
-    Regularization, SemanticConstraint, SemanticExpression, SemanticProblemIr, SemanticProvenance,
-    SemanticRelation, SourceLocation, SparseFactorization, SparseFieldAssemblyError,
-    SparseFitOptions, SparseSolveError, UnitDirection, VerticalDirection, Wendland,
-    WendlandSmoothness, try_solve_sparse_field, try_solve_sparse_field_with_control,
+    ExecutionOptions, ExecutionStage, FieldAssemblyError, FieldProblem, FittedField,
+    FunctionalAtom, FunctionalExpr, FunctionalProvenance, FunctionalTerm, GlobalAnisotropy,
+    Handedness, KernelDefinition, LengthUnit, ObservationFunctional, ObservationId, Point,
+    ProblemIrError, ProgressEvent, ProgressSink, Regularization, SemanticConstraint,
+    SemanticExpression, SemanticProblemIr, SemanticProvenance, SemanticRelation, SourceLocation,
+    SparseFactorization, SparseFieldAssemblyError, SparseFitOptions, SparseSolveError,
+    SparseSolveMemoryDiagnostics, UnitDirection, VerticalDirection, Wendland, WendlandSmoothness,
+    try_solve_sparse_field, try_solve_sparse_field_with_control,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
 
 const MEMORY_LIMIT: usize = 64 * 1024 * 1024;
+
+#[derive(Default)]
+struct RecordingSink {
+    events: Mutex<Vec<ProgressEvent>>,
+}
+
+impl RecordingSink {
+    fn events(&self) -> Vec<ProgressEvent> {
+        self.events
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+    }
+}
+
+impl ProgressSink for RecordingSink {
+    fn on_progress(&self, event: ProgressEvent) {
+        self.events
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .push(event);
+    }
+}
 
 fn sparse_options() -> SparseFitOptions {
     sparse_options_with_limit(MEMORY_LIMIT)
@@ -578,6 +604,43 @@ fn assert_corrected_solve_limit(kernel: Wendland) -> TestResult {
     Ok(())
 }
 
+fn assert_solve_memory_sums(memory: &SparseSolveMemoryDiagnostics) {
+    assert_eq!(
+        memory.factorization_bytes,
+        memory.symbolic_factor_bytes + memory.numeric_factor_bytes
+    );
+    assert!(memory.symbolic_analysis_scratch_bytes >= memory.amd_ordering_scratch_bytes);
+    assert_eq!(
+        memory.symbolic_factorization_peak_bytes,
+        memory.retained_system_bytes
+            + memory.backend_matrix_bytes
+            + memory.symbolic_analysis_scratch_bytes
+            + memory.symbolic_factor_bytes
+    );
+    assert_eq!(
+        memory.numeric_factorization_peak_bytes,
+        memory.retained_system_bytes
+            + memory.backend_matrix_bytes
+            + memory.symbolic_factor_bytes
+            + memory.numeric_factor_bytes
+            + memory.numeric_factorization_scratch_bytes
+    );
+    assert_eq!(
+        memory.solve_and_review_peak_bytes,
+        memory.retained_system_bytes
+            + memory.backend_matrix_bytes
+            + memory.factorization_bytes
+            + memory.working_vector_bytes
+    );
+    assert_eq!(
+        memory.estimated_peak_bytes,
+        memory
+            .symbolic_factorization_peak_bytes
+            .max(memory.numeric_factorization_peak_bytes)
+            .max(memory.solve_and_review_peak_bytes)
+    );
+}
+
 #[test]
 fn peak_memory_diagnostics_and_stage_limits_are_exact() -> TestResult {
     let points = [[0.0], [0.5], [1.0], [1.5], [2.0]];
@@ -649,13 +712,7 @@ fn peak_memory_diagnostics_and_stage_limits_are_exact() -> TestResult {
 
     let wide_solution = try_solve_sparse_field(&wide)?;
     let solve_memory = &wide_solution.diagnostics().memory;
-    assert_eq!(
-        solve_memory.estimated_peak_bytes,
-        solve_memory.retained_system_bytes
-            + solve_memory.backend_matrix_bytes
-            + solve_memory.factorization_bytes
-            + solve_memory.working_vector_bytes
-    );
+    assert_solve_memory_sums(solve_memory);
     assert!(solve_memory.estimated_peak_bytes > memory.estimated_peak_bytes);
 
     assert_corrected_solve_limit(kernel)?;
@@ -674,6 +731,62 @@ fn peak_memory_diagnostics_and_stage_limits_are_exact() -> TestResult {
         }) if estimated_peak_bytes == solve_memory.estimated_peak_bytes
             && limit_bytes == assembly_limit
     ));
+    Ok(())
+}
+
+#[test]
+fn faer_workspace_limit_rejects_before_factorization_progress() -> TestResult {
+    const DIMENSION: usize = 64;
+    let points = (0_u32..64)
+        .map(|index| [f64::from(index)])
+        .collect::<Vec<_>>();
+    let targets = vec![0.0; DIMENSION];
+    let kernel = Wendland::try_new(WendlandSmoothness::C2, 64.0)?;
+    let wide =
+        value_problem(&points, &targets)?.try_assemble_sparse(kernel, None, sparse_options())?;
+    assert_eq!(wide.matrix().values().len(), DIMENSION * DIMENSION);
+
+    let solution = try_solve_sparse_field(&wide)?;
+    let memory = &solution.diagnostics().memory;
+    let amd_request = amd::order_maybe_unsorted_scratch::<usize>(DIMENSION, DIMENSION * DIMENSION);
+    assert_ne!(amd_request.align_bytes(), 0);
+    assert_eq!(memory.amd_ordering_scratch_bytes, amd_request.size_bytes());
+    assert!(memory.symbolic_analysis_scratch_bytes >= amd_request.size_bytes());
+
+    let old_factorization_bytes =
+        DIMENSION * (DIMENSION + 1) / 2 * (size_of::<usize>() + size_of::<f64>());
+    let old_peak = memory.retained_system_bytes
+        + memory.backend_matrix_bytes
+        + old_factorization_bytes
+        + memory.working_vector_bytes;
+    let assembly_peak = wide.diagnostics().memory.estimated_peak_bytes;
+    let lower_bound = old_peak.max(assembly_peak);
+    assert!(lower_bound < memory.estimated_peak_bytes);
+    let limit = lower_bound + (memory.estimated_peak_bytes - lower_bound) / 2;
+    assert!(old_peak < limit && limit < memory.estimated_peak_bytes);
+    assert!(assembly_peak <= limit);
+
+    let limited = value_problem(&points, &targets)?.try_assemble_sparse(
+        kernel,
+        None,
+        sparse_options_with_limit(limit),
+    )?;
+    let sink = RecordingSink::default();
+    assert!(matches!(
+        try_solve_sparse_field_with_control(&limited, ExecutionControl::with_progress(&sink)),
+        Err(SparseSolveError::MemoryLimitExceeded {
+            estimated_peak_bytes,
+            limit_bytes,
+        }) if estimated_peak_bytes == memory.estimated_peak_bytes && limit_bytes == limit
+    ));
+    let events = sink.events();
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].stage(), ExecutionStage::Started);
+    assert!(
+        events
+            .iter()
+            .all(|event| event.stage() != ExecutionStage::Factorization)
+    );
     Ok(())
 }
 

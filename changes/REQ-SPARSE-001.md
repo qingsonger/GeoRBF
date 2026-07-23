@@ -27,8 +27,11 @@ sums the retained index, every reserved canonical relation-vector capacity,
 equality row and provenance-string capacities, scaling, CSC, right-hand side,
 accepted-pair, reflected-entry, row-buffer, and bulk-load payloads at each
 checked stage. Solve evidence adds the complete borrowed retained system,
-backend CSC copy, conservative dense lower-triangle factor fill, vectors, and
-exact accumulators. The fixed acceptance tolerance is
+backend CSC copy, the pinned faer AMD and complete symbolic-analysis scratch
+requests, conservative retained symbolic structures, numeric-factor storage
+and scratch, vectors, and exact accumulators. Separate
+symbolic-factorization, numeric-factorization, and solve-and-review peaks are
+checked before backend dispatch. The fixed acceptance tolerance is
 `128 * dimension * epsilon`. Singular systems, nonrepresentable neighborhoods,
 allocation and memory limits, cancellation, unsupported thread counts,
 nonfinite solutions, and residual failures are structured errors. No jitter,
@@ -44,7 +47,7 @@ index and coefficients remain immutable, cloneable, deterministic, and
 `Send + Sync`; third-party point, tree, matrix, and factorization types are not
 public.
 
-Nine independent integration tests cover the hand-derived three-point
+Ten independent integration tests cover the hand-derived three-point
 Wendland C2 CSC and analytic solution; the exact support-boundary structural
 zero; dense-sparse coefficient/value/gradient/Hessian parity in D=1/D=2/D=3;
 mixed and co-located Value and DirectionalDerivative representers, including
@@ -54,11 +57,14 @@ filtering; repeated complete CSC and diagnostic determinism; 64-point versus
 512-point bounded-neighbor growth; exact assembly and solve memory sums with
 limits between retained, assembly-peak, and solve-peak payloads; hard canonical
 conflict; assembly and solve cancellation; nonrepresentable candidate radius;
-and singular-factorization rejection. Existing field, model, and execution
-suites remain green. An internal canonical-IR regression independently sums
-all relation-vector, equality-term, provenance-string, variable-block, and
-scaling capacities, including the three logically empty but reserved relation
-buffers, and requires the retained equality-only payload to match.
+singular-factorization rejection; and a 64-by-64 all-supported system that
+independently obtains faer's AMD scratch request and rejects a between-limit
+solve before any factorization progress event. Existing field, model, and
+execution suites remain green. An internal canonical-IR regression
+independently sums all relation-vector, equality-term, provenance-string,
+variable-block, and scaling capacities, including the three logically empty
+but reserved relation buffers, and requires the retained equality-only payload
+to match.
 
 The production re-audit retains the exact versions and default-disabled
 features selected by ADR-0012: rstar 0.13.0 and faer 0.24.4 with `std` and
