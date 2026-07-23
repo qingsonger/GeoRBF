@@ -6,11 +6,12 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement
+- Mode: Review complete; Repair required
 - Requirement: REQ-ANISO-003, Issue #111
 - Branch: `codex/req-aniso-003-export-diagnostics`
 - Draft pull request: #112
 - Base: `main` at `37cb91d` after REQ-TREND-002 integration
+- Reviewed head: `a698362`
 - Stable full-gate head: `98c72dc`
 - Dependencies: REQ-ANISO-002 and REQ-TREND-002 are integrated
 - Registry state in this change: `in_progress`
@@ -33,6 +34,22 @@ records, benchmark reports, Git, and GitHub.
 - No GUI, VTK, encoder, versioned schema, CLI, binding, solver, or numerical
   dependency is added. Schema/CLI work remains M8 and adapters remain M9.
 
+## Independent review state
+
+- A fresh read-only project `math_reviewer` reviewed the bounded requirement,
+  integrated dependency closure, Issue #111, M6 plan, ANISOTROPY and
+  ADR-0005/ADR-0008 contracts, complete PR diff, tests, and validation evidence.
+- ANISO003-REV-001 (P2) is open: the required independent diagnostic-schema
+  test does not assert exported axis components and provenance, axis-length
+  pairing, ellipsoid tolerance, exact per-control condition numbers, or the
+  summary maximum condition number.
+- Independent truth for the existing orthogonal test fixtures is condition two
+  for the `(3, 1.5)` spheroid, four for the `[4, 1]` ellipsoid, one for the
+  isotropic background, and four for the mixture summary. The expected axes are
+  spheroid `(1, 0)` and caller-ordered ellipsoid `(-1, 0)`, `(0, 1)`.
+- No other P0-P3 finding was identified. Durable evidence is in
+  `docs/reviews/PR-112-INDEPENDENT-REVIEW.md`.
+
 ## Validation state
 
 - Focused `anisotropy_diagnostics` integration tests pass all four schema,
@@ -47,14 +64,19 @@ records, benchmark reports, Git, and GitHub.
   changes no production code, test, manifest, registry, schema, CI, build input,
   API, numerical behavior, or dependency, so the immutable `98c72dc` full gate
   remains applicable.
+- This Review task passed the four focused integration tests, the D=4
+  compile-fail Rustdoc test, the runnable example, and diff whitespace
+  validation on reviewed head `a698362`. Draft Ubuntu CI is green on that head.
 
 ## Next task boundary
 
-After this implementation is committed, pushed, and attached to a Draft PR,
-open a fresh Review task for only REQ-ANISO-003. The reviewer must receive the
-requirement/dependency summaries, Issue #111, M6 plan, ANISOTROPY and
-ADR-0005/ADR-0008 contracts, PR diff, and exact validation evidence. Do not
-repair production code or start the next requirement in that Review task.
+Open a fresh Repair task for only ANISO003-REV-001 on PR #112. Extend the
+existing diagnostic-schema test with exact axis/provenance, pairing, tolerance,
+per-control condition-number, and summary-maximum assertions. Change production
+code only if that regression exposes a defect. Run focused checks and one final
+complete standard gate after the last test or code change, update review
+evidence and this handoff, commit, push, and stop for fresh independent
+re-review. Do not start another requirement.
 
 ## Durable evidence
 
@@ -65,6 +87,7 @@ repair production code or start the next requirement in that Review task.
 - Independent tests: `crates/georbf/tests/anisotropy_diagnostics.rs`
 - Runnable example: `crates/georbf/examples/anisotropy_diagnostics.rs`
 - Mathematical contract: `docs/architecture/ANISOTROPY.md`, ADR-0005, ADR-0008
+- Independent review: `docs/reviews/PR-112-INDEPENDENT-REVIEW.md`
 
 ## Checks not yet available
 
