@@ -6,14 +6,14 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-CENTER-001 complete
-- Requirement: REQ-CENTER-001, closed Issue #120
+- Mode: None; the REQ-CENTER-001 integration sequence is complete
+- Requirement: REQ-CENTER-001, Issue #120
 - Implementation pull request: #121, squash-merged as `474988b`
-- Integration-state branch: `codex/req-center-001-integration-state`
-- Integration-state pull request: #122 (Draft until exact Ready CI is green)
-- Exact Ready head: `4c9525f`
+- Integration-state pull request: #122, merged as `c40b97d`
+- Integration-state exact Ready head: `4f4e897`
+- Post-merge handoff repair: Issue #123
 - Dependencies: REQ-SOLVE-001 and REQ-MODEL-001 are integrated
-- Registry status in this change: `integrated`
+- Registry status: `integrated`
 
 ## Integration result
 
@@ -28,10 +28,16 @@ records, benchmark reports, Git, and GitHub.
 - PR #121 squash-merged exactly once as `474988b`; Issue #120 closed as
   completed. Post-merge `main` CI run 30015158750 passed the same complete
   three-platform gate on exact merge commit `474988b`.
-- This isolated integration-state change updates only the registry, review
-  evidence, completed-history index, and bounded handoff. It changes no
-  production code, test, manifest, schema, CI, build input, API, numerical
-  behavior, dependency, tag, or release.
+- Integration-state PR #122 exact Ready head `4f4e897` passed complete
+  Windows, Ubuntu, and macOS CI run 30017196433, including every configured
+  backend combination, benchmark smoke, and requirement validation.
+- PR #122 merged exactly once as `c40b97d`. Post-merge `main` CI run
+  30019137463 passed the same complete three-platform gate on that exact merge
+  commit.
+- Issue #123 corrects only the stale bounded handoff left by PR #122. It does
+  not change production code, tests, manifests, schemas, CI, build inputs,
+  APIs, numerical behavior, dependencies, tags, releases, or the integrated
+  requirement registry.
 
 ## Review validation
 
@@ -46,22 +52,25 @@ records, benchmark reports, Git, and GitHub.
 - Exact Ready-head run 30013183746 and post-merge `main` run 30015158750 are
   both green on Windows, Ubuntu, and macOS, including every configured
   benchmark smoke.
-- The isolated integration-state tree must pass the complete local standard
-  gate and exact Ready-head CI before it merges.
+- Integration-state exact Ready-head run 30017196433 and post-merge `main` run
+  30019137463 are both green on Windows, Ubuntu, and macOS, including every
+  configured benchmark smoke.
 
 ## Next task boundary
 
-Create the isolated integration-state pull request, link its number in this
-handoff and completed-history index, and run the complete standard local gate
-on the final head. Mark that PR Ready, wait for exact-head
-Windows/Ubuntu/macOS and benchmark-smoke CI, merge only if green, and stop. Do
-not begin REQ-TUNE-001.
+Start a fresh task and perform the mandatory preflight against this handoff and
+the current remote state. If no higher-priority Repair or Review work exists,
+implement only the single atomic requirement returned by
+`cargo xtask requirements next`; at the time of this repair that command
+returns REQ-TUNE-001. Stop at that task's Draft PR boundary and do not continue
+into another requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: closed GitHub Issue #120
 - Merged implementation: GitHub PR #121
-- Integration-state pull request: GitHub PR #122
+- Merged integration state: GitHub PR #122
+- Post-merge handoff correction: GitHub Issue #123
 - Independent review: `docs/reviews/PR-121-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-CENTER-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
