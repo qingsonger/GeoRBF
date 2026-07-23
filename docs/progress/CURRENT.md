@@ -9,7 +9,7 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement
 - Requirement: REQ-ANISO-003, Issue #111
 - Branch: `codex/req-aniso-003-export-diagnostics`
-- Pull request: pending initial push
+- Draft pull request: #112
 - Base: `main` at `37cb91d` after REQ-TREND-002 integration
 - Dependencies: REQ-ANISO-002 and REQ-TREND-002 are integrated
 - Registry state in this change: `in_progress`

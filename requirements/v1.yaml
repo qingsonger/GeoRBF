@@ -643,7 +643,7 @@ requirements:
     milestone: M6-v0.6.0
     priority: P1
     issue: 111
-    pull_request: null
+    pull_request: 112
     tests: [diagnostic-schema, low-confidence, direction-jump]
     docs: [docs/architecture/ANISOTROPY.md, rustdoc]
     rust_api: implemented
