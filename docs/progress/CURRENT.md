@@ -6,59 +6,52 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; Repair required
+- Mode: Repair complete; fresh independent re-review required
 - Requirement: REQ-SPIKE-003, Issue #114
 - Branch: `codex/req-spike-003-sparse-backends`
 - Draft pull request: #115
 - Reviewed implementation head: `2ad68e5`
-- Stable full-gate head: `255bac8`
-- Review findings: P1 SPIKE003-REV-001 and P2 SPIKE003-REV-002
+- Repair implementation and stable full-gate head: `7257e67`
+- Repair scope: P1 SPIKE003-REV-001 and P2 SPIKE003-REV-002
 - Dependencies: REQ-KERNEL-004 and its complete closure are integrated
 - Registry state: `implemented`
 
-## Independent review result
+## Repair result
 
-- SPIKE003-REV-001: the claimed independent matrix-vector truth is circular.
-  `SparseCase::from_points` creates the right-hand side with the same helper
-  that the only matrix-vector assertion calls again. Neither backend's actual
-  CSC column pointers, row indices, values, or storage-level matrix-vector
-  result is checked.
-- SPIKE003-REV-002: the published factor-and-solve timings include triplet
-  allocation, CSC construction, factorization, solve, residual recomputation,
-  and analytic-truth review. The benchmark report and ADR label and interpret
-  them too narrowly.
-- The reviewer otherwise confirmed the D=3 Wendland C2 formula and SPD fixture,
-  strict support behavior, pair-count bounds, dimensionless original-unit
-  backward error, explicit singular failure, absence of hidden regularization
-  or fallback, dependency graph, and truthful interface N/A dispositions.
+- SPIKE003-REV-001: a hand-derived `0`, `R/2`, `R` fixture now checks
+  `phi = [1, 3/16, 0]`, the exact expected CSC arrays, sorted uniqueness,
+  symmetry, candidate-storage matrix-vector results, and recovery of
+  `[1, 2, 3]` for both faer and sprs without deriving expected values from the
+  harness kernel, assembly, or row-major matrix-vector helpers.
+- SPIKE003-REV-002: benchmark CSV rows now carry explicit end-to-end phase
+  names. Solver results are truthfully labeled as
+  construct/factor/solve/review/checksum totals, the three-trial Windows
+  evidence was refreshed, and the ADR no longer makes an isolated
+  factorization-speed inference.
+- The PR remains Draft and both findings remain pending independent closure.
 
 ## Evidence state
 
-- A fresh isolated read-only project `math_reviewer` reviewed exact head
-  `2ad68e5` against base `244e887` and recorded both findings in
-  `docs/reviews/PR-115-INDEPENDENT-REVIEW.md`.
-- The reviewer passed all eight locked all-feature harness tests, the locked
-  release smoke workload, exact-version metadata and dependency-tree review,
-  requirement show/dependency checks, and the complete PR whitespace check.
-- The parent Review task independently passed the eight all-feature harness
-  tests, all 58 requirement checks, and the complete PR whitespace check.
-- Draft CI run 29979880254 passed the configured Ubuntu gate on exact reviewed
-  head `2ad68e5`. Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI was
-  skipped as designed and is not claimed.
-- Stable implementation head `255bac8` passed the complete standard local gate.
-  Commits after it through this Review evidence change only handoff, review,
-  and registry-document-index Markdown/YAML evidence; they do not change code,
-  tests, manifests, CI, dependencies, or numerical behavior.
+- Exact Repair head `7257e67` passed sparse-harness formatting, warning-denying
+  all-target/all-feature Clippy, all 10 combined-feature tests, all four minimal
+  feature cross-products, both negative configurations, and the optimized
+  release smoke workload.
+- Three consecutive optimized Windows runs refreshed the complete 216-, 512-,
+  and 1,000-point end-to-end benchmark evidence.
+- Exact Repair head `7257e67` passed the complete standard local gate and all
+  58 requirement checks. The subsequent handoff commit changes only this
+  bounded handoff and the review-evidence Markdown.
+- Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI remains unexecuted
+  and is not claimed. PR #115 remains Draft.
 
 ## Next task boundary
 
-Open a fresh Repair task for Draft PR #115. Address only SPIKE003-REV-001 and
-SPIKE003-REV-002 from `docs/reviews/PR-115-INDEPENDENT-REVIEW.md`. Add the
-hand-derived three-point Wendland/CSC/matrix-vector regression and truthful
-benchmark phase labeling or phase separation, rerun the fixed benchmark
-evidence, focused checks, and one complete stable-head standard gate, update
-review evidence and this bounded handoff, push, and stop for a fresh independent
-re-review. Do not mark the PR ready, merge it, or begin REQ-SPARSE-001.
+Open a fresh Review task for Draft PR #115. Use a new isolated read-only
+`math_reviewer` to re-review exact Repair head `7257e67` and the complete PR
+diff against base `244e887`, with special attention to SPIKE003-REV-001 and
+SPIKE003-REV-002, the hand-derived CSC truth, actual candidate storage, and
+benchmark interpretation. Record findings and stop. Do not repair code in that
+task, mark the PR ready, merge it, or begin REQ-SPARSE-001.
 
 ## Durable evidence
 

@@ -134,3 +134,59 @@ PR #115 remains Draft and REQ-SPIKE-003 remains `implemented`, not
 SPIKE003-REV-002, add the required regressions, rerun focused checks and the
 complete stable-head gate, update this review evidence and the bounded handoff,
 push, and stop for a fresh independent re-review. Do not begin REQ-SPARSE-001.
+
+## Repair evidence pending fresh independent re-review
+
+- Repair implementation and benchmark-evidence head:
+  `7257e67873b1fddd22d6a122f57e5cb92c354bda`
+- Reviewed implementation head before Repair:
+  `2ad68e530d11a9486f3a48e3437b15115c32329e`
+- Scope: SPIKE003-REV-001 and SPIKE003-REV-002 only
+
+SPIKE003-REV-001 is repaired with a hand-derived three-point fixture at
+`0`, `R/2`, and `R`. Its expected values explicitly require
+`phi(0) = 1`, `phi(1/2) = 3/16`, and `phi(1) = 0`, with
+`A * [1, 2, 3] = [11/8, 11/4, 27/8]`. The expected CSC arrays and product do
+not use `wendland_c2`, `assemble_wendland_c2`, or
+`sparse_matrix_vector_product`. The regression separately exercises the
+harness kernel and assembly, then inspects each candidate's actual CSC shape,
+column pointers, sorted unique row indices, exact stored values, explicit
+symmetry, storage-level matrix-vector result, and recovered solution.
+
+SPIKE003-REV-002 is repaired by adding an explicit `phase` field to every
+benchmark row. Solver rows are labeled
+`construct_factor_solve_review_checksum_end_to_end`; the report, ADR, change
+fragment, and harness README now state that these totals include triplet
+allocation, CSC construction, factorization, solve, residual and analytic
+review, and checksum accumulation. They make no isolated factorization-speed
+claim. Three consecutive optimized Windows runs of the repaired harness
+refreshed the recorded 216-, 512-, and 1,000-point ranges. A schema regression
+requires the explicit end-to-end phase names.
+
+After the last code/test change, focused validation passed:
+
+- sparse-harness formatting and warning-denying all-target/all-feature Clippy;
+- all 10 combined-feature tests;
+- all four minimal index/backend feature cross-products;
+- both required missing-capability negative configurations; and
+- the optimized all-feature smoke workload.
+
+The fixed full three-trial workload also passed before the final test-only
+strengthening of the hand-derived symmetry assertions. That strengthening is
+compiled only under `cfg(test)` and does not change the release benchmark
+binary or its output schema.
+
+Exact Repair head `7257e67` then passed the complete stable-head gate:
+
+- `cargo fmt --all -- --check`;
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`;
+- `cargo test --workspace --all-features`;
+- `cargo test --doc --workspace`;
+- `cargo xtask requirements check` for all 58 requirements; and
+- `git diff --check`.
+
+This is Repair evidence, not independent closure. PR #115 remains Draft and
+REQ-SPIKE-003 remains `implemented`, not `integrated`. A fresh isolated
+mathematical and numerical re-review must inspect the complete repaired PR diff
+and exact Repair head before the PR can be marked ready. This Repair does not
+begin REQ-SPARSE-001.
