@@ -10,11 +10,14 @@
 - Repair implementation and gate head: `a24699525aa811f2a55b3eecf880eb64e685ee76`
 - Second Repair implementation and gate head:
   `eca914287138baa42fddd09313596be60aa4a681`
+- Second re-reviewed evidence head:
+  `f7c832181ff6529ca554fd212afe60580f7d7633`
 - Review date: 2026-07-23
 - Result: the original review found one P1 and two P2 findings; the first
   Repair closed both P2 findings, while fresh re-review retained one P1 and
-  added one evidence-only P3. The second Repair addresses both remaining
-  findings, pending fresh independent re-review.
+  added one evidence-only P3. The second Repair closed both remaining
+  findings, but the next fresh independent re-review found one new P1 sparse
+  solver peak-memory finding.
 
 ## Scope and independence
 
@@ -353,3 +356,99 @@ regularization policy. PR #118 remains Draft and REQ-SPARSE-001 remains
 `planned`. A fresh independent Review/re-review must confirm both repairs and
 check for new P0-P3 findings before any Ready transition, complete
 three-platform and benchmark-smoke CI, merge, or integration-state update.
+
+## Fresh independent re-review after the second Repair
+
+- Re-reviewed base: `c6696f2b75a0b492f10bccb90f8ef3059e3f8eb9`
+- Re-reviewed evidence head:
+  `f7c832181ff6529ca554fd212afe60580f7d7633`
+- Second Repair implementation and stable-gate head:
+  `eca914287138baa42fddd09313596be60aa4a681`
+- Draft CI run: 29994904719
+- Result: SPARSE001-REV-001 and SPARSE001-REV-004 are closed; one new P1
+  finding remains open
+
+A new isolated read-only project `math_reviewer` independently inspected the
+complete base-to-head diff. It received only the bounded requirement summary
+and integrated dependency closure, Issue #117 acceptance criteria and
+exclusions, the M7 plan, architecture and solver policy, ADR-0012, all prior
+findings, the complete repaired diff, and exact test, benchmark, and stable-gate
+evidence. It inherited no Implement or Repair reasoning and made no repository
+or remote change.
+
+SPARSE001-REV-001 is closed. The retained canonical equality-only payload and
+canonicalization preflight now count all four canonical relation-vector
+capacities, including the three logically empty reserved buffers. The
+independent canonical-capacity unit regression and the assembly/solve
+between-limit regressions pass.
+
+SPARSE001-REV-002 and SPARSE001-REV-003 remain closed. Exact-support coverage
+continues to be recorded before numeric-zero filtering, and the nine sparse
+integration tests retain deterministic complete CSC and diagnostics, hard
+conflict, assembly and solve cancellation, nonrepresentable candidate radius,
+solve memory rejection, and two-size bounded-neighbor growth coverage.
+
+SPARSE001-REV-004 is closed. This review record correctly states that the
+implementation accumulates `b-A*x`; the published infinity norm and backward
+error are sign invariant.
+
+### P1 SPARSE001-REV-005: faer symbolic-factorization scratch is omitted from the explicit peak-memory limit
+
+`crates/georbf/src/sparse.rs:1318-1325` dispatches faer `sp_cholesky` after
+`estimate_sparse_peak_bytes` at `crates/georbf/src/sparse.rs:1848-1876`
+counts the retained system, backend CSC copy, dense lower-triangle factor
+payload, and residual and solution vectors. The enforced estimate omits faer
+AMD and symbolic-analysis scratch, retained symbolic structures, and numeric
+scratch.
+
+This is logical backend work memory, not allocator or operating-system
+overhead. Pinned faer 0.24.4 constructs the symbolic factor before numeric LLT
+and requests AMD scratch approximately equal to
+`(3.4*m + 13*n + 1) * size_of::<usize>()` for an unsorted CSC with `m` stored
+entries. A permitted 64-by-64 all-supported system has `m = 4096`, so AMD
+scratch alone is 118,072 bytes on the reviewed 64-bit targets. GeoRBF's
+current dense-lower fill and working-vector allowance for that system totals
+only 70,656 bytes. Even treating residual workspace, which is not live during
+symbolic analysis, as spare factorization allowance leaves at least 47,416
+bytes unaccounted before retained permutations and symbolic factor storage.
+
+A caller limit between the reported and actual logical solve peak can
+therefore pass preflight and enter a backend allocation above the explicit
+limit. This contradicts Issue #117 and the architecture, solver-policy, and
+change-fragment claims that every simultaneously live solve component is
+covered.
+
+Required Repair: add checked conservative bounds for the pinned faer AMD and
+symbolic-analysis scratch, retained symbolic structures, numeric-factor
+storage, and numeric scratch before dispatch. If the high-level API cannot
+expose exact requests, derive a conservative bound from `n`, stored `m`, and
+the dense-factor fill, or use a lower-level checked adapter. Add an internal
+64-by-64 all-supported Wendland regression that independently obtains or
+reproduces faer's AMD scratch request, sets a limit strictly between the old
+and corrected solve peaks, permits assembly, and requires
+`SparseSolveError::MemoryLimitExceeded` before any factorization progress
+event.
+
+No other P0, P1, P2, or P3 finding was identified. Independent truth checks
+confirmed the conservative anisotropy candidate bound, strict support,
+D=1/D=2/D=3 index embedding, sorted and deduplicated pairs, exact reflection,
+sorted-unique CSC, Wendland SPD restriction and CPD exclusion, explicit LLT
+failure, absence of hidden regularization or fallback, original-unit residual
+normalization and tolerance, local normalization and derivative chain rules,
+capability-gated Hessians, interface dispositions, benchmark scope, and
+truthful non-integrated registry state.
+
+Focused read-only validation passed all nine all-feature sparse integration
+tests, the canonical reserved-capacity unit regression, and the complete PR
+whitespace check. Exact faer 0.24.4 and rstar 0.13.0 feature resolution was
+confirmed, and the worktree remained clean. Draft CI run 29994904719 passed
+its Ubuntu correctness job on exact reviewed head `f7c8321`; the Ready-only
+Windows, Ubuntu, macOS, and benchmark-smoke matrix was skipped as designed and
+is not claimed.
+
+PR #118 must remain Draft and REQ-SPARSE-001 remains `planned`. A fresh Repair
+task must address only SPARSE001-REV-005, add the specified regression, run
+focused checks and one complete stable-head standard gate after the last
+production or test change, update this evidence and the bounded handoff, push,
+and stop for another fresh independent re-review. This Review does not repair
+production code, mark the PR ready, merge it, or begin REQ-CENTER-001.
