@@ -6,41 +6,45 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Tenth Repair complete, fresh independent re-review required
+- Mode: Fresh tenth re-review complete; P1 Repair required
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
 - Draft pull request: #109
-- Tenth Repair code/test/contract head: `2a25f44`
+- Latest independently re-reviewed code/test/contract head: `2a25f44`
+- Reviewed pre-evidence head: `8593ec5`
 - Stable full-gate head: `2a25f44`
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are
   integrated
 - Registry state in this change: `implemented`
 
-## Tenth Repair result
+## Fresh independent re-review result
 
-- TREND002-REV-016 is repaired at exact code/test/contract head `2a25f44`,
-  pending fresh independent re-review. The non-regional Gaussian-weight path
-  now retains the error-free displacement residual and separately scaled
-  diagonal factors already used by the regional path.
-- Its exact public D=1 regression removes only the region from REV-015. It
-  reproduces the old approximately `-0.618` Hessian before the repair and now
-  retains the independent positive approximately `1.2750102220326992e128`
-  result.
-- TREND002-REV-017 is repaired at the same head, pending fresh independent
-  re-review. Stable fixed-Gaussian gradient and Hessian factors retain two
-  represented reciprocal lengths instead of a prematurely underflowed
-  reciprocal square.
-- Its exact public compiled-control regression reproduces the old `-2^-1074`
-  background-only Hessian before the repair and now retains the independent
-  approximately `-3.67879441171431e-93` complete result.
+- A fresh isolated read-only `math_reviewer` independently re-reviewed exact
+  code/test/contract head `2a25f44` and the evidence-only tail through
+  `8593ec5` without inheriting Repair reasoning.
+- TREND002-REV-016 is closed. The non-regional residual-aware Gaussian state
+  and separately scaled diagonal factors retain the independently derived
+  positive approximately `1.2750102220326992e128` Hessian.
+- TREND002-REV-017 is closed. Two represented reciprocal-length factors remain
+  separate through complete fixed-Gaussian derivative scaling and retain the
+  independently derived approximately `-3.67879441171431e-93` Hessian.
+- New P1 TREND002-REV-018 remains. The stable fixed-Gaussian path reconstructs
+  transformed displacement as `unit * radius`, so normalization can underflow
+  a small represented transverse component to exact zero before two accepted
+  large spatial weights make its gradient contribution representable.
+- The accepted D=2 compiled-control counterexample returns zero instead of the
+  independent approximately `-6.035055754270406e-183` second gradient.
 - PR #109 remains Draft and the requirement remains `implemented`.
 
 ## Validation state
 
-- Focused checks passed all nineteen public `trend_controls` tests, all
+- This Review passed all nineteen public `trend_controls` tests, all
   fifteen `local_trend` integration tests, all five private local-trend
-  regressions, both exact new regressions, and complete diff whitespace
-  validation.
+  regressions, both exact tenth-Repair regressions, and complete diff
+  whitespace validation.
+- Independent 300-digit arithmetic and a temporary public-API test reproduced
+  TREND002-REV-018's finite truth and current exact-zero result. The temporary
+  test was removed and the worktree restored before recording evidence.
 - Exact stable head `2a25f44` passed workspace format, warning-denying workspace
   all-target/all-feature Clippy, all-feature workspace tests, workspace Rustdoc,
   all 58 requirement checks, and complete diff whitespace validation.
@@ -51,15 +55,13 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-A fresh Review task must independently re-review exact Repair head `2a25f44`,
-confirm TREND002-REV-016 and TREND002-REV-017 are closed for their published
-regressions, and search for new P0-P3 findings without inheriting this Repair
-reasoning. If any finding remains, record it and stop without production
-repair. If the review is clean and the stable local gate remains valid, follow
-the mandatory sequence: update review evidence, mark PR #109 ready, wait for
-complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact ready head,
-merge only when all are green, then record truthful integration state. Do not
-begin another requirement.
+A fresh Repair task must address only TREND002-REV-018. First add the exact
+public D=2 compiled-control regression, then preserve the original transformed
+separation components or mathematically equivalent signed-log scale without
+reconstructing them through normalized unit components. Run focused checks and
+one final stable-head standard gate, update the review evidence and bounded
+handoff, push, and stop for another fresh independent re-review. Do not mark
+PR #109 Ready, merge it, or begin another requirement.
 
 ## Durable evidence
 

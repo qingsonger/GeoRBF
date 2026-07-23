@@ -4,12 +4,12 @@
 - Issue: https://github.com/qingsonger/GeoRBF/issues/108
 - Pull request: https://github.com/qingsonger/GeoRBF/pull/109
 - Branch: `codex/req-trend-002-region-controls`
-- Latest re-reviewed code/test/contract head: `144a018f697e3c6e9f23fc9621b434337543be7f`
+- Latest re-reviewed code/test/contract head: `2a25f4467588edd7ac040074a79e3aeed6b3f459`
+- Latest reviewed evidence head: `8593ec5a9b5ba289964402401b16724d114a1d4c`
 - Base head: `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
 - Review date: 2026-07-22; latest re-review: 2026-07-23
-- Result: TREND002-REV-001 through TREND002-REV-015 closed; P1 findings
-  TREND002-REV-016 and TREND002-REV-017 require Repair; no other P0-P3
-  finding remains
+- Result: TREND002-REV-001 through TREND002-REV-017 closed; P1 finding
+  TREND002-REV-018 requires Repair; no other P0-P3 finding remains
 
 ## Scope and independence
 
@@ -1609,3 +1609,124 @@ read-only re-review; this Repair does not close its own findings. PR #109
 remains Draft and REQ-TREND-002 remains `implemented`, not `integrated`.
 Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI remain intentionally
 unexecuted. No unavailable check is claimed as passed.
+
+## Fresh independent re-review after tenth Repair
+
+- Exact reviewed evidence head:
+  `8593ec5a9b5ba289964402401b16724d114a1d4c`
+- Tenth Repair code/test/contract head:
+  `2a25f4467588edd7ac040074a79e3aeed6b3f459`
+- Base and merge-base:
+  `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
+- Re-review date: 2026-07-23
+- Result: TREND002-REV-016 and TREND002-REV-017 closed; P1 finding
+  TREND002-REV-018 requires Repair; no other P0-P3 finding remains
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-TREND-002 summary and integrated dependency closure, Issue #108 acceptance
+criteria and exclusions, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008
+contracts, the complete PR and tenth-Repair diffs, directly relevant source,
+tests, example, benchmark, registry, change evidence, handoff, and recorded
+validation evidence. It inherited no Implement or Repair reasoning and made no
+repository, Git, or GitHub change. The tail from `2a25f44` through `8593ec5`
+changes only the requirement change fragment, this review record, and the
+bounded handoff.
+
+### Closure of TREND002-REV-016
+
+TREND002-REV-016 is closed. The non-regional Gaussian-weight path now reuses
+the residual-aware `GaussianWeightState`. Its value, gradient, mixed Hessian,
+and diagonal Hessian therefore retain the error-free displacement residual.
+The diagonal factors `d-r` and `d+r` each receive one represented
+inverse-radius-square factor before their product. For the published D=1
+counterexample, the independently derived complete Hessian remains
+approximately `1.2750102220326992e128`; the exact public regression passes
+within `64 * EPSILON` relative tolerance.
+
+### Closure of TREND002-REV-017
+
+TREND002-REV-017 is closed. Stable fixed-Gaussian gradient projections and
+Hessian curvatures retain two represented reciprocal-length factors rather
+than forming an underflowed reciprocal square. For the published D=1
+counterexample, the complete local Hessian remains approximately
+`-3.67879441171431e-93`, rather than only the `-2^-1074` background term; the
+exact public regression passes within `1024 * EPSILON` relative tolerance.
+
+### TREND002-REV-018 - P1: fixed-Gaussian normalization erases a represented transverse gradient
+
+Affected code:
+
+- `crates/georbf/src/local_trend.rs:2151-2169`
+
+The stable fixed-Gaussian path obtains a transformed radial separation, then
+reconstructs each transformed displacement component as
+`unit_displacement[axis] * radius`. Normalizing a highly unbalanced but finite
+represented displacement can underflow a small unit component to exact zero.
+The reconstruction then promotes that represented displacement component to a
+mathematical exact zero before two large accepted spatial weights can make its
+kernel-gradient contribution representable.
+
+A concrete accepted D=2 compiled-control counterexample uses identity fixed
+anisotropy; control location and query `x = [1e160, 1e-170]`; kernel center
+`y = [0, 0]`; fixed Gaussian length `L = 1e160`; influence radius `R = 1e161`;
+strength `s = 1e154`; no region; and a valid tiny constant Gaussian
+background. The radial separation is approximately `1e160`, so normalization
+underflows the second unit component `1e-170 / 1e160` to zero. Because the
+query equals the control location, the query spatial-weight gradient is zero.
+For identity anisotropy the omitted fixed-kernel derivative is
+
+```text
+partial_x2 k = -k(x, y) (x2 - y2) / L^2.
+```
+
+The center spatial weight contributes
+`w_c = -0.5 ||x / R||^2`, approximately `-0.005`, and the fixed kernel
+contributes `-0.5`. Evaluated independently at 300 decimal digits from the
+exact represented binary64 inputs, the complete local term is
+
+```text
+-s^2 exp(w_c - 0.5) (x2 - y2) / L^2
+    approximately -6.035055754270406e-183.
+```
+
+That value is finite and representable, but the current implementation returns
+exactly zero. The parent Review task independently reproduced both values with
+a temporary public-API compiled-control test and removed the test before
+recording this evidence. This contradicts the documented rule that fixed
+Gaussian gradients retain analytic signed-logarithmic scale through complete
+mixture-term formation.
+
+A fresh Repair must first add this public D=2 compiled-control regression, then
+preserve the original transformed separation components, or mathematically
+equivalent signed-log scale, without reconstructing them through normalized
+unit components. The Repair must remain limited to TREND002-REV-018.
+
+### Re-review validation and disposition
+
+The parent Review task passed all nineteen public `trend_controls` tests, all
+fifteen public `local_trend` tests, all five private local-trend regressions,
+both exact tenth-Repair regressions, compact requirement `show` and dependency
+review, and complete PR diff whitespace validation. Independent 300-digit
+arithmetic and the temporary public-API reproduction establish the finite
+TREND002-REV-018 truth and the current exact-zero result. The temporary test
+was removed and the worktree restored before this evidence change.
+
+Exact stable code/test/contract head `2a25f44` retains its recorded complete
+local standard gate. Draft CI run 29964780295 passed its Ubuntu correctness
+gate on exact evidence head `8593ec5`. This Review changes only this review
+record and the bounded Markdown handoff. Ready-only Windows, Ubuntu, macOS,
+and benchmark smoke remain unexecuted and are not claimed as passed.
+
+The SPD-mixture proof, CPD rejection, regional C2 gate and complete product
+rules, center capability checks, deterministic diagnostics and allocation
+interfaces, and adapter dispositions otherwise satisfy the reviewed scope.
+Polynomial spaces, scale-aware rank decisions, hard constraints, solver
+infeasibility, and solver regularization do not apply to this fixed-SPD
+compiler path.
+
+PR #109 must remain Draft and REQ-TREND-002 remains `implemented`, not
+`integrated`. A fresh Repair task must address only TREND002-REV-018, add the
+required regression before the smallest production repair, run focused checks
+and one final stable-head standard gate, update evidence, push, and stop for
+another fresh independent re-review. This Review task does not repair
+production code, mark the PR Ready, merge it, or begin another requirement.
