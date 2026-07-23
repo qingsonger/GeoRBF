@@ -6,63 +6,56 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; fresh Repair required
+- Mode: Repair complete; fresh independent re-review required
 - Requirement: REQ-SPIKE-003, Issue #114
 - Branch: `codex/req-spike-003-sparse-backends`
 - Draft pull request: #115
-- Re-reviewed Repair implementation and stable full-gate head: `7257e67`
+- Repair implementation and stable full-gate head: `83ba364`
 - Closed findings: P1 SPIKE003-REV-001 and P2 SPIKE003-REV-002
-- Open finding: P2 SPIKE003-REV-003
+- Repaired pending independent closure: P2 SPIKE003-REV-003
 - Dependencies: REQ-KERNEL-004 and its complete closure are integrated
 - Registry state: `implemented`
 
-## Review result
+## Repair result
 
-- The isolated `math_reviewer` closed SPIKE003-REV-001. The hand-derived
+- The preceding isolated `math_reviewer` closed SPIKE003-REV-001. The hand-derived
   three-point truth checks both candidates' actual CSC arrays, storage-level
   matrix-vector result, and recovered solution independently of the harness
   kernel, assembly, and row-major matrix-vector helpers.
-- The reviewer closed SPIKE003-REV-002. Solver rows truthfully describe
+- The reviewer also closed SPIKE003-REV-002. Solver rows truthfully describe
   construct/factor/solve/review/checksum end-to-end totals, and no isolated
   factorization-speed conclusion remains.
-- New P2 SPIKE003-REV-003: the index timer also constructs the complete Kiddo
-  or Rstar index, but the explicit phase name and ADR/benchmark/README prose
-  describe only query/filter/canonicalize/checksum work. The unchanged timing
-  region must be relabeled to include construction, and the schema regression
-  must require that component explicitly.
-- No other P0-P3 finding was identified. The PR remains Draft.
+- SPIKE003-REV-003 is repaired. Index rows and every evidence surface now use
+  the explicit construct/query/filter/canonicalize/checksum end-to-end phase,
+  and the schema regression requires that exact construction-bearing label.
+- The timed control flow and boundary are unchanged, so the existing fixed
+  three-trial Windows ranges remain valid. No query-only performance claim
+  remains. The PR stays Draft pending fresh independent re-review.
 
 ## Evidence state
 
-- Exact Repair head `7257e67` passed sparse-harness formatting, warning-denying
+- Exact Repair head `83ba364` passed sparse-harness formatting, warning-denying
   all-target/all-feature Clippy, all 10 combined-feature tests, all four minimal
   feature cross-products, both negative configurations, and the optimized
-  release smoke workload.
-- Three consecutive optimized Windows runs refreshed the complete 216-, 512-,
-  and 1,000-point end-to-end benchmark evidence.
-- Exact Repair head `7257e67` passed the complete standard local gate and all
+  release smoke workload with the corrected index phase label.
+- The construction, query, filter, canonicalization, checksum, fixture, and
+  iteration timing region is unchanged; no benchmark rerun was required.
+- Exact Repair head `83ba364` passed the complete standard local gate and all
   58 requirement checks.
-- The isolated reviewer passed all 10 locked all-feature tests, a locked smoke
-  run, exact direct-version review, and the complete exact-head whitespace
-  check. The parent Review task independently passed the same 10 tests, the
-  optimized locked release smoke workload, all 58 requirement checks, and the
-  exact-head whitespace check.
-- The Review tail changes only this bounded handoff and the review-evidence
-  Markdown; it does not invalidate the stable code/test/build gate.
+- The pending Repair tail changes only this bounded handoff and the
+  review-evidence Markdown; it does not invalidate the stable code/test/build
+  gate on `83ba364`.
 - Ready-only Windows, Ubuntu, macOS, and benchmark-smoke CI remains unexecuted
   and is not claimed. PR #115 remains Draft.
 
 ## Next task boundary
 
-Open a fresh Repair task for Draft PR #115 limited to SPIKE003-REV-003. Relabel
-the unchanged index timing region everywhere as an explicit
-construct/query/filter/canonicalize/checksum end-to-end phase, and strengthen
-the benchmark schema regression to require the construction component. Retain
-the existing timing ranges only if the timed code and phase boundary remain
-unchanged; otherwise rerun the fixed three-trial workload. Run focused checks
-and one stable-head standard gate, update Repair evidence, push, and stop for a
-fresh independent re-review. Do not mark the PR ready, merge it, or begin
-REQ-SPARSE-001.
+Open a fresh Review task for Draft PR #115. Use an isolated `math_reviewer` to
+verify that exact Repair head `83ba364` closes SPIKE003-REV-003 and to inspect
+the complete PR diff for new P0-P3 findings. If any finding remains, record it
+and stop for another fresh Repair. Do not mark the PR ready, merge it, or begin
+REQ-SPARSE-001 unless that independent re-review is clean and the repository's
+separate ready-head integration sequence is followed.
 
 ## Durable evidence
 

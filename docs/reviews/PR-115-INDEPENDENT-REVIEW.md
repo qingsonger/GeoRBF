@@ -276,3 +276,50 @@ PR #115 remains Draft and REQ-SPIKE-003 remains `implemented`, not
 phase label, documentation, and regression, run focused and stable-head checks,
 push, and stop for another fresh independent re-review. Do not mark the PR
 ready, merge it, or begin REQ-SPARSE-001.
+
+## SPIKE003-REV-003 Repair evidence pending fresh independent re-review
+
+- Repair implementation and stable full-gate head:
+  `83ba364da69477d13510f7304c255e3c28cbdae6`
+- Re-reviewed implementation head before this Repair:
+  `7257e67873b1fddd22d6a122f57e5cb92c354bda`
+- Scope: SPIKE003-REV-003 only
+
+SPIKE003-REV-003 is repaired by relabeling the index timing phase as
+`construct_query_filter_canonicalize_checksum_end_to_end`. The schema
+regression now requires that exact phase, including its construction
+component, rather than checking only an `_end_to_end` suffix. The ADR,
+benchmark report, harness README, and change fragment explicitly state that
+each timed index iteration constructs the complete Kiddo tree or bulk-loads
+the complete Rstar tree before query, strict filtering, canonicalization, and
+checksum work.
+
+The `time_index` control flow, `Instant` boundary, candidate construction and
+query calls, fixture, iteration count, and checksum are unchanged. The
+previously recorded three-trial Windows timing ranges therefore remain the
+measurements for this now-correctly named phase; this Repair does not present
+them as query-only evidence and did not rerun the unchanged workload.
+
+After the final code and test change, focused validation passed:
+
+- sparse-harness formatting and warning-denying all-target/all-feature Clippy;
+- all 10 combined-feature tests;
+- all four minimal feature cross-products;
+- both required missing-capability negative configurations; and
+- the optimized all-feature smoke workload, whose index rows emitted the new
+  explicit construction phase.
+
+Exact Repair head `83ba364` then passed the complete stable-head gate:
+
+- `cargo fmt --all -- --check`;
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`;
+- `cargo test --workspace --all-features`;
+- `cargo test --doc --workspace`;
+- `cargo xtask requirements check` for all 58 requirements; and
+- `git diff --check`.
+
+This is Repair evidence, not independent closure. PR #115 remains Draft and
+REQ-SPIKE-003 remains `implemented`, not `integrated`. A fresh isolated
+mathematical and numerical re-review must inspect exact Repair head `83ba364`
+before the PR can be marked ready. This Repair does not merge the PR or begin
+REQ-SPARSE-001.
