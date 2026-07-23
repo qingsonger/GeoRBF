@@ -61,6 +61,10 @@ pub enum ExecutionOperation {
     FieldAssembly,
     /// Checked dense equality solving.
     DenseSolve,
+    /// Compact-support neighborhood discovery and sparse field assembly.
+    SparseFieldAssembly,
+    /// Checked sparse positive-definite equality solving.
+    SparseSolve,
     /// Canonical convex QP or SOCP solving.
     ConvexSolve,
     /// Post-fit sampled geometric thickness validation.
@@ -72,6 +76,8 @@ impl fmt::Display for ExecutionOperation {
         formatter.write_str(match self {
             Self::FieldAssembly => "field assembly",
             Self::DenseSolve => "dense solve",
+            Self::SparseFieldAssembly => "sparse field assembly",
+            Self::SparseSolve => "sparse solve",
             Self::ConvexSolve => "convex solve",
             Self::SampledThicknessValidation => "sampled thickness validation",
         })
@@ -86,6 +92,10 @@ pub enum ExecutionStage {
     Started,
     /// One upper-triangle kernel entry was assembled.
     KernelAssembly,
+    /// The immutable support-neighborhood index was constructed.
+    NeighborhoodIndex,
+    /// One support-neighborhood query was filtered and canonicalized.
+    NeighborhoodQuery,
     /// CPD polynomial rank and null-space evidence was constructed.
     CpdConstruction,
     /// One observation row was applied to the complete polynomial basis.
@@ -94,6 +104,8 @@ pub enum ExecutionStage {
     Canonicalization,
     /// The dense matrix passed its symmetry review.
     SymmetryReview,
+    /// Canonical sorted-unique CSC storage was materialized.
+    SparseStorage,
     /// Projected CPD energy evidence was constructed.
     ProjectedEnergy,
     /// The solve passed its checked peak-memory policy.

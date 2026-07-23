@@ -6,76 +6,66 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-SPIKE-003 complete
-- Requirement: REQ-SPIKE-003, closed Issue #114
-- Implementation pull request: #115, squash-merged as `97fabfa`
-- Integration-state branch: `codex/req-spike-003-integration-state`
-- Integration-state pull request: #116 (Draft until exact Ready CI is green)
-- Repair implementation and stable full-gate head: `83ba364`
-- Exact Ready head: `6052712`
-- Closed findings: P1 SPIKE003-REV-001, P2 SPIKE003-REV-002, and
-  P2 SPIKE003-REV-003
-- Review state: the complete repaired PR has no remaining P0-P3 finding
-- Dependencies: REQ-KERNEL-004 and its complete closure are integrated
-- Registry state in this change: `integrated`
+- Mode: Implement / REQ-SPARSE-001 complete; independent Review required
+- Requirement: REQ-SPARSE-001
+- Issue: #117
+- Branch: `codex/req-sparse-001-compact-support`
+- Draft pull request: pending creation
+- Dependencies: REQ-SPIKE-003, REQ-FIELD-001, and REQ-KERNEL-004 are integrated
+- Registry status: `planned` until review, Ready CI, merge, and integration
 
-## Integration result
+## Implemented scope
 
-- The isolated `math_reviewer` independently closed all three findings and
-  found no new P0-P3 issue in the complete repaired PR.
-- Exact comparison with the unique brute-force pair oracle, pair sorting and
-  deduplication, and sorted-unique CSC checks satisfy neighborhood and storage
-  truth. The hand-derived three-point fixture independently verifies both
-  candidate CSC arrays, storage products, symmetry, and recovered solution.
-- Index rows truthfully cover construct/query/filter/canonicalize/checksum
-  end-to-end work. Solver rows truthfully cover
-  construct/factor/solve/review/checksum end-to-end work. No query-only or
-  isolated-factorization performance claim remains.
-- Exact Ready head `6052712` passed complete Windows, Ubuntu, and macOS CI run
-  29984412613, including every configured backend combination, benchmark
-  smoke, and requirement validation.
-- PR #115 squash-merged exactly once as `97fabfa`; Issue #114 closed as
-  completed. Post-merge `main` CI run 29985301861 passed the same complete
-  three-platform gate on exact merge commit `97fabfa`.
-- This isolated integration-state change updates only the registry, review
-  evidence, completed-history index, and bounded handoff. It changes no
-  production code, test, manifest, schema, CI, build input, API, numerical
-  behavior, dependency, tag, or release.
+- The existing `FieldProblem<D>` assembles strictly positive-definite Wendland
+  systems directly from exact support-neighbor pairs into GeoRBF-owned
+  sorted-unique full symmetric CSC for D=1, D=2, and D=3.
+- A private immutable rstar index retains stable center/term identities. D=1
+  and D=2 are zero-padded into three index coordinates to avoid rstar's
+  one-dimensional panic; exact support truth remains dimension-specific.
+- Candidate hits are independently recomputed with stable isotropic or global-
+  anisotropy separation and the strict `radius < support_radius` rule.
+- Private faer 0.24.4 lower LLT with AMD ordering solves without densification,
+  fallback, jitter, regularization, pseudoinverse, or constraint relaxation.
+  Exact original-unit residual review uses tolerance `128*n*epsilon`.
+- `FittedField<D>` gained sparse fitting without a second model hierarchy and
+  retains the index for local-center value, gradient, and Hessian evaluation.
+- Diagnostics cover nonzeros, density, support coverage, memory, backend,
+  ordering, residuals, and visited-versus-total evaluation centers.
 
 ## Validation state
 
-- Exact Repair head `83ba364` passed sparse-harness formatting,
-  warning-denying all-target/all-feature Clippy, all 10 combined-feature tests,
-  all four minimal feature cross-products, both negative configurations, the
-  optimized release smoke workload, the complete local standard gate, all 58
-  requirement checks, and whitespace validation.
-- The isolated re-review independently passed all 10 locked all-feature tests,
-  the optimized locked smoke workload, exact dependency review, compact
-  requirement/dependency checks, and whitespace validation.
-- Exact Ready-head run 29984412613 and post-merge `main` run 29985301861 are
-  both green on Windows, Ubuntu, and macOS, including every configured
-  benchmark smoke.
-- The isolated integration-state tree must pass the complete local standard
-  gate and exact Ready-head CI before it merges.
+- Focused sparse, field, model, and execution tests pass.
+- The sparse test suite covers a hand-derived CSC and analytic solution,
+  support boundaries, D=1/D=2/D=3 dense parity, mixed Value and
+  DirectionalDerivative representers, local evaluation, anisotropy, 512-point
+  scaling, cancellation, memory limits, and singular rejection.
+- Warning-denying focused all-feature Clippy passes for the sparse test and
+  production compact-sparse benchmark.
+- The release benchmark smoke passed at 64 points; four full 512-point runs
+  retained 3,200 nonzeros and bit-identical phase checksums.
+- The final stable implementation state passes all five standard workspace
+  checks: format, warning-denying all-target/all-feature Clippy, all-feature
+  workspace tests, workspace doctests, and the 58-requirement registry check.
+  The only later changes record validation and pull-request evidence.
 
 ## Next task boundary
 
-Run the complete local standard gate on the final integration-state head. Mark
-PR #116 Ready, wait for exact Ready-head Windows, Ubuntu, macOS, and
-benchmark-smoke CI, merge only if green, and stop. Do not start REQ-SPARSE-001.
+Open a fresh Review task for the Draft PR. Supply only the requirement
+show/dependency summaries, Issue #117 criteria, scoped architecture/solver
+documents and ADR-0012, the complete PR diff, tests, dependency audit, and
+benchmark evidence to the isolated `math_reviewer`. Do not repair findings or
+begin REQ-CENTER-001 in that Review task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #114
-- Merged implementation: GitHub PR #115
-- Integration-state pull request: GitHub PR #116
-- Requirement summary: `changes/REQ-SPIKE-003.md`
-- Independent review: `docs/reviews/PR-115-INDEPENDENT-REVIEW.md`
-- Reproducible harness: `spikes/sparse-backends/`
-- Selection decision:
-  `docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md`
-- Scaling and size evidence: `docs/benchmarks/REQ-SPIKE-003.md`
+- Acceptance criteria and exclusions: GitHub Issue #117
+- Requirement summary: `changes/REQ-SPARSE-001.md`
+- Architecture: `docs/architecture/ARCHITECTURE.md`
 - Numerical policy: `docs/architecture/SOLVER_POLICY.md`
+- Backend selection: `docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md`
+- Benchmark: `docs/benchmarks/REQ-SPARSE-001.md`
+- Production implementation: `crates/georbf/src/sparse.rs`
+- Independent tests: `crates/georbf/tests/sparse.rs`
 
 ## Checks not yet available
 

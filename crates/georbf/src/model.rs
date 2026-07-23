@@ -31,6 +31,11 @@ use crate::polynomial::{PolynomialSpace, PolynomialSpaceError};
 use crate::solver::{
     DenseSolveDiagnostics, DenseSolveError, DenseSolveOptions, try_solve_field_with_control,
 };
+use crate::sparse::{
+    CompactNeighborhood, CompactNeighborhoodError, SparseFieldAssemblyDiagnostics,
+    SparseFieldAssemblyError, SparseFitOptions, SparseSolveDiagnostics, SparseSolveError,
+    try_solve_sparse_field_with_control,
+};
 use crate::transform::{AffineNormalization, TransformError};
 
 /// One concrete configured kernel that can be retained by a fitted model.
@@ -199,7 +204,7 @@ where
         }
     }
 
-    fn try_assembly_prefix(
+    pub(crate) fn try_assembly_prefix(
         self,
         query: Point<D>,
         center: Point<D>,
@@ -419,6 +424,26 @@ impl FittedFieldCapabilities {
     }
 }
 
+/// Assembly evidence retained by either fitted-field numerical path.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[must_use]
+pub enum FittedFieldAssemblyDiagnostics {
+    /// Dense all-pairs assembly evidence.
+    Dense(FieldAssemblyDiagnostics),
+    /// Compact support-neighbor sparse assembly evidence.
+    Sparse(SparseFieldAssemblyDiagnostics),
+}
+
+/// Solve evidence retained by either fitted-field numerical path.
+#[derive(Clone, Debug, PartialEq)]
+#[must_use]
+pub enum FittedFieldSolveDiagnostics {
+    /// Checked dense equality solve evidence.
+    Dense(Box<DenseSolveDiagnostics>),
+    /// Checked sparse positive-definite solve evidence.
+    Sparse(SparseSolveDiagnostics),
+}
+
 /// Immutable assembly and solve evidence retained by a fitted field.
 #[derive(Clone, Debug, PartialEq)]
 #[must_use]
@@ -426,17 +451,17 @@ pub struct FittedFieldDiagnostics<const D: usize>
 where
     Dim<D>: SupportedDimension,
 {
-    assembly: FieldAssemblyDiagnostics,
+    assembly: FittedFieldAssemblyDiagnostics,
     cpd: Option<CpdFieldAssembly<D>>,
-    solve: DenseSolveDiagnostics,
+    solve: FittedFieldSolveDiagnostics,
 }
 
 impl<const D: usize> FittedFieldDiagnostics<D>
 where
     Dim<D>: SupportedDimension,
 {
-    /// Returns field-assembly symmetry and work-count evidence.
-    pub const fn assembly(&self) -> FieldAssemblyDiagnostics {
+    /// Returns field-assembly evidence for the selected numerical path.
+    pub const fn assembly(&self) -> FittedFieldAssemblyDiagnostics {
         self.assembly
     }
 
@@ -448,8 +473,8 @@ where
         self.cpd.as_ref()
     }
 
-    /// Borrows complete dense-solve numerical evidence.
-    pub const fn solve(&self) -> &DenseSolveDiagnostics {
+    /// Borrows complete solve evidence for the selected numerical path.
+    pub const fn solve(&self) -> &FittedFieldSolveDiagnostics {
         &self.solve
     }
 }
@@ -463,6 +488,8 @@ where
 {
     value: f64,
     gradient: Vector<D>,
+    center_evaluations: usize,
+    total_centers: usize,
 }
 
 impl<const D: usize> FittedFieldEvaluation<D>
@@ -479,6 +506,18 @@ where
     pub const fn gradient(self) -> Vector<D> {
         self.gradient
     }
+
+    /// Returns centers actually visited for this query.
+    #[must_use]
+    pub const fn center_evaluations(self) -> usize {
+        self.center_evaluations
+    }
+
+    /// Returns all centers retained by the model.
+    #[must_use]
+    pub const fn total_centers(self) -> usize {
+        self.total_centers
+    }
 }
 
 /// Original-coordinate scalar value, gradient, and Hessian.
@@ -491,6 +530,8 @@ where
     value: f64,
     gradient: Vector<D>,
     hessian: [[f64; D]; D],
+    center_evaluations: usize,
+    total_centers: usize,
 }
 
 impl<const D: usize> FittedFieldSecondOrderEvaluation<D>
@@ -512,6 +553,18 @@ where
     #[must_use]
     pub const fn hessian(self) -> [[f64; D]; D] {
         self.hessian
+    }
+
+    /// Returns centers actually visited for this query.
+    #[must_use]
+    pub const fn center_evaluations(self) -> usize {
+        self.center_evaluations
+    }
+
+    /// Returns all centers retained by the model.
+    #[must_use]
+    pub const fn total_centers(self) -> usize {
+        self.total_centers
     }
 }
 
@@ -537,6 +590,7 @@ where
     center_count: usize,
     capabilities: FittedFieldCapabilities,
     diagnostics: FittedFieldDiagnostics<D>,
+    compact_neighborhood: Option<CompactNeighborhood<D>>,
 }
 
 impl<const D: usize> FittedField<D>
@@ -664,10 +718,112 @@ where
             center_count,
             capabilities,
             diagnostics: FittedFieldDiagnostics {
-                assembly,
+                assembly: FittedFieldAssemblyDiagnostics::Dense(assembly),
                 cpd,
-                solve,
+                solve: FittedFieldSolveDiagnostics::Dense(Box::new(solve)),
             },
+            compact_neighborhood: None,
+        })
+    }
+
+    /// Assembles, solves, and owns one compact-support sparse fitted field.
+    ///
+    /// This path accepts only a configured Wendland kernel, materializes no
+    /// dense matrix, and retains the immutable support index for local
+    /// evaluation. It introduces no polynomial block, regularization, jitter,
+    /// densification, factorization fallback, or constraint relaxation.
+    ///
+    /// # Errors
+    ///
+    /// Returns structured sparse assembly, solve, or coefficient-layout
+    /// diagnostics without returning a partial model.
+    #[allow(clippy::too_many_arguments)]
+    pub fn try_fit_sparse(
+        problem: FieldProblem<D>,
+        coordinate_metadata: CoordinateMetadata<D>,
+        normalization: AffineNormalization<D>,
+        kernel: Wendland,
+        anisotropy: Option<GlobalAnisotropy<D>>,
+        options: SparseFitOptions,
+    ) -> Result<Self, FittedFieldFitError<D>> {
+        Self::try_fit_sparse_with_control(
+            problem,
+            coordinate_metadata,
+            normalization,
+            kernel,
+            anisotropy,
+            options,
+            ExecutionControl::default(),
+        )
+    }
+
+    /// Fits a compact sparse field with borrowed cancellation and progress.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same failures as [`Self::try_fit_sparse`], including
+    /// execution-policy and cancellation failures from both phases.
+    #[allow(clippy::too_many_arguments)]
+    pub fn try_fit_sparse_with_control(
+        problem: FieldProblem<D>,
+        coordinate_metadata: CoordinateMetadata<D>,
+        normalization: AffineNormalization<D>,
+        kernel: Wendland,
+        anisotropy: Option<GlobalAnisotropy<D>>,
+        options: SparseFitOptions,
+        control: ExecutionControl<'_>,
+    ) -> Result<Self, FittedFieldFitError<D>> {
+        let system = problem
+            .try_assemble_sparse_with_control(kernel, anisotropy, options, control)
+            .map_err(|source| FittedFieldFitError::SparseAssembly(Box::new(source)))?;
+        let center_count = system.center_count();
+        let solution = try_solve_sparse_field_with_control(&system, control)
+            .map_err(|source| FittedFieldFitError::SparseSolve(Box::new(source)))?;
+        let (coefficients, solve) = solution.into_parts();
+        if coefficients.len() != center_count {
+            return Err(FittedFieldFitError::CoefficientCountMismatch {
+                expected: center_count,
+                actual: coefficients.len(),
+            });
+        }
+        let (assembly, compact_neighborhood) = system.into_model_parts();
+        let centers = problem.into_centers();
+        if centers.len() != center_count {
+            return Err(FittedFieldFitError::CenterCountMismatch {
+                expected: center_count,
+                actual: centers.len(),
+            });
+        }
+        let definition = KernelDefinition::from(kernel);
+        let maximum_center_order = centers
+            .iter()
+            .flat_map(|center| center.expression().terms())
+            .map(|term| term.atom().derivative_order())
+            .max()
+            .unwrap_or(KernelDerivativeOrder::Value);
+        let derivatives = definition.metadata().derivatives();
+        let capabilities = FittedFieldCapabilities {
+            value: derivatives.query_capability(KernelDerivativeOrder::Value, maximum_center_order),
+            gradient: derivatives
+                .query_capability(KernelDerivativeOrder::First, maximum_center_order),
+            hessian: derivatives
+                .query_capability(KernelDerivativeOrder::Second, maximum_center_order),
+        };
+        Ok(Self {
+            coordinate_metadata,
+            normalization,
+            kernel: definition,
+            anisotropy,
+            centers,
+            coefficients,
+            center_count,
+            capabilities,
+            diagnostics: FittedFieldDiagnostics {
+                assembly: FittedFieldAssemblyDiagnostics::Sparse(assembly),
+                cpd: None,
+                solve: FittedFieldSolveDiagnostics::Sparse(solve),
+            },
+            compact_neighborhood: Some(compact_neighborhood),
         })
     }
 
@@ -787,6 +943,8 @@ where
         Ok(FittedFieldEvaluation {
             value: normalized.value,
             gradient,
+            center_evaluations: normalized.center_evaluations,
+            total_centers: self.center_count,
         })
     }
 
@@ -834,6 +992,8 @@ where
             value: normalized.value,
             gradient,
             hessian,
+            center_evaluations: normalized.center_evaluations,
+            total_centers: self.center_count,
         })
     }
 
@@ -874,6 +1034,7 @@ where
             .polynomial_space()
             .map_or(0, PolynomialSpace::term_count);
         Ok(FittedFieldEvaluationScratch {
+            center_indices: Vec::new(),
             values: try_filled(count, 0.0, FittedFieldStorage::PolynomialValues)?,
             gradients: if output >= FittedFieldOutput::Gradient {
                 try_filled(count, [0.0; D], FittedFieldStorage::PolynomialGradients)?
@@ -910,98 +1071,121 @@ where
             value: 0.0,
             gradient: [0.0; D],
             hessian: [[0.0; D]; D],
+            center_evaluations: 0,
         };
 
-        for (center_index, (center, weight)) in
-            self.centers.iter().zip(self.center_weights()).enumerate()
-        {
-            for (term_index, term) in center.expression().terms().iter().enumerate() {
-                let atom = term.atom();
-                let center_order = atom.derivative_order();
-                let capability = self
-                    .kernel
-                    .metadata()
-                    .derivatives()
-                    .query_capability(output.derivative_order(), center_order);
-                if capability == KernelDerivativeCapability::Unsupported {
-                    return Err(FittedFieldEvaluationError::UnsupportedCenterTerm {
-                        output,
-                        center_index,
-                        term_index,
-                        provenance: atom.provenance(),
-                    });
-                }
-                if capability == KernelDerivativeCapability::SupportedAwayFromCenters
-                    && query == atom.point()
-                {
-                    return Err(FittedFieldEvaluationError::UnavailableAtCenter {
-                        output,
-                        center_index,
-                        term_index,
-                        provenance: atom.provenance(),
-                    });
-                }
-                let demanded = combined_order(output.derivative_order(), center_order).ok_or(
-                    FittedFieldEvaluationError::UnsupportedCenterTerm {
-                        output,
-                        center_index,
-                        term_index,
-                        provenance: atom.provenance(),
-                    },
-                )?;
-                let jet = self
-                    .kernel
-                    .try_spatial_jet(query, atom.point(), demanded, self.anisotropy.as_ref())
-                    .map_err(|source| FittedFieldEvaluationError::Kernel {
-                        center_index,
-                        term_index,
-                        provenance: atom.provenance(),
-                        source,
-                    })?;
-                let multiplier = *weight * term.coefficient();
-                let value_action = center_value_action(atom, &jet);
-                accumulate_center(
-                    &mut evaluation.value,
-                    multiplier,
-                    value_action,
-                    FittedFieldComponent::Value,
-                    center_index,
-                    term_index,
-                )?;
-
-                if output >= FittedFieldOutput::Gradient {
-                    let gradient_action = center_gradient_action(atom, &jet);
-                    for (axis, action) in gradient_action.into_iter().enumerate() {
-                        accumulate_center(
-                            &mut evaluation.gradient[axis],
-                            multiplier,
-                            action,
-                            FittedFieldComponent::Gradient { axis },
-                            center_index,
-                            term_index,
-                        )?;
-                    }
-                }
-                if output >= FittedFieldOutput::Hessian {
-                    let hessian_action = center_hessian_action(atom, &jet);
-                    for (row, values) in hessian_action.into_iter().enumerate() {
-                        for (column, action) in values.into_iter().enumerate() {
-                            accumulate_center(
-                                &mut evaluation.hessian[row][column],
-                                multiplier,
-                                action,
-                                FittedFieldComponent::Hessian { row, column },
-                                center_index,
-                                term_index,
-                            )?;
-                        }
-                    }
-                }
+        if let Some(neighborhood) = &self.compact_neighborhood {
+            neighborhood
+                .try_center_indices_into(
+                    query,
+                    &self.centers,
+                    self.anisotropy.as_ref(),
+                    &mut scratch.center_indices,
+                )
+                .map_err(FittedFieldEvaluationError::Neighborhood)?;
+            for center_index in scratch.center_indices.iter().copied() {
+                self.try_accumulate_center(query, output, center_index, &mut evaluation)?;
+            }
+        } else {
+            for center_index in 0..self.center_count {
+                self.try_accumulate_center(query, output, center_index, &mut evaluation)?;
             }
         }
 
         self.try_add_polynomial(query, output, &mut evaluation, scratch)?;
         Ok(evaluation)
+    }
+
+    fn try_accumulate_center(
+        &self,
+        query: Point<D>,
+        output: FittedFieldOutput,
+        center_index: usize,
+        evaluation: &mut NormalizedEvaluation<D>,
+    ) -> Result<(), FittedFieldEvaluationError<D>> {
+        let center = &self.centers[center_index];
+        let weight = self.center_weights()[center_index];
+        for (term_index, term) in center.expression().terms().iter().enumerate() {
+            let atom = term.atom();
+            let center_order = atom.derivative_order();
+            let capability = self
+                .kernel
+                .metadata()
+                .derivatives()
+                .query_capability(output.derivative_order(), center_order);
+            if capability == KernelDerivativeCapability::Unsupported {
+                return Err(FittedFieldEvaluationError::UnsupportedCenterTerm {
+                    output,
+                    center_index,
+                    term_index,
+                    provenance: atom.provenance(),
+                });
+            }
+            if capability == KernelDerivativeCapability::SupportedAwayFromCenters
+                && query == atom.point()
+            {
+                return Err(FittedFieldEvaluationError::UnavailableAtCenter {
+                    output,
+                    center_index,
+                    term_index,
+                    provenance: atom.provenance(),
+                });
+            }
+            let demanded = combined_order(output.derivative_order(), center_order).ok_or(
+                FittedFieldEvaluationError::UnsupportedCenterTerm {
+                    output,
+                    center_index,
+                    term_index,
+                    provenance: atom.provenance(),
+                },
+            )?;
+            let jet = self
+                .kernel
+                .try_spatial_jet(query, atom.point(), demanded, self.anisotropy.as_ref())
+                .map_err(|source| FittedFieldEvaluationError::Kernel {
+                    center_index,
+                    term_index,
+                    provenance: atom.provenance(),
+                    source,
+                })?;
+            let multiplier = weight * term.coefficient();
+            accumulate_center(
+                &mut evaluation.value,
+                multiplier,
+                center_value_action(atom, &jet),
+                FittedFieldComponent::Value,
+                center_index,
+                term_index,
+            )?;
+            if output >= FittedFieldOutput::Gradient {
+                for (axis, action) in center_gradient_action(atom, &jet).into_iter().enumerate() {
+                    accumulate_center(
+                        &mut evaluation.gradient[axis],
+                        multiplier,
+                        action,
+                        FittedFieldComponent::Gradient { axis },
+                        center_index,
+                        term_index,
+                    )?;
+                }
+            }
+            if output >= FittedFieldOutput::Hessian {
+                for (row, values) in center_hessian_action(atom, &jet).into_iter().enumerate() {
+                    for (column, action) in values.into_iter().enumerate() {
+                        accumulate_center(
+                            &mut evaluation.hessian[row][column],
+                            multiplier,
+                            action,
+                            FittedFieldComponent::Hessian { row, column },
+                            center_index,
+                            term_index,
+                        )?;
+                    }
+                }
+            }
+        }
+        evaluation.center_evaluations = evaluation.center_evaluations.saturating_add(1);
+        Ok(())
     }
 
     fn try_add_polynomial(
@@ -1161,6 +1345,10 @@ where
     Assembly(Box<FieldAssemblyError<KernelDefinitionEvaluationError<D>>>),
     /// Dense solve failed.
     Solve(Box<DenseSolveError>),
+    /// Compact sparse field assembly failed.
+    SparseAssembly(Box<SparseFieldAssemblyError<D>>),
+    /// Compact sparse solve failed.
+    SparseSolve(Box<SparseSolveError>),
     /// Center plus polynomial count overflowed.
     CoefficientCountOverflow,
     /// Solver output length disagreed with assembled variables.
@@ -1194,6 +1382,8 @@ where
         match self {
             Self::Assembly(source) => source.fmt(formatter),
             Self::Solve(source) => source.fmt(formatter),
+            Self::SparseAssembly(source) => source.fmt(formatter),
+            Self::SparseSolve(source) => source.fmt(formatter),
             Self::CoefficientCountOverflow => {
                 formatter.write_str("fitted-field coefficient count overflowed")
             }
@@ -1221,6 +1411,8 @@ where
         match self {
             Self::Assembly(source) => Some(source.as_ref()),
             Self::Solve(source) => Some(source.as_ref()),
+            Self::SparseAssembly(source) => Some(source.as_ref()),
+            Self::SparseSolve(source) => Some(source.as_ref()),
             Self::CoefficientCountOverflow
             | Self::CoefficientCountMismatch { .. }
             | Self::PolynomialCountMismatch { .. }
@@ -1268,6 +1460,8 @@ where
 {
     /// Coordinate normalization or derivative transformation failed.
     Transform(TransformError),
+    /// Compact support-neighborhood filtering failed.
+    Neighborhood(CompactNeighborhoodError<D>),
     /// The model supplies no requested output even away from centers.
     UnsupportedOutput {
         /// Requested output.
@@ -1347,6 +1541,7 @@ where
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Transform(source) => source.fmt(formatter),
+            Self::Neighborhood(source) => source.fmt(formatter),
             Self::UnsupportedOutput { output, capability } => {
                 write!(
                     formatter,
@@ -1414,6 +1609,7 @@ where
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Transform(source) => Some(source),
+            Self::Neighborhood(source) => Some(source),
             Self::Kernel { source, .. } => Some(source),
             Self::Polynomial(source) => Some(source),
             Self::UnsupportedOutput { .. }
@@ -1432,6 +1628,7 @@ struct NormalizedEvaluation<const D: usize> {
     value: f64,
     gradient: [f64; D],
     hessian: [[f64; D]; D],
+    center_evaluations: usize,
 }
 
 /// Reusable polynomial work buffers for crate-internal batch evaluation.
@@ -1439,6 +1636,7 @@ pub(crate) struct FittedFieldEvaluationScratch<const D: usize>
 where
     Dim<D>: SupportedDimension,
 {
+    center_indices: Vec<usize>,
     values: Vec<f64>,
     gradients: Vec<[f64; D]>,
     hessians: Vec<[[f64; D]; D]>,

@@ -148,15 +148,32 @@ and returns an immutable GeoRBF-owned row-major dense system with symmetry and
 CPD diagnostics. It does not factor, solve, regularize, select centers, construct
 geological semantics, or expose nalgebra types.
 
+For strictly positive-definite Wendland kernels, the same `FieldProblem<D>`
+also supports a compact sparse path. Atomic center locations are bulk-loaded
+under stable `(center, term)` identities; D=1 and D=2 locations are embedded
+with zero padding into the private three-coordinate rstar index because rstar's
+tree requires at least two coordinates. Candidate hits are never mathematical
+truth: GeoRBF recomputes the exact isotropic or globally anisotropic separation,
+applies the strict `radius < support_radius` rule, then sorts and deduplicates
+representer pairs. The path reflects each evaluated upper entry exactly,
+compiles the same canonical hard equalities, validates finite exact symmetry,
+and materializes GeoRBF-owned sorted-unique CSC once without a dense
+intermediate. CPD kernels and polynomial side rows remain on the dense
+rank-safe path until a separately reviewed sparse CPD formulation exists.
+
 The fitted-model layer consumes one `FieldProblem<D>`, one concrete configured
 kernel definition, optional constant global anisotropy, coordinate metadata,
-normalization, and an explicit dense-solve policy. It uses that same retained
-kernel definition for assembly and evaluation, then discards the semantic
-builder, canonical problem, dense matrix, right-hand side, and factorization
+normalization, and an explicit dense or compact-sparse solve policy. It uses
+that same retained kernel definition for assembly and evaluation, then discards the semantic
+builder, canonical problem, numerical matrix, right-hand side, and factorization
 workspace. `FittedField<D>` owns centers, center functionals, coefficients,
 complete CPD polynomial space, capabilities, general assembly/solve
 diagnostics, and the accepted CPD RRQR/SVD rank decision, verified null-space,
 and projected-energy evidence when applicable.
+Compact Wendland models retain a private immutable support index and query only
+exactly filtered local centers; dense models retain the existing all-center
+evaluation. Returned fused evaluations report visited and total center counts
+without adding mutable counters to the model.
 Original-coordinate queries are normalized before evaluation; gradients use
 `S^-T`, and Hessians use `S^-T H S^-1`. Directional-derivative centers retain
 the kernel-calculus center-argument sign and require mixed second or third
@@ -227,6 +244,12 @@ returns a partial system, solution, fitted model, or sampled-thickness report.
 `FittedField` propagates one borrowed control through fitting or validation
 without retaining it.
 
+Compact sparse assembly additionally checks around index construction, each
+row's candidate filtering, every supported kernel action, canonicalization,
+symmetry review, and CSC materialization. Sparse solving checks before backend
+storage construction and after the indivisible symbolic/numeric LLT and solve
+calls.
+
 Progress totals are checked maximum work budgets. Completed counts report only
 work actually performed, so early refinement termination can complete with a
 count below the budget. `Completed` is the single successful terminal event:
@@ -252,5 +275,7 @@ separate later requirements that map to this one Rust source of truth.
 
 Dense assembly computes only required symmetric work in blocks and reuses
 per-thread storage. Compact-support paths use a neighborhood index and sparse
-storage. Performance changes are accepted only with fixed-data baselines and
-documented hardware and thread settings.
+storage, reject nonrepresentable candidate bounds, retain stored-nonzero,
+density, coverage, memory, ordering, and original-unit residual evidence, and
+never densify or fall back. Performance changes are accepted only with
+fixed-data baselines and documented hardware and thread settings.
