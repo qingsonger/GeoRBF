@@ -452,6 +452,16 @@ where
         }
     }
 
+    pub(crate) fn try_diagnostic_value(
+        self,
+        point: Point<D>,
+        component: usize,
+    ) -> Result<f64, LocalTrendEvaluationError<D>> {
+        self.try_jet(point, KernelDerivativeOrder::Value)
+            .map(|jet| jet.value)
+            .map_err(|source| source.with_component(component))
+    }
+
     fn try_jet(
         self,
         point: Point<D>,
