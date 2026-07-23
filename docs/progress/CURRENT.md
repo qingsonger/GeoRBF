@@ -6,12 +6,13 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: None; the REQ-CENTER-001 integration sequence is complete
+- Mode: Review complete for the Issue #123 handoff repair; pending a fresh
+  integration Review
 - Requirement: REQ-CENTER-001, Issue #120
 - Implementation pull request: #121, squash-merged as `474988b`
 - Integration-state pull request: #122, merged as `c40b97d`
 - Integration-state exact Ready head: `4f4e897`
-- Post-merge handoff repair: Issue #123
+- Post-merge handoff repair: Issue #123, Draft PR #124
 - Dependencies: REQ-SOLVE-001 and REQ-MODEL-001 are integrated
 - Registry status: `integrated`
 
@@ -38,6 +39,9 @@ records, benchmark reports, Git, and GitHub.
   not change production code, tests, manifests, schemas, CI, build inputs,
   APIs, numerical behavior, dependencies, tags, releases, or the integrated
   requirement registry.
+- A fresh Review task independently examined exact repair head `2790ac9`
+  against `main` at `c40b97d` and found no P0--P3 issue. This review adds only
+  review evidence and bounded-handoff state.
 
 ## Review validation
 
@@ -55,15 +59,19 @@ records, benchmark reports, Git, and GitHub.
 - Integration-state exact Ready-head run 30017196433 and post-merge `main` run
   30019137463 are both green on Windows, Ubuntu, and macOS, including every
   configured benchmark smoke.
+- PR #124 Draft CI run 30020972952 passed the Ubuntu correctness gate on exact
+  reviewed repair head `2790ac9`; `git diff --check` also passed. The recorded
+  complete local standard gate remains applicable because this Review changes
+  only Markdown review and handoff evidence.
 
 ## Next task boundary
 
-Start a fresh task and perform the mandatory preflight against this handoff and
-the current remote state. If no higher-priority Repair or Review work exists,
-implement only the single atomic requirement returned by
-`cargo xtask requirements next`; at the time of this repair that command
-returns REQ-TUNE-001. Stop at that task's Draft PR boundary and do not continue
-into another requirement.
+Start a fresh Review/integration task and handle only PR #124. Re-review the
+evidence-only delta after exact reviewed repair head `2790ac9`. If no P0--P3
+finding remains, mark PR #124 Ready, wait for complete Windows, Ubuntu, and
+macOS benchmark-smoke CI on that exact Ready head, merge exactly once only when
+green, and close Issue #123. Stop after recording truthful integration state;
+do not begin REQ-TUNE-001.
 
 ## Durable evidence
 
@@ -71,6 +79,8 @@ into another requirement.
 - Merged implementation: GitHub PR #121
 - Merged integration state: GitHub PR #122
 - Post-merge handoff correction: GitHub Issue #123
+- Handoff repair: GitHub PR #124
+- Handoff repair review: `docs/reviews/PR-124-INDEPENDENT-REVIEW.md`
 - Independent review: `docs/reviews/PR-121-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-CENTER-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
