@@ -6,60 +6,65 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / REQ-SPARSE-001 complete; independent Review required
+- Mode: Review complete; Repair required
 - Requirement: REQ-SPARSE-001
 - Issue: #117
 - Branch: `codex/req-sparse-001-compact-support`
 - Draft pull request: #118
+- Reviewed implementation head: `806bbff`
+- Stable implementation gate head: `a0fd9fe`
+- Review findings: P1 SPARSE001-REV-001; P2 SPARSE001-REV-002 and
+  SPARSE001-REV-003
 - Dependencies: REQ-SPIKE-003, REQ-FIELD-001, and REQ-KERNEL-004 are integrated
 - Registry status: `planned` until review, Ready CI, merge, and integration
 
-## Implemented scope
+## Independent review result
 
-- The existing `FieldProblem<D>` assembles strictly positive-definite Wendland
-  systems directly from exact support-neighbor pairs into GeoRBF-owned
-  sorted-unique full symmetric CSC for D=1, D=2, and D=3.
-- A private immutable rstar index retains stable center/term identities. D=1
-  and D=2 are zero-padded into three index coordinates to avoid rstar's
-  one-dimensional panic; exact support truth remains dimension-specific.
-- Candidate hits are independently recomputed with stable isotropic or global-
-  anisotropy separation and the strict `radius < support_radius` rule.
-- Private faer 0.24.4 lower LLT with AMD ordering solves without densification,
-  fallback, jitter, regularization, pseudoinverse, or constraint relaxation.
-  Exact original-unit residual review uses tolerance `128*n*epsilon`.
-- `FittedField<D>` gained sparse fitting without a second model hierarchy and
-  retains the index for local-center value, gradient, and Hessian evaluation.
-- Diagnostics cover nonzeros, density, support coverage, memory, backend,
-  ordering, residuals, and visited-versus-total evaluation centers.
+- SPARSE001-REV-001 (P1): assembly and solve memory estimates omit
+  simultaneously live canonical, neighborhood-index, and temporary payloads.
+  The explicit limit and claimed conservative peak can therefore undercount
+  the operation's logical live memory.
+- SPARSE001-REV-002 (P2): row support coverage increments only for nonzero
+  kernel actions rather than accepted exact-support pairs. Co-located Value and
+  DirectionalDerivative representers can be falsely reported as isolated.
+- SPARSE001-REV-003 (P2): the change fragment overstates canonical-conflict and
+  failure coverage; deterministic ordering, solve-stage memory/cancellation,
+  a sparse nonfinite boundary, and a multi-size subquadratic comparison lack
+  direct regressions.
+- The reviewer found no other formula, sign, dimension, SPD/CPD, strict-support,
+  anisotropy-bound, residual, hidden fallback/regularization, Hessian-
+  capability, or interface-disposition defect.
 
-## Validation state
+## Evidence state
 
-- Focused sparse, field, model, and execution tests pass.
-- The sparse test suite covers a hand-derived CSC and analytic solution,
-  support boundaries, D=1/D=2/D=3 dense parity, mixed Value and
-  DirectionalDerivative representers, local evaluation, anisotropy, 512-point
-  scaling, cancellation, memory limits, and singular rejection.
-- Warning-denying focused all-feature Clippy passes for the sparse test and
-  production compact-sparse benchmark.
-- The release benchmark smoke passed at 64 points; four full 512-point runs
-  retained 3,200 nonzeros and bit-identical phase checksums.
-- The final stable implementation state passes all five standard workspace
-  checks: format, warning-denying all-target/all-feature Clippy, all-feature
-  workspace tests, workspace doctests, and the 58-requirement registry check.
-  The only later changes record validation and pull-request evidence.
+- A fresh isolated read-only `math_reviewer` inspected exact head `806bbff`
+  against base `c6696f2` and recorded all three findings in
+  `docs/reviews/PR-118-INDEPENDENT-REVIEW.md`.
+- Both reviewer and parent passed all six all-feature sparse integration tests.
+  The parent also passed all 58 requirement checks and the complete PR
+  whitespace check.
+- Draft CI run 29990525588 passed its configured Ubuntu correctness job on
+  exact reviewed head `806bbff`; the Ready-only three-platform and
+  benchmark-smoke matrix was skipped as designed and is not claimed.
+- Stable implementation head `a0fd9fe` retains the complete five-check local
+  gate and release benchmark smoke recorded by Implement. This Review changes
+  only the review record, registry document index, and bounded handoff.
 
 ## Next task boundary
 
-Open a fresh Review task for the Draft PR. Supply only the requirement
-show/dependency summaries, Issue #117 criteria, scoped architecture/solver
-documents and ADR-0012, the complete PR diff, tests, dependency audit, and
-benchmark evidence to the isolated `math_reviewer`. Do not repair findings or
-begin REQ-CENTER-001 in that Review task.
+Open a fresh Repair task for Draft PR #118. Address only SPARSE001-REV-001,
+SPARSE001-REV-002, and SPARSE001-REV-003 from the independent review. Add the
+specified memory-peak, exact-support coverage, deterministic/conflict/failure,
+and multi-size scaling regressions; implement the smallest complete repairs;
+rerun focused checks and one complete stable-head standard gate; update review
+evidence and this bounded handoff; push; and stop for fresh independent
+re-review. Do not mark the PR ready, merge it, or begin REQ-CENTER-001.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #117
 - Draft implementation: GitHub PR #118
+- Independent review: `docs/reviews/PR-118-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-SPARSE-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - Numerical policy: `docs/architecture/SOLVER_POLICY.md`
