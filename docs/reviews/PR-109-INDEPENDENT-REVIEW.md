@@ -1767,3 +1767,89 @@ TREND002-REV-018. PR #109 remains Draft and REQ-TREND-002 remains
 `implemented`, not `integrated`. A fresh isolated mathematical and numerical
 re-review of the complete PR and exact Repair head is required next. This
 Repair does not mark the PR Ready, merge it, or begin another requirement.
+
+## Fresh independent final re-review after transformed-displacement Repair
+
+- Exact reviewed evidence head:
+  `01084473bb393f37a84b166057fb3a2ad1190f32`
+- Production/test Repair head:
+  `095272909709eec631b4a5a58609d0f336824d16`
+- Base and merge-base:
+  `8535880c2d9cf2d580ac97bddf0610f9f6a68f61`
+- Re-review date: 2026-07-23
+- Result: TREND002-REV-018 closed; no P0-P3 finding remains
+
+A fresh isolated read-only project `math_reviewer` received only the bounded
+REQ-TREND-002 summary and integrated dependency closure, Issue #108 acceptance
+criteria and exclusions, the M6 plan, ANISOTROPY and ADR-0005/ADR-0008
+contracts, the complete PR and eleventh-Repair diffs, directly relevant source,
+tests, example, benchmark, registry, change evidence, handoff, and recorded
+validation evidence. It inherited no Implement or Repair reasoning transcript
+and made no repository, Git, or GitHub change.
+
+### Closure of TREND002-REV-018
+
+`RadialSeparation` now retains the original represented transformed
+displacement on both center and non-center paths and exposes it only within the
+crate. The stable fixed-Gaussian evaluator uses that displacement directly,
+eliminating the lossy `unit_displacement * radius` reconstruction. For the
+exact represented regression inputs, the independently derived contribution is
+
+```text
+-strength^2
+    * exp(-0.5 * ||x / influence_radius||^2
+          -0.5 * ||x / fixed_kernel_length||^2)
+    * x[1] / fixed_kernel_length^2.
+```
+
+Independent 300-decimal arithmetic gives
+`-6.035055754270405679245...e-183`, whose nearest binary64 value is
+`-6.035055754270406e-183`. The former normalization rounds
+`1e-170 / 1e160` to exact zero; the Repair instead preserves the represented
+`1e-170` transformed displacement. The permanent public D=2 compiled-control
+regression passes within `1024 * EPSILON` of that independent oracle.
+
+### Complete re-review disposition
+
+- Gaussian, regional-gate, gradient, and Hessian formulae retain correct signs,
+  dimensions, units, C2 boundary behavior, and complete product rules.
+- The fixed-SPD diagonal-congruence construction retains a strictly nonzero
+  constant SPD background; CPD kernels remain explicitly rejected.
+- Condition, reference-gradient, confidence, direction-jump, center-sensitive
+  Hessian-capability, deterministic-order, diagnostic, and allocation
+  contracts remain explicit and satisfied.
+- No jitter, regularization, pseudoinverse, clipping, silent fallback, unsafe
+  code, new dependency, or third-party type in a public geometry interface is
+  introduced.
+- Rust and benchmark interfaces are implemented. CLI and versioned schemas are
+  legitimately deferred to M8; C, C++, and Python adapters are deferred to M9.
+- Polynomial spaces, scale-aware rank decisions, hard constraints, solver
+  infeasibility, and solver regularization do not apply to this fixed-SPD
+  compiler path.
+
+### Final re-review validation
+
+The isolated reviewer passed the exact TREND002-REV-018 regression, all twenty
+public `trend_controls` tests, all fifteen public and five private
+`local_trend` tests, all eleven kernel-calculus tests, all thirteen anisotropy
+tests, the runnable example, optimized four- and sixteen-control benchmark
+smoke, all 58 requirement checks, and Repair/evidence-tail diff whitespace
+validation. Draft Ubuntu CI run 29970067600 passed its configured correctness
+gate on exact reviewed evidence head `0108447`.
+
+Exact stable production/test head `0952729` retains its complete local standard
+gate: workspace format, warning-denying all-target/all-feature Clippy,
+all-feature workspace tests, all 35 workspace Rustdoc tests, all 58 requirement
+checks, and complete diff whitespace. The tail after that stable head and this
+evidence-only review update change only the requirement change fragment, this
+review record, and the bounded Markdown handoff.
+
+`cargo-nextest`, `cargo-deny`, `cargo-audit`, `cargo-semver-checks`, local
+`actionlint`, and Miri remain unavailable. Sanitizers, executable fuzzing,
+mutation testing, and API/ABI/schema gates remain deferred. No unavailable or
+deferred check is claimed as passed.
+
+No P0-P3 finding remains. PR #109 may be marked Ready only after this
+evidence-only conclusion is committed and pushed. Integration still requires
+the complete exact-Ready-head Windows, Ubuntu, and macOS workspace and every
+benchmark-smoke workload to pass before one squash merge.

@@ -6,58 +6,61 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Eleventh Repair complete; fresh independent re-review required
+- Mode: Review clean / Ready evidence commit pending for PR #109
 - Requirement: REQ-TREND-002, Issue #108
 - Branch: `codex/req-trend-002-region-controls`
-- Draft pull request: #109
-- Latest independently re-reviewed code/test/contract head: `2a25f44`
-- Latest independent-review evidence head: `f5228b5`
+- Implementation pull request: #109 (Draft)
+- Latest independently reviewed evidence head: `0108447`
 - Eleventh Repair code/test head: `0952729`
 - Stable full-gate head: `0952729`
+- Review state: TREND002-REV-001 through TREND002-REV-018 are independently
+  closed; the complete PR has no remaining P0-P3 finding
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are
   integrated
 - Registry state in this change: `implemented`
 
-## Eleventh Repair result
+## Final re-review result
 
-- The exact public D=2 compiled-control regression first reproduced
-  TREND002-REV-018 on the pre-Repair head: expected approximately
-  `-6.035055754270406e-183` for the second gradient, actual exact zero.
-- `RadialSeparation` now retains its original represented transformed
-  displacement internally. The stable fixed-Gaussian path uses those
-  components directly instead of reconstructing them through a normalized
-  unit vector whose transverse component can underflow.
-- The repaired regression retains the independent gradient within
-  `1024 * EPSILON` relative tolerance. Public APIs, formulae, fixed-SPD
-  structure, demand bounds, and non-Gaussian paths are unchanged.
-- This Repair records evidence but does not independently close
-  TREND002-REV-018. PR #109 remains Draft and the requirement remains
-  `implemented`.
+- A fresh isolated read-only `math_reviewer` independently closed
+  TREND002-REV-018 and found no P0-P3 issue in the complete repaired PR.
+- Independent 300-decimal arithmetic gives
+  `-6.035055754270405679245...e-183`, rounding to the permanent regression's
+  `-6.035055754270406e-183` binary64 oracle. The test passes within
+  `1024 * EPSILON`.
+- The original represented transformed displacement now reaches the stable
+  fixed-Gaussian evaluator directly; the underflowing normalized-unit-vector
+  reconstruction is gone. Public APIs, formulae, fixed-SPD structure, demand
+  bounds, and non-Gaussian paths are unchanged.
+- Formulae, product rules, fixed-SPD/CPD classification, C2 boundaries,
+  Hessian capabilities, explicit policies, deterministic diagnostics,
+  allocation behavior, interface dispositions, and absence of hidden
+  regularization satisfy the reviewed scope.
 
 ## Validation state
 
-- Focused validation passed the exact regression, all twenty public
-  `trend_controls` tests, all fifteen public `local_trend` integration tests,
-  all five private local-trend regressions, all eleven kernel-calculus tests,
-  all thirteen anisotropy tests, and complete diff whitespace validation.
+- The isolated reviewer passed the exact regression, all twenty public
+  `trend_controls` tests, all fifteen public and five private `local_trend`
+  tests, all eleven kernel-calculus tests, all thirteen anisotropy tests, the
+  example, optimized benchmark smoke, all 58 requirement checks, and complete
+  Repair/evidence-tail diff whitespace validation.
 - Exact stable head `0952729` passed workspace format, warning-denying workspace
   all-target/all-feature Clippy, all-feature workspace tests, all 35 workspace
   Rustdoc tests, all 58 requirement checks, and complete diff whitespace
   validation.
-- The evidence tail after `0952729` changes only the requirement change
-  fragment, independent-review record, and bounded Markdown handoff. Ready-only
-  Windows/Ubuntu/macOS and benchmark-smoke CI remain intentionally unexecuted
-  while PR #109 is Draft.
+- Draft Ubuntu CI run 29970067600 passed on exact reviewed evidence head
+  `0108447`. The evidence tail after `0952729` changes only the requirement
+  change fragment, independent-review record, and bounded Markdown handoff.
+- Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI remain unexecuted and
+  are not claimed as passed.
 
 ## Next task boundary
 
-A fresh Review/re-review task must create an isolated read-only project
-`math_reviewer` to independently verify TREND002-REV-018 against exact Repair
-head `0952729` and inspect the complete PR diff for new P0-P3 findings. It must
-not inherit this Repair reasoning or repair production code. If findings
-remain, record them and stop. Only a clean re-review may continue through the
-repository's mandatory Ready, exact-head three-platform and benchmark-smoke CI,
-and single-merge integration sequence. Do not begin another requirement.
+Commit and push the evidence-only final re-review record, synchronize PR #109
+evidence, and mark it Ready. Wait for the complete Windows, Ubuntu, and macOS
+workspace and every benchmark-smoke workload on that exact Ready head.
+Squash-merge exactly once only if every required check is green, wait for the
+post-merge `main` gate, then record truthful integration state through an
+isolated branch and pull request. Do not begin another requirement.
 
 ## Durable evidence
 
