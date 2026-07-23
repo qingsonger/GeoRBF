@@ -9,9 +9,10 @@ records, benchmark reports, Git, and GitHub.
 - Mode: Implement
 - Requirement: REQ-SPIKE-003, Issue #114
 - Branch: `codex/req-spike-003-sparse-backends`
-- Draft pull request: pending initial push
+- Draft pull request: #115
+- Initial implementation head: `7cae556`
 - Dependencies: REQ-KERNEL-004 and its complete closure are integrated
-- Registry state: `planned` until the Draft PR number is recorded
+- Registry state: `implemented`
 
 ## Scoped implementation
 
@@ -51,15 +52,15 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-Finish focused configuration and negative compile checks, create the initial
-commit and push, open the Draft PR, record its exact number in the registry and
-this handoff, then run the complete standard workspace gate on the final stable
-head. Commit and push that evidence and stop. Independent Review must occur in
-a fresh task; do not start REQ-SPARSE-001.
+Run the complete standard workspace gate on the final stable implementation
+tree, commit and push the registry and bounded handoff evidence, and stop.
+Independent Review of Draft PR #115 must occur in a fresh task with a
+read-only reviewer; do not start REQ-SPARSE-001.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #114
+- Draft implementation: GitHub PR #115
 - Requirement summary: `changes/REQ-SPIKE-003.md`
 - Reproducible harness: `spikes/sparse-backends/`
 - Selection decision:
