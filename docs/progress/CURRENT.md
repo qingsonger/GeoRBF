@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-CENTER-001, closed Issue #120
 - Implementation pull request: #121, squash-merged as `474988b`
 - Integration-state branch: `codex/req-center-001-integration-state`
-- Integration-state pull request: pending creation
+- Integration-state pull request: #122 (Draft until exact Ready CI is green)
 - Exact Ready head: `4c9525f`
 - Dependencies: REQ-SOLVE-001 and REQ-MODEL-001 are integrated
 - Registry status in this change: `integrated`
@@ -61,7 +61,7 @@ not begin REQ-TUNE-001.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #120
 - Merged implementation: GitHub PR #121
-- Integration-state pull request: pending creation
+- Integration-state pull request: GitHub PR #122
 - Independent review: `docs/reviews/PR-121-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-CENTER-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`

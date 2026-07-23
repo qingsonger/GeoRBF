@@ -259,7 +259,7 @@ until that sequence completes.
 - Squash merge: `474988bd9184927925d9b2942e350e2d6cab6fe0`
 - Post-merge `main` CI run: 30015158750
 - Integration-state branch: `codex/req-center-001-integration-state`
-- Integration-state pull request: pending creation
+- Integration-state pull request: #122
 
 Ready CI run 30013183746 passed the complete Windows, Ubuntu, and macOS
 workspace gate on exact Ready head `4c9525f`, including every configured
