@@ -6,57 +6,56 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement / REQ-CENTER-001 complete
+- Mode: Review / REQ-CENTER-001 complete with findings
 - Requirement: REQ-CENTER-001, open Issue #120
 - Branch: `codex/req-center-001-rank-safe-centers`
-- Pull request: #121 (Draft, awaiting fresh independent Review)
+- Pull request: #121 (Draft; one P1, one P2, and two P3 findings)
 - Dependencies: REQ-SOLVE-001 and REQ-MODEL-001 are integrated
-- Registry status: `planned` until independent Review, Ready CI, merge, and
-  isolated integration-state evidence complete
+- Registry status: `planned`
 
-## Implemented scope
+## Independent findings
 
-- Added one GeoRBF-owned `CenterSelectionProblem<D>` for D=1, D=2, and D=3
-  with finite locations, targets, and exact-symmetric row-major Gram storage.
-- Implemented all-representer, ordered user-provided, seeded farthest-point,
-  seeded residual-greedy, and seeded power-greedy strategies.
-- Residual and power selection share checked Newton--Cholesky updates with the
-  explicit scale threshold `n * epsilon * max_i(abs(K_ii))`.
-- Every successful proposed selection passes the existing eight-pass RRQR,
-  bounded-SVD, ambiguity-band, checked-Cholesky, and original-unit residual
-  path under an explicit nonzero memory limit.
-- Selection returns stable indices and diagnostics only. It never mutates a
-  field problem, drops or softens a hard constraint, refits, regularizes,
-  calls a pseudoinverse, or changes solver policy.
-- Rust is implemented. CLI/schema work is N/A until M8; C, C++, and Python are
-  N/A until M9.
+- P1 CENTER001-REV-001: the global maximum-diagonal greedy pivot threshold
+  rejects a full-rank SPD basis after an equivalent nonzero basis scaling,
+  before the scale-aware final rank review can run.
+- P2 CENTER001-REV-002: the generic public center-selection contract neither
+  implements the CPD `Q`/null-space/projected-positive path nor explicitly
+  classifies and rejects CPD input at a typed capability boundary.
+- P3 CENTER001-REV-003: farthest-point exact seeded ties and repeated results
+  lack the required regression.
+- P3 CENTER001-REV-004: Gram/target length and nonfinite-input validations are
+  untested, so the malformed-shape evidence is overstated.
+- Exact evidence and required regressions:
+  `docs/reviews/PR-121-INDEPENDENT-REVIEW.md`.
 
-## Validation state
+## Review validation
 
-- Nine focused center-selection integration tests pass.
-- The center-selection rustdoc example passes.
-- Warning-denying focused test and benchmark Clippy passes.
-- The 48-candidate release benchmark smoke passes; the recorded 160-candidate
-  baseline covers all five strategies.
-- After the final production, test, manifest, and CI change, the complete
-  standard workspace gate passed: format, warning-denying
-  workspace/all-target/all-feature Clippy, all-feature workspace tests,
-  workspace doctests, and the 58-requirement registry check.
-- The later handoff and PR-number edits are documentation/registry evidence
-  only; they change no production code, test, manifest, schema, CI, benchmark,
-  build input, API, numerical behavior, or dependency.
+- An isolated read-only project `math_reviewer` reviewed base
+  `aa128ed87236c85aa6d310127ad05c70c0a2092b` through head
+  `63a9f9035ec280124ea0fc230692b3c271436f59`.
+- Both reviewer and parent passed the nine focused integration tests, the
+  five-strategy release benchmark smoke, and the complete PR whitespace check.
+- The parent also passed the rustdoc example and 58-requirement registry check.
+- Draft CI run 30004560859 passed Ubuntu on the exact reviewed head. Ready-only
+  three-platform and benchmark-smoke CI was skipped and is not claimed.
+- Stable implementation gate head
+  `bf850a8f9a4b673425724e71abc46d955258cd6e` remains the last complete local
+  standard gate; this Review changes documentation evidence only.
 
 ## Next task boundary
 
-After this implementation task commits, pushes, and opens its Draft PR, stop.
-A fresh Review task must inspect only REQ-CENTER-001 and the PR diff, use the
-isolated project `math_reviewer`, record findings, and must not repair
-production code or begin REQ-TUNE-001.
+A fresh Repair task must address only CENTER001-REV-001 through
+CENTER001-REV-004, add the specified independent regressions, run focused
+checks during iteration and one complete standard gate after the last
+production or test change, update the review evidence and bounded handoff,
+push, and stop for another fresh independent re-review. Do not mark PR #121
+ready, merge it, or begin REQ-TUNE-001.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #120
 - Draft implementation: GitHub PR #121
+- Independent review: `docs/reviews/PR-121-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-CENTER-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - Numerical policy: `docs/architecture/SOLVER_POLICY.md`
