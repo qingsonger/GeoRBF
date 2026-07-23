@@ -6,88 +6,53 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-SPARSE-001 complete
-- Requirement: REQ-SPARSE-001, closed Issue #117
-- Implementation pull request: #118, squash-merged as `ce93a98`
-- Integration-state branch: `codex/req-sparse-001-integration-state`
-- Integration-state pull request: #119 (Draft until exact Ready CI is green)
-- Exact Ready head: `4c436b6`
-- Clean independent re-review head:
-  `917e6b3b5a12f48588cb5a34676cb2093988a8db`
-- Third Repair implementation and stable gate head:
-  `85d7e99356fe3790f2a0d63430b78a4f68ad8a0f`
-- Closed findings: P1 SPARSE001-REV-001, P2 SPARSE001-REV-002, P2
-  SPARSE001-REV-003, P3 SPARSE001-REV-004, and P1 SPARSE001-REV-005
-- Open P0-P3 findings: none
-- Dependencies: REQ-SPIKE-003, REQ-FIELD-001, and REQ-KERNEL-004 are integrated
-- Registry status in this change: `integrated`
+- Mode: Review / REQ-CENTER-001 clean fresh re-review; Ready CI pending
+- Requirement: REQ-CENTER-001, open Issue #120
+- Branch: `codex/req-center-001-rank-safe-centers`
+- Pull request: #121 (Draft; clean re-review authorizes Ready transition)
+- Dependencies: REQ-SOLVE-001 and REQ-MODEL-001 are integrated
+- Registry status: `planned`
 
-## Integration result
+## Fresh re-review outcome
 
-- An isolated read-only `math_reviewer` inspected the complete base-to-head
-  diff and independently closed SPARSE001-REV-005.
-- The faer 0.24.4 AMD and complete symbolic-analysis request reconstruction,
-  retained symbolic and numeric bounds, separate live peaks, and enforcement
-  before backend CSC construction are conservative and match pinned backend
-  truth.
-- The 64-by-64 all-supported between-limit regression independently obtains
-  faer's AMD request and rejects after only the `Started` progress event.
-- No new P0-P3 finding was identified.
-- Exact Ready head `4c436b6` passed complete Windows, Ubuntu, and macOS CI run
-  29998141180, including every configured backend combination, benchmark
-  smoke, and requirement validation.
-- PR #118 squash-merged exactly once as `ce93a98`; Issue #117 closed as
-  completed. Post-merge `main` CI run 29999737528 passed the same complete
-  three-platform gate on exact merge commit `ce93a98`.
-- This isolated integration-state change updates only the registry, review
-  evidence, completed-history index, and bounded handoff. It changes no
-  production code, test, manifest, schema, CI, build input, API, numerical
-  behavior, dependency, tag, or release.
+- An isolated read-only project `math_reviewer` reviewed base `aa128ed8`
+  through exact Repair head `75110a5`.
+- CENTER001-REV-001 through CENTER001-REV-004 are independently closed.
+- The complete repaired 13-file PR diff has no remaining or new P0--P3
+  finding.
 
-## Validation state
+## Review validation
 
-- Exact stable implementation head
-  `85d7e99356fe3790f2a0d63430b78a4f68ad8a0f` passed all 44 all-feature core
-  unit tests, all ten all-feature sparse integration tests, format, and
-  warning-denying all-target/all-feature Clippy.
-- After the last production or test change, that same exact head passed the
-  complete standard workspace gate: format, warning-denying
-  workspace/all-target/all-feature Clippy, all-feature workspace tests,
-  workspace doctests, and the 58-requirement registry check.
-- The independent reviewer passed all ten sparse integration tests, the
-  canonical-capacity regression, and the 64-point release benchmark smoke.
-  The parent Review task independently passed the sparse tests,
-  canonical-capacity regression, registry check, and PR whitespace check.
-- Draft CI run 29997122789 passed on exact reviewed head `917e6b3`.
-- Exact Ready-head run 29998141180 and post-merge `main` run 29999737528 are
-  both green on Windows, Ubuntu, and macOS, including every configured
-  benchmark smoke.
-- The isolated integration-state tree must pass the complete local standard
-  gate and exact Ready-head CI before it merges.
+- The isolated reviewer and parent Review task independently passed all 13
+  center-selection tests, the center-selection rustdoc example, the
+  five-strategy release benchmark smoke, the 58-requirement registry check,
+  and the complete PR whitespace check.
+- The stable Repair tree passed the complete standard gate: format,
+  warning-denying workspace/all-target/all-feature Clippy, all-feature
+  workspace tests, workspace doctests, and the 58-requirement registry check.
+- Draft CI run 30009925065 passed Ubuntu on exact Repair head `75110a5`.
+- The re-review evidence tail changes only this review record and bounded
+  handoff, so the immutable stable-head complete gate remains valid.
 
 ## Next task boundary
 
-Run the complete local standard gate on the final integration-state head. Mark
-PR #119 Ready, wait for exact Ready-head Windows, Ubuntu, macOS, and
-benchmark-smoke CI, merge only if green, and stop. Do not begin
-REQ-CENTER-001.
+Push this documentation-only clean re-review evidence, mark PR #121 Ready, and
+wait for the Windows/Ubuntu/macOS and complete benchmark-smoke CI on that exact
+Ready head. Merge exactly once only if the whole matrix is green, then record
+the truthful integration state through an isolated documentation-only change.
+Do not begin REQ-TUNE-001.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #117
-- Merged implementation: GitHub PR #118
-- Integration-state pull request: GitHub PR #119
-- Independent review and Repair evidence:
-  `docs/reviews/PR-118-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-SPARSE-001.md`
+- Acceptance criteria and exclusions: GitHub Issue #120
+- Draft implementation: GitHub PR #121
+- Independent review: `docs/reviews/PR-121-INDEPENDENT-REVIEW.md`
+- Requirement summary: `changes/REQ-CENTER-001.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - Numerical policy: `docs/architecture/SOLVER_POLICY.md`
-- Backend selection: `docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md`
-- Benchmark: `docs/benchmarks/REQ-SPARSE-001.md`
-- Production implementation: `crates/georbf/src/problem_ir.rs` and
-  `crates/georbf/src/sparse.rs`
-- Independent tests: canonical-IR unit tests and
-  `crates/georbf/tests/sparse.rs`
+- Benchmark: `docs/benchmarks/REQ-CENTER-001.md`
+- Production implementation: `crates/georbf/src/center_selection.rs`
+- Independent tests: `crates/georbf/tests/center_selection.rs`
 
 ## Checks not yet available
 

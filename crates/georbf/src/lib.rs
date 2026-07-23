@@ -14,7 +14,11 @@
 //! policy and original-unit diagnostics. Wendland fields also support
 //! deterministic support-neighbor assembly into GeoRBF-owned sorted CSC,
 //! checked private sparse LLT, exact original-unit residual review, and
-//! immutable local-center evaluation without densification. Immutable fitted
+//! immutable local-center evaluation without densification. Fields can be
+//! preceded by a separate deterministic, rank-safe candidate center-selection
+//! step with all-representer, user-provided, farthest-point, residual-greedy,
+//! and power-greedy policies; selection returns indices and RRQR/SVD evidence
+//! without mutating constraints or fitting implicitly. Immutable fitted
 //! fields have capability-gated original-coordinate value, gradient, and
 //! Hessian evaluation, plus stable source-aware structured error codes for adapter and
 //! orchestration boundaries, and caller-owned cancellation, deterministic
@@ -64,6 +68,7 @@
 
 pub mod anisotropy;
 pub mod anisotropy_diagnostics;
+pub mod center_selection;
 pub mod convex;
 pub mod coordinates;
 pub mod cpd;
@@ -103,6 +108,11 @@ pub use anisotropy_diagnostics::{
     AnisotropyDiagnosticExport, AnisotropyDiagnosticExportError, AnisotropyDiagnosticStorage,
     AnisotropyDiagnosticSummary, AnisotropySampleRecord, LowConfidenceTrendRegion,
     try_export_anisotropy_diagnostics,
+};
+pub use center_selection::{
+    CenterGreedyDiagnostics, CenterSelection, CenterSelectionDiagnostics, CenterSelectionError,
+    CenterSelectionKind, CenterSelectionOptions, CenterSelectionProblem, CenterSelectionStorage,
+    CenterSelectionStrategy,
 };
 pub use convex::{
     ConvexBackendStatus, ConvexCertificateDiagnostics, ConvexConstraintDiagnostics,
