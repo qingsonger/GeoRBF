@@ -6,32 +6,33 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required
+- Mode: Review clean; mandatory Ready CI and integration sequence in progress
 - Requirement: REQ-SPARSE-001
 - Issue: #117
 - Branch: `codex/req-sparse-001-compact-support`
 - Draft pull request: #118
+- Clean independent re-review head:
+  `917e6b3b5a12f48588cb5a34676cb2093988a8db`
 - Third Repair implementation and stable gate head:
   `85d7e99356fe3790f2a0d63430b78a4f68ad8a0f`
-- Finding addressed pending fresh re-review: P1 SPARSE001-REV-005
 - Closed findings: P1 SPARSE001-REV-001, P2 SPARSE001-REV-002, P2
-  SPARSE001-REV-003, and P3 SPARSE001-REV-004
+  SPARSE001-REV-003, P3 SPARSE001-REV-004, and P1 SPARSE001-REV-005
+- Open P0-P3 findings: none
 - Dependencies: REQ-SPIKE-003, REQ-FIELD-001, and REQ-KERNEL-004 are integrated
-- Registry status: `planned`; Ready CI and integration remain forbidden until
-  a fresh independent re-review is clean
+- Registry status: `planned`; Ready CI, merge, and isolated integration-state
+  evidence remain required
 
-## Third Repair result
+## Clean re-review result
 
-- Pinned faer 0.24.4 AMD and complete symbolic-analysis `StackReq` requests are
-  reproduced from dimension and stored nonzeros before backend dispatch.
-- Checked conservative bounds now include retained symbolic structures,
-  numeric-factor storage, and numeric scratch.
-- Diagnostics and enforcement distinguish symbolic-factorization,
-  numeric-factorization, and solve-and-review peaks.
-- The 64-by-64 all-supported regression independently obtains faer's AMD
-  request for 4,096 entries, permits assembly at a limit between the old and
-  corrected solve peaks, and rejects solve after only the `Started` progress
-  event.
+- An isolated read-only `math_reviewer` inspected the complete base-to-head
+  diff and independently closed SPARSE001-REV-005.
+- The faer 0.24.4 AMD and complete symbolic-analysis request reconstruction,
+  retained symbolic and numeric bounds, separate live peaks, and enforcement
+  before backend CSC construction are conservative and match pinned backend
+  truth.
+- The 64-by-64 all-supported between-limit regression independently obtains
+  faer's AMD request and rejects after only the `Started` progress event.
+- No new P0-P3 finding was identified.
 
 ## Evidence state
 
@@ -43,27 +44,23 @@ records, benchmark reports, Git, and GitHub.
   complete standard workspace gate: format, warning-denying
   workspace/all-target/all-feature Clippy, all-feature workspace tests,
   workspace doctests, and the 58-requirement registry check.
-- This subsequent handoff update changes only review evidence and
-  `docs/progress/CURRENT.md`; it does not invalidate that stable implementation
-  gate.
-- Draft CI for the Repair head has not yet completed and is not claimed.
-  Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI has not run and is not
+- The independent reviewer passed all ten sparse integration tests, the
+  canonical-capacity regression, and the 64-point release benchmark smoke.
+  The parent Review task independently passed the sparse tests,
+  canonical-capacity regression, registry check, and PR whitespace check.
+- Draft CI run 29997122789 passed on exact reviewed head `917e6b3`.
+- This review evidence and handoff change only documentation and do not
+  invalidate the stable implementation gate.
+- Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI has not run and is not
   claimed.
 
 ## Next task boundary
 
-Open a fresh Review/re-review task for PR #118. Supply the isolated project
-`math_reviewer` only the bounded requirement summary and dependency closure,
-Issue #117 criteria, M7 plan, applicable architecture and solver policy,
-ADR-0012, the complete PR diff, prior finding SPARSE001-REV-005, and exact
-validation evidence. Independently verify the new faer workspace bounds and
-64-by-64 between-limit regression, confirm whether SPARSE001-REV-005 is closed,
-and check for new P0-P3 findings. If any finding remains, record it and stop
-without repairing production code. If the review is clean, follow the
-mandatory integration sequence: synchronize evidence, mark PR #118 ready,
-wait for complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact
-ready head, merge only if all are green, then record integration state in an
-isolated change. Do not begin REQ-CENTER-001 in that task.
+Commit and push the synchronized clean-review evidence, update PR #118, and
+mark it ready. Wait for the complete Windows/Ubuntu/macOS and benchmark-smoke
+CI on that exact Ready head. Merge exactly once only if every required check
+is green, then record truthful integration state in an isolated change. Do not
+begin REQ-CENTER-001 in this task.
 
 ## Durable evidence
 

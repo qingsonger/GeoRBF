@@ -490,3 +490,69 @@ remains Draft and REQ-SPARSE-001 remains `planned`. SPARSE001-REV-005 is
 addressed but is not recorded as independently closed; a fresh re-review task
 must verify this exact Repair and check for new P0-P3 findings. This task does
 not mark the PR ready, merge it, or begin REQ-CENTER-001.
+
+## Fresh independent re-review after the third Repair
+
+- Re-reviewed base: `c6696f2b75a0b492f10bccb90f8ef3059e3f8eb9`
+- Re-reviewed evidence head:
+  `917e6b3b5a12f48588cb5a34676cb2093988a8db`
+- Third Repair implementation and stable-gate head:
+  `85d7e99356fe3790f2a0d63430b78a4f68ad8a0f`
+- Draft CI run: 29997122789
+- Result: SPARSE001-REV-005 is closed; no P0-P3 finding remains
+
+A new isolated read-only project `math_reviewer` independently inspected the
+complete base-to-head diff. It received only the bounded requirement summary
+and integrated dependency closure, Issue #117 acceptance criteria and
+exclusions, the M7 plan, architecture and solver policy, ADR-0012, all prior
+findings, the complete repaired diff, and exact test, benchmark, and
+stable-gate evidence. It inherited no Implement or Repair reasoning and made
+no repository or remote change.
+
+SPARSE001-REV-005 is closed. The preflight reconstructs pinned faer 0.24.4's
+AMD request and complete symbolic-analysis `StackReq`, matching faer's maximum
+of AMD workspace and CSC permutation plus post-ordering symbolic workspace.
+The conservative retained bounds cover both symbolic forms, two
+permutations, dense worst-case index patterns, numeric supernodal panels, and
+numeric scratch. Symbolic-factorization, numeric-factorization, and
+solve-and-review live peaks are summed separately, their maximum is enforced,
+and rejection occurs before the backend CSC copy begins.
+
+The 64-by-64 all-supported regression independently obtains faer's AMD request
+for all 4,096 stored entries. Its memory limit is above both the assembly peak
+and the former solve estimate but below the corrected peak. Assembly succeeds,
+solve returns `SparseSolveError::MemoryLimitExceeded`, and the progress sink
+observes only `ExecutionStage::Started`.
+
+SPARSE001-REV-001 through SPARSE001-REV-004 remain closed. No new P0, P1, P2,
+or P3 finding was identified. Independent truth checks confirmed the Wendland
+SPD and strict-support contracts, CPD and polynomial-side-condition exclusion,
+conservative anisotropy candidates, exact symmetric CSC action, original-unit
+residual acceptance, hard-failure behavior, absence of hidden regularization
+or fallback, D=1/D=2/D=3 and derivative capabilities, immutable local
+evaluation, truthful interface dispositions, benchmark scope, and the
+non-integrated registry state.
+
+The independent reviewer passed all ten all-feature sparse integration tests,
+the canonical reserved-capacity unit regression, the 64-point release
+benchmark smoke with 352 stored nonzeros, and the complete PR whitespace
+check. The parent Review task independently passed the same ten sparse tests,
+the canonical reserved-capacity regression, the 58-requirement registry check,
+and the complete PR whitespace check. Exact faer 0.24.4 and rstar 0.13.0
+feature resolution was confirmed without faer's Rayon feature.
+
+Draft CI run 29997122789 passed its configured Ubuntu correctness job on exact
+re-reviewed head `917e6b3`; the Ready-only Windows, Ubuntu, macOS, and
+benchmark-smoke matrix was skipped as designed and is not claimed. The branch
+and remote heads matched, and the worktree remained clean throughout review.
+
+This review evidence changes only this record and the bounded handoff. It
+changes no production code, test, manifest, schema, CI, build input, API,
+numerical behavior, dependency, or benchmark result, so the complete standard
+gate on exact stable implementation head `85d7e99` remains valid.
+
+PR #118 is clean for the mandatory integration sequence. REQ-SPARSE-001
+remains `planned` until the exact Ready head passes the complete
+Windows/Ubuntu/macOS and benchmark-smoke CI, the PR is merged exactly once,
+and isolated integration-state evidence is recorded. This Review does not
+begin REQ-CENTER-001.
