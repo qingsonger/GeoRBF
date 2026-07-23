@@ -148,6 +148,34 @@ and returns an immutable GeoRBF-owned row-major dense system with symmetry and
 CPD diagnostics. It does not factor, solve, regularize, select centers, construct
 geological semantics, or expose nalgebra types.
 
+The center-selection layer is a separate, pre-assembly numerical primitive.
+`CenterSelectionProblem<D>` owns explicit finite candidate locations, a finite
+exact-symmetric row-major candidate Gram matrix, and aligned initial target
+residuals. It returns stable candidate indices and diagnostics; it does not
+consume or mutate `FieldProblem<D>`, remove semantic observations, convert hard
+relations to soft ones, fit coefficients, or select a solver. This separation
+keeps center placement from becoming an implicit constraint rewrite.
+
+All-representer selection preserves input order. User-provided selection
+preserves an explicitly validated unique index order. Farthest-point traversal
+starts from `seed mod candidate_count`, then maximizes the minimum stable
+Euclidean separation. Residual-greedy and power-greedy use the same
+incremental Newton--Cholesky columns: residual-greedy maximizes the current
+absolute interpolation residual, while power-greedy maximizes the current
+Schur-complement diagonal. Seeded SplitMix64 keys break exact score ties
+without mutable global randomness. A pivot must be strictly greater than
+`candidate_count * epsilon * max_i(abs(K_ii))`; the implementation never adds
+jitter, substitutes a diagonal, or skips a deficient requested step.
+
+Every proposed selection, including all-representer, user-provided, and
+farthest-point results, is materialized as its selected principal Gram matrix
+and passed through the existing eight-pass equilibration, RRQR screen, bounded
+SVD review, and checked Cholesky path under an explicit memory limit. A
+deficient or ambiguous rank decision, SVD non-convergence, failed checked
+factorization, or memory rejection is a structured selection error with the
+underlying numerical evidence. Thus a greedy pivot screen is development of
+the basis, not a substitute for the repository's final rank policy.
+
 For strictly positive-definite Wendland kernels, the same `FieldProblem<D>`
 also supports a compact sparse path. Atomic center locations are bulk-loaded
 under stable `(center, term)` identities; D=1 and D=2 locations are embedded

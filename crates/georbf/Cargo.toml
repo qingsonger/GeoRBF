@@ -86,6 +86,10 @@ name = "compact_sparse_field"
 harness = false
 
 [[bench]]
+name = "center_selection"
+harness = false
+
+[[bench]]
 name = "level_compilation"
 harness = false
 

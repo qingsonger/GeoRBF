@@ -249,3 +249,30 @@ Explicit regularization is validated before use and records both the original
 and effective rank decisions, the exact amount applied, and the final residual
 against the unmodified matrix. `AutomaticWithin(maximum)` remains a normative
 future policy, not a placeholder success path in the current API.
+
+## Rank-safe center selection
+
+`REQ-CENTER-001` adds no solver or numerical dependency. It accepts an explicit
+GeoRBF-owned symmetric candidate Gram matrix and supports all-representer,
+ordered user-provided, seeded farthest-point, seeded residual-greedy, and
+seeded power-greedy selection. The selection layer is side-effect free: it
+returns indices and evidence but does not rewrite a semantic problem, relax a
+hard equality, or fit a model.
+
+Residual- and power-greedy selection share a deterministic incremental
+Newton--Cholesky construction. At step `j`, the squared basis pivot is
+`K_ii - sum_l L_il^2`. Residual-greedy selects the largest absolute current
+interpolation residual and applies its normalized Newton column; power-greedy
+selects the largest squared pivot. A pivot is accepted only when it is finite
+and strictly greater than
+`candidate_count * epsilon * max_i(abs(K_ii))`. Farthest-point selection uses
+stable Euclidean `hypot` accumulation. All exact score ties use deterministic
+seeded keys; there is no global random state.
+
+The pivot check is not the final rank decision. Every selected principal Gram
+matrix is independently reviewed by the existing eight-pass equilibration,
+RRQR, bounded SVD, factor-16 ambiguity band, and checked Cholesky path under
+the caller's explicit memory limit. Deficiency, ambiguity, non-convergence,
+factorization rejection, nonfinite work, or an insufficient limit fails
+explicitly. No jitter, substitute diagonal, hidden regularization,
+pseudoinverse, candidate skipping, or factorization fallback is authorized.
