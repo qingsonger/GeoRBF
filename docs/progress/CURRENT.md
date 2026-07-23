@@ -6,20 +6,22 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review clean / Ready evidence commit pending for PR #109
+- Mode: Integration state / REQ-TREND-002 complete
 - Requirement: REQ-TREND-002, Issue #108
-- Branch: `codex/req-trend-002-region-controls`
-- Implementation pull request: #109 (Draft)
-- Latest independently reviewed evidence head: `0108447`
+- Implementation pull request: #109, squash-merged as `9c7eb2a`
+- Integration-state branch: `codex/req-trend-002-integration-state`
+- Integration-state pull request: #110 (Draft until exact Ready CI is green)
+- Independently reviewed implementation evidence head: `0108447`
+- Clean re-review evidence / exact Ready head: `a73562c`
 - Eleventh Repair code/test head: `0952729`
 - Stable full-gate head: `0952729`
 - Review state: TREND002-REV-001 through TREND002-REV-018 are independently
   closed; the complete PR has no remaining P0-P3 finding
 - Dependencies: REQ-TREND-001, REQ-PROJECT-001, and REQ-NORMAL-001 are
   integrated
-- Registry state in this change: `implemented`
+- Registry state in this change: `integrated`
 
-## Final re-review result
+## Integration result
 
 - A fresh isolated read-only `math_reviewer` independently closed
   TREND002-REV-018 and found no P0-P3 issue in the complete repaired PR.
@@ -35,6 +37,16 @@ records, benchmark reports, Git, and GitHub.
   Hessian capabilities, explicit policies, deterministic diagnostics,
   allocation behavior, interface dispositions, and absence of hidden
   regularization satisfy the reviewed scope.
+- Exact Ready head `a73562c` passed complete Windows, Ubuntu, and macOS CI run
+  29971311450, including every configured backend combination, benchmark
+  smoke, and requirement validation.
+- PR #109 squash-merged exactly once as `9c7eb2a`; Issue #108 closed as
+  completed. Post-merge `main` CI run 29971918657 passed the same complete
+  three-platform gate on exact merge commit `9c7eb2a`.
+- This isolated integration-state change updates only the registry, review
+  evidence, history index, and bounded handoff. It changes no production code,
+  test, manifest, schema, CI, build input, API, numerical behavior, dependency,
+  tag, or release.
 
 ## Validation state
 
@@ -47,25 +59,24 @@ records, benchmark reports, Git, and GitHub.
   all-target/all-feature Clippy, all-feature workspace tests, all 35 workspace
   Rustdoc tests, all 58 requirement checks, and complete diff whitespace
   validation.
-- Draft Ubuntu CI run 29970067600 passed on exact reviewed evidence head
-  `0108447`. The evidence tail after `0952729` changes only the requirement
-  change fragment, independent-review record, and bounded Markdown handoff.
-- Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI remain unexecuted and
-  are not claimed as passed.
+- Exact Ready-head run 29971311450 and post-merge `main` run 29971918657 are
+  both green on Windows, Ubuntu, and macOS, including every configured
+  benchmark smoke.
+- The isolated integration-state tree must pass the complete local standard
+  gate and exact Ready-head CI before it merges.
 
 ## Next task boundary
 
-Commit and push the evidence-only final re-review record, synchronize PR #109
-evidence, and mark it Ready. Wait for the complete Windows, Ubuntu, and macOS
-workspace and every benchmark-smoke workload on that exact Ready head.
-Squash-merge exactly once only if every required check is green, wait for the
-post-merge `main` gate, then record truthful integration state through an
-isolated branch and pull request. Do not begin another requirement.
+After the isolated integration-state pull request is green and merged, open a
+fresh task and perform the mandatory preflight. Use
+`cargo xtask requirements next`; do not start another requirement in this
+task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #108
-- Draft implementation: GitHub PR #109
+- Acceptance criteria and exclusions: closed GitHub Issue #108
+- Merged implementation: GitHub PR #109
+- Integration-state pull request: GitHub PR #110
 - Independent review, findings, and Repair evidence:
   `docs/reviews/PR-109-INDEPENDENT-REVIEW.md`
 - Requirement summary and benchmark baseline: `changes/REQ-TREND-002.md`
