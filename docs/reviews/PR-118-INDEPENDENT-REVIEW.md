@@ -556,3 +556,30 @@ remains `planned` until the exact Ready head passes the complete
 Windows/Ubuntu/macOS and benchmark-smoke CI, the PR is merged exactly once,
 and isolated integration-state evidence is recorded. This Review does not
 begin REQ-CENTER-001.
+
+## Integration evidence
+
+- Exact Ready evidence head:
+  `4c436b616f7be780dbe0350fc1649db0b436f821`
+- Ready CI run: 29998141180
+- Squash merge: `ce93a9862690399c36de7c34dcfd4cd4dbf2ee8c`
+- Post-merge `main` CI run: 29999737528
+- Integration-state branch: `codex/req-sparse-001-integration-state`
+- Integration-state pull request: pending creation
+
+Ready CI run 29998141180 passed the complete Windows, Ubuntu, and macOS
+workspace gate on exact Ready head `4c436b6`, including every configured
+backend combination, every benchmark-smoke workload, and requirement
+validation. PR #118 then squash-merged exactly once as `ce93a98`; Issue #117
+closed as completed. Post-merge `main` CI run 29999737528 passed the same
+complete three-platform gate on exact merge commit `ce93a98`.
+
+The isolated integration-state change updates only the requirement registry,
+this review evidence, the completed-history index, and the bounded handoff. It
+changes no production code, test, manifest, schema, CI, build input, public
+API, numerical behavior, dependency, tag, or release. The requirement may be
+recorded as `integrated` in this change because implementation, tests,
+documentation, applicable interfaces, diagnostics, independent review, exact
+Ready-head CI, the implementation merge, and post-merge `main` CI are
+complete. The integration-state pull request itself must still pass its
+complete local standard gate and exact Ready-head CI before it merges.
