@@ -6,11 +6,12 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review clean; mandatory Ready CI and integration sequence in progress
-- Requirement: REQ-SPARSE-001
-- Issue: #117
-- Branch: `codex/req-sparse-001-compact-support`
-- Draft pull request: #118
+- Mode: Integration state / REQ-SPARSE-001 complete
+- Requirement: REQ-SPARSE-001, closed Issue #117
+- Implementation pull request: #118, squash-merged as `ce93a98`
+- Integration-state branch: `codex/req-sparse-001-integration-state`
+- Integration-state pull request: #119 (Draft until exact Ready CI is green)
+- Exact Ready head: `4c436b6`
 - Clean independent re-review head:
   `917e6b3b5a12f48588cb5a34676cb2093988a8db`
 - Third Repair implementation and stable gate head:
@@ -19,10 +20,9 @@ records, benchmark reports, Git, and GitHub.
   SPARSE001-REV-003, P3 SPARSE001-REV-004, and P1 SPARSE001-REV-005
 - Open P0-P3 findings: none
 - Dependencies: REQ-SPIKE-003, REQ-FIELD-001, and REQ-KERNEL-004 are integrated
-- Registry status: `planned`; Ready CI, merge, and isolated integration-state
-  evidence remain required
+- Registry status in this change: `integrated`
 
-## Clean re-review result
+## Integration result
 
 - An isolated read-only `math_reviewer` inspected the complete base-to-head
   diff and independently closed SPARSE001-REV-005.
@@ -33,8 +33,18 @@ records, benchmark reports, Git, and GitHub.
 - The 64-by-64 all-supported between-limit regression independently obtains
   faer's AMD request and rejects after only the `Started` progress event.
 - No new P0-P3 finding was identified.
+- Exact Ready head `4c436b6` passed complete Windows, Ubuntu, and macOS CI run
+  29998141180, including every configured backend combination, benchmark
+  smoke, and requirement validation.
+- PR #118 squash-merged exactly once as `ce93a98`; Issue #117 closed as
+  completed. Post-merge `main` CI run 29999737528 passed the same complete
+  three-platform gate on exact merge commit `ce93a98`.
+- This isolated integration-state change updates only the registry, review
+  evidence, completed-history index, and bounded handoff. It changes no
+  production code, test, manifest, schema, CI, build input, API, numerical
+  behavior, dependency, tag, or release.
 
-## Evidence state
+## Validation state
 
 - Exact stable implementation head
   `85d7e99356fe3790f2a0d63430b78a4f68ad8a0f` passed all 44 all-feature core
@@ -49,23 +59,24 @@ records, benchmark reports, Git, and GitHub.
   The parent Review task independently passed the sparse tests,
   canonical-capacity regression, registry check, and PR whitespace check.
 - Draft CI run 29997122789 passed on exact reviewed head `917e6b3`.
-- This review evidence and handoff change only documentation and do not
-  invalidate the stable implementation gate.
-- Ready-only Windows/Ubuntu/macOS and benchmark-smoke CI has not run and is not
-  claimed.
+- Exact Ready-head run 29998141180 and post-merge `main` run 29999737528 are
+  both green on Windows, Ubuntu, and macOS, including every configured
+  benchmark smoke.
+- The isolated integration-state tree must pass the complete local standard
+  gate and exact Ready-head CI before it merges.
 
 ## Next task boundary
 
-Commit and push the synchronized clean-review evidence, update PR #118, and
-mark it ready. Wait for the complete Windows/Ubuntu/macOS and benchmark-smoke
-CI on that exact Ready head. Merge exactly once only if every required check
-is green, then record truthful integration state in an isolated change. Do not
-begin REQ-CENTER-001 in this task.
+Run the complete local standard gate on the final integration-state head. Mark
+PR #119 Ready, wait for exact Ready-head Windows, Ubuntu, macOS, and
+benchmark-smoke CI, merge only if green, and stop. Do not begin
+REQ-CENTER-001.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #117
-- Draft implementation: GitHub PR #118
+- Acceptance criteria and exclusions: closed GitHub Issue #117
+- Merged implementation: GitHub PR #118
+- Integration-state pull request: GitHub PR #119
 - Independent review and Repair evidence:
   `docs/reviews/PR-118-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-SPARSE-001.md`

@@ -45,6 +45,7 @@ available in Git history through commit `a2be099`.
 | REQ-TREND-002 | #108 | #109 | #110 | `docs/reviews/PR-109-INDEPENDENT-REVIEW.md` |
 | REQ-ANISO-003 | #111 | #112 | #113 | `docs/reviews/PR-112-INDEPENDENT-REVIEW.md` |
 | REQ-SPIKE-003 | #114 | #115 | #116 | `docs/reviews/PR-115-INDEPENDENT-REVIEW.md` |
+| REQ-SPARSE-001 | #117 | #118 | #119 | `docs/reviews/PR-118-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
@@ -68,5 +69,5 @@ REQ-PROJECT-001, completing M5. This integration-state change adds
 REQ-TREND-001 as the first integrated M6 requirement, REQ-ANISO-002 as the
 second, REQ-TREND-002 as the third, and REQ-ANISO-003 as the fourth. This
 integration-state change adds REQ-SPIKE-003 as the first integrated M7
-requirement; the next eligible atomic requirement must be selected by the
-registry in a fresh task.
+requirement and REQ-SPARSE-001 as the second; the next eligible atomic
+requirement must be selected by the registry in a fresh task.

@@ -683,12 +683,12 @@ requirements:
     tests: [dense-sparse-parity, support-boundaries, memory-scaling, backend-workspace-limits, coverage]
     docs: [docs/architecture/ARCHITECTURE.md, docs/reviews/PR-118-INDEPENDENT-REVIEW.md, rustdoc]
     rust_api: implemented
-    cli: "N/A: complete fitting CLI and schemas are deferred to M8"
-    c_api: "N/A: stable C ABI is deferred to M9"
-    cpp_api: "N/A: C++ wrapper is deferred to M9 and depends on the C ABI"
-    python_api: "N/A: Python bindings and parity are deferred to M9"
+    cli: "N/A: complete fitting CLI and schemas are M8 capabilities"
+    c_api: "N/A: stable C ABI is an M9 capability"
+    cpp_api: "N/A: C++ wrapper is an M9 capability and depends on the C ABI"
+    python_api: "N/A: Python bindings and parity are M9 capabilities"
     benchmark: implemented
-    status: planned
+    status: integrated
 
   - id: REQ-CENTER-001
     title: Rank-safe center selection
