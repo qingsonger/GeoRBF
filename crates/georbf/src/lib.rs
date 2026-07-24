@@ -55,6 +55,11 @@
 //! original-coordinate domain, refines analytic value and derivative brackets,
 //! reports isolated crossings and stationary tangencies, and preserves
 //! numerically degenerate level intervals instead of inventing isolated roots.
+//! Two-dimensional isoline extraction separately provides a fixed-diagonal
+//! marching-simplices reference and asymptotically disambiguated marching
+//! squares, refines value-sign-change edge brackets, deduplicates canonical
+//! grid intersections, reconstructs open and closed polylines, and retains
+//! requested-domain evidence for every open endpoint.
 //! Immutable multi-field projects retain independently fitted scalar fields in
 //! stable identifier order and expose validated reference-field inputs that
 //! delegate evaluation without adding topology or cross-field mathematics.
@@ -129,7 +134,11 @@ pub use center_selection::{
     CenterSelectionStrategy,
 };
 pub use contour::{
-    DegenerateLevelInterval, LevelPoint, LevelPointBound, LevelPointDiagnostics, LevelPointError,
+    DegenerateLevelInterval, IsolineAmbiguityDecider, IsolineAmbiguousCell,
+    IsolineBoundaryEndpoint, IsolineBoundarySide, IsolineCellPairing, IsolineDiagnostics,
+    IsolineDomainAxis, IsolineError, IsolineMethod, IsolinePolyline, IsolineReport, IsolineRequest,
+    IsolineRequestError, IsolineSettings, IsolineSettingsError, IsolineStorage, IsolineTolerance,
+    IsolineVertex, LevelPoint, LevelPointBound, LevelPointDiagnostics, LevelPointError,
     LevelPointInterval, LevelPointKind, LevelPointRefinement, LevelPointReport, LevelPointRequest,
     LevelPointRequestError, LevelPointSettings, LevelPointSettingsError, LevelPointStorage,
     LevelPointTolerance, StationaryLevelPoint,

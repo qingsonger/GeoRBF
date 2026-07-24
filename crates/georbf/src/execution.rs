@@ -71,6 +71,8 @@ pub enum ExecutionOperation {
     SampledThicknessValidation,
     /// One-dimensional fitted-field level-point extraction.
     LevelPointExtraction,
+    /// Two-dimensional fitted-field isoline extraction.
+    IsolineExtraction,
 }
 
 impl fmt::Display for ExecutionOperation {
@@ -83,6 +85,7 @@ impl fmt::Display for ExecutionOperation {
             Self::ConvexSolve => "convex solve",
             Self::SampledThicknessValidation => "sampled thickness validation",
             Self::LevelPointExtraction => "level-point extraction",
+            Self::IsolineExtraction => "isoline extraction",
         })
     }
 }
@@ -129,6 +132,8 @@ pub enum ExecutionStage {
     SampledThicknessEvaluation,
     /// One analytic fitted-field value-and-gradient evaluation completed.
     LevelPointEvaluation,
+    /// One analytic fitted-field value evaluation for an isoline completed.
+    IsolineEvaluation,
     /// The operation completed successfully.
     Completed,
 }
@@ -336,6 +341,10 @@ impl<'a> ProgressTracker<'a> {
         self.check_cancelled(stage)?;
         self.completed = self.completed.saturating_add(1).min(self.total);
         self.report(stage);
+        self.check_cancelled(stage)
+    }
+
+    pub(crate) fn checkpoint(&self, stage: ExecutionStage) -> Result<(), ExecutionError> {
         self.check_cancelled(stage)
     }
 
