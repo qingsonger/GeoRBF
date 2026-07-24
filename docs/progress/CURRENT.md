@@ -10,7 +10,8 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-CONTOUR-002, two-dimensional isolines
 - Issue: #135
 - Branch: `codex/req-contour-002-isolines`
-- Draft pull request: pending publication
+- Draft pull request: #136
+- Stable implementation head: `4e766af`
 - Dependency: REQ-MODEL-001 is integrated
 - Registry status: `in_progress`
 - Base `main`: `6e622c7`; post-merge CI run 30092831813 passed Windows,
@@ -67,14 +68,16 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-Commit and push the stable implementation, open a Draft PR, link its exact head
-and number in the registry and handoff, and stop. The next fresh task must
-perform an isolated mathematical/numerical Review of only REQ-CONTOUR-002 and
-its Draft PR. Do not begin REQ-CONTOUR-003.
+Stop this Implement task. The next fresh task must perform an isolated
+mathematical/numerical Review of only REQ-CONTOUR-002 and Draft PR #136,
+supplied only the requirement summary, dependency closure, normative
+documents, PR diff, and validation evidence. It must record findings without
+repairing production code in the same task. Do not begin REQ-CONTOUR-003.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #135
+- Draft implementation: GitHub PR #136
 - Core implementation: `crates/georbf/src/contour/isoline.rs`
 - Independent tests: `crates/georbf/tests/isoline.rs`
 - User guide: `docs/user-guide/ISOLINES.md`
