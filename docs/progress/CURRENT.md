@@ -6,73 +6,67 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement complete; fresh isolated Review required
+- Mode: Review complete; Repair required
 - Requirement: REQ-CONTOUR-001, one-dimensional level points
 - Issue: #132
 - Branch: `codex/req-contour-001-level-points`
 - Draft pull request: #133
+- Reviewed head: `323fcd9`
 - Stable implementation gate head: `b41e482`
 - Dependency: REQ-MODEL-001 is integrated
 - Registry status: `in_progress`
 
-## Implemented scope
+## Independent review result
 
-- `FittedField<1>` accepts a finite target level, finite original-coordinate
-  domain, explicit scan/refinement limits, and positive finite value,
-  coordinate, and derivative tolerances.
-- Every requested scan interval is deterministically midpoint-split. Analytic
-  fitted-value and original-coordinate derivative sign brackets are retained
-  and refined by bracket-preserving bisection.
-- Isolated points are sorted and tolerance-deduplicated with fitted value,
-  residual, analytic derivative, and boundary/crossing/stationary
-  classification. Non-level stationary candidates remain separately visible.
-- Adjacent scan segments satisfying both value and derivative tolerances are
-  merged into degenerate level intervals. The API emits no arbitrary isolated
-  point for a non-isolated solution set and reports that finite scan resolution
-  is not a global root-count proof.
-- The controlled serial path rejects unsupported thread counts before fitted
-  evaluation, reports deterministic progress, checks cancellation around every
-  analytic query, and returns no partial report on failure.
-- Rust and benchmark surfaces are implemented. CLI is N/A until an M8
-  versioned model/project input can supply a fitted field. C, C++, and Python
-  remain M9 work.
+The fresh isolated read-only `math_reviewer` found three defects on exact head
+`323fcd9`:
+
+- P1 CONTOUR001-REV-001: an away-from-centers-only gradient can change sign
+  across an unsampled nondifferentiable center. Coordinate-width termination
+  can then fabricate a stationary candidate and at-level stationary root.
+- P2 CONTOUR001-REV-002: `stationary_brackets()` records a near-zero scan node
+  with neighboring nonzero derivatives without requiring an endpoint sign
+  change, contradicting the API and guide's sign-bracket claim.
+- P3 CONTOUR001-REV-003: the transformed independent truth test verifies
+  original-coordinate locations but not the returned original-coordinate
+  derivative values or reflection sign.
+
+No other P0--P3 finding was identified. Complete counterexamples, exact lines,
+mathematical reasoning, and required regressions are in
+`docs/reviews/PR-133-INDEPENDENT-REVIEW.md`.
 
 ## Validation state
 
-- Seven independent integration tests pass for transformed
-  crossing roots, tangency, non-level stationarity, exact boundaries,
-  degenerate intervals, invalid settings, work overflow, center-limited
-  evaluation failure, refinement exhaustion, cancellation, serial policy, and
-  progress.
-- The focused contour rustdoc example and warning-denying all-target Clippy
-  pass.
-- Release benchmark smoke passes with two roots, one non-level stationary
-  point, and checksum `2.50500000000000000e2`.
-- The normal 2,000-iteration release benchmark records
-  125,356.75 ns/extraction and checksum `2.50500000000000000e5` on the documented
-  local environment.
-- Exact stable implementation head `b41e482` passed formatting, all-target and
-  all-feature workspace Clippy with warnings denied, the complete all-feature
-  workspace test suite, all workspace Rustdoc tests, and the 58-requirement
-  registry check after the final production, test, manifest, benchmark, and
-  CI-routing change.
-- The subsequent handoff-link change modifies only the requirement pull-request
-  number and this bounded handoff. It changes no production code, test,
-  manifest, schema, benchmark, CI, API, or numerical behavior.
+- The isolated reviewer and parent Review task independently passed all seven
+  all-feature contour integration tests, the focused Rustdoc example, release
+  benchmark smoke with checksum `2.50500000000000000e2`, the 58-requirement
+  registry check, and the complete PR whitespace check.
+- Draft CI run 30077398167 passed Ubuntu on exact reviewed head `323fcd9`.
+  The Ready-only Windows, Ubuntu, and macOS benchmark matrix was skipped as
+  designed and is not claimed.
+- Stable implementation head `b41e482` passed the complete standard local gate
+  after the final production, test, manifest, benchmark, CI, and registry
+  change.
+- This Review changes only Markdown review and bounded-handoff evidence, so
+  the immutable implementation-head gate remains applicable.
 
 ## Next task boundary
 
-Start a fresh isolated mathematical/numerical Review task for only Draft PR
-#133 and REQ-CONTOUR-001. Supply the reviewer the bounded requirement/dependency
-summary, relevant architecture contracts, base-to-head diff, seven independent
-tests, rustdoc, and benchmark evidence without this implementation reasoning
-transcript. Record findings but do not repair production code in that Review
-task. Do not begin REQ-CONTOUR-002.
+Start a fresh Repair task for only PR #133 findings
+CONTOUR001-REV-001 through CONTOUR001-REV-003. Add the specified independent
+regressions before the smallest production repair. Run focused checks during
+iteration, then one complete standard workspace gate after the last production
+or test change. Update the review record and this bounded handoff, commit,
+push, and stop for a fresh isolated re-review.
+
+Do not mark PR #133 Ready, merge it, change REQ-CONTOUR-001 to `integrated`, or
+begin REQ-CONTOUR-002 in the Repair task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #132
 - Draft implementation: GitHub PR #133
+- Independent review: `docs/reviews/PR-133-INDEPENDENT-REVIEW.md`
 - Core implementation: `crates/georbf/src/contour.rs`
 - Independent tests: `crates/georbf/tests/contour.rs`
 - User guide: `docs/user-guide/LEVEL_POINTS.md`
