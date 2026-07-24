@@ -12,7 +12,7 @@ records, benchmark reports, Git, and GitHub.
 - Implementation branch: `codex/req-perf-001-performance-baseline`
 - Implementation pull request: #130, squash-merged as `bee47fbf`
 - Integration-state branch: `codex/req-perf-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #131 (Draft until final exact-head gates pass)
 - Exact implementation Ready head: `7c36721`
 - Repair head: `c5b5b8d`
 - Re-reviewed evidence head: `b295e9d`
@@ -64,24 +64,24 @@ evidence are in
   benchmark smoke.
 - PR #130 was squash-merged exactly once as `bee47fbf`; Issue #129 closed as
   completed.
-- Post-merge `main` CI run 30072182895 is pending and is not yet claimed green.
+- Post-merge `main` CI run 30072182895 passed the same complete three-platform
+  gate on exact merge commit `bee47fbf`.
 - This isolated integration-state change modifies only the registry, completed
   history index, independent review evidence, and bounded handoff.
 
 ## Next task boundary
 
-Create the isolated integration-state pull request, link its number in this
-handoff and completed-history index, and wait for exact merge-commit `main` CI.
-Run the complete standard local gate on the final integration-state head, mark
-that PR Ready, wait for exact-head Windows, Ubuntu, and macOS correctness plus
-complete benchmark-smoke CI, and merge only if green. Then stop. Do not begin
-another requirement.
+Commit and push the linked integration evidence after the complete standard
+local gate passes on the final integration-state tree. Mark PR #131 Ready,
+wait for exact-head Windows, Ubuntu, and macOS correctness plus complete
+benchmark-smoke CI, and merge only if green. Then stop. Do not begin another
+requirement.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: closed GitHub Issue #129
 - Merged implementation: GitHub PR #130
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #131
 - Independent review: `docs/reviews/PR-130-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-PERF-001.md`
 - Benchmark and allocation evidence: `docs/benchmarks/REQ-PERF-001.md`

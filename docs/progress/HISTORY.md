@@ -48,7 +48,7 @@ available in Git history through commit `a2be099`.
 | REQ-SPARSE-001 | #117 | #118 | #119 | `docs/reviews/PR-118-INDEPENDENT-REVIEW.md` |
 | REQ-CENTER-001 | #120 | #121 | #122 | `docs/reviews/PR-121-INDEPENDENT-REVIEW.md` |
 | REQ-TUNE-001 | #126 | #127 | #128 | `docs/reviews/PR-127-INDEPENDENT-REVIEW.md` |
-| REQ-PERF-001 | #129 | #130 | pending | `docs/reviews/PR-130-INDEPENDENT-REVIEW.md` |
+| REQ-PERF-001 | #129 | #130 | #131 | `docs/reviews/PR-130-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,

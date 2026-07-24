@@ -261,10 +261,12 @@ performance baseline smoke on all three platforms.
 
 PR #130 was squash-merged exactly once as
 `bee47fbf2f29feb0d241cbfae404d28e7b312d54`; Issue #129 closed as completed.
-Post-merge `main` CI run 30072182895 is pending and is not yet claimed green.
+Post-merge `main` CI run 30072182895 passed the same complete Windows, Ubuntu,
+and macOS gate on exact merge commit `bee47fbf`.
 The isolated integration-state change updates only this review evidence,
 `requirements/v1.yaml`, `docs/progress/HISTORY.md`, and the bounded handoff.
 It changes no production code, test, manifest, schema, CI, build input, API,
 numerical behavior, dependency, tag, or release. REQ-PERF-001 becomes
 truthfully `integrated` only when that isolated change itself merges after its
-complete exact-head gate. No next requirement may begin here.
+complete exact-head gate. The isolated change is Draft PR #131. No next
+requirement may begin here.
