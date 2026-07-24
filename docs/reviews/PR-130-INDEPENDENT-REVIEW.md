@@ -6,11 +6,13 @@
 - Branch: `codex/req-perf-001-performance-baseline`
 - Base head: `01b9fa5eaf10e8cfa040eaf309c382c9d8803b6c`
 - Reviewed head: `293bcd15f44128dae6d067e9e1eb119bc5c2e0ae`
+- Repair head: `c5b5b8d56c0fae009345c74a0cee425571392ede`
 - Stable implementation gate head:
-  `236ec26a84b34d47c7082e1406722e28baf4679d`
+  `c5b5b8d56c0fae009345c74a0cee425571392ede`
 - Draft CI run: 30067909616
 - Review date: 2026-07-24
-- Result: changes requested; one P1, two P2, and one P3 finding remain
+- Original result: changes requested; one P1, two P2, and one P3 finding
+- Current state: all four findings repaired; fresh independent re-review required
 
 ## Scope and independence
 
@@ -111,6 +113,50 @@ with each pair visited once and no lower-triangle evaluation.
 
 No other P0, P1, P2, or P3 finding was identified.
 
+## Repair evidence
+
+Repair head `c5b5b8d56c0fae009345c74a0cee425571392ede` addresses only
+PERF001-REV-001 through PERF001-REV-004:
+
+- PERF001-REV-001: reusable sparse batch workspaces and their checked logical
+  memory now use `CompactNeighborhoodDiagnostics::indexed_terms`, and the
+  explicit workspace constructor reserves that complete pre-deduplication
+  capacity. A three-center, six-indexed-term regression verifies the corrected
+  48-byte scratch estimate, rejection at a limit strictly between the old and
+  corrected peaks, and zero allocations on the first batch-into query after
+  caller output capacity and workspace construction are established.
+- PERF001-REV-002: `try_evaluate_batch_into` clears caller output before
+  compatibility validation and explicitly clears it on the checked
+  center-count overflow path. The regression first populates output
+  successfully, then proves an incompatible workspace returns its structured
+  error with empty output.
+- PERF001-REV-003: ordinary value, value/gradient, and Hessian APIs construct
+  locality-scaled sparse scratch without a retained-global reservation.
+  Explicit reusable batch workspaces alone request the complete indexed-term
+  capacity. A one-local-hit regression proves identical one-point allocation
+  bytes for otherwise equivalent models with 3 and 128 retained centers.
+- PERF001-REV-004: the dense block regression now records every evaluator
+  invocation and proves exactly `n(n+1)/2` unique visits, no lower-triangle
+  call, and the complete deterministic 32-by-32 block order before separately
+  checking reflection symmetry.
+
+The repair task passed the eight-test focused performance suite, the
+mixed-value/derivative dense-sparse parity regression, and the release
+benchmark smoke. The smoke retained exact dense/sparse center visits of 864
+and 136 and unchanged checksums at one, two, and four workers.
+
+After the last production or test change, exact repair head `c5b5b8d` passed:
+
+- `cargo fmt --all -- --check`;
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`;
+- `cargo test --workspace --all-features`;
+- `cargo test --doc --workspace`; and
+- `cargo xtask requirements check` for all 58 v1 requirements.
+
+The repair did not mark the PR Ready, merge it, change REQ-PERF-001 from
+`in_progress`, or begin another requirement. A fresh isolated re-review must
+independently confirm closure and check for new P0--P3 findings.
+
 ## Independent truth and validation
 
 The isolated reviewer independently confirmed:
@@ -162,10 +208,7 @@ spawn and worker panic have structured code paths but no deterministic
 regression seam; this remains residual coverage risk rather than a separate
 finding.
 
-PR #130 must remain Draft and REQ-PERF-001 remains `in_progress`. A fresh
-Repair task must address only PERF001-REV-001 through PERF001-REV-004, add the
-specified regressions, run focused checks and one complete stable-head standard
-gate after the last production or test change, update this record and the
-bounded handoff, push, and stop for another fresh independent re-review. This
-Review does not repair production code, mark the PR ready, merge it, or begin
-another requirement.
+PR #130 remains Draft and REQ-PERF-001 remains `in_progress`. Repair head
+`c5b5b8d` and the evidence above supersede the original Repair instruction.
+The next task is a fresh isolated re-review; this Repair does not mark the PR
+Ready, merge it, or begin another requirement.

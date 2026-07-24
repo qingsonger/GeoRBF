@@ -6,61 +6,65 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; Repair required
+- Mode: Repair complete; fresh isolated re-review required
 - Requirement: REQ-PERF-001, dense and sparse performance baseline
 - Issue: #129
 - Branch: `codex/req-perf-001-performance-baseline`
 - Draft pull request: #130
+- Repair head: `c5b5b8d`
 - Reviewed head: `293bcd1`
-- Stable implementation gate head: `236ec26`
+- Stable implementation gate head: `c5b5b8d`
 - Dependencies: REQ-SPARSE-001, REQ-CENTER-001, and REQ-TUNE-001 are integrated
 - Registry status: `in_progress`
 
-## Independent review result
+## Repair result
 
-The fresh isolated read-only `math_reviewer` found four defects on exact head
-`293bcd1`:
+Exact repair head `c5b5b8d` addresses only the four findings recorded by the
+fresh isolated review of `293bcd1`:
 
-- P1 PERF001-REV-001: sparse workspace capacity uses retained centers, but the
-  R-tree yields atomic terms before center-ID deduplication. Multi-term centers
-  can therefore allocate during a query and exceed reported scratch bytes.
-- P2 PERF001-REV-002: `try_evaluate_batch_into` returns an incompatible-
-  workspace error before clearing previously populated caller output.
-- P2 PERF001-REV-003: the shared scratch constructor reserves all sparse
-  centers for ordinary one-point APIs, regressing local evaluation to
-  global-size allocation.
-- P3 PERF001-REV-004: the dense exact-work regression checks a closed-form
-  diagnostic and symmetry but never records actual evaluator visits.
+- PERF001-REV-001: batch workspace capacity and logical memory now use the
+  complete atomic indexed-term count. A multi-term regression checks the
+  corrected estimate, pre-allocation limit rejection, and zero first-query
+  allocation with caller capacity already established.
+- PERF001-REV-002: every fallible batch-into exit clears caller output,
+  including incompatible workspaces and checked center-count overflow.
+- PERF001-REV-003: one-point sparse APIs use locality-scaled scratch, while
+  explicit reusable batch workspaces reserve the complete index capacity.
+- PERF001-REV-004: the dense block test records every real evaluator visit and
+  proves unique upper-triangle work in deterministic block order.
 
-No other P0--P3 finding was identified. Complete scenarios, exact lines,
-independent truth, and required regressions are in
+Complete original findings, repair mapping, independent truth, and validation
+evidence are in
 `docs/reviews/PR-130-INDEPENDENT-REVIEW.md`.
 
 ## Validation state
 
-- The isolated reviewer and parent Review task independently passed the focused
-  performance suite and release benchmark smoke. The parent also passed all
-  georbf Rustdoc tests, the 58-requirement registry check, and the complete PR
-  whitespace check.
-- Draft CI run 30067909616 passed Ubuntu on exact reviewed head `293bcd1`.
-  The Ready-only Windows, Ubuntu, and macOS benchmark matrix was skipped as
-  designed and is not claimed.
-- Stable implementation head `236ec26` passed the complete standard local gate
-  after the final production, test, manifest, CI, and registry change.
-- This Review changes only Markdown review and bounded-handoff evidence, so the
-  immutable implementation-head gate remains applicable.
+- Focused repair validation passed all eight performance tests, the
+  mixed-value/derivative sparse parity test, and release benchmark smoke with
+  unchanged deterministic center visits and checksums.
+- Exact stable implementation head `c5b5b8d` passed formatting, all-target and
+  all-feature Clippy with warnings denied, the complete all-feature workspace
+  test suite, all workspace Rustdoc tests, and the 58-requirement registry
+  check after the final production and test change.
+- Draft CI run 30069460773 is remote evidence for the pre-repair review-record
+  head only and is not claimed for `c5b5b8d`. The repair push is expected to
+  trigger a new Draft Ubuntu correctness run; its result is not yet claimed.
+- The Ready-only Windows, Ubuntu, and macOS benchmark matrix has not run on the
+  repair head and is not claimed.
 
 ## Next task boundary
 
-Start a fresh Repair task for only PR #130 findings PERF001-REV-001 through
-PERF001-REV-004. Add the specified independent regressions before the smallest
-production repair. Run focused checks during iteration, then one complete
-standard workspace gate after the last production or test change. Update the
-review record and this bounded handoff, commit, push, and stop for a fresh
-isolated re-review.
+Start a fresh isolated Review task for only PR #130 and REQ-PERF-001. Supply
+the reviewer the bounded requirement/dependency summary, normative documents,
+base-to-repair diff, original findings, and exact validation evidence without
+the Repair reasoning transcript. Independently confirm PERF001-REV-001 through
+PERF001-REV-004 are closed and check for new P0--P3 findings.
 
-Do not mark PR #130 Ready, merge it, change REQ-PERF-001 to `integrated`, or
-begin another requirement in the Repair task.
+If any finding remains, record it and stop without repairing production code.
+Only after a clean isolated re-review and a green complete local gate may that
+fresh Review task mark PR #130 Ready, wait for exact-head Windows, Ubuntu, and
+macOS correctness plus benchmark-smoke CI, merge exactly once, and record
+truthful integration state. Do not begin another requirement in that task.
 
 ## Durable evidence
 
