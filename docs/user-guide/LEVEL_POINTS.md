@@ -18,11 +18,20 @@ decision explicit:
 
 Each requested scan interval is split at its midpoint. The report therefore
 records twice the requested number of examined segments. A fitted value sign
-change is a crossing bracket. An analytic original-coordinate derivative sign
-change is a stationary bracket. Bracket-preserving bisection stops only when
-the matching residual tolerance or coordinate-width tolerance is satisfied;
-otherwise the explicit iteration limit produces an error and no partial
-report.
+change is a crossing bracket. A stationary bracket has opposite-sign analytic
+original-coordinate derivatives at its endpoints, or collapses to one scan
+node whose derivative is exactly zero. A derivative that is merely within the
+requested tolerance remains stationary-candidate evidence and is not called a
+bracket unless its neighboring derivatives actually change sign.
+Bracket-preserving bisection stops only when the matching residual tolerance
+or coordinate-width tolerance is satisfied; otherwise the explicit iteration
+limit produces an error and no partial report.
+
+The fitted field must declare gradients
+`SupportedEverywhere`. GeoRBF rejects `SupportedAwayFromCenters` before the
+first evaluation because a domain may contain an unsampled nondifferentiable
+center and derivative-sign bisection requires a derivative defined throughout
+every retained bracket.
 
 The scan resolution is evidence, not a global root-count proof. A field may
 oscillate more than once between adjacent scan nodes. Increase the explicit
@@ -40,10 +49,10 @@ level residual, analytic derivative, and one classification:
 - `Stationary` for an at-level analytic stationary candidate, including a
   tangency.
 
-`stationary_points()` also retains non-level extrema or stationary candidates.
-Its `is_at_level` flag is based only on the explicit value tolerance.
-`diagnostics()` exposes every value and stationary bracket plus the actual
-fitted-field evaluation count.
+`stationary_points()` also retains non-level extrema or tolerance-small
+stationary candidates. Its `is_at_level` flag is based only on the explicit
+value tolerance. `diagnostics()` exposes every value bracket, every justified
+stationary bracket, and the actual fitted-field evaluation count.
 
 When both endpoints of adjacent examined segments satisfy the value and
 derivative tolerances, GeoRBF merges them into a

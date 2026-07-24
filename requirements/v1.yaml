@@ -752,7 +752,7 @@ requirements:
     priority: P0
     issue: 132
     pull_request: 133
-    tests: [analytic-roots, tangencies, degenerate-intervals, original-coordinate-transform, boundary-deduplication, invalid-settings, work-overflow, evaluation-failure, refinement-failure, cancellation-progress]
+    tests: [analytic-roots, tangencies, degenerate-intervals, stationary-bracket-validation, original-coordinate-transform, reflected-derivative, boundary-deduplication, invalid-settings, work-overflow, gradient-capability, evaluation-failure, refinement-failure, cancellation-progress]
     docs: [docs/user-guide/LEVEL_POINTS.md, docs/benchmarks/REQ-CONTOUR-001.md, rustdoc]
     rust_api: implemented
     cli: "N/A: the complete M8 CLI needs a versioned model/project input before it can supply a fitted field"

@@ -19,15 +19,20 @@ The operation uses the fitted model's existing analytic value-and-gradient
 path and original-coordinate chain rule. It performs no finite differences,
 implicit fit, coefficient mutation, hidden adjustment, topology
 reconstruction, schema I/O, or adapter-side mathematics. Its controlled form
-is deterministic and serial, rejects unsupported thread counts before
-evaluation, reports monotonic progress, checks cancellation around every
-fitted-field query, and returns no partial report on failure.
+is deterministic and serial, rejects unsupported thread counts and gradients
+that are not supported everywhere before evaluation, reports monotonic
+progress, checks cancellation around every fitted-field query, and returns no
+partial report on failure. Stationary diagnostics contain only actual
+derivative sign brackets or exact-zero scan nodes; a merely tolerance-small
+sample remains candidate evidence without being mislabeled as a bracket.
 
 Independent CPD-polynomial truth tests cover transformed crossing roots,
-non-level stationary evidence, an at-level tangency, exact domain-boundary
-deduplication, a constant degenerate level interval, invalid settings,
-work-budget overflow, center-limited analytic evaluation failure, refinement
-exhaustion, cancellation, serial-policy rejection, and progress semantics. The
+reflected original-coordinate derivative signs, non-level stationary evidence,
+an at-level tangency, exact domain-boundary deduplication, a constant
+degenerate level interval, invalid settings, work-budget overflow,
+away-from-centers gradient-capability rejection, a complete CPD cubic with a
+tolerance-small but strictly positive derivative, refinement exhaustion,
+cancellation, serial-policy rejection, and progress semantics. The
 `georbf.level_points.v1` benchmark exercises a fixed quadratic model and is
 routed to Ready/main three-platform smoke CI.
 

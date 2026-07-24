@@ -9,8 +9,8 @@ use georbf::{
     ConditionPolicy, CoordinateMetadata, CrsMetadata, DenseFactorization, DenseSolveOptions,
     Enforcement, ExecutionControl, ExecutionError, ExecutionOperation, ExecutionOptions,
     ExecutionStage, FieldProblem, FittedField, FunctionalAtom, FunctionalExpr,
-    FunctionalProvenance, FunctionalTerm, Handedness, KernelDefinition, LengthUnit,
-    LevelPointError, LevelPointKind, LevelPointRequest, LevelPointSettings, Matern,
+    FunctionalProvenance, FunctionalTerm, Handedness, KernelDefinition, KernelDerivativeCapability,
+    LengthUnit, LevelPointError, LevelPointKind, LevelPointRequest, LevelPointSettings, Matern,
     MaternSmoothness, ObservationFunctional, ObservationId, Point, PolyharmonicSpline,
     ProgressEvent, ProgressSink, Regularization, SemanticConstraint, SemanticExpression,
     SemanticProblemIr, SemanticProvenance, SemanticRelation, SourceLocation, VerticalDirection,
@@ -42,6 +42,14 @@ fn value_expression(point: f64, identifier: u64) -> Result<FunctionalExpr<1>, Bo
 fn polynomial_model(
     polynomial: impl Fn(f64) -> f64,
     normalization: AffineNormalization<1>,
+) -> Result<FittedField<1>, Box<dyn Error>> {
+    polynomial_model_with_power(polynomial, normalization, 4)
+}
+
+fn polynomial_model_with_power(
+    polynomial: impl Fn(f64) -> f64,
+    normalization: AffineNormalization<1>,
+    polyharmonic_power: u16,
 ) -> Result<FittedField<1>, Box<dyn Error>> {
     let sites = [-2.0, -0.5, 1.0, 2.5];
     let mut constraints = Vec::new();
@@ -86,7 +94,7 @@ fn polynomial_model(
         problem,
         metadata()?,
         normalization,
-        KernelDefinition::from(PolyharmonicSpline::try_new(4)?),
+        KernelDefinition::from(PolyharmonicSpline::try_new(polyharmonic_power)?),
         None,
         options,
     )?)
@@ -209,6 +217,65 @@ fn crossing_roots_and_stationary_evidence_use_original_coordinates() -> Result<(
     assert_eq!(report.diagnostics().examined_segments(), 16);
     assert_eq!(report.diagnostics().value_brackets().len(), 2);
     assert_eq!(report.diagnostics().stationary_brackets().len(), 1);
+
+    assert_close(report.points()[0].derivative(), -1.5, 1.0e-10);
+    assert_close(report.points()[1].derivative(), 1.5, 1.0e-10);
+    assert_close(stationary.derivative(), 0.0, 1.0e-10);
+
+    let reflected_model = polynomial_model(
+        polynomial,
+        AffineNormalization::try_new(Point::try_new([5.0])?, [[-2.0]])?,
+    )?;
+    let reflected = reflected_model.try_level_points(&request)?;
+    assert_eq!(reflected.points().len(), 2);
+    assert_close(reflected.points()[0].point().components()[0], 3.0, 1.0e-10);
+    assert_close(reflected.points()[0].derivative(), -1.5, 1.0e-10);
+    assert_close(reflected.points()[1].point().components()[0], 9.0, 1.0e-10);
+    assert_close(reflected.points()[1].derivative(), 1.5, 1.0e-10);
+    assert_eq!(reflected.stationary_points().len(), 1);
+    assert_close(
+        reflected.stationary_points()[0].point().components()[0],
+        6.0,
+        1.0e-10,
+    );
+    assert_close(reflected.stationary_points()[0].derivative(), 0.0, 1.0e-10);
+    Ok(())
+}
+
+#[test]
+fn tolerance_small_derivative_node_is_not_a_stationary_sign_bracket() -> Result<(), Box<dyn Error>>
+{
+    let epsilon = 1.0e-12;
+    let polynomial = |x: f64| x.powi(3) + epsilon * x;
+    let model = polynomial_model_with_power(polynomial, identity_normalization()?, 6)?;
+    let settings = LevelPointSettings::try_new(
+        NonZeroU32::MIN,
+        NonZeroU32::new(64).ok_or("refinement iterations")?,
+        1.0e-12,
+        1.0e-10,
+        1.0e-10,
+    )?;
+    let request = LevelPointRequest::try_new(1.0, -1.0, 1.0, settings)?;
+    let report = model.try_level_points(&request)?;
+
+    assert_eq!(report.stationary_points().len(), 1);
+    assert_close(
+        report.stationary_points()[0].point().components()[0],
+        0.0,
+        1.0e-12,
+    );
+    assert!(report.diagnostics().stationary_brackets().is_empty());
+    assert!(
+        report
+            .diagnostics()
+            .stationary_brackets()
+            .iter()
+            .all(|interval| {
+                let left = 3.0 * interval.lower().powi(2) + epsilon;
+                let right = 3.0 * interval.upper().powi(2) + epsilon;
+                left == 0.0 || right == 0.0 || left.is_sign_positive() != right.is_sign_positive()
+            })
+    );
     Ok(())
 }
 
@@ -366,12 +433,26 @@ fn work_overflow_and_center_capability_failure_return_no_report() -> Result<(), 
         Err(LevelPointError::WorkBudgetOverflow { .. })
     ));
 
+    let evaluation_request = LevelPointRequest::try_new(0.0, 1.0e100, 2.0e100, settings()?)?;
+    assert!(matches!(
+        model.try_level_points(&evaluation_request),
+        Err(LevelPointError::Evaluation { .. })
+    ));
+
     let center_limited = center_limited_model()?;
-    let center_request = LevelPointRequest::try_new(0.5, -1.0, 1.0, settings()?)?;
+    let center_settings = LevelPointSettings::try_new(
+        NonZeroU32::MIN,
+        NonZeroU32::new(64).ok_or("refinement iterations")?,
+        1.0e-6,
+        1.0e-8,
+        1.0e-12,
+    )?;
+    let center_request = LevelPointRequest::try_new(1.0, -1.0, 2.0, center_settings)?;
     assert!(matches!(
         center_limited.try_level_points(&center_request),
-        Err(LevelPointError::Evaluation { coordinate, .. })
-            if coordinate.to_bits() == 0.0_f64.to_bits()
+        Err(LevelPointError::UnsupportedGradientCapability {
+            capability: KernelDerivativeCapability::SupportedAwayFromCenters,
+        })
     ));
     Ok(())
 }

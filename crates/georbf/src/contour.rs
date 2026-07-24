@@ -38,6 +38,7 @@ use crate::execution::{
     ExecutionControl, ExecutionError, ExecutionOperation, ExecutionStage, ProgressTracker,
 };
 use crate::geometry::Point;
+use crate::kernel::KernelDerivativeCapability;
 use crate::model::{FittedField, FittedFieldEvaluationError, FittedFieldOutput};
 use crate::problem_ir::ExecutionOptions;
 
@@ -492,7 +493,11 @@ impl LevelPointDiagnostics {
         &self.value_brackets
     }
 
-    /// Borrows every analytic-derivative sign-change interval in scan order.
+    /// Borrows every analytic-derivative bracket in scan order.
+    ///
+    /// Each interval has opposite-sign endpoint derivatives or collapses to
+    /// one scan node whose derivative is exactly zero. A merely
+    /// tolerance-small derivative remains candidate evidence, not a bracket.
     pub fn stationary_brackets(&self) -> &[LevelPointInterval] {
         &self.stationary_brackets
     }
@@ -619,6 +624,11 @@ pub enum LevelPointError {
         /// Requested element capacity.
         requested: usize,
     },
+    /// Analytic gradients are not defined throughout the requested domain.
+    UnsupportedGradientCapability {
+        /// Reported fitted-field gradient capability.
+        capability: KernelDerivativeCapability,
+    },
     /// Reusable analytic-gradient evaluation storage could not be prepared.
     Preparation {
         /// Fitted-field failure.
@@ -680,6 +690,10 @@ impl fmt::Display for LevelPointError {
                 formatter,
                 "level-point {storage} could not reserve {requested} elements"
             ),
+            Self::UnsupportedGradientCapability { capability } => write!(
+                formatter,
+                "level-point extraction requires gradients supported everywhere, got {capability:?}"
+            ),
             Self::Preparation { source } => {
                 write!(
                     formatter,
@@ -723,6 +737,7 @@ impl Error for LevelPointError {
             Self::Execution(source) => Some(source),
             Self::WorkBudgetOverflow { .. }
             | Self::AllocationFailed { .. }
+            | Self::UnsupportedGradientCapability { .. }
             | Self::NonFiniteCoordinate { .. }
             | Self::NonFiniteResidual { .. }
             | Self::RefinementLimitReached { .. } => None,
@@ -739,7 +754,9 @@ impl FittedField<1> {
     ///
     /// # Errors
     ///
-    /// Returns structured preparation, evaluation, allocation, arithmetic, or
+    /// The field's gradient capability must be
+    /// [`KernelDerivativeCapability::SupportedEverywhere`]. Returns structured
+    /// capability, preparation, evaluation, allocation, arithmetic, or
     /// refinement failures. No partial report is returned.
     pub fn try_level_points(
         &self,
@@ -775,6 +792,17 @@ impl FittedField<1> {
             ExecutionOperation::LevelPointExtraction,
             execution,
             maximum_evaluations,
+        )?;
+        let gradient_capability = self.capabilities().gradient();
+        progress.observe_result(
+            ExecutionStage::Started,
+            if gradient_capability == KernelDerivativeCapability::SupportedEverywhere {
+                Ok(())
+            } else {
+                Err(LevelPointError::UnsupportedGradientCapability {
+                    capability: gradient_capability,
+                })
+            },
         )?;
         let scratch_result = self
             .try_evaluation_scratch(FittedFieldOutput::Gradient)
@@ -871,8 +899,7 @@ fn extract_level_points(
     let mut stationary_candidates =
         try_vec(stationary_capacity, LevelPointStorage::StationaryCandidates)?;
     let mut value_brackets = try_vec(segment_count, LevelPointStorage::ValueBrackets)?;
-    let mut stationary_brackets =
-        try_vec(stationary_capacity, LevelPointStorage::StationaryBrackets)?;
+    let mut stationary_brackets = try_vec(segment_count, LevelPointStorage::StationaryBrackets)?;
 
     for (index, sample) in samples.iter().copied().enumerate() {
         if inside_degenerate(sample.coordinate, &degenerate_intervals) {
@@ -888,7 +915,9 @@ fn extract_level_points(
             && isolated_stationary_node(index, &samples, request.settings.derivative_tolerance)
         {
             stationary_candidates.push(sample);
-            stationary_brackets.push(stationary_node_interval(index, &samples));
+            if let Some(bracket) = stationary_node_bracket(index, &samples) {
+                stationary_brackets.push(bracket);
+            }
         }
     }
 
@@ -1120,15 +1149,24 @@ fn isolated_stationary_node(
     left_is_nonzero || right_is_nonzero
 }
 
-fn stationary_node_interval(index: usize, samples: &[AnalyticSample]) -> LevelPointInterval {
-    let lower = index
+fn stationary_node_bracket(index: usize, samples: &[AnalyticSample]) -> Option<LevelPointInterval> {
+    let sample = samples[index];
+    let neighbors = index
         .checked_sub(1)
         .and_then(|previous| samples.get(previous))
-        .map_or(samples[index].coordinate, |sample| sample.coordinate);
-    let upper = samples
-        .get(index.saturating_add(1))
-        .map_or(samples[index].coordinate, |sample| sample.coordinate);
-    LevelPointInterval { lower, upper }
+        .zip(samples.get(index.saturating_add(1)));
+    if let Some((left, right)) = neighbors
+        && opposite_signs(left.derivative, right.derivative)
+    {
+        return Some(LevelPointInterval {
+            lower: left.coordinate,
+            upper: right.coordinate,
+        });
+    }
+    (sample.derivative == 0.0).then_some(LevelPointInterval {
+        lower: sample.coordinate,
+        upper: sample.coordinate,
+    })
 }
 
 fn deduplicate_samples(samples: &mut Vec<AnalyticSample>, coordinate_tolerance: f64) {
