@@ -304,8 +304,9 @@ where
 {
     /// Allocates one reusable serial value/gradient evaluation workspace.
     ///
-    /// Sparse models reserve enough center-index capacity for every retained
-    /// center, so exact support filtering cannot allocate inside a query.
+    /// Sparse models reserve enough center-index capacity for every atomic
+    /// term in the compact index, so exact support filtering cannot allocate
+    /// inside a query before center identifiers are deduplicated.
     ///
     /// # Errors
     ///
@@ -319,7 +320,10 @@ where
                 storage: crate::model::FittedFieldStorage::NeighborhoodCenters,
                 requested: sparse_center_capacity,
             })?;
-        let scratch = self.try_evaluation_scratch(FittedFieldOutput::Gradient)?;
+        let scratch = self.try_evaluation_scratch_with_center_capacity(
+            FittedFieldOutput::Gradient,
+            sparse_center_capacity,
+        )?;
         Ok(FittedFieldEvaluationWorkspace {
             sparse_center_capacity,
             polynomial_count,
@@ -344,6 +348,7 @@ where
         workspace: &mut FittedFieldEvaluationWorkspace<D>,
         output: &mut Vec<FittedFieldEvaluation<D>>,
     ) -> Result<usize, BatchEvaluationError<D>> {
+        output.clear();
         let (expected_sparse, expected_polynomial) = self.workspace_shape();
         if workspace.sparse_center_capacity != expected_sparse
             || workspace.polynomial_count != expected_polynomial
@@ -355,7 +360,6 @@ where
                 actual_polynomial_count: workspace.polynomial_count,
             });
         }
-        output.clear();
         output.try_reserve_exact(points.len()).map_err(|_| {
             BatchEvaluationError::AllocationFailed {
                 storage: BatchEvaluationStorage::Evaluations,
@@ -371,9 +375,12 @@ where
                     return Err(BatchEvaluationError::Evaluation { query, source });
                 }
             };
-            center_evaluations = center_evaluations
-                .checked_add(evaluation.center_evaluations())
-                .ok_or(BatchEvaluationError::MemoryEstimateOverflow)?;
+            let Some(total) = center_evaluations.checked_add(evaluation.center_evaluations())
+            else {
+                output.clear();
+                return Err(BatchEvaluationError::MemoryEstimateOverflow);
+            };
+            center_evaluations = total;
             output.push(evaluation);
         }
         Ok(center_evaluations)
@@ -594,7 +601,7 @@ where
     fn workspace_shape(&self) -> (usize, usize) {
         let sparse_center_capacity = match self.diagnostics().assembly() {
             FittedFieldAssemblyDiagnostics::Dense(_) => 0,
-            FittedFieldAssemblyDiagnostics::Sparse(_) => self.centers().len(),
+            FittedFieldAssemblyDiagnostics::Sparse(assembly) => assembly.neighborhood.indexed_terms,
         };
         let polynomial_count = self
             .polynomial_space()

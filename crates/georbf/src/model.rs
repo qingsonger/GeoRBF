@@ -1025,21 +1025,31 @@ where
     }
 
     #[allow(clippy::too_many_lines)]
-    /// Allocates reusable polynomial storage for a crate-internal batch.
+    /// Allocates locality-scaled reusable storage for one-point evaluation.
     pub(crate) fn try_evaluation_scratch(
         &self,
         output: FittedFieldOutput,
+    ) -> Result<FittedFieldEvaluationScratch<D>, FittedFieldEvaluationError<D>> {
+        self.try_evaluation_scratch_with_center_capacity(output, 0)
+    }
+
+    #[allow(clippy::too_many_lines)]
+    /// Allocates reusable storage with an explicit sparse candidate capacity.
+    pub(crate) fn try_evaluation_scratch_with_center_capacity(
+        &self,
+        output: FittedFieldOutput,
+        sparse_center_capacity: usize,
     ) -> Result<FittedFieldEvaluationScratch<D>, FittedFieldEvaluationError<D>> {
         let count = self
             .polynomial_space()
             .map_or(0, PolynomialSpace::term_count);
         let mut center_indices = Vec::new();
-        if self.compact_neighborhood.is_some() {
+        if self.compact_neighborhood.is_some() && sparse_center_capacity != 0 {
             center_indices
-                .try_reserve_exact(self.center_count)
+                .try_reserve_exact(sparse_center_capacity)
                 .map_err(|_| FittedFieldEvaluationError::AllocationFailed {
                     storage: FittedFieldStorage::NeighborhoodCenters,
-                    requested: self.center_count,
+                    requested: sparse_center_capacity,
                 })?;
         }
         Ok(FittedFieldEvaluationScratch {

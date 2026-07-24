@@ -18,11 +18,14 @@ write disjoint output ranges, preserve input order, and never configure a
 global thread pool. A worker creation failure or panic is structured; a query
 failure retains its exact input index and returns no partial batch.
 
-Sparse workspaces reserve the complete retained-center capacity before the
-first query, so exact rstar candidate lookup, independent support filtering,
-sorting, and deduplication cannot grow the center-index vector per point.
-Dense batches visit every center. Sparse batches visit only exact supported
-centers and retain their existing center-count evidence in every result.
+Sparse batch workspaces reserve the complete atomic indexed-term capacity
+before the first query, so exact rstar candidate lookup, independent support
+filtering, sorting, and center-ID deduplication cannot grow the center-index
+vector per point, including for multi-term center representers. Ordinary
+one-point sparse APIs retain locality-scaled scratch instead of reserving the
+complete global index. Dense batches visit every center. Sparse batches visit
+only exact supported centers and retain their existing center-count evidence
+in every result.
 Repeated serial calls with warmed workspace and output capacity allocate zero
 times. The convenience path makes a constant two allocations for a dense
 single-worker batch, independent of whether the input contains four or 256
@@ -37,11 +40,13 @@ misreported as GeoRBF-owned payload. A limit below the estimate fails before
 workspace or output allocation.
 
 Independent integration tests cover D=1/D=2/D=3 dense scalar parity,
-bit-identical one/four-worker results, exact 33-center block counts and
-symmetry, sparse locality and thread determinism, exact dense and sparse
-workspace formulas, pre-allocation memory rejection, empty batches,
-incompatible workspace rejection, zero-allocation warmed reuse, and
-batch-length-independent allocation counts. The versioned
+bit-identical one/four-worker results, exact unique 33-center block visits in
+deterministic upper-triangle order and symmetry, sparse locality and thread
+determinism, multi-term indexed capacity, exact dense and sparse workspace
+formulas, pre-allocation memory rejection, empty batches, stale-output
+clearing after incompatible-workspace rejection, locality-scaled one-point
+scratch, zero-allocation reusable batches, and batch-length-independent
+allocation counts. The versioned
 `georbf.performance.v1` benchmark uses fixed D=3 dense and compact-sparse
 models, fixed ordered queries, one/two/four workers, exact center-visit counts,
 checked memory, and full value/gradient checksums. Ready and `main` CI run its

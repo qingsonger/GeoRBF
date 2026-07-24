@@ -1,5 +1,6 @@
 //! Independent block, batch, thread, sparse-locality, and memory tests.
 
+use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt;
 use std::mem::size_of;
@@ -144,6 +145,60 @@ fn sparse_model() -> Result<FittedField<3>, Box<dyn Error>> {
     )?)
 }
 
+fn multi_term_sparse_model() -> Result<FittedField<3>, Box<dyn Error>> {
+    let mut constraints = Vec::new();
+    let mut centers = Vec::new();
+    for index in 0..3 {
+        let ordinal = f64::from(u32::try_from(index)?);
+        let first = Point::try_new([ordinal * 0.2, 0.0, 0.0])?;
+        let second = Point::try_new([ordinal * 0.2 + 0.05, 0.0, 0.0])?;
+        let identifier = u64::try_from(index + 1)?;
+        let expression = FunctionalExpr::try_new([
+            FunctionalTerm::try_new(
+                1.0,
+                FunctionalAtom::value(first, FunctionalProvenance::new(identifier * 2)),
+            )?,
+            FunctionalTerm::try_new(
+                0.5,
+                FunctionalAtom::value(second, FunctionalProvenance::new(identifier * 2 + 1)),
+            )?,
+        ])?;
+        centers.push(CenterRepresenter::new(expression.clone()));
+        constraints.push(SemanticConstraint::try_new(
+            SemanticProvenance::try_new(
+                ObservationId::new(identifier),
+                SourceLocation::try_new(
+                    "performance-multi-term.csv".to_owned(),
+                    NonZeroUsize::new(index + 1).ok_or("line")?,
+                )?,
+                "m".to_owned(),
+                format!("field.equalities[{index}]"),
+                Some("multi-term performance test".to_owned()),
+            )?,
+            SemanticRelation::Equality {
+                expression: SemanticExpression::try_new(
+                    ObservationFunctional::new(expression),
+                    0.0,
+                )?,
+                target: ordinal,
+            },
+            Enforcement::Hard,
+        )?);
+    }
+    let field = FieldProblem::try_new(
+        SemanticProblemIr::try_new(constraints, ExecutionOptions::default())?,
+        centers,
+    )?;
+    Ok(FittedField::try_fit_sparse(
+        field,
+        metadata()?,
+        normalization()?,
+        Wendland::try_new(WendlandSmoothness::C4, 1.0)?,
+        None,
+        sparse_options()?,
+    )?)
+}
+
 fn queries<const D: usize>(count: usize) -> Result<Vec<Point<D>>, Box<dyn Error>>
 where
     georbf::Dim<D>: georbf::SupportedDimension,
@@ -198,10 +253,15 @@ fn upper_triangle_blocks_evaluate_and_reflect_each_pair_once() -> TestResult {
     let count = DENSE_ASSEMBLY_BLOCK_SIZE + 1;
     let field = problem::<1>(count, 0.25)?;
     let kernel = Gaussian::try_new(0.8)?;
+    let mut visited = Vec::new();
     let system = field.try_assemble(kernel.metadata(), |query, center, demanded| {
         if demanded != KernelDerivativeOrder::Value {
             return Err(EvaluatorError("unexpected derivative demand".to_owned()));
         }
+        visited.push((
+            query.components()[0].to_bits(),
+            center.components()[0].to_bits(),
+        ));
         let separation = RadialSeparation::try_new(query, center)
             .map_err(|error| EvaluatorError(error.to_string()))?;
         if separation.is_center() {
@@ -237,6 +297,37 @@ fn upper_triangle_blocks_evaluate_and_reflect_each_pair_once() -> TestResult {
         diagnostics.normalized_asymmetry.to_bits(),
         0.0_f64.to_bits()
     );
+    let unique = visited.iter().copied().collect::<BTreeSet<_>>();
+    assert_eq!(visited.len(), count * (count + 1) / 2);
+    assert_eq!(unique.len(), visited.len());
+    assert!(
+        visited
+            .iter()
+            .all(|(row, column)| f64::from_bits(*row) <= f64::from_bits(*column))
+    );
+    let mut expected = Vec::new();
+    for block_row in 0..count.div_ceil(DENSE_ASSEMBLY_BLOCK_SIZE) {
+        let row_start = block_row * DENSE_ASSEMBLY_BLOCK_SIZE;
+        let row_end = (row_start + DENSE_ASSEMBLY_BLOCK_SIZE).min(count);
+        for block_column in block_row..count.div_ceil(DENSE_ASSEMBLY_BLOCK_SIZE) {
+            let column_start = block_column * DENSE_ASSEMBLY_BLOCK_SIZE;
+            let column_end = (column_start + DENSE_ASSEMBLY_BLOCK_SIZE).min(count);
+            for row in row_start..row_end {
+                let first_column = if block_row == block_column {
+                    row
+                } else {
+                    column_start
+                };
+                for column in first_column..column_end {
+                    expected.push((
+                        (f64::from(u32::try_from(row)?) * 0.25).to_bits(),
+                        (f64::from(u32::try_from(column)?) * 0.25).to_bits(),
+                    ));
+                }
+            }
+        }
+    }
+    assert_eq!(visited, expected);
     for row in 0..count {
         for column in 0..count {
             assert_eq!(
@@ -303,6 +394,45 @@ fn logical_memory_is_exact_and_rejected_before_batch_allocation() -> TestResult 
 }
 
 #[test]
+fn sparse_multi_term_workspace_uses_indexed_terms_without_query_allocation() -> TestResult {
+    let model = multi_term_sparse_model()?;
+    let FittedFieldAssemblyDiagnostics::Sparse(assembly) = model.diagnostics().assembly() else {
+        return Err("expected sparse assembly".into());
+    };
+    assert_eq!(model.centers().len(), 3);
+    assert_eq!(assembly.neighborhood.indexed_terms, 6);
+
+    let points = [Point::try_new([0.2, 0.0, 0.0])?];
+    let memory = model.try_batch_memory_diagnostics(1, batch_options(1, MEMORY_LIMIT)?)?;
+    assert_eq!(
+        memory.workspace_bytes_per_worker,
+        assembly.neighborhood.indexed_terms * size_of::<usize>()
+    );
+    let old_peak = memory.output_bytes + model.centers().len() * size_of::<usize>();
+    assert!(old_peak < memory.estimated_peak_bytes);
+    let limited = batch_options(1, old_peak + 1)?;
+    assert!(matches!(
+        model.try_evaluate_batch(&points, limited),
+        Err(BatchEvaluationError::MemoryLimitExceeded {
+            estimated_peak_bytes,
+            limit_bytes,
+        }) if estimated_peak_bytes == memory.estimated_peak_bytes
+            && limit_bytes == limited.memory_limit_bytes().get()
+    ));
+
+    let mut workspace = model.try_evaluation_workspace()?;
+    let mut output = Vec::with_capacity(points.len());
+    let mut result = None;
+    let allocation = allocation_counter::measure(|| {
+        result = Some(model.try_evaluate_batch_into(&points, &mut workspace, &mut output));
+    });
+    assert_eq!(result.ok_or("workspace measurement did not run")??, 3);
+    assert_eq!(allocation.count_total, 0);
+    assert_eq!(allocation.bytes_total, 0);
+    Ok(())
+}
+
+#[test]
 fn caller_workspace_reuses_capacity_and_clears_partial_failures() -> TestResult {
     let dense = dense_model::<1>()?;
     let sparse = sparse_model()?;
@@ -317,10 +447,41 @@ fn caller_workspace_reuses_capacity_and_clears_partial_failures() -> TestResult 
     assert_eq!(output.capacity(), capacity);
     let dense_three = dense_model::<3>()?;
     let mut incompatible = dense_three.try_evaluation_workspace()?;
+    let mut stale_output = Vec::new();
+    dense_three.try_evaluate_batch_into(&queries::<3>(2)?, &mut incompatible, &mut stale_output)?;
+    assert!(!stale_output.is_empty());
     assert!(matches!(
-        sparse.try_evaluate_batch_into(&queries::<3>(1)?, &mut incompatible, &mut Vec::new()),
+        sparse.try_evaluate_batch_into(&queries::<3>(1)?, &mut incompatible, &mut stale_output,),
         Err(BatchEvaluationError::IncompatibleWorkspace { .. })
     ));
+    assert!(stale_output.is_empty());
+    Ok(())
+}
+
+fn one_point_sparse_allocation_bytes(center_count: usize) -> Result<u64, Box<dyn Error>> {
+    let model = FittedField::try_fit_sparse(
+        problem(center_count, 10.0)?,
+        metadata()?,
+        normalization()?,
+        Wendland::try_new(WendlandSmoothness::C4, 0.76)?,
+        None,
+        sparse_options()?,
+    )?;
+    let query = Point::try_new([0.0, 0.03125, 0.0625])?;
+    let mut evaluation = None;
+    let allocation = allocation_counter::measure(|| {
+        evaluation = Some(model.try_evaluate(query));
+    });
+    let completed = evaluation.ok_or("point measurement did not run")??;
+    assert_eq!(completed.center_evaluations(), 1);
+    Ok(allocation.bytes_total)
+}
+
+#[test]
+fn one_point_sparse_scratch_allocation_is_locality_scaled() -> TestResult {
+    let small = one_point_sparse_allocation_bytes(3)?;
+    let large = one_point_sparse_allocation_bytes(128)?;
+    assert_eq!(large, small);
     Ok(())
 }
 
