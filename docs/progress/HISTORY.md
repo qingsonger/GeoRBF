@@ -48,6 +48,7 @@ available in Git history through commit `a2be099`.
 | REQ-SPARSE-001 | #117 | #118 | #119 | `docs/reviews/PR-118-INDEPENDENT-REVIEW.md` |
 | REQ-CENTER-001 | #120 | #121 | #122 | `docs/reviews/PR-121-INDEPENDENT-REVIEW.md` |
 | REQ-TUNE-001 | #126 | #127 | #128 | `docs/reviews/PR-127-INDEPENDENT-REVIEW.md` |
+| REQ-PERF-001 | #129 | #130 | pending | `docs/reviews/PR-130-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
@@ -71,7 +72,7 @@ REQ-PROJECT-001, completing M5. This integration-state change adds
 REQ-TREND-001 as the first integrated M6 requirement, REQ-ANISO-002 as the
 second, REQ-TREND-002 as the third, and REQ-ANISO-003 as the fourth. This
 integration-state change adds REQ-SPIKE-003 as the first integrated M7
-requirement, REQ-SPARSE-001 as the second, and REQ-CENTER-001 as the third; the
-integration-state change adds REQ-TUNE-001 as the fourth. The next eligible
-atomic requirement must be selected by the registry in a fresh task after PR
-#128 integrates.
+requirement, REQ-SPARSE-001 as the second, REQ-CENTER-001 as the third, and
+REQ-TUNE-001 as the fourth. This integration-state change adds REQ-PERF-001 as
+the fifth. The next eligible atomic requirement must be selected by the
+registry in a fresh task after this integration-state pull request merges.
