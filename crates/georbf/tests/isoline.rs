@@ -301,6 +301,122 @@ fn marching_simplices_reference_preserves_circle_topology() -> Result<(), Box<dy
 }
 
 #[test]
+fn tolerance_accepted_brackets_keep_distinct_edge_identities() -> Result<(), Box<dyn Error>> {
+    const DELTA: f64 = 1.0e-6;
+
+    let model = polynomial_model(|x, _| x * x - DELTA, identity_normalization()?)?;
+    let bracket_settings = IsolineSettings::try_new(
+        NonZeroU32::new(2).ok_or("x cells")?,
+        NonZeroU32::MIN,
+        NonZeroU32::new(64).ok_or("refinement iterations")?,
+        2.0 * DELTA,
+        1.0e-8,
+    )?;
+    let report = model.try_isolines(&request(
+        IsolineMethod::DisambiguatedMarchingSquares,
+        [-1.0, -1.0],
+        [1.0, 1.0],
+        bracket_settings,
+    )?)?;
+
+    assert_eq!(report.polylines().len(), 2);
+    assert!(report.polylines().iter().all(|line| !line.is_closed()));
+    assert_eq!(report.diagnostics().unique_segments(), 2);
+    assert_eq!(report.diagnostics().deduplicated_vertices(), 4);
+    assert_eq!(report.diagnostics().boundary_endpoints().len(), 4);
+    assert_ne!(
+        report.polylines()[0].vertex_indices(),
+        report.polylines()[1].vertex_indices()
+    );
+    Ok(())
+}
+
+#[test]
+fn exact_square_corner_intersections_form_one_ordinary_segment() -> Result<(), Box<dyn Error>> {
+    let model = polynomial_model(|x, y| x - y, identity_normalization()?)?;
+    let report = model.try_isolines(&request(
+        IsolineMethod::DisambiguatedMarchingSquares,
+        [0.0, 0.0],
+        [1.0, 1.0],
+        settings(1)?,
+    )?)?;
+
+    assert_eq!(report.polylines().len(), 1);
+    assert_eq!(report.polylines()[0].vertex_indices().len(), 2);
+    assert!(!report.polylines()[0].is_closed());
+    assert_eq!(report.diagnostics().deduplicated_vertices(), 2);
+    let endpoint_sides = report
+        .diagnostics()
+        .boundary_endpoints()
+        .iter()
+        .map(georbf::IsolineBoundaryEndpoint::sides)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        endpoint_sides,
+        [
+            &[IsolineBoundarySide::Left, IsolineBoundarySide::Bottom][..],
+            &[IsolineBoundarySide::Right, IsolineBoundarySide::Top][..],
+        ]
+    );
+    Ok(())
+}
+
+#[test]
+fn final_bisection_can_first_satisfy_coordinate_tolerance() -> Result<(), Box<dyn Error>> {
+    let model = polynomial_model(|x, _| x - 0.25, identity_normalization()?)?;
+    let final_iteration_settings = IsolineSettings::try_new(
+        NonZeroU32::MIN,
+        NonZeroU32::MIN,
+        NonZeroU32::MIN,
+        1.0e-16,
+        1.0,
+    )?;
+    let report = model.try_isolines(&request(
+        IsolineMethod::DisambiguatedMarchingSquares,
+        [-1.0, -1.0],
+        [1.0, 1.0],
+        final_iteration_settings,
+    )?)?;
+    assert_eq!(report.polylines().len(), 1);
+    assert!(
+        report
+            .vertices()
+            .iter()
+            .all(|vertex| vertex.point().components()[0] == 0.0)
+    );
+
+    let failing_tolerance = 0.999;
+    let insufficient = IsolineSettings::try_new(
+        NonZeroU32::MIN,
+        NonZeroU32::MIN,
+        NonZeroU32::MIN,
+        1.0e-16,
+        failing_tolerance,
+    )?;
+    let result = model.try_isolines(&request(
+        IsolineMethod::DisambiguatedMarchingSquares,
+        [-1.0, -1.0],
+        [1.0, 1.0],
+        insufficient,
+    )?);
+    let Err(error) = result else {
+        return Err("one bisection unexpectedly satisfied the stricter tolerance".into());
+    };
+    match error {
+        IsolineError::RefinementLimitReached { first, second, .. } => {
+            let first = first.components();
+            let second = second.components();
+            let width = (second[0] - first[0])
+                .abs()
+                .max((second[1] - first[1]).abs());
+            assert!(width > failing_tolerance);
+        }
+        other => return Err(format!("unexpected error: {other}").into()),
+    }
+    Ok(())
+}
+
+#[test]
 fn invalid_input_degenerate_edges_and_refinement_exhaustion_are_structured()
 -> Result<(), Box<dyn Error>> {
     assert!(matches!(

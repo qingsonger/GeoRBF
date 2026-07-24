@@ -927,29 +927,29 @@ impl FittedField<2> {
         let mut scratch = progress.observe_result(ExecutionStage::Started, scratch_result)?;
         let mut evaluations = 0_usize;
         let mut report = extract_isolines(request, work, |point| {
-            let result = self
-                .try_value_with_scratch(point, &mut scratch)
-                .map_err(|source| IsolineError::Evaluation {
-                    point,
-                    source: Box::new(source),
-                })
-                .and_then(|value| {
-                    let residual = value - request.level;
-                    if residual.is_finite() {
-                        Ok(Sample {
-                            point,
-                            value,
-                            residual,
-                        })
-                    } else {
-                        Err(IsolineError::NonFiniteResidual {
-                            point,
-                            value,
-                            level: request.level,
-                        })
-                    }
-                });
-            let sample = progress.finish_work(ExecutionStage::IsolineEvaluation, result)?;
+            let sample = finish_value_query(&mut progress, || {
+                self.try_value_with_scratch(point, &mut scratch)
+                    .map_err(|source| IsolineError::Evaluation {
+                        point,
+                        source: Box::new(source),
+                    })
+                    .and_then(|value| {
+                        let residual = value - request.level;
+                        if residual.is_finite() {
+                            Ok(Sample {
+                                point,
+                                value,
+                                residual,
+                            })
+                        } else {
+                            Err(IsolineError::NonFiniteResidual {
+                                point,
+                                value,
+                                level: request.level,
+                            })
+                        }
+                    })
+            })?;
             evaluations = evaluations.saturating_add(1);
             Ok(sample)
         })?;
@@ -957,6 +957,15 @@ impl FittedField<2> {
         progress.complete()?;
         Ok(report)
     }
+}
+
+fn finish_value_query<T>(
+    progress: &mut ProgressTracker<'_>,
+    query: impl FnOnce() -> Result<T, IsolineError>,
+) -> Result<T, IsolineError> {
+    progress.checkpoint(ExecutionStage::IsolineEvaluation)?;
+    let result = query();
+    progress.finish_work(ExecutionStage::IsolineEvaluation, result)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -1204,12 +1213,7 @@ fn emit_square(
     raw_segments: &mut Vec<RawSegment>,
     ambiguous_cells: &mut Vec<IsolineAmbiguousCell>,
 ) -> Result<(), IsolineError> {
-    let mut intersections = [None; 4];
-    let mut count = 0_usize;
-    for edge in edges.into_iter().flatten() {
-        intersections[count] = Some(edge);
-        count += 1;
-    }
+    let (intersections, count) = unique_endpoints(edges);
     match count {
         0 => Ok(()),
         2 => {
@@ -1245,9 +1249,8 @@ fn emit_square(
             } else {
                 IsolineCellPairing::BottomLeftAndRightTop
             };
-            let endpoint = |index: usize| {
-                intersections[index].ok_or_else(|| cell_error(request, column, row, count))
-            };
+            let endpoint =
+                |index: usize| edges[index].ok_or_else(|| cell_error(request, column, row, count));
             match pairing {
                 IsolineCellPairing::BottomRightAndTopLeft => {
                     raw_segments.push(RawSegment {
@@ -1291,12 +1294,7 @@ fn emit_simplex(
     edges: [Option<Endpoint>; 3],
     raw_segments: &mut Vec<RawSegment>,
 ) -> Result<(), IsolineError> {
-    let mut intersections = [None; 3];
-    let mut count = 0_usize;
-    for edge in edges.into_iter().flatten() {
-        intersections[count] = Some(edge);
-        count += 1;
-    }
+    let (intersections, count) = unique_endpoints(edges);
     match count {
         0 => Ok(()),
         2 => {
@@ -1324,6 +1322,25 @@ fn emit_simplex(
             intersections: count,
         }),
     }
+}
+
+fn unique_endpoints<const N: usize>(
+    edges: [Option<Endpoint>; N],
+) -> ([Option<Endpoint>; N], usize) {
+    let mut intersections: [Option<Endpoint>; N] = [None; N];
+    let mut count = 0_usize;
+    for endpoint in edges.into_iter().flatten() {
+        if intersections[..count]
+            .iter()
+            .flatten()
+            .any(|existing| existing.key == endpoint.key)
+        {
+            continue;
+        }
+        intersections[count] = Some(endpoint);
+        count += 1;
+    }
+    (intersections, count)
 }
 
 fn ambiguity_decider(corners: [Sample; 4]) -> (f64, IsolineAmbiguityDecider) {
@@ -1408,12 +1425,12 @@ fn edge_intersection(
     {
         return Ok(Some(if first_absolute <= second_absolute {
             Endpoint {
-                key: first_key,
+                key: edge_key,
                 sample: first,
             }
         } else {
             Endpoint {
-                key: second_key,
+                key: edge_key,
                 sample: second,
             }
         }));
@@ -1442,15 +1459,16 @@ fn refine_edge(
                 components: middle_components,
             })?;
         let sample = evaluate(middle)?;
-        if sample.residual.abs() <= request.settings.value_tolerance
-            || bracket_width(first.point, second.point) <= request.settings.coordinate_tolerance
-        {
+        if sample.residual.abs() <= request.settings.value_tolerance {
             return Ok(sample);
         }
         if same_sign(sample.residual, first.residual) {
             first = sample;
         } else {
             second = sample;
+        }
+        if bracket_width(first.point, second.point) <= request.settings.coordinate_tolerance {
+            return Ok(sample);
         }
     }
     Err(IsolineError::RefinementLimitReached {
@@ -1475,7 +1493,7 @@ fn build_report(
         endpoint_records.push((segment.first.key, segment.first.sample));
         endpoint_records.push((segment.second.key, segment.second.sample));
     }
-    endpoint_records.sort_by_key(|record| record.0);
+    sort_endpoint_records(&mut endpoint_records);
     endpoint_records.dedup_by(|later, earlier| {
         if later.0 != earlier.0 {
             return false;
@@ -1587,7 +1605,7 @@ fn build_report(
             )?);
         }
     }
-    polylines.sort_by(|left, right| left.vertex_indices.cmp(&right.vertex_indices));
+    sort_polylines(&mut polylines);
     let open_polylines = polylines.iter().filter(|line| !line.closed).count();
     let closed_polylines = polylines.len().saturating_sub(open_polylines);
 
@@ -1610,6 +1628,26 @@ fn build_report(
         vertices,
         polylines,
     })
+}
+
+fn sort_endpoint_records(records: &mut [(IntersectionKey, Sample)]) {
+    records.sort_unstable_by(|left, right| {
+        left.0
+            .cmp(&right.0)
+            .then_with(|| left.1.residual.abs().total_cmp(&right.1.residual.abs()))
+            .then_with(|| left.1.point.components()[0].total_cmp(&right.1.point.components()[0]))
+            .then_with(|| left.1.point.components()[1].total_cmp(&right.1.point.components()[1]))
+            .then_with(|| left.1.value.total_cmp(&right.1.value))
+            .then_with(|| left.1.residual.total_cmp(&right.1.residual))
+    });
+}
+
+fn sort_polylines(polylines: &mut [IsolinePolyline]) {
+    polylines.sort_unstable_by(|left, right| {
+        left.vertex_indices
+            .cmp(&right.vertex_indices)
+            .then_with(|| left.closed.cmp(&right.closed))
+    });
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -1781,4 +1819,125 @@ fn validate_tolerance(tolerance: IsolineTolerance, value: f64) -> Result<(), Iso
         return Err(IsolineSettingsError::InvalidTolerance { tolerance, value });
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cell::Cell;
+    use std::error::Error;
+
+    use super::{
+        Endpoint, IntersectionKey, IsolineError, IsolinePolyline, Sample, finish_value_query,
+        sort_endpoint_records, sort_polylines,
+    };
+    use crate::execution::{
+        CancellationToken, ExecutionControl, ExecutionError, ExecutionOperation, ExecutionStage,
+        ProgressTracker,
+    };
+    use crate::geometry::Point;
+    use crate::problem_ir::ExecutionOptions;
+
+    #[test]
+    fn topology_ordering_uses_no_auxiliary_allocation() -> Result<(), Box<dyn Error>> {
+        const COUNT: usize = 4096;
+
+        let mut records = Vec::with_capacity(COUNT);
+        for index in (0..COUNT).rev() {
+            let index_value = f64::from(u32::try_from(index)?);
+            let row_value = f64::from(u32::try_from(index % 17)?);
+            records.push((
+                IntersectionKey::Horizontal {
+                    column: index,
+                    row: index % 17,
+                },
+                Sample {
+                    point: Point::try_new([index_value, row_value])?,
+                    value: index_value,
+                    residual: index_value.mul_add(0.5, -1000.0),
+                },
+            ));
+        }
+        let record_allocations =
+            allocation_counter::measure(|| sort_endpoint_records(&mut records));
+        assert_eq!(record_allocations.count_total, 0);
+
+        let mut polylines = Vec::with_capacity(COUNT);
+        for index in (0..COUNT).rev() {
+            polylines.push(IsolinePolyline {
+                vertex_indices: vec![index, index + 1],
+                closed: index % 2 == 0,
+            });
+        }
+        let polyline_allocations = allocation_counter::measure(|| sort_polylines(&mut polylines));
+        assert_eq!(polyline_allocations.count_total, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn value_query_checks_cancellation_before_and_after_evaluator() -> Result<(), Box<dyn Error>> {
+        let token = CancellationToken::new();
+        let mut progress = ProgressTracker::try_new(
+            ExecutionControl::with_cancellation(&token),
+            ExecutionOperation::IsolineExtraction,
+            ExecutionOptions::default(),
+            1,
+        )?;
+        progress.checkpoint(ExecutionStage::IsolineEvaluation)?;
+        token.cancel();
+        let calls = Cell::new(0_usize);
+        let cancelled_before: Result<(), IsolineError> = finish_value_query(&mut progress, || {
+            calls.set(calls.get() + 1);
+            Ok(())
+        });
+        assert!(matches!(
+            cancelled_before,
+            Err(IsolineError::Execution(ExecutionError::Cancelled {
+                operation: ExecutionOperation::IsolineExtraction,
+                stage: ExecutionStage::IsolineEvaluation,
+            }))
+        ));
+        assert_eq!(calls.get(), 0);
+
+        let token = CancellationToken::new();
+        let mut progress = ProgressTracker::try_new(
+            ExecutionControl::with_cancellation(&token),
+            ExecutionOperation::IsolineExtraction,
+            ExecutionOptions::default(),
+            1,
+        )?;
+        let calls = Cell::new(0_usize);
+        let cancelled_after: Result<(), IsolineError> = finish_value_query(&mut progress, || {
+            calls.set(calls.get() + 1);
+            token.cancel();
+            Err(IsolineError::NonFiniteCoordinate {
+                components: [f64::NAN, 0.0],
+            })
+        });
+        assert!(matches!(
+            cancelled_after,
+            Err(IsolineError::Execution(ExecutionError::Cancelled {
+                operation: ExecutionOperation::IsolineExtraction,
+                stage: ExecutionStage::IsolineEvaluation,
+            }))
+        ));
+        assert_eq!(calls.get(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn unique_endpoint_identity_is_key_based() -> Result<(), Box<dyn Error>> {
+        let sample = Sample {
+            point: Point::try_new([0.0, 0.0])?,
+            value: 0.0,
+            residual: 0.0,
+        };
+        let endpoint = Endpoint {
+            key: IntersectionKey::Vertex(0),
+            sample,
+        };
+        let (unique, count) = super::unique_endpoints([Some(endpoint), Some(endpoint)]);
+        assert_eq!(count, 1);
+        assert!(unique[0].is_some());
+        Ok(())
+    }
 }

@@ -344,6 +344,10 @@ impl<'a> ProgressTracker<'a> {
         self.check_cancelled(stage)
     }
 
+    pub(crate) fn checkpoint(&self, stage: ExecutionStage) -> Result<(), ExecutionError> {
+        self.check_cancelled(stage)
+    }
+
     pub(crate) fn finish_work<T, E>(
         &mut self,
         stage: ExecutionStage,
