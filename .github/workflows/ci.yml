@@ -261,6 +261,8 @@ jobs:
         run: cargo bench -p georbf --bench center_selection -- --smoke
       - name: Smoke-test deterministic parameter-tuning benchmark
         run: cargo bench -p georbf --bench parameter_tuning -- --smoke
+      - name: Smoke-test dense and sparse performance baseline
+        run: cargo bench -p georbf --bench performance_baseline -- --smoke
       - name: Smoke-test linear semantic compilation benchmark
         run: cargo bench -p georbf --bench linear_constraint_compilation -- --smoke
       - name: Smoke-test canonical convex solver benchmark

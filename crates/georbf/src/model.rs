@@ -1033,8 +1033,17 @@ where
         let count = self
             .polynomial_space()
             .map_or(0, PolynomialSpace::term_count);
+        let mut center_indices = Vec::new();
+        if self.compact_neighborhood.is_some() {
+            center_indices
+                .try_reserve_exact(self.center_count)
+                .map_err(|_| FittedFieldEvaluationError::AllocationFailed {
+                    storage: FittedFieldStorage::NeighborhoodCenters,
+                    requested: self.center_count,
+                })?;
+        }
         Ok(FittedFieldEvaluationScratch {
-            center_indices: Vec::new(),
+            center_indices,
             values: try_filled(count, 0.0, FittedFieldStorage::PolynomialValues)?,
             gradients: if output >= FittedFieldOutput::Gradient {
                 try_filled(count, [0.0; D], FittedFieldStorage::PolynomialGradients)?
@@ -1443,6 +1452,8 @@ pub enum FittedFieldComponent {
 /// Temporary storage whose checked allocation failed during evaluation.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum FittedFieldStorage {
+    /// Reused compact-support center-index buffer.
+    NeighborhoodCenters,
     /// Polynomial values.
     PolynomialValues,
     /// Polynomial gradients.

@@ -23,11 +23,13 @@
 //! axis-ratio, and influence-radius candidates by fixed, distance-heuristic,
 //! deterministic cross-validation, generalized-cross-validation, or
 //! power-function criteria, while caller-supplied evaluators retain ownership
-//! of fitting and failures. Immutable fitted
-//! fields have capability-gated original-coordinate value, gradient, and
-//! Hessian evaluation, plus stable source-aware structured error codes for adapter and
-//! orchestration boundaries, and caller-owned cancellation, deterministic
-//! progress, and explicit serial-execution controls for assembly and solving,
+//! of fitting and failures. Immutable fitted fields have capability-gated
+//! original-coordinate value, gradient, and Hessian evaluation, plus reusable
+//! allocation-stable value/gradient batch workspaces, explicit scoped worker
+//! counts, checked logical batch-memory limits, and stable source-aware
+//! structured error codes for adapter and orchestration boundaries. Assembly
+//! and solving retain caller-owned cancellation, deterministic progress, and
+//! explicit serial-execution controls,
 //! plus provenance-preserving fixed, unknown, and prior level variables with
 //! hard memberships, order-DAG validation, gauge and contrast checks, and
 //! solver-neutral equality/linear-bound compilation, plus explicit lower,
@@ -93,6 +95,7 @@ pub mod model;
 pub mod normal_observations;
 pub mod orientation;
 pub mod orientation_tensor;
+pub mod performance;
 pub mod polynomial;
 pub mod problem_ir;
 pub mod project;
@@ -149,9 +152,9 @@ pub use execution::{
     ProgressEvent, ProgressSink,
 };
 pub use field::{
-    CpdFieldAssembly, DenseFieldMatrix, DenseFieldSystem, FieldAssemblyDiagnostics,
-    FieldAssemblyError, FieldAssemblyStorage, FieldLinearizationError, FieldProblem,
-    FieldProblemError,
+    CpdFieldAssembly, DENSE_ASSEMBLY_BLOCK_SIZE, DenseFieldMatrix, DenseFieldSystem,
+    FieldAssemblyDiagnostics, FieldAssemblyError, FieldAssemblyStorage, FieldLinearizationError,
+    FieldProblem, FieldProblemError,
 };
 pub use functional::{
     CenterRepresenter, FunctionalAtom, FunctionalError, FunctionalExpr, FunctionalProvenance,
@@ -213,6 +216,11 @@ pub use orientation_tensor::{
     OrientationTensorError, OrientationTensorEstimate, OrientationTensorEstimator,
     OrientationTensorInfluence, OrientationTensorSample, OrientationTensorSpectralBackend,
     PrincipalAxisRatios,
+};
+pub use performance::{
+    BatchEvaluationDiagnostics, BatchEvaluationError, BatchEvaluationMemoryDiagnostics,
+    BatchEvaluationOptions, BatchEvaluationStorage, FittedFieldBatchEvaluation,
+    FittedFieldEvaluationWorkspace,
 };
 pub use polynomial::{MultiIndex, PolynomialOutput, PolynomialSpace, PolynomialSpaceError};
 pub use problem_ir::{

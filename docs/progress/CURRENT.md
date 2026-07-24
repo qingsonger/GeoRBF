@@ -6,74 +6,73 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-TUNE-001 complete
-- Requirement: REQ-TUNE-001, closed Issue #126
-- Implementation pull request: #127, squash-merged as `41ac2c3`
-- Integration-state branch: `codex/req-tune-001-integration-state`
-- Integration-state pull request: #128 (Draft)
-- Exact Ready head: `1bcd330`
-- Dependency: REQ-MODEL-001 is integrated
-- Registry status in this change: `integrated`
+- Mode: Implement
+- Requirement: REQ-PERF-001
+- Issue: #129
+- Branch: `codex/req-perf-001-performance-baseline`
+- Draft pull request: pending initial push
+- Dependencies: REQ-SPARSE-001, REQ-CENTER-001, and REQ-TUNE-001 are integrated
+- Registry status in this change: `in_progress`
 
-## Integration result
+## Implemented scope
 
-- An isolated read-only project `math_reviewer` reviewed base `4093c26`
-  through exact Repair evidence head `6b64350`.
-- TUNE001-REV-001 through TUNE001-REV-005 are independently closed.
-- The complete repaired PR diff has no remaining or new P0--P3 finding.
-- Exact Ready head `1bcd330` passed complete Windows, Ubuntu, and macOS CI run
-  30061378871, including every configured backend combination, benchmark
-  smoke, and requirement validation.
-- PR #127 squash-merged exactly once as `41ac2c3`; Issue #126 closed as
-  completed. Post-merge `main` CI run 30062398006 passed the same complete
-  three-platform gate on exact merge commit `41ac2c3`.
-- This isolated integration-state change updates only the registry, review
-  evidence, completed-history index, and bounded handoff. It changes no
-  production code, test, manifest, schema, CI, build input, API, numerical
-  behavior, dependency, tag, or release.
+- Dense all-representer assembly uses deterministic fixed 32-by-32
+  upper-triangle blocks, evaluates each kernel pair once, reflects each
+  off-diagonal entry once, and records block and work-count evidence.
+- `FittedFieldEvaluationWorkspace<D>` supports allocation-stable reusable
+  serial value/gradient batches for D=1, D=2, and D=3.
+- `BatchEvaluationOptions` requires explicit nonzero worker and logical-memory
+  limits. Scoped workers own isolated scratch, use deterministic contiguous
+  ranges, preserve input order, and never configure a global thread pool.
+- Batch diagnostics record exact center visits and checked output, per-worker
+  workspace, total workspace, logical peak, and caller-limit bytes.
+- Sparse workspaces reserve complete center-index capacity before evaluation;
+  exact compact-support filtering therefore performs no per-query allocation.
+- `georbf.performance.v1` is a fixed CSV benchmark schema for dense and sparse
+  D=3 value/gradient batches at one, two, and four workers.
 
-## Review validation
+## Validation evidence
 
-- The isolated reviewer passed all 14 tuning integration tests, the isolated
-  zero-allocation ordering regression, the tuning rustdoc example, smoke plus
-  complete five-strategy release benchmarks, the 58-requirement registry
-  check, and the complete PR whitespace check.
-- Exact repair implementation head `ae570a5` passed the complete standard
-  local gate after the last production, test, and Rust documentation change:
-  format, warning-denying workspace/all-target/all-feature Clippy, all-feature
-  workspace tests, workspace doctests, and the 58-requirement registry check.
-- Repair Draft CI run 30060683399 passed its configured Ubuntu correctness job
-  on exact reviewed head `6b64350`; the Ready-only matrix was skipped by
-  design.
-- Exact Ready-head run 30061378871 and post-merge `main` run 30062398006 are
-  both green on Windows, Ubuntu, and macOS, including every configured
-  benchmark smoke.
-- The isolated integration-state tree must pass the complete local standard
-  gate and exact Ready-head CI before it merges.
+- Six independent performance integration tests pass: D=1/D=2/D=3 parity,
+  one/four-worker bit identity, exact cross-block upper-triangle counts and
+  symmetry, sparse locality, memory preflight, empty batches, workspace
+  compatibility, zero-allocation warmed reuse, and allocation-count
+  independence from query count.
+- Focused warning-denying all-target/all-feature Clippy passes.
+- The new release benchmark smoke passes and emits identical checksums at one,
+  two, and four workers for both dense and sparse workloads.
+- Four consecutive full local benchmark runs and their environment, ranges,
+  memory, center visits, checksums, and directional scaling are recorded in
+  `docs/benchmarks/REQ-PERF-001.md`.
+- The 58-requirement registry check passes.
+- After the last production and test change, the stable implementation tree
+  passed the complete standard local gate: format, warning-denying
+  workspace/all-target/all-feature Clippy, all-feature workspace tests,
+  workspace doctests, and the 58-requirement registry check.
 
 ## Next task boundary
 
-Start a fresh Review task for only PR #128. Independently review the isolated
-four-file integration-state delta against `41ac2c3`; do not repair production
-code and do not begin another requirement. If no P0--P3 finding remains, mark
-PR #128 Ready, wait for exact-head Windows/Ubuntu/macOS and benchmark-smoke CI,
-merge exactly once only when green, and stop.
+Finish only this Implement task: commit, push, open a Draft PR for Issue #129,
+link its exact head here and in the registry, validate the evidence-only
+follow-up, push, and stop.
 
-Do not begin REQ-PERF-001 in the re-review task.
+The next fresh task must be Review mode for only the resulting REQ-PERF-001
+Draft PR. It must use an isolated read-only project `math_reviewer` because the
+change affects numerical assembly traversal and performance-sensitive
+evaluation. Do not repair production code or begin another requirement in
+that Review task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #126
-- Merged implementation: GitHub PR #127
-- Integration-state pull request: GitHub PR #128
-- Independent review and repair evidence:
-  `docs/reviews/PR-127-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-TUNE-001.md`
-- Numerical policy: `docs/architecture/SOLVER_POLICY.md`
-- Benchmark: `docs/benchmarks/REQ-TUNE-001.md`
-- Production implementation: `crates/georbf/src/tuning.rs`
-- Independent tests: `crates/georbf/tests/tuning.rs`
-- Release benchmark: `crates/georbf/benches/parameter_tuning.rs`
+- Acceptance criteria and exclusions: GitHub Issue #129
+- Requirement summary: `changes/REQ-PERF-001.md`
+- Benchmark and allocation evidence: `docs/benchmarks/REQ-PERF-001.md`
+- Production batch implementation: `crates/georbf/src/performance.rs`
+- Dense block assembly: `crates/georbf/src/field.rs`
+- Independent tests: `crates/georbf/tests/performance.rs`
+- Release benchmark: `crates/georbf/benches/performance_baseline.rs`
+- Dense backend policy: `docs/adr/ADR-0010-nalgebra-dense-factorization-backend.md`
+- Sparse backend policy: `docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md`
 
 ## Checks not yet available
 

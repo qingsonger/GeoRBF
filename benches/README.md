@@ -99,3 +99,17 @@ cargo bench -p georbf --bench parameter_tuning
 
 The explicit search space, evaluator evidence, seed, workload sizes, and local
 baseline are recorded in `docs/benchmarks/REQ-TUNE-001.md`.
+
+`REQ-PERF-001` adds one versioned CSV report for deterministic D=3 dense and
+compact-sparse value/gradient batches at one, two, and four explicit workers.
+Every row records fixed center/query counts, iterations, exact center visits,
+the checked logical peak-memory estimate, time per query, and a full-output
+checksum:
+
+```text
+cargo bench -p georbf --bench performance_baseline -- --smoke
+cargo bench -p georbf --bench performance_baseline
+```
+
+The fixed data, schema contract, allocation evidence, thread scaling, and local
+baseline are recorded in `docs/benchmarks/REQ-PERF-001.md`.
