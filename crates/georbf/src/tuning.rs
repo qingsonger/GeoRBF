@@ -1283,11 +1283,18 @@ fn validate_parameter_value(
 fn same_parameters(first: &TuningParameters, second: &TuningParameters) -> bool {
     TuningParameter::ALL.into_iter().all(|parameter| {
         match (first.value(parameter), second.value(parameter)) {
-            (Some(first), Some(second)) => first == second,
+            (Some(first), Some(second)) => {
+                canonical_parameter_bits(first) == canonical_parameter_bits(second)
+            }
             (None, None) => true,
             (Some(_), None) | (None, Some(_)) => false,
         }
     })
+}
+
+fn canonical_parameter_bits(value: f64) -> u64 {
+    let bits = value.to_bits();
+    if bits << 1 == 0 { 0 } else { bits }
 }
 
 fn median_nearest_neighbor_distance<const D: usize>(

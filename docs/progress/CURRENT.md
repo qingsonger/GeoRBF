@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-TUNE-001, deterministic parameter tuning
 - Issue: #126
 - Branch: `codex/req-tune-001-deterministic-tuning`
-- Pull request: not yet opened
+- Draft pull request: #127
 - Dependency: REQ-MODEL-001 is integrated
 - Registry status: `in_progress`
 
@@ -39,21 +39,24 @@ records, benchmark reports, Git, and GitHub.
 - Focused tuning rustdoc passes: 1/1.
 - Focused warning-denying Clippy passes for the tuning test and benchmark.
 - The optimized 16-candidate benchmark smoke passes for all five strategies.
-- The complete standard workspace gate has not yet run on the stable head and
-  is not claimed as passed.
+- After the final production, test, manifest, CI, and registry change, the
+  stable tree passed the complete standard gate on 2026-07-24: format,
+  warning-denying workspace/all-target/all-feature Clippy, all-feature
+  workspace tests, workspace doctests, and the 58-requirement registry check.
+- The final stable tree also passed the optimized five-strategy benchmark
+  smoke. The first gate attempt exposed one formatting delta and direct float
+  comparison; both were corrected before this complete clean rerun.
 - Mathematical/numerical independent Review remains a fresh next task after
   this Implement task opens or updates the Draft PR.
 
 ## Next task boundary
 
-Finish only this Implement task: record the full benchmark baseline, run the
-complete standard workspace gate after the final code/manifest/registry
-change, update this handoff with the stable head and exact validation evidence,
-commit, push, open or update a Draft PR, and stop.
-
-The following task must be a fresh independent Review of only REQ-TUNE-001 and
-its Draft PR. It must use the isolated project `math_reviewer`, record P0--P3
-findings, and must not repair production code or start REQ-PERF-001.
+Start a fresh independent Review of only REQ-TUNE-001 and Draft PR #127. It
+must use the isolated project `math_reviewer`, independently check scoring
+formulae, units, bounds, folds, seeded ties, evidence validation, hidden
+regularization, interface dispositions, tests, benchmark, and registry state,
+and record P0--P3 findings. It must not repair production code or start
+REQ-PERF-001.
 
 ## Durable evidence
 

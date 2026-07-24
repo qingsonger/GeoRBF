@@ -715,7 +715,7 @@ requirements:
     milestone: M7-v0.7.0
     priority: P1
     issue: 126
-    pull_request: null
+    pull_request: 127
     tests: [strategy-truth, known-optimum, deterministic-search, bounds, explicit-seed, malformed-evidence, dimension-parity]
     docs: [docs/architecture/SOLVER_POLICY.md, docs/benchmarks/REQ-TUNE-001.md, rustdoc]
     rust_api: implemented

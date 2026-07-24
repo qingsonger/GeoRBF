@@ -364,8 +364,7 @@ fn malformed_bounds_candidates_and_strategy_are_structured() -> TestResult {
         ),
         Err(TuningError::DuplicateCandidate { .. })
     ));
-    let signed_zero_bounds =
-        TuningBounds::try_new(None, None, Some((-0.0, 1.0)), None, None)?;
+    let signed_zero_bounds = TuningBounds::try_new(None, None, Some((-0.0, 1.0)), None, None)?;
     assert!(matches!(
         TuningProblem::try_new(
             vec![Point::try_new([0.0])?],
