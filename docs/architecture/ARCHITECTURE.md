@@ -220,6 +220,23 @@ rejected when metadata declares only away-from-center support. The layer
 performs no finite differences, hidden coefficient repair, persistence I/O,
 schema migration, contouring, or adapter-side evaluation.
 
+The one-dimensional contour layer consumes only an immutable
+`FittedField<1>`, a finite target level and original-coordinate domain, and
+explicit scan/refinement tolerances. It evaluates the fitted field's analytic
+value and original-coordinate gradient only when the gradient capability is
+supported everywhere; away-from-centers-only gradients are rejected before
+evaluation. It midpoint-splits the requested uniform scan, retains value
+brackets and only derivative brackets with an exact-zero endpoint or an actual
+endpoint sign change, and applies bracket-preserving bisection. Merely
+tolerance-small derivative samples remain separately inspectable stationary
+candidate evidence, not fabricated sign brackets. Isolated points are sorted
+and tolerance-deduped, and adjacent segments satisfying both value and
+derivative tolerances are merged as non-isolated degenerate intervals. The
+reported scan resolution is not a proof against arbitrarily many unseen
+oscillations. This layer performs no finite differences, fitting, coefficient
+repair, topology reconstruction, schema I/O, or adapter-side mathematics; D=2
+and D=3 level sets remain separate atomic requirements.
+
 The project layer owns one or more independently fitted `FittedField<D>` values
 behind stable caller-controlled `FieldId` values. `GeoProject<D>` preserves
 insertion order, rejects duplicate identifiers, and performs deterministic

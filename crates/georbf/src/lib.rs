@@ -51,6 +51,10 @@
 //! adjacent level intersections along selected fitted-field normals, reports
 //! deterministic returned-point Euclidean distance evidence, supports
 //! caller-owned cancellation and progress, and never refits implicitly.
+//! One-dimensional level-point extraction separately scans an explicit
+//! original-coordinate domain, refines analytic value and derivative brackets,
+//! reports isolated crossings and stationary tangencies, and preserves
+//! numerically degenerate level intervals instead of inventing isolated roots.
 //! Immutable multi-field projects retain independently fitted scalar fields in
 //! stable identifier order and expose validated reference-field inputs that
 //! delegate evaluation without adding topology or cross-field mathematics.
@@ -76,6 +80,7 @@
 pub mod anisotropy;
 pub mod anisotropy_diagnostics;
 pub mod center_selection;
+pub mod contour;
 pub mod convex;
 pub mod coordinates;
 pub mod cpd;
@@ -122,6 +127,12 @@ pub use center_selection::{
     CenterGreedyDiagnostics, CenterSelection, CenterSelectionDiagnostics, CenterSelectionError,
     CenterSelectionKind, CenterSelectionOptions, CenterSelectionProblem, CenterSelectionStorage,
     CenterSelectionStrategy,
+};
+pub use contour::{
+    DegenerateLevelInterval, LevelPoint, LevelPointBound, LevelPointDiagnostics, LevelPointError,
+    LevelPointInterval, LevelPointKind, LevelPointRefinement, LevelPointReport, LevelPointRequest,
+    LevelPointRequestError, LevelPointSettings, LevelPointSettingsError, LevelPointStorage,
+    LevelPointTolerance, StationaryLevelPoint,
 };
 pub use convex::{
     ConvexBackendStatus, ConvexCertificateDiagnostics, ConvexConstraintDiagnostics,

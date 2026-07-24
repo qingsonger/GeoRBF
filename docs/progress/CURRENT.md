@@ -6,91 +6,73 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-PERF-001 implementation merged
-- Requirement: REQ-PERF-001, dense and sparse performance baseline
-- Issue: #129, closed
-- Implementation branch: `codex/req-perf-001-performance-baseline`
-- Implementation pull request: #130, squash-merged as `bee47fbf`
-- Integration-state branch: `codex/req-perf-001-integration-state`
-- Integration-state pull request: #131 (Draft until final exact-head gates pass)
-- Exact implementation Ready head: `7c36721`
-- Repair head: `c5b5b8d`
-- Re-reviewed evidence head: `b295e9d`
-- Stable implementation gate head: `c5b5b8d`
-- Dependencies: REQ-SPARSE-001, REQ-CENTER-001, and REQ-TUNE-001 are integrated
-- Registry status in this change: `integrated`
+- Mode: Review / clean fresh re-review; Ready transition pending
+- Requirement: REQ-CONTOUR-001, one-dimensional level points
+- Issue: #132
+- Branch: `codex/req-contour-001-level-points`
+- Pull request: #133 (Draft; clean re-review authorizes Ready transition)
+- Re-reviewed source head: `bc892c3`
+- Repair implementation head: `1280cd2`
+- Dependency: REQ-MODEL-001 is integrated
+- Registry status: `in_progress`
 
 ## Fresh re-review result
 
 An isolated read-only project `math_reviewer` reviewed the complete base
-`01b9fa5` through evidence head `b295e9d` and the focused repair
-`293bcd1..c5b5b8d`. It found no remaining or new P0--P3 issue and independently
-closed all four original findings:
+`a3e89ee..bc892c3` and focused repair `323fcd9..1280cd2`. It found no
+remaining or new P0--P3 issue and independently closed all three findings:
 
-- PERF001-REV-001: batch workspace capacity and logical memory now use the
-  complete atomic indexed-term count. A multi-term regression checks the
-  corrected estimate, pre-allocation limit rejection, and zero first-query
-  allocation with caller capacity already established.
-- PERF001-REV-002: every fallible batch-into exit clears caller output,
-  including incompatible workspaces and checked center-count overflow.
-- PERF001-REV-003: one-point sparse APIs use locality-scaled scratch, while
-  explicit reusable batch workspaces reserve the complete index capacity.
-- PERF001-REV-004: the dense block test records every real evaluator visit and
-  proves unique upper-triangle work in deterministic block order.
+- CONTOUR001-REV-001: extraction rejects gradients that are only supported
+  away from centers before evaluation, preventing a nondifferentiable center
+  from fabricating stationary evidence.
+- CONTOUR001-REV-002: tolerance-small derivative nodes remain candidate
+  evidence but become diagnostic brackets only with a real neighboring sign
+  change; exact-zero nodes use an explicit zero-width bracket.
+- CONTOUR001-REV-003: independent transformed truth now checks
+  original-coordinate derivative values and a negative-scale reflection.
 
-Complete original findings, repair mapping, independent truth, and validation
+Complete counterexamples, repair details, independent truth, and re-review
 evidence are in
-`docs/reviews/PR-130-INDEPENDENT-REVIEW.md`.
+`docs/reviews/PR-133-INDEPENDENT-REVIEW.md`.
 
 ## Validation state
 
-- Focused repair validation passed all eight performance tests, the
-  mixed-value/derivative sparse parity test, and release benchmark smoke with
-  unchanged deterministic center visits and checksums.
-- The fresh isolated re-review independently passed the same eight performance
-  tests, focused mixed value/derivative sparse parity test, release benchmark
-  smoke, and complete base-to-head whitespace check.
-- Exact stable implementation head `c5b5b8d` passed formatting, all-target and
-  all-feature Clippy with warnings denied, the complete all-feature workspace
-  test suite, all workspace Rustdoc tests, and the 58-requirement registry
-  check after the final production and test change.
-- The parent re-review task repeated that complete standard gate successfully
-  on exact evidence head `b295e9d`.
-- Draft CI run 30070320531 passed its Ubuntu correctness job on exact evidence
-  head `b295e9d`.
-- Exact Ready CI run 30071031648 passed the complete Windows, Ubuntu, and macOS
-  workspace matrix on exact head `7c36721`, including all configured
-  correctness checks, backend combinations, requirement validation, and every
-  benchmark smoke.
-- PR #130 was squash-merged exactly once as `bee47fbf`; Issue #129 closed as
-  completed.
-- Post-merge `main` CI run 30072182895 passed the same complete three-platform
-  gate on exact merge commit `bee47fbf`.
-- This isolated integration-state change modifies only the registry, completed
-  history index, independent review evidence, and bounded handoff.
+- Before repair, the focused contour suite reproduced the first two defects as
+  two failures. After repair, all eight all-feature contour integration tests
+  passed.
+- The focused contour Rustdoc example passed.
+- Release benchmark smoke passed with deterministic checksum
+  `2.50500000000000000e2`.
+- The 58-requirement registry check and complete PR whitespace check passed.
+- Exact repair implementation tree `1280cd2` passed the complete standard
+  local gate: formatting, all-target/all-feature Clippy with warnings denied,
+  all-feature workspace tests, workspace Rustdoc tests, and the registry check.
+- The re-review confirmed `1280cd2..bc892c3` changes only the independent
+  review record and bounded handoff, so the immutable repair-head gate remains
+  applicable.
+- Draft CI run 30080017013 passed Ubuntu on exact source head `bc892c3`.
+- The Ready-only Windows, Ubuntu, macOS, and benchmark-smoke matrix remains
+  unexecuted and is not claimed.
 
 ## Next task boundary
 
-Commit and push the linked integration evidence after the complete standard
-local gate passes on the final integration-state tree. Mark PR #131 Ready,
-wait for exact-head Windows, Ubuntu, and macOS correctness plus complete
-benchmark-smoke CI, and merge only if green. Then stop. Do not begin another
-requirement.
+Validate and push this documentation-only clean re-review evidence, then mark
+PR #133 Ready. Wait for the complete Windows, Ubuntu, and macOS workspace and
+benchmark-smoke CI on that exact Ready head. Merge exactly once only if the
+whole matrix is green, then record truthful integration state through an
+isolated change. Do not begin REQ-CONTOUR-002.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #129
-- Merged implementation: GitHub PR #130
-- Integration-state pull request: GitHub PR #131
-- Independent review: `docs/reviews/PR-130-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-PERF-001.md`
-- Benchmark and allocation evidence: `docs/benchmarks/REQ-PERF-001.md`
-- Production batch implementation: `crates/georbf/src/performance.rs`
-- Dense block assembly: `crates/georbf/src/field.rs`
-- Independent tests: `crates/georbf/tests/performance.rs`
-- Release benchmark: `crates/georbf/benches/performance_baseline.rs`
-- Dense backend policy: `docs/adr/ADR-0010-nalgebra-dense-factorization-backend.md`
-- Sparse backend policy: `docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md`
+- Acceptance criteria and exclusions: GitHub Issue #132
+- Draft implementation: GitHub PR #133
+- Independent review and repair: `docs/reviews/PR-133-INDEPENDENT-REVIEW.md`
+- Core implementation: `crates/georbf/src/contour.rs`
+- Independent tests: `crates/georbf/tests/contour.rs`
+- User guide: `docs/user-guide/LEVEL_POINTS.md`
+- Requirement summary: `changes/REQ-CONTOUR-001.md`
+- Benchmark evidence: `docs/benchmarks/REQ-CONTOUR-001.md`
+- Release benchmark: `crates/georbf/benches/level_points.rs`
 
 ## Checks not yet available
 

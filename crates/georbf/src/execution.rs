@@ -69,6 +69,8 @@ pub enum ExecutionOperation {
     ConvexSolve,
     /// Post-fit sampled geometric thickness validation.
     SampledThicknessValidation,
+    /// One-dimensional fitted-field level-point extraction.
+    LevelPointExtraction,
 }
 
 impl fmt::Display for ExecutionOperation {
@@ -80,6 +82,7 @@ impl fmt::Display for ExecutionOperation {
             Self::SparseSolve => "sparse solve",
             Self::ConvexSolve => "convex solve",
             Self::SampledThicknessValidation => "sampled thickness validation",
+            Self::LevelPointExtraction => "level-point extraction",
         })
     }
 }
@@ -124,6 +127,8 @@ pub enum ExecutionStage {
     ResidualReview,
     /// One sampled-thickness fitted-field evaluation completed.
     SampledThicknessEvaluation,
+    /// One analytic fitted-field value-and-gradient evaluation completed.
+    LevelPointEvaluation,
     /// The operation completed successfully.
     Completed,
 }
