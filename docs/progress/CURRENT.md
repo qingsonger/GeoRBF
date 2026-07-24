@@ -6,21 +6,23 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh isolated re-review required
+- Mode: Review / clean fresh re-review; Ready transition pending
 - Requirement: REQ-PERF-001, dense and sparse performance baseline
 - Issue: #129
 - Branch: `codex/req-perf-001-performance-baseline`
-- Draft pull request: #130
+- Pull request: #130 (Draft; clean re-review authorizes Ready transition)
 - Repair head: `c5b5b8d`
-- Reviewed head: `293bcd1`
+- Re-reviewed evidence head: `b295e9d`
 - Stable implementation gate head: `c5b5b8d`
 - Dependencies: REQ-SPARSE-001, REQ-CENTER-001, and REQ-TUNE-001 are integrated
 - Registry status: `in_progress`
 
-## Repair result
+## Fresh re-review result
 
-Exact repair head `c5b5b8d` addresses only the four findings recorded by the
-fresh isolated review of `293bcd1`:
+An isolated read-only project `math_reviewer` reviewed the complete base
+`01b9fa5` through evidence head `b295e9d` and the focused repair
+`293bcd1..c5b5b8d`. It found no remaining or new P0--P3 issue and independently
+closed all four original findings:
 
 - PERF001-REV-001: batch workspace capacity and logical memory now use the
   complete atomic indexed-term count. A multi-term regression checks the
@@ -42,29 +44,27 @@ evidence are in
 - Focused repair validation passed all eight performance tests, the
   mixed-value/derivative sparse parity test, and release benchmark smoke with
   unchanged deterministic center visits and checksums.
+- The fresh isolated re-review independently passed the same eight performance
+  tests, focused mixed value/derivative sparse parity test, release benchmark
+  smoke, and complete base-to-head whitespace check.
 - Exact stable implementation head `c5b5b8d` passed formatting, all-target and
   all-feature Clippy with warnings denied, the complete all-feature workspace
   test suite, all workspace Rustdoc tests, and the 58-requirement registry
   check after the final production and test change.
-- Draft CI run 30069460773 is remote evidence for the pre-repair review-record
-  head only and is not claimed for `c5b5b8d`. The repair push is expected to
-  trigger a new Draft Ubuntu correctness run; its result is not yet claimed.
+- The parent re-review task repeated that complete standard gate successfully
+  on exact evidence head `b295e9d`.
+- Draft CI run 30070320531 passed its Ubuntu correctness job on exact evidence
+  head `b295e9d`.
 - The Ready-only Windows, Ubuntu, and macOS benchmark matrix has not run on the
-  repair head and is not claimed.
+  final re-review evidence head and is not claimed.
 
 ## Next task boundary
 
-Start a fresh isolated Review task for only PR #130 and REQ-PERF-001. Supply
-the reviewer the bounded requirement/dependency summary, normative documents,
-base-to-repair diff, original findings, and exact validation evidence without
-the Repair reasoning transcript. Independently confirm PERF001-REV-001 through
-PERF001-REV-004 are closed and check for new P0--P3 findings.
-
-If any finding remains, record it and stop without repairing production code.
-Only after a clean isolated re-review and a green complete local gate may that
-fresh Review task mark PR #130 Ready, wait for exact-head Windows, Ubuntu, and
-macOS correctness plus benchmark-smoke CI, merge exactly once, and record
-truthful integration state. Do not begin another requirement in that task.
+Push this documentation-only clean re-review evidence, mark PR #130 Ready, and
+wait for the Windows, Ubuntu, and macOS correctness plus complete
+benchmark-smoke CI on that exact Ready head. Merge exactly once only if the
+whole matrix is green, then record truthful integration state through an
+isolated documentation-only change. Do not begin another requirement.
 
 ## Durable evidence
 

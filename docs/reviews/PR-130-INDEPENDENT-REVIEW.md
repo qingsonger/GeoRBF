@@ -9,10 +9,13 @@
 - Repair head: `c5b5b8d56c0fae009345c74a0cee425571392ede`
 - Stable implementation gate head:
   `c5b5b8d56c0fae009345c74a0cee425571392ede`
-- Draft CI run: 30067909616
+- Original Draft CI run: 30067909616
+- Re-review evidence Draft CI run: 30070320531
 - Review date: 2026-07-24
 - Original result: changes requested; one P1, two P2, and one P3 finding
-- Current state: all four findings repaired; fresh independent re-review required
+- Re-reviewed evidence head:
+  `b295e9df0a5b90ac595aa9ad184f40553fe2e985`
+- Current state: clean fresh independent re-review; Ready-head CI required
 
 ## Scope and independence
 
@@ -157,6 +160,39 @@ The repair did not mark the PR Ready, merge it, change REQ-PERF-001 from
 `in_progress`, or begin another requirement. A fresh isolated re-review must
 independently confirm closure and check for new P0--P3 findings.
 
+## Fresh isolated re-review
+
+A second fresh isolated read-only project `math_reviewer` received only the
+bounded requirement and integrated dependency summary, Issue #129 acceptance
+criteria and exclusions, M7 plan, relevant ADRs, complete base-to-evidence
+diff, focused repair diff, original findings, tests, benchmark evidence, and
+validation state. It inherited no Implement or Repair reasoning and made no
+repository or remote change.
+
+The re-review found no remaining or new P0--P3 issue. It independently closed:
+
+- PERF001-REV-001 because reusable batch workspace sizing and checked logical
+  memory use the complete atomic indexed-term count, and the six-term
+  regression proves corrected pre-allocation rejection and zero query
+  allocation;
+- PERF001-REV-002 because caller output is cleared before compatibility
+  validation and on every later evaluation or checked count failure, with a
+  populated-stale-output regression;
+- PERF001-REV-003 because ordinary one-point value, gradient, and Hessian
+  evaluation retain locality-scaled sparse scratch while explicit reusable
+  batch workspaces alone reserve the global indexed-term bound; and
+- PERF001-REV-004 because the block test records every real evaluator call and
+  proves the unique upper triangle in exact deterministic block order.
+
+The re-review passed all eight performance integration tests, the focused
+mixed value/derivative sparse parity test, release benchmark smoke, and the
+complete base-to-head whitespace check. The smoke retained exact dense and
+sparse visits of 864 and 136 and bit-identical checksums at one, two, and four
+workers. Residual non-findings are the absence of deterministic fault-injection
+seams for worker spawn and panic, the documented exclusion of thread stacks and
+standard-library bookkeeping from portable logical memory, and the still
+mandatory exact Ready-head three-platform CI gate.
+
 ## Independent truth and validation
 
 The isolated reviewer independently confirmed:
@@ -199,7 +235,13 @@ production, test, manifest, CI, and registry change. This Review changes only
 Markdown review and bounded-handoff evidence, so that immutable gate remains
 applicable.
 
-The full workspace gate and full 20-iteration benchmark were not rerun in this
+The parent re-review task ran the complete standard local gate on exact
+evidence head `b295e9d`: formatting, warning-denying all-target/all-feature
+Clippy, all-feature workspace tests, workspace Rustdoc tests, and the
+58-requirement registry check all passed. Draft CI run 30070320531 also passed
+its Ubuntu correctness job on that exact head. The final re-review evidence
+tail changes only this Markdown record and bounded handoff, so the immutable
+gate remains applicable. The full 20-iteration benchmark was not rerun in this
 Review task. `cargo-nextest`, `cargo-deny`, `cargo-audit`,
 `cargo-semver-checks`, Miri for pinned Rust 1.96.1, sanitizers, executable
 fuzzing, mutation testing, API/ABI/schema snapshot checks, and local
@@ -208,7 +250,8 @@ spawn and worker panic have structured code paths but no deterministic
 regression seam; this remains residual coverage risk rather than a separate
 finding.
 
-PR #130 remains Draft and REQ-PERF-001 remains `in_progress`. Repair head
-`c5b5b8d` and the evidence above supersede the original Repair instruction.
-The next task is a fresh isolated re-review; this Repair does not mark the PR
-Ready, merge it, or begin another requirement.
+PR #130 remains Draft and REQ-PERF-001 remains `in_progress` until this clean
+re-review evidence is pushed. The next action is to mark the PR Ready, wait for
+the exact-head Windows, Ubuntu, and macOS correctness and benchmark-smoke
+matrix, merge exactly once only if the complete matrix is green, and then
+record truthful integration state. No next requirement may begin here.
