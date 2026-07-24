@@ -6,11 +6,12 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement complete; Draft PR publication in progress
+- Mode: Implement complete; fresh isolated Review required
 - Requirement: REQ-CONTOUR-001, one-dimensional level points
 - Issue: #132
 - Branch: `codex/req-contour-001-level-points`
-- Draft pull request: pending publication
+- Draft pull request: #133
+- Stable implementation gate head: `b41e482`
 - Dependency: REQ-MODEL-001 is integrated
 - Registry status: `in_progress`
 
@@ -50,22 +51,28 @@ records, benchmark reports, Git, and GitHub.
 - The normal 2,000-iteration release benchmark records
   125,356.75 ns/extraction and checksum `2.50500000000000000e5` on the documented
   local environment.
-- After the final production, test, manifest, benchmark, and CI-routing change,
-  the stable implementation tree passed formatting, all-target and all-feature
-  workspace Clippy with warnings denied, the complete all-feature workspace
-  test suite, all workspace Rustdoc tests, and the 58-requirement registry
-  check.
+- Exact stable implementation head `b41e482` passed formatting, all-target and
+  all-feature workspace Clippy with warnings denied, the complete all-feature
+  workspace test suite, all workspace Rustdoc tests, and the 58-requirement
+  registry check after the final production, test, manifest, benchmark, and
+  CI-routing change.
+- The subsequent handoff-link change modifies only the requirement pull-request
+  number and this bounded handoff. It changes no production code, test,
+  manifest, schema, benchmark, CI, API, or numerical behavior.
 
 ## Next task boundary
 
-Commit and push the stable implementation, open a Draft PR, link its exact head
-and number in the registry and handoff, and stop. The next fresh task must
-perform an isolated mathematical/numerical Review of only REQ-CONTOUR-001 and
-its Draft PR. Do not begin REQ-CONTOUR-002.
+Start a fresh isolated mathematical/numerical Review task for only Draft PR
+#133 and REQ-CONTOUR-001. Supply the reviewer the bounded requirement/dependency
+summary, relevant architecture contracts, base-to-head diff, seven independent
+tests, rustdoc, and benchmark evidence without this implementation reasoning
+transcript. Record findings but do not repair production code in that Review
+task. Do not begin REQ-CONTOUR-002.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #132
+- Draft implementation: GitHub PR #133
 - Core implementation: `crates/georbf/src/contour.rs`
 - Independent tests: `crates/georbf/tests/contour.rs`
 - User guide: `docs/user-guide/LEVEL_POINTS.md`
