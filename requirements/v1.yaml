@@ -742,7 +742,7 @@ requirements:
     cpp_api: "N/A: C++ wrapper is an M9 capability and depends on the C ABI"
     python_api: "N/A: Python bindings and parity are M9 capabilities"
     benchmark: implemented
-    status: in_progress
+    status: integrated
 
   - id: REQ-CONTOUR-001
     title: One-dimensional level points

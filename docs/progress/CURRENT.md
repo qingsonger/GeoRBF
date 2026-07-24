@@ -6,16 +6,19 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review / clean fresh re-review; Ready transition pending
+- Mode: Integration state / REQ-PERF-001 implementation merged
 - Requirement: REQ-PERF-001, dense and sparse performance baseline
-- Issue: #129
-- Branch: `codex/req-perf-001-performance-baseline`
-- Pull request: #130 (Draft; clean re-review authorizes Ready transition)
+- Issue: #129, closed
+- Implementation branch: `codex/req-perf-001-performance-baseline`
+- Implementation pull request: #130, squash-merged as `bee47fbf`
+- Integration-state branch: `codex/req-perf-001-integration-state`
+- Integration-state pull request: #131 (Draft until final exact-head gates pass)
+- Exact implementation Ready head: `7c36721`
 - Repair head: `c5b5b8d`
 - Re-reviewed evidence head: `b295e9d`
 - Stable implementation gate head: `c5b5b8d`
 - Dependencies: REQ-SPARSE-001, REQ-CENTER-001, and REQ-TUNE-001 are integrated
-- Registry status: `in_progress`
+- Registry status in this change: `integrated`
 
 ## Fresh re-review result
 
@@ -55,21 +58,30 @@ evidence are in
   on exact evidence head `b295e9d`.
 - Draft CI run 30070320531 passed its Ubuntu correctness job on exact evidence
   head `b295e9d`.
-- The Ready-only Windows, Ubuntu, and macOS benchmark matrix has not run on the
-  final re-review evidence head and is not claimed.
+- Exact Ready CI run 30071031648 passed the complete Windows, Ubuntu, and macOS
+  workspace matrix on exact head `7c36721`, including all configured
+  correctness checks, backend combinations, requirement validation, and every
+  benchmark smoke.
+- PR #130 was squash-merged exactly once as `bee47fbf`; Issue #129 closed as
+  completed.
+- Post-merge `main` CI run 30072182895 passed the same complete three-platform
+  gate on exact merge commit `bee47fbf`.
+- This isolated integration-state change modifies only the registry, completed
+  history index, independent review evidence, and bounded handoff.
 
 ## Next task boundary
 
-Push this documentation-only clean re-review evidence, mark PR #130 Ready, and
-wait for the Windows, Ubuntu, and macOS correctness plus complete
-benchmark-smoke CI on that exact Ready head. Merge exactly once only if the
-whole matrix is green, then record truthful integration state through an
-isolated documentation-only change. Do not begin another requirement.
+Commit and push the linked integration evidence after the complete standard
+local gate passes on the final integration-state tree. Mark PR #131 Ready,
+wait for exact-head Windows, Ubuntu, and macOS correctness plus complete
+benchmark-smoke CI, and merge only if green. Then stop. Do not begin another
+requirement.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: GitHub Issue #129
-- Draft implementation: GitHub PR #130
+- Acceptance criteria and exclusions: closed GitHub Issue #129
+- Merged implementation: GitHub PR #130
+- Integration-state pull request: GitHub PR #131
 - Independent review: `docs/reviews/PR-130-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-PERF-001.md`
 - Benchmark and allocation evidence: `docs/benchmarks/REQ-PERF-001.md`

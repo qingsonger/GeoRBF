@@ -15,7 +15,7 @@
 - Original result: changes requested; one P1, two P2, and one P3 finding
 - Re-reviewed evidence head:
   `b295e9df0a5b90ac595aa9ad184f40553fe2e985`
-- Current state: clean fresh independent re-review; Ready-head CI required
+- Current state: implementation merged; isolated integration-state record pending
 
 ## Scope and independence
 
@@ -250,8 +250,23 @@ spawn and worker panic have structured code paths but no deterministic
 regression seam; this remains residual coverage risk rather than a separate
 finding.
 
-PR #130 remains Draft and REQ-PERF-001 remains `in_progress` until this clean
-re-review evidence is pushed. The next action is to mark the PR Ready, wait for
-the exact-head Windows, Ubuntu, and macOS correctness and benchmark-smoke
-matrix, merge exactly once only if the complete matrix is green, and then
-record truthful integration state. No next requirement may begin here.
+## Ready CI and implementation merge
+
+Clean re-review evidence was committed and pushed as exact Ready head
+`7c3672182c9e3283098024c4c4985a356ec6130a`. Ready CI run 30071031648 passed
+the complete Windows, Ubuntu, and macOS workspace jobs on that exact head.
+Every configured correctness check, backend feature combination, requirement
+validation, and benchmark smoke passed, including the dense and sparse
+performance baseline smoke on all three platforms.
+
+PR #130 was squash-merged exactly once as
+`bee47fbf2f29feb0d241cbfae404d28e7b312d54`; Issue #129 closed as completed.
+Post-merge `main` CI run 30072182895 passed the same complete Windows, Ubuntu,
+and macOS gate on exact merge commit `bee47fbf`.
+The isolated integration-state change updates only this review evidence,
+`requirements/v1.yaml`, `docs/progress/HISTORY.md`, and the bounded handoff.
+It changes no production code, test, manifest, schema, CI, build input, API,
+numerical behavior, dependency, tag, or release. REQ-PERF-001 becomes
+truthfully `integrated` only when that isolated change itself merges after its
+complete exact-head gate. The isolated change is Draft PR #131. No next
+requirement may begin here.
