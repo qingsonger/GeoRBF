@@ -136,3 +136,7 @@ harness = false
 [[bench]]
 name = "level_points"
 harness = false
+
+[[bench]]
+name = "isolines"
+harness = false

@@ -6,60 +6,81 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-CONTOUR-001 implementation merged
-- Requirement: REQ-CONTOUR-001, one-dimensional level points
-- Issue: #132, closed
-- Implementation branch: `codex/req-contour-001-level-points`
-- Implementation pull request: #133, squash-merged as `2634a7d`
-- Integration-state branch: `codex/req-contour-001-integration-state`
-- Integration-state pull request: #134 (Draft until final exact-head gates pass)
-- Exact implementation Ready head: `25df6e9`
-- Repair implementation head: `1280cd2`
+- Mode: Implement complete; Draft PR publication in progress
+- Requirement: REQ-CONTOUR-002, two-dimensional isolines
+- Issue: #135
+- Branch: `codex/req-contour-002-isolines`
+- Draft pull request: pending publication
 - Dependency: REQ-MODEL-001 is integrated
-- Registry status in this change: `integrated`
+- Registry status: `in_progress`
+- Base `main`: `6e622c7`; post-merge CI run 30092831813 passed Windows,
+  Ubuntu, and macOS
 
-## Fresh re-review and integration result
+## Implemented scope
 
-An isolated read-only project `math_reviewer` reviewed the complete base
-`a3e89ee..bc892c3` and focused repair `323fcd9..1280cd2`. It found no
-remaining or new P0--P3 issue and independently closed all three original
-findings. Complete counterexamples, repair mapping, independent truth, and
-validation evidence are in
-`docs/reviews/PR-133-INDEPENDENT-REVIEW.md`.
+- `FittedField<2>` accepts a finite target level, finite original-coordinate
+  rectangle, explicit X/Y grid and refinement limits, positive finite value
+  and coordinate tolerances, and an explicit marching method.
+- `MarchingSimplices` is the fixed lower-left-to-upper-right reference path.
+  `DisambiguatedMarchingSquares` uses a scale-normalized bilinear asymptotic
+  decider and deterministic positive-connectivity tie for alternating cells.
+- Only exact endpoint hits and true value-sign brackets produce
+  intersections. Retained brackets use fitted-field values and
+  bracket-preserving bisection with an explicit failure limit.
+- Shared intersections use canonical grid-edge or grid-vertex identities.
+  Only exact repeated undirected segments are removed; distinct nearby
+  components are not spatially merged.
+- The unique segment graph is accepted only with degree at most two. Returned
+  components are deterministic open or closed polylines, and every open
+  endpoint retains explicit requested-rectangle side evidence.
+- Edges with two exact target-level endpoint samples, unsupported exact-vertex
+  patterns, non-manifold vertices, and interior open endpoints are structured
+  failures. Finite samples never claim that a nonlinear edge interior or an
+  unseen sub-cell component is known.
+- The controlled serial path rejects unsupported thread counts before fitted
+  evaluation, reports deterministic progress, checks cancellation around every
+  analytic value query, and returns no partial report on failure.
+- Rust and benchmark surfaces are implemented. CLI is N/A until an M8
+  versioned model/project input can supply a fitted field. C, C++, and Python
+  remain M9 work.
 
-Clean re-review evidence was pushed as exact Ready head `25df6e9`. Ready CI run
-30088526342 passed the complete Windows, Ubuntu, and macOS workspace matrix,
-including all configured correctness checks, backend combinations, requirement
-validation, and every benchmark smoke. PR #133 was squash-merged exactly once
-as `2634a7d`; Issue #132 closed as completed. Post-merge `main` CI run
-30089747253 passed the same complete three-platform gate on exact merge commit
-`2634a7d`.
+## Validation state
 
-This isolated integration-state change modifies only the registry, completed
-history index, independent review evidence, and bounded handoff. It changes no
-production code, test, manifest, schema, CI, build input, API, numerical
-behavior, dependency, tag, or release.
+- Seven independent exact-CPD-polynomial integration tests pass for a
+  transformed open line, closed circle, exactly tied saddle, nonzero
+  asymptotic decision, marching-simplices reference, invalid input,
+  two-endpoint edge degeneracy, refinement exhaustion, work overflow,
+  cancellation, serial policy, and progress.
+- The focused isoline Rustdoc example and warning-denying all-target,
+  all-feature `georbf` Clippy pass.
+- Release benchmark smoke passes with one closed circle and checksum
+  `1.83299999999997817e4`.
+- The normal 500-iteration release benchmark records 19,386,121.40
+  ns/extraction and checksum `4.58249999999998696e6` on the documented local
+  environment.
+- The 58-requirement registry check passes.
+- After the final production, test, manifest, benchmark, CI-routing,
+  architecture, user-guide, registry, and handoff changes, the stable
+  implementation tree passed formatting, all-target and all-feature workspace
+  Clippy with warnings denied, the complete all-feature workspace test suite,
+  all workspace Rustdoc tests, and the 58-requirement registry check.
 
 ## Next task boundary
 
-Run the complete standard local gate on the final integration-state tree,
-commit and push it, and open its Draft pull request. Mark that pull request
-Ready, wait for exact-head Windows, Ubuntu, and macOS correctness plus complete
-benchmark-smoke CI, and merge only if green. Then stop. Do not begin
-REQ-CONTOUR-002.
+Commit and push the stable implementation, open a Draft PR, link its exact head
+and number in the registry and handoff, and stop. The next fresh task must
+perform an isolated mathematical/numerical Review of only REQ-CONTOUR-002 and
+its Draft PR. Do not begin REQ-CONTOUR-003.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #132
-- Merged implementation: GitHub PR #133
-- Integration-state pull request: GitHub PR #134
-- Independent review and repair: `docs/reviews/PR-133-INDEPENDENT-REVIEW.md`
-- Core implementation: `crates/georbf/src/contour.rs`
-- Independent tests: `crates/georbf/tests/contour.rs`
-- User guide: `docs/user-guide/LEVEL_POINTS.md`
-- Requirement summary: `changes/REQ-CONTOUR-001.md`
-- Benchmark evidence: `docs/benchmarks/REQ-CONTOUR-001.md`
-- Release benchmark: `crates/georbf/benches/level_points.rs`
+- Acceptance criteria and exclusions: GitHub Issue #135
+- Core implementation: `crates/georbf/src/contour/isoline.rs`
+- Independent tests: `crates/georbf/tests/isoline.rs`
+- User guide: `docs/user-guide/ISOLINES.md`
+- Requirement summary: `changes/REQ-CONTOUR-002.md`
+- Benchmark evidence: `docs/benchmarks/REQ-CONTOUR-002.md`
+- Release benchmark: `crates/georbf/benches/isolines.rs`
 
 ## Checks not yet available
 

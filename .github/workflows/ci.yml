@@ -279,5 +279,7 @@ jobs:
         run: cargo bench -p georbf --bench sampled_thickness_validation -- --smoke
       - name: Smoke-test one-dimensional level-point benchmark
         run: cargo bench -p georbf --bench level_points -- --smoke
+      - name: Smoke-test two-dimensional isoline benchmark
+        run: cargo bench -p georbf --bench isolines -- --smoke
       - name: Validate requirement registry
         run: cargo xtask requirements check

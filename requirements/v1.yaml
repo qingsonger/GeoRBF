@@ -768,17 +768,17 @@ requirements:
     dependencies: [REQ-MODEL-001]
     milestone: M8-v0.8.0
     priority: P0
-    issue: null
+    issue: 135
     pull_request: null
-    tests: [line, circle, saddle, ambiguous-cell, open-boundary]
-    docs: [rustdoc, user-guide]
-    rust_api: planned
-    cli: planned
-    c_api: planned
-    cpp_api: planned
-    python_api: planned
-    benchmark: planned
-    status: planned
+    tests: [line, circle, saddle, ambiguous-cell, open-boundary, marching-simplices, original-coordinate-transform, invalid-settings, degenerate-edge, refinement-failure, work-overflow, cancellation-progress]
+    docs: [docs/user-guide/ISOLINES.md, docs/benchmarks/REQ-CONTOUR-002.md, rustdoc]
+    rust_api: implemented
+    cli: "N/A: the complete M8 CLI needs a versioned model/project input before it can supply a fitted field"
+    c_api: "N/A: stable C ABI and parity are M9 capabilities"
+    cpp_api: "N/A: C++ wrapper is an M9 capability and depends on the C ABI"
+    python_api: "N/A: Python bindings and parity are M9 capabilities"
+    benchmark: implemented
+    status: in_progress
 
   - id: REQ-CONTOUR-003
     title: Three-dimensional isosurfaces

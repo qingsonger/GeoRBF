@@ -42,6 +42,15 @@ use crate::kernel::KernelDerivativeCapability;
 use crate::model::{FittedField, FittedFieldEvaluationError, FittedFieldOutput};
 use crate::problem_ir::ExecutionOptions;
 
+mod isoline;
+
+pub use isoline::{
+    IsolineAmbiguityDecider, IsolineAmbiguousCell, IsolineBoundaryEndpoint, IsolineBoundarySide,
+    IsolineCellPairing, IsolineDiagnostics, IsolineDomainAxis, IsolineError, IsolineMethod,
+    IsolinePolyline, IsolineReport, IsolineRequest, IsolineRequestError, IsolineSettings,
+    IsolineSettingsError, IsolineStorage, IsolineTolerance, IsolineVertex,
+};
+
 /// Explicit scan and bracket-refinement policy for one-dimensional level points.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[must_use]

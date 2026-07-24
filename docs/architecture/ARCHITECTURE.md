@@ -237,6 +237,29 @@ oscillations. This layer performs no finite differences, fitting, coefficient
 repair, topology reconstruction, schema I/O, or adapter-side mathematics; D=2
 and D=3 level sets remain separate atomic requirements.
 
+The two-dimensional isoline layer consumes only an immutable `FittedField<2>`,
+a finite target level, a finite original-coordinate rectangle, and explicit
+grid and refinement settings. Its reference path splits every rectangular cell
+from lower-left to upper-right and marches the two simplices. Its regular-grid
+path uses marching squares; alternating-sign cells use the scale-normalized
+bilinear saddle value when the saddle is interior, the bilinear center
+otherwise, and a deterministic positive-connectivity tie when that decider is
+exactly zero. Both paths retain only exact endpoint hits or true value-sign
+brackets and refine the latter with bracket-preserving bisection. Shared
+intersections are deduplicated by canonical grid-edge or grid-vertex identity,
+not by an implicit spatial merge radius. The resulting unique undirected
+segment graph must have degree at most two, and every degree-one vertex must
+touch the requested rectangle within the explicit coordinate tolerance.
+Returned topology consists only of deterministic open and closed polylines,
+with boundary-side and ambiguity evidence. An exact grid edge on the target
+level, or an edge whose two endpoint samples are exact but whose interior is
+unknown, is diagnosed as underdetermined at the requested grid resolution
+rather than converted into an arbitrary segment. The finite grid is reported
+evidence rather than a proof against unseen sub-cell components. This layer
+performs no finite differences, fitting, coefficient repair, schema I/O, mesh
+export, or adapter-side mathematics; D=3 isosurfaces remain a separate atomic
+requirement.
+
 The project layer owns one or more independently fitted `FittedField<D>` values
 behind stable caller-controlled `FieldId` values. `GeoProject<D>` preserves
 insertion order, rejects duplicate identifiers, and performs deterministic
