@@ -8,9 +8,12 @@
 - Reviewed head: `2b93db4c7efce551601e45836ec43ff4a3c7f622`
 - Stable implementation gate head:
   `4e766af`
+- Repair implementation and standard-gate head:
+  `9510b6c`
 - Draft CI run: 30095419189
 - Review date: 2026-07-24
-- Result: five actionable findings; fresh Repair required
+- Repair date: 2026-07-24
+- Result: five findings repaired; fresh independent re-review required
 
 ## Scope and independence
 
@@ -131,6 +134,50 @@ The Repair must add an instrumented evaluation path synchronized so
 cancellation occurs after the preceding checkpoint but before the next
 invocation. It must require cancellation before the evaluator counter
 increments and retain a post-query cancellation-priority assertion.
+
+## Repair evidence
+
+Commit `9510b6c` addresses only CONTOUR002-REV-001 through
+CONTOUR002-REV-005:
+
+- Sign-bracket intersections accepted by value tolerance retain their
+  canonical crossed-edge key, so distinct bracketed components cannot collapse
+  through a shared nonzero grid sample.
+- Square and simplex intersection records are deduplicated by canonical key
+  before topology classification. The exact affine `x - y` one-cell square
+  now produces one ordinary corner-to-corner segment while one-unique and
+  underdetermined patterns remain structured failures.
+- Refinement updates the retained bracket before checking coordinate
+  tolerance, so the final permitted bisection can succeed and every exhausted
+  bracket remains wider than the requested coordinate tolerance.
+- Endpoint-record and polyline ordering use deterministic in-place unstable
+  sorts with total tie breakers. A 4096-element allocator-instrumented
+  regression observes zero allocation calls during either ordering operation.
+- The fitted-value wrapper performs an explicit cancellation checkpoint
+  immediately before invoking the evaluator and retains the existing
+  post-query cancellation priority. A synchronized counter regression proves
+  both boundaries.
+
+Independent exact-CPD polynomial regressions cover the two nearby quadratic
+components, the exact affine corner topology, and final-iteration coordinate
+tolerance. The isoline integration suite passes 10 tests, and the internal
+allocation, cancellation, and canonical-key suite passes 3 tests. Focused
+all-target, all-feature Clippy with warnings denied and the isoline Rustdoc
+example pass. Release benchmark smoke passes with unchanged checksum
+`1.83299999999997817e4`.
+
+After the final production and test change, the exact tree committed as
+`9510b6c` passed:
+
+- `cargo fmt --all -- --check`
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`
+- `cargo test --workspace --all-features`
+- `cargo test --doc --workspace`
+- `cargo xtask requirements check`
+
+This repair evidence is not an independent re-review and does not close the
+review contract by itself. PR #136 remains Draft until a fresh isolated
+reviewer confirms the repairs and checks for new P0--P3 findings.
 
 ## Verified behavior and residual risk
 

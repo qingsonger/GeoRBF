@@ -6,13 +6,13 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; Repair required
+- Mode: Repair complete; fresh independent re-review required
 - Requirement: REQ-CONTOUR-002, two-dimensional isolines
 - Issue: #135
 - Branch: `codex/req-contour-002-isolines`
 - Draft pull request: #136
 - Reviewed head: `2b93db4`
-- Stable implementation head: `4e766af`
+- Repair implementation and standard-gate head: `9510b6c`
 - Independent review: `docs/reviews/PR-136-INDEPENDENT-REVIEW.md`
 - Dependency: REQ-MODEL-001 is integrated
 - Registry status: `in_progress`
@@ -67,7 +67,8 @@ records, benchmark reports, Git, and GitHub.
   implementation tree passed formatting, all-target and all-feature workspace
   Clippy with warnings denied, the complete all-feature workspace test suite,
   all workspace Rustdoc tests, and the 58-requirement registry check.
-- The isolated `math_reviewer` found two P1 and three P2 defects:
+- The isolated `math_reviewer` found two P1 and three P2 defects on
+  `2b93db4`:
   - CONTOUR002-REV-001: value-tolerance endpoint acceptance can assign one
     grid-vertex key to two distinct bracketed components.
   - CONTOUR002-REV-002: duplicate edge records for exact grid corners reject
@@ -78,23 +79,40 @@ records, benchmark reports, Git, and GitHub.
     structured allocation-failure path.
   - CONTOUR002-REV-005: cancellation is checked after, but not immediately
     before, each fitted-field value query.
-- On exact reviewed head `2b93db4`, the parent Review reran all seven focused
-  isoline integration tests and the focused Rustdoc example; they passed.
-  Draft CI run 30095419189 also passed its configured Ubuntu correctness gate.
-  This is not the complete Ready three-platform and benchmark-smoke gate.
-- No production, test, manifest, schema, benchmark, registry, CI, or build
-  input was changed during Review. The complete standard gate on immutable
-  implementation head `4e766af` therefore remains the latest full local gate.
+- Repair commit `9510b6c` gives tolerance-accepted sign brackets their
+  crossed-edge identities, deduplicates square and simplex intersections by
+  canonical key before topology classification, checks the updated bracket
+  after the final bisection, uses allocation-free deterministic topology
+  ordering, and checkpoints cancellation immediately before every fitted-value
+  query while preserving post-query cancellation priority.
+- Three new exact-CPD integration regressions cover distinct nearby quadratic
+  components, exact affine square-corner topology, and final-iteration
+  coordinate tolerance. Three internal regressions cover canonical-key
+  deduplication, 4096-element zero-allocation ordering, and synchronized
+  pre/post-query cancellation behavior.
+- The 10-test isoline integration suite, 3-test internal repair suite, focused
+  isoline Rustdoc, warning-denying focused Clippy, and release benchmark smoke
+  pass. The smoke checksum remains `1.83299999999997817e4`.
+- After the final production and test change, exact committed tree `9510b6c`
+  passed formatting, warning-denying all-target and all-feature workspace
+  Clippy, the complete all-feature workspace test suite, all workspace Rustdoc
+  tests, and the 58-requirement registry check.
+- The repair has not been independently re-reviewed. PR #136 remains Draft;
+  no Ready Windows, Ubuntu, macOS, or complete benchmark-smoke CI is claimed.
 
 ## Next task boundary
 
-Stop this Review task. The next fresh task must use Repair mode and address
-only CONTOUR002-REV-001 through CONTOUR002-REV-005 in Draft PR #136. Reproduce
-each finding with the independent regression specified in the review record,
-implement the smallest complete repairs, rerun focused checks during
-development, run the complete standard checks after the final code change,
-update review evidence and this bounded handoff, commit, push, and stop for a
-fresh independent re-review. Do not begin REQ-CONTOUR-003.
+Stop this Repair task after pushing the documentation-only handoff commit. The
+next fresh task must use Review/re-review mode for Draft PR #136. Supply a fresh
+isolated `math_reviewer` only the bounded requirement and dependency summary,
+normative documents, original five findings, focused repair diff
+`978a445..9510b6c`, complete PR diff, and validation evidence. It must
+independently confirm closure of CONTOUR002-REV-001 through
+CONTOUR002-REV-005 and check for new P0--P3 findings. If any finding remains,
+record it and stop without repair. If the re-review is clean, synchronize the
+review evidence, mark PR #136 Ready, wait for the complete exact-head Windows,
+Ubuntu, macOS, and benchmark-smoke CI, and merge exactly once only if green.
+Then record truthful integration state and stop. Do not begin REQ-CONTOUR-003.
 
 ## Durable evidence
 
