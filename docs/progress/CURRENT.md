@@ -6,14 +6,17 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; Repair required for CONTOUR002-REREV-006
+- Mode: Repair complete; fresh independent re-review required for
+  CONTOUR002-REREV-006
 - Requirement: REQ-CONTOUR-002, two-dimensional isolines
 - Issue: #135
 - Branch: `codex/req-contour-002-isolines`
 - Draft pull request: #136
 - Reviewed head: `2b93db4`
 - Fresh re-reviewed head: `98a5572`
-- Repair implementation and standard-gate head: `9510b6c`
+- First repair implementation and standard-gate head: `9510b6c`
+- CONTOUR002-REREV-006 repair implementation and standard-gate head:
+  `6dee8e7`
 - Independent review: `docs/reviews/PR-136-INDEPENDENT-REVIEW.md`
 - Dependency: REQ-MODEL-001 is integrated
 - Registry status: `in_progress`
@@ -107,6 +110,22 @@ records, benchmark reports, Git, and GitHub.
   diagnostic itself can fail outside the extractor's fallible allocation path.
   Repair must preserve the exact fitted-field source without heap allocation
   and add allocation-instrumented production-conversion regressions.
+- Repair commit `6dee8e7` stores preparation and evaluation fitted-field
+  sources inline and routes both production `map_err` call sites through the
+  exact conversion functions exercised by the regression. Forming either
+  diagnostic now performs no heap allocation of its own, and `Error::source`
+  retains the concrete `FittedFieldEvaluationError<2>` and its evidence.
+- The new internal regression observes zero allocation calls for both
+  production conversions, verifies the retained preparation and evaluation
+  source variants, and verifies the evaluation point. The 10-test isoline
+  integration suite, all 4 internal isoline repair tests, focused isoline
+  Rustdoc, warning-denying focused Clippy, and release benchmark smoke pass.
+  The smoke checksum remains `1.83299999999997817e4`.
+- After the final production, test, user-guide, and change-fragment update,
+  exact committed tree `6dee8e7` passed formatting, warning-denying all-target
+  and all-feature workspace Clippy, the complete all-feature workspace test
+  suite, all workspace Rustdoc tests, the 58-requirement registry check, and
+  whitespace checks.
 - The reviewer passed the 10-test isoline suite, all 3 internal repair tests,
   focused Rustdoc, release benchmark smoke with unchanged checksum, formatting,
   the 58-requirement registry check, and complete and repair whitespace checks.
@@ -116,17 +135,16 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-Stop this Review task after pushing its documentation-only evidence commit.
-The next fresh task must use Repair mode for Draft PR #136 and address only
-CONTOUR002-REREV-006. Replace the infallibly allocated preparation and
-evaluation error-source mapping while preserving the exact
-`FittedFieldEvaluationError<2>` through `Error::source`. Add
-allocation-instrumented regressions that exercise the same conversions as both
-production call sites and require zero allocations. Run focused checks during
-repair and one complete standard gate after the last production or test
-change, update the review evidence and bounded handoff, commit, push, and stop
-for another fresh independent re-review. Do not mark the PR Ready, merge it, or
-begin REQ-CONTOUR-003.
+Stop this Repair task after pushing its documentation-only evidence commit.
+The next fresh task must use Review mode for Draft PR #136 and independently
+re-review exact repair head `6dee8e7`. It must receive only the bounded
+requirement summary, dependency closure, normative documents, base-to-head
+diff, finding CONTOUR002-REREV-006, and validation evidence. Verify that both
+production conversions allocate nothing and retain the exact fitted-field
+source through `Error::source`, inspect the new regression, rerun focused
+checks, update the independent review and bounded handoff, commit and push the
+review evidence, then stop. Do not repair production code, mark the PR Ready,
+merge it, or begin REQ-CONTOUR-003.
 
 ## Durable evidence
 

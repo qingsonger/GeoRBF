@@ -10,13 +10,15 @@
   `98a5572001457ce8cedaac6180c9be2f43cb5900`
 - Stable implementation gate head:
   `4e766af`
-- Repair implementation and standard-gate head:
+- First repair implementation and standard-gate head:
   `9510b6c`
+- CONTOUR002-REREV-006 repair implementation and standard-gate head:
+  `6dee8e73487b94b4c79a9d8b11206159814e8ba0`
 - Draft CI runs: 30095419189, 30097440898
 - Review and re-review date: 2026-07-24
 - Repair date: 2026-07-24
-- Result: original five findings closed; new P2
-  CONTOUR002-REREV-006 requires Repair
+- Result: original five findings closed; P2 CONTOUR002-REREV-006 repaired on
+  `6dee8e7` and awaiting fresh independent re-review
 
 ## Scope and independence
 
@@ -229,6 +231,21 @@ allocation-instrumented regression must exercise the same preparation and
 evaluation source conversions used by both production call sites, observe zero
 allocation calls, and verify the retained source.
 
+Repair head `6dee8e7` stores both fitted-field sources inline and routes the two
+production `map_err` call sites through the same private conversions exercised
+by the new allocation-instrumented regression. The regression observes zero
+allocation calls for both conversions and downcasts each `Error::source` back
+to the exact `FittedFieldEvaluationError<2>` with its evidence intact.
+
+On that exact implementation head, the 10-test isoline integration suite, all
+4 internal isoline repair tests, focused isoline Rustdoc, warning-denying
+focused Clippy, and release benchmark smoke passed with the unchanged checksum
+`1.83299999999997817e4`. The final standard gate passed formatting,
+warning-denying all-target and all-feature workspace Clippy, the complete
+all-feature workspace test suite, all workspace Rustdoc tests, and the
+58-requirement registry check. This is Repair evidence, not an independent
+closure of CONTOUR002-REREV-006.
+
 No P0, P1, additional P2, or P3 finding was identified. The reviewer
 independently rechecked the bilinear coefficients, interior saddle and
 `a - b*c/d` value, positive-connectivity pairings and exact tie, dimensions and
@@ -246,12 +263,11 @@ check, and both complete and repair whitespace checks. Draft CI run
 re-reviewed head `98a5572`. Ready-only Windows, Ubuntu, macOS, and complete
 benchmark-smoke CI remains unexecuted.
 
-PR #136 remains Draft and REQ-CONTOUR-002 remains `in_progress`. A fresh Repair
-task must address only CONTOUR002-REREV-006, add the required production-path
-regression, run the focused and final standard checks after the last code
-change, update the evidence and bounded handoff, push, and stop for another
-fresh independent re-review. This Review task does not repair production code,
-mark the PR Ready, merge it, or begin REQ-CONTOUR-003.
+PR #136 remains Draft and REQ-CONTOUR-002 remains `in_progress`. A fresh Review
+task must independently re-review exact repair head `6dee8e7`, determine
+whether CONTOUR002-REREV-006 is closed, record its evidence, push, and stop.
+That task must not repair production code, mark the PR Ready, merge it, or
+begin REQ-CONTOUR-003.
 
 ## Verified behavior and residual risk
 
