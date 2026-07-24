@@ -132,3 +132,7 @@ harness = false
 [[bench]]
 name = "sampled_thickness_validation"
 harness = false
+
+[[bench]]
+name = "level_points"
+harness = false
