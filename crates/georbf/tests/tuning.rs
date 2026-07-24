@@ -38,11 +38,13 @@ where
 #[derive(Clone, Copy)]
 enum AnalyticMode {
     CrossValidation { optimum: f64 },
+    AuditableCrossValidation,
     GeneralizedCrossValidation { optimum: f64 },
     Power { optimum: f64 },
     Constant,
     InvalidCrossValidation,
     InvalidGeneralizedCrossValidation,
+    MismatchedGeneralizedCrossValidation,
     InvalidPower,
     Failure,
 }
@@ -83,6 +85,21 @@ impl TuningEvaluator for AnalyticEvaluator {
                 weighted_squared_error: 1.0,
                 weight: 1.0,
             }),
+            AnalyticMode::AuditableCrossValidation => match fold.index() {
+                0 => Ok(CrossValidationEvidence {
+                    weighted_squared_error: 1.0,
+                    weight: 1.0,
+                }),
+                1 => Ok(CrossValidationEvidence {
+                    weighted_squared_error: 6.0,
+                    weight: 2.0,
+                }),
+                2 => Ok(CrossValidationEvidence {
+                    weighted_squared_error: 9.0,
+                    weight: 3.0,
+                }),
+                _ => Err(TuningEvaluationFailure::new("unexpected fold")),
+            },
             AnalyticMode::InvalidCrossValidation => Ok(CrossValidationEvidence {
                 weighted_squared_error: -1.0,
                 weight: 0.0,
@@ -113,6 +130,14 @@ impl TuningEvaluator for AnalyticEvaluator {
                     residual_sum_squares: 1.0,
                     observation_count: 2,
                     effective_degrees_of_freedom: 2.0,
+                })
+            }
+            AnalyticMode::MismatchedGeneralizedCrossValidation => {
+                let first_candidate = length.to_bits() == 1.0_f64.to_bits();
+                Ok(GeneralizedCrossValidationEvidence {
+                    residual_sum_squares: 1.0,
+                    observation_count: if first_candidate { 100 } else { 2 },
+                    effective_degrees_of_freedom: if first_candidate { 90.0 } else { 1.0 },
                 })
             }
             AnalyticMode::Failure => Err(TuningEvaluationFailure::new("analytic failure")),
@@ -196,6 +221,27 @@ fn distance_heuristic_matches_median_nearest_neighbor_truth() -> TestResult {
 }
 
 #[test]
+fn distance_heuristic_handles_extreme_finite_log_ratios() -> TestResult {
+    for (distance, length) in [(f64::MIN_POSITIVE, f64::MAX), (f64::MAX, f64::MIN_POSITIVE)] {
+        let problem = TuningProblem::try_new(
+            vec![Point::try_new([0.0])?, Point::try_new([distance])?],
+            vec![length_candidate(length)?],
+            TuningBounds::try_new(Some((f64::MIN_POSITIVE, f64::MAX)), None, None, None, None)?,
+        )?;
+        let result = problem.try_tune(
+            TuningStrategy::DistanceHeuristic { seed: 19 },
+            &mut NoopTuningEvaluator,
+        )?;
+        assert!(
+            result.diagnostics().candidates[0]
+                .score
+                .is_some_and(f64::is_finite)
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn cross_validation_finds_known_optimum_and_records_folds() -> TestResult {
     let problem = length_problem(
         (0_u32..7)
@@ -229,9 +275,65 @@ fn cross_validation_finds_known_optimum_and_records_folds() -> TestResult {
     );
     assert!(matches!(
         &result.diagnostics().candidates[2].evidence,
-        TuningScoreEvidence::CrossValidation { fold_losses }
-            if fold_losses == &[0.0, 0.0, 0.0]
+        TuningScoreEvidence::CrossValidation { fold_evidence }
+            if fold_evidence.len() == 3
+                && fold_evidence.iter().all(|evidence| {
+                    evidence.weighted_squared_error == 0.0 && evidence.weight > 0.0
+                })
     ));
+    Ok(())
+}
+
+#[test]
+fn cross_validation_retains_auditable_weighted_evidence() -> TestResult {
+    let problem = length_problem(
+        vec![
+            Point::try_new([0.0])?,
+            Point::try_new([1.0])?,
+            Point::try_new([2.0])?,
+        ],
+        &[1.0],
+    )?;
+    let mut evaluator = AnalyticEvaluator::new(AnalyticMode::AuditableCrossValidation);
+    let result = problem.try_tune(
+        TuningStrategy::CrossValidation {
+            folds: NonZeroUsize::new(3).ok_or("fold count")?,
+            seed: 0x5eed,
+        },
+        &mut evaluator,
+    )?;
+    let expected = [
+        CrossValidationEvidence {
+            weighted_squared_error: 1.0,
+            weight: 1.0,
+        },
+        CrossValidationEvidence {
+            weighted_squared_error: 6.0,
+            weight: 2.0,
+        },
+        CrossValidationEvidence {
+            weighted_squared_error: 9.0,
+            weight: 3.0,
+        },
+    ];
+    let TuningScoreEvidence::CrossValidation { fold_evidence } =
+        &result.diagnostics().candidates[0].evidence
+    else {
+        return Err("missing cross-validation evidence".into());
+    };
+    assert_eq!(fold_evidence, &expected);
+    let total_error = fold_evidence
+        .iter()
+        .map(|evidence| evidence.weighted_squared_error)
+        .sum::<f64>();
+    let total_weight = fold_evidence
+        .iter()
+        .map(|evidence| evidence.weight)
+        .sum::<f64>();
+    assert_eq!(
+        result.diagnostics().candidates[0].score,
+        Some(total_error / total_weight)
+    );
     Ok(())
 }
 
@@ -277,8 +379,32 @@ fn generalized_cross_validation_uses_documented_formula() -> TestResult {
         &mut evaluator,
     )?;
     assert_eq!(result.parameters().length(), Some(2.0));
-    assert_eq!(result.diagnostics().candidates[0].score, Some(0.25));
+    assert_eq!(result.diagnostics().candidates[0].score, Some(1.0));
     assert_eq!(result.diagnostics().candidates[1].score, Some(0.0));
+    Ok(())
+}
+
+#[test]
+fn generalized_cross_validation_rejects_candidate_count_mismatch() -> TestResult {
+    let problem = length_problem(
+        vec![Point::try_new([0.0])?, Point::try_new([1.0])?],
+        &[1.0, 2.0],
+    )?;
+    let mut evaluator = AnalyticEvaluator::new(AnalyticMode::MismatchedGeneralizedCrossValidation);
+    assert!(matches!(
+        problem.try_tune(
+            TuningStrategy::GeneralizedCrossValidation { seed: 11 },
+            &mut evaluator,
+        ),
+        Err(
+            TuningError::MismatchedGeneralizedCrossValidationObservationCount {
+                candidate: 1,
+                expected: 100,
+                actual: 2,
+            }
+        )
+    ));
+    assert_eq!(evaluator.calls, 2);
     Ok(())
 }
 
@@ -418,6 +544,22 @@ fn distance_and_fold_preconditions_fail_explicitly() -> TestResult {
         ),
         Err(TuningError::FoldCountExceedsObservations { .. })
     ));
+    let two = length_problem(
+        vec![Point::try_new([0.0])?, Point::try_new([1.0])?],
+        &[1.0, 2.0],
+    )?;
+    let mut evaluator = AnalyticEvaluator::new(AnalyticMode::Constant);
+    assert!(matches!(
+        two.try_tune(
+            TuningStrategy::CrossValidation {
+                folds: NonZeroUsize::new(1).ok_or("fold count")?,
+                seed: 0,
+            },
+            &mut evaluator,
+        ),
+        Err(TuningError::InsufficientCrossValidationFolds { folds: 1 })
+    ));
+    assert_eq!(evaluator.calls, 0);
     Ok(())
 }
 

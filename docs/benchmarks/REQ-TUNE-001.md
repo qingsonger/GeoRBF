@@ -12,7 +12,8 @@ regularization, axis ratio, and influence radius. All searches use seed
 `0x5eed`. Cross-validation uses five deterministic nonempty folds. Its analytic
 evaluator has a known length optimum of two and returns finite weighted held-
 out errors. The generalized-cross-validation evaluator supplies 64
-observations, 12 effective degrees of freedom, and an analytic residual. The
+observations for every candidate, 12 effective degrees of freedom, and an
+analytic residual scored as canonical `n * RSS / (n - effective_dof)^2`. The
 power evaluator reviews 128 samples and supplies an analytic worst-case squared
 power. The benchmark measures only the GeoRBF-owned validation, fold
 construction, scoring, diagnostics, and deterministic selection layer; actual
@@ -25,11 +26,11 @@ One 100-iteration run on 2026-07-24 produced:
 
 | Strategy | Time per selection | Checksum |
 | --- | ---: | ---: |
-| Fixed | 418 ns | `6.40000000000000000e3` |
-| Distance heuristic | 49.245 us | `1.96184571271557033e4` |
-| Cross-validation | 12.437 us | `1.94724409448819279e4` |
-| Generalized cross-validation | 824 ns | `5.40520430508316167e3` |
-| Power function | 909 ns | `1.94724409448819279e4` |
+| Fixed | 490 ns | `6.40000000000000000e3` |
+| Distance heuristic | 33.708 us | `1.96184571271557033e4` |
+| Cross-validation | 11.073 us | `1.94724409448819279e4` |
+| Generalized cross-validation | 827 ns | `5.73307552532266072e3` |
+| Power function | 694 ns | `1.94724409448819279e4` |
 
 These are local regression observations, not cross-machine or final-library
 performance promises. Ready and `main` CI run a 16-candidate, one-iteration

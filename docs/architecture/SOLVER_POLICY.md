@@ -299,14 +299,19 @@ Fixed selection returns one exact caller index without evaluating alternatives.
 The distance heuristic computes each observation's stable Euclidean nearest-
 neighbor distance, takes their median, and minimizes the mean squared
 log-ratio for every active length, support-radius, and influence-radius value.
+Log ratios are evaluated as a difference of finite logarithms so legal extreme
+positive scales do not overflow or underflow through an intermediate quotient.
 Duplicate locations, nonrepresentable distances, or the absence of a
 length-like candidate parameter are explicit failures.
 
 Cross-validation constructs nonempty folds by sorting observation indices with
 an explicit-seed SplitMix64 key and assigning that order round-robin. It
-minimizes the total caller-reviewed weighted squared error divided by total
-weight while retaining each fold mean. Generalized cross-validation minimizes
-`RSS / (n - effective_dof)^2` only when `0 <= effective_dof < n`.
+requires `2 <= folds <= observations`, so every validation fold has a nonempty
+training complement. It minimizes the total caller-reviewed weighted squared
+error divided by total weight while retaining each fold's exact weighted
+squared error and weight. Generalized cross-validation minimizes canonical
+`n * RSS / (n - effective_dof)^2` only when `0 <= effective_dof < n`, and
+requires every candidate to report the same observation count.
 Power-function tuning minimizes the caller-reviewed maximum nonnegative squared
 power over a positive sample count. These formulas, finite evidence, and
 observation counts are reviewed in the Rust core; the caller-owned evaluator
@@ -315,8 +320,9 @@ criterion fallback.
 
 Candidate traversal and score reduction are stable. Exact minimum-score ties
 use keys derived only from the explicit seed and candidate index; no global
-random state exists. Diagnostics retain the criterion, seed, bounds, fold
-membership, every candidate score and criterion evidence, the selected index,
-and exact tie count. Tuning never mutates a `FieldProblem`, changes a hard
-constraint, invents regularization, adds jitter, uses a pseudoinverse, or
-changes solver policy.
+random state exists. Total deterministic nearest-distance and fold-order keys
+are sorted in place without auxiliary allocation. Diagnostics retain the
+criterion, seed, bounds, fold membership, every candidate score and criterion
+evidence, the selected index, and exact tie count. Tuning never mutates a
+`FieldProblem`, changes a hard constraint, invents regularization, adds jitter,
+uses a pseudoinverse, or changes solver policy.

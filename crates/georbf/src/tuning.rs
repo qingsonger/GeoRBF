@@ -245,7 +245,7 @@ pub enum TuningCriterion {
     DistanceHeuristic,
     /// Minimize weighted held-out squared error over deterministic folds.
     CrossValidation,
-    /// Minimize `RSS / (observation_count - effective_degrees_of_freedom)^2`.
+    /// Minimize canonical `n * RSS / (n - effective_degrees_of_freedom)^2`.
     GeneralizedCrossValidation,
     /// Minimize the worst squared power-function value.
     PowerFunction,
@@ -267,7 +267,7 @@ pub enum TuningStrategy {
     },
     /// Use deterministic shuffled round-robin validation folds.
     CrossValidation {
-        /// Required nonzero validation-fold count.
+        /// Validation-fold count; must be at least two and at most the observations.
         folds: NonZeroUsize,
         /// Reproducible fold-order and exact-score tie-breaking seed.
         seed: u64,
@@ -482,10 +482,10 @@ pub enum TuningScoreEvidence {
         /// Number of active length-like values included in the score.
         compared_parameter_count: usize,
     },
-    /// Deterministic per-fold mean losses in fold order.
+    /// Deterministic raw per-fold evidence in fold order.
     CrossValidation {
-        /// Per-fold `weighted_squared_error / weight`.
-        fold_losses: Vec<f64>,
+        /// Exact weighted squared error and weight returned for each fold.
+        fold_evidence: Vec<CrossValidationEvidence>,
     },
     /// Validated generalized-cross-validation evidence.
     GeneralizedCrossValidation(GeneralizedCrossValidationEvidence),
@@ -774,8 +774,12 @@ where
             } => {
                 folds = build_folds(self.locations.len(), fold_count, seed)?;
                 for (candidate_index, candidate) in self.candidates.iter().enumerate() {
-                    let mut fold_losses = Vec::new();
-                    try_reserve_exact(&mut fold_losses, folds.len(), TuningStorage::FoldLosses)?;
+                    let mut fold_evidence = Vec::new();
+                    try_reserve_exact(
+                        &mut fold_evidence,
+                        folds.len(),
+                        TuningStorage::FoldEvidence,
+                    )?;
                     let mut total_error = 0.0;
                     let mut total_weight = 0.0;
                     for fold in &folds {
@@ -795,7 +799,7 @@ where
                                 criterion,
                             });
                         }
-                        fold_losses.push(fold_loss);
+                        fold_evidence.push(evidence);
                         total_error += evidence.weighted_squared_error;
                         total_weight += evidence.weight;
                         if !total_error.is_finite() || !total_weight.is_finite() {
@@ -806,16 +810,23 @@ where
                         }
                     }
                     let score = total_error / total_weight;
+                    if !score.is_finite() {
+                        return Err(TuningError::NonFiniteScore {
+                            candidate: candidate_index,
+                            criterion,
+                        });
+                    }
                     diagnostics.push(TuningCandidateDiagnostics {
                         candidate_index,
                         score: Some(score),
-                        evidence: TuningScoreEvidence::CrossValidation { fold_losses },
+                        evidence: TuningScoreEvidence::CrossValidation { fold_evidence },
                     });
                 }
                 let (selected, tied) = select_minimum(&diagnostics, seed)?;
                 self.finish(selected, criterion, Some(seed), folds, diagnostics, tied)
             }
             TuningStrategy::GeneralizedCrossValidation { seed } => {
+                let mut common_observation_count = None;
                 for (candidate_index, candidate) in self.candidates.iter().enumerate() {
                     let evidence =
                         evaluator
@@ -826,6 +837,19 @@ where
                                 source,
                             })?;
                     let score = generalized_cross_validation_score(candidate_index, evidence)?;
+                    if let Some(expected) = common_observation_count {
+                        if evidence.observation_count != expected {
+                            return Err(
+                                TuningError::MismatchedGeneralizedCrossValidationObservationCount {
+                                    candidate: candidate_index,
+                                    expected,
+                                    actual: evidence.observation_count,
+                                },
+                            );
+                        }
+                    } else {
+                        common_observation_count = Some(evidence.observation_count);
+                    }
                     diagnostics.push(TuningCandidateDiagnostics {
                         candidate_index,
                         score: Some(score),
@@ -901,8 +925,8 @@ pub enum TuningStorage {
     Folds,
     /// Validation indices within one fold.
     FoldValidationIndices,
-    /// Per-candidate validation losses.
-    FoldLosses,
+    /// Per-candidate raw validation evidence.
+    FoldEvidence,
 }
 
 /// Failure while validating or selecting a bounded parameter candidate.
@@ -1009,6 +1033,11 @@ pub enum TuningError {
         /// Available observation count.
         observations: usize,
     },
+    /// Fewer than two validation folds would leave no training complement.
+    InsufficientCrossValidationFolds {
+        /// Requested fold count.
+        folds: usize,
+    },
     /// Caller-supplied candidate evaluation failed.
     EvaluationFailed {
         /// Candidate index.
@@ -1039,6 +1068,15 @@ pub enum TuningError {
         observation_count: usize,
         /// Rejected effective degrees of freedom.
         effective_degrees_of_freedom: f64,
+    },
+    /// GCV candidates described different observation populations.
+    MismatchedGeneralizedCrossValidationObservationCount {
+        /// Candidate whose observation count differs from the first candidate.
+        candidate: usize,
+        /// Observation count established by the first candidate.
+        expected: usize,
+        /// Rejected observation count.
+        actual: usize,
     },
     /// Power-function evidence was invalid.
     InvalidPowerFunctionEvidence {
@@ -1179,6 +1217,10 @@ impl fmt::Display for TuningError {
                 formatter,
                 "{folds} validation folds exceed {observations} observations"
             ),
+            Self::InsufficientCrossValidationFolds { folds } => write!(
+                formatter,
+                "cross-validation requires at least two folds, got {folds}"
+            ),
             Self::EvaluationFailed {
                 candidate,
                 fold,
@@ -1213,6 +1255,14 @@ impl fmt::Display for TuningError {
             } => write!(
                 formatter,
                 "candidate {candidate} has invalid GCV evidence RSS={residual_sum_squares}, observations={observation_count}, effective_dof={effective_degrees_of_freedom}"
+            ),
+            Self::MismatchedGeneralizedCrossValidationObservationCount {
+                candidate,
+                expected,
+                actual,
+            } => write!(
+                formatter,
+                "candidate {candidate} has GCV observation count {actual}, expected common count {expected}"
             ),
             Self::InvalidPowerFunctionEvidence {
                 candidate,
@@ -1334,7 +1384,7 @@ where
         }
         nearest.push(minimum);
     }
-    nearest.sort_by(f64::total_cmp);
+    sort_nearest_distances(&mut nearest);
     let middle = nearest.len() / 2;
     let median = if nearest.len() % 2 == 0 {
         0.5 * nearest[middle - 1] + 0.5 * nearest[middle]
@@ -1363,7 +1413,7 @@ fn distance_heuristic_score(
         TuningParameter::InfluenceRadius,
     ] {
         if let Some(value) = candidate.value(parameter) {
-            let residual = (value / target).ln();
+            let residual = value.ln() - target.ln();
             score += residual * residual;
             count += 1;
         }
@@ -1394,6 +1444,9 @@ fn build_folds(
     seed: u64,
 ) -> Result<Vec<TuningFold>, TuningError> {
     let fold_count = fold_count.get();
+    if fold_count < 2 {
+        return Err(TuningError::InsufficientCrossValidationFolds { folds: fold_count });
+    }
     if fold_count > observations {
         return Err(TuningError::FoldCountExceedsObservations {
             folds: fold_count,
@@ -1403,7 +1456,7 @@ fn build_folds(
     let mut order = Vec::new();
     try_reserve_exact(&mut order, observations, TuningStorage::FoldOrder)?;
     order.extend(0..observations);
-    order.sort_by_key(|&index| (tie_key(seed, index), index));
+    sort_fold_order(&mut order, seed);
 
     let mut folds = Vec::new();
     try_reserve_exact(&mut folds, fold_count, TuningStorage::Folds)?;
@@ -1482,7 +1535,7 @@ fn generalized_cross_validation_score(
         });
     }
     let denominator = count - evidence.effective_degrees_of_freedom;
-    let score = evidence.residual_sum_squares / (denominator * denominator);
+    let score = count * evidence.residual_sum_squares / (denominator * denominator);
     if !score.is_finite() {
         return Err(TuningError::NonFiniteScore {
             candidate,
@@ -1556,4 +1609,34 @@ fn try_reserve_exact<T>(
     values
         .try_reserve_exact(requested)
         .map_err(|_| TuningError::AllocationFailed { storage, requested })
+}
+
+fn sort_nearest_distances(nearest: &mut [f64]) {
+    nearest.sort_unstable_by(f64::total_cmp);
+}
+
+fn sort_fold_order(order: &mut [usize], seed: u64) {
+    order.sort_unstable_by_key(|&index| (tie_key(seed, index), index));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{sort_fold_order, sort_nearest_distances};
+
+    #[test]
+    fn tuning_ordering_uses_no_auxiliary_allocation() {
+        const COUNT: usize = 4096;
+
+        let mut nearest = Vec::with_capacity(COUNT);
+        nearest
+            .extend((0_u32..4096).map(|index| f64::from(index.wrapping_mul(2_654_435_761)) + 1.0));
+        let nearest_allocations =
+            allocation_counter::measure(|| sort_nearest_distances(&mut nearest));
+        assert_eq!(nearest_allocations.count_total, 0);
+
+        let mut order = Vec::with_capacity(COUNT);
+        order.extend(0..COUNT);
+        let order_allocations = allocation_counter::measure(|| sort_fold_order(&mut order, 0x5eed));
+        assert_eq!(order_allocations.count_total, 0);
+    }
 }
