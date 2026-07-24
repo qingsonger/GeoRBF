@@ -38,6 +38,11 @@ serial-policy rejection, and progress semantics. The `georbf.isolines.v1`
 benchmark exercises a fixed 64 by 64 circle extraction and is routed to
 Ready/main three-platform smoke CI.
 
+Preparation and point-evaluation diagnostics preserve their exact fitted-field
+error source inline. Their production conversions are allocation-free, so an
+already-formed fitted-field failure does not introduce an infallible diagnostic
+allocation outside the extractor's checked storage paths.
+
 Rust and benchmark surfaces are implemented. CLI is N/A until an M8 versioned
 model/project input can supply a fitted field. C, C++, and Python are N/A until
 their M9 adapter and parity requirements. Three-dimensional isosurfaces,

@@ -81,6 +81,11 @@ analytic value query. Cancellation, fitted-field failure, allocation failure,
 nonrepresentable work, degeneracy, refinement exhaustion, or invalid topology
 returns no partial report.
 
+Preparation and point-evaluation failures retain the exact
+`FittedFieldEvaluationError<2>` as their `Error::source`. Forming either
+structured isoline diagnostic stores that source inline and performs no heap
+allocation of its own.
+
 The CLI cannot consume an in-memory fitted model until the M8 versioned
 project/model schema and loading workflow exist. C, C++, and Python parity are
 M9 work; all later adapters must call this Rust implementation.

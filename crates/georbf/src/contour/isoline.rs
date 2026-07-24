@@ -655,6 +655,9 @@ impl fmt::Display for IsolineStorage {
 }
 
 /// Structured two-dimensional isoline extraction failure.
+// The fitted-field source is retained inline so constructing a diagnostic
+// cannot introduce an infallible allocation on an error path.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum IsolineError {
     /// Grid, edge, segment, or refinement work arithmetic overflowed.
@@ -676,14 +679,14 @@ pub enum IsolineError {
     /// Reusable fitted-value evaluation storage could not be prepared.
     Preparation {
         /// Fitted-field failure.
-        source: Box<FittedFieldEvaluationError<2>>,
+        source: FittedFieldEvaluationError<2>,
     },
     /// The fitted field could not be evaluated at one original-coordinate point.
     Evaluation {
         /// Original-coordinate query.
         point: Point<2>,
         /// Fitted-field failure.
-        source: Box<FittedFieldEvaluationError<2>>,
+        source: FittedFieldEvaluationError<2>,
     },
     /// A derived grid or refinement point was not finite.
     NonFiniteCoordinate {
@@ -862,7 +865,7 @@ impl fmt::Display for IsolineError {
 impl Error for IsolineError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            Self::Preparation { source } | Self::Evaluation { source, .. } => Some(source.as_ref()),
+            Self::Preparation { source } | Self::Evaluation { source, .. } => Some(source),
             Self::Execution(source) => Some(source),
             Self::WorkBudgetOverflow { .. }
             | Self::AllocationFailed { .. }
@@ -877,6 +880,14 @@ impl Error for IsolineError {
             | Self::InteriorOpenEndpoint { .. } => None,
         }
     }
+}
+
+fn preparation_error(source: FittedFieldEvaluationError<2>) -> IsolineError {
+    IsolineError::Preparation { source }
+}
+
+fn evaluation_error(point: Point<2>, source: FittedFieldEvaluationError<2>) -> IsolineError {
+    IsolineError::Evaluation { point, source }
 }
 
 impl FittedField<2> {
@@ -921,18 +932,13 @@ impl FittedField<2> {
         )?;
         let scratch_result = self
             .try_evaluation_scratch(FittedFieldOutput::Value)
-            .map_err(|source| IsolineError::Preparation {
-                source: Box::new(source),
-            });
+            .map_err(preparation_error);
         let mut scratch = progress.observe_result(ExecutionStage::Started, scratch_result)?;
         let mut evaluations = 0_usize;
         let mut report = extract_isolines(request, work, |point| {
             let sample = finish_value_query(&mut progress, || {
                 self.try_value_with_scratch(point, &mut scratch)
-                    .map_err(|source| IsolineError::Evaluation {
-                        point,
-                        source: Box::new(source),
-                    })
+                    .map_err(|source| evaluation_error(point, source))
                     .and_then(|value| {
                         let residual = value - request.level;
                         if residual.is_finite() {
@@ -1827,15 +1833,72 @@ mod tests {
     use std::error::Error;
 
     use super::{
-        Endpoint, IntersectionKey, IsolineError, IsolinePolyline, Sample, finish_value_query,
-        sort_endpoint_records, sort_polylines,
+        Endpoint, IntersectionKey, IsolineError, IsolinePolyline, Sample, evaluation_error,
+        finish_value_query, preparation_error, sort_endpoint_records, sort_polylines,
     };
     use crate::execution::{
         CancellationToken, ExecutionControl, ExecutionError, ExecutionOperation, ExecutionStage,
         ProgressTracker,
     };
     use crate::geometry::Point;
+    use crate::model::{FittedFieldComponent, FittedFieldEvaluationError, FittedFieldStorage};
     use crate::problem_ir::ExecutionOptions;
+
+    #[test]
+    fn fitted_field_source_conversions_use_no_allocation() -> Result<(), Box<dyn Error>> {
+        let preparation_source = FittedFieldEvaluationError::AllocationFailed {
+            storage: FittedFieldStorage::PolynomialValues,
+            requested: 7,
+        };
+        let mut preparation = None;
+        let preparation_allocations = allocation_counter::measure(|| {
+            preparation = Some(preparation_error(preparation_source));
+        });
+        assert_eq!(preparation_allocations.count_total, 0);
+        let preparation = preparation
+            .ok_or_else(|| std::io::Error::other("preparation conversion did not run"))?;
+        let preparation_source = preparation
+            .source()
+            .and_then(|source| source.downcast_ref::<FittedFieldEvaluationError<2>>())
+            .ok_or_else(|| std::io::Error::other("preparation source was not retained"))?;
+        assert!(matches!(
+            preparation_source,
+            FittedFieldEvaluationError::AllocationFailed {
+                storage: FittedFieldStorage::PolynomialValues,
+                requested: 7,
+            }
+        ));
+
+        let point = Point::try_new([1.0, -2.0])?;
+        let evaluation_source = FittedFieldEvaluationError::NonFiniteOutput {
+            component: FittedFieldComponent::Value,
+        };
+        let mut evaluation = None;
+        let evaluation_allocations = allocation_counter::measure(|| {
+            evaluation = Some(evaluation_error(point, evaluation_source));
+        });
+        assert_eq!(evaluation_allocations.count_total, 0);
+        let evaluation =
+            evaluation.ok_or_else(|| std::io::Error::other("evaluation conversion did not run"))?;
+        assert!(matches!(
+            &evaluation,
+            IsolineError::Evaluation {
+                point: retained_point,
+                ..
+            } if retained_point == &point
+        ));
+        let evaluation_source = evaluation
+            .source()
+            .and_then(|source| source.downcast_ref::<FittedFieldEvaluationError<2>>())
+            .ok_or_else(|| std::io::Error::other("evaluation source was not retained"))?;
+        assert!(matches!(
+            evaluation_source,
+            FittedFieldEvaluationError::NonFiniteOutput {
+                component: FittedFieldComponent::Value,
+            }
+        ));
+        Ok(())
+    }
 
     #[test]
     fn topology_ordering_uses_no_auxiliary_allocation() -> Result<(), Box<dyn Error>> {
