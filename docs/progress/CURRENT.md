@@ -12,7 +12,7 @@ records, benchmark reports, Git, and GitHub.
 - Implementation branch: `codex/req-contour-001-level-points`
 - Implementation pull request: #133, squash-merged as `2634a7d`
 - Integration-state branch: `codex/req-contour-001-integration-state`
-- Integration-state pull request: pending creation
+- Integration-state pull request: #134 (Draft until final exact-head gates pass)
 - Exact implementation Ready head: `25df6e9`
 - Repair implementation head: `1280cd2`
 - Dependency: REQ-MODEL-001 is integrated
@@ -52,7 +52,7 @@ REQ-CONTOUR-002.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #132
 - Merged implementation: GitHub PR #133
-- Integration-state pull request: pending creation
+- Integration-state pull request: GitHub PR #134
 - Independent review and repair: `docs/reviews/PR-133-INDEPENDENT-REVIEW.md`
 - Core implementation: `crates/georbf/src/contour.rs`
 - Independent tests: `crates/georbf/tests/contour.rs`
