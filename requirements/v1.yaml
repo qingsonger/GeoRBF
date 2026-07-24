@@ -733,7 +733,7 @@ requirements:
     milestone: M7-v0.7.0
     priority: P1
     issue: 129
-    pull_request: null
+    pull_request: 130
     tests: [allocation-check, complexity, thread-scaling, memory-estimate]
     docs: [docs/MASTER_PLAN.md, benchmark-report]
     rust_api: implemented

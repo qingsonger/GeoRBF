@@ -10,7 +10,8 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-PERF-001
 - Issue: #129
 - Branch: `codex/req-perf-001-performance-baseline`
-- Draft pull request: pending initial push
+- Draft pull request: #130
+- Stable implementation head: `236ec26`
 - Dependencies: REQ-SPARSE-001, REQ-CENTER-001, and REQ-TUNE-001 are integrated
 - Registry status in this change: `in_progress`
 
@@ -49,22 +50,24 @@ records, benchmark reports, Git, and GitHub.
   passed the complete standard local gate: format, warning-denying
   workspace/all-target/all-feature Clippy, all-feature workspace tests,
   workspace doctests, and the 58-requirement registry check.
+- Draft PR #130 contains that exact implementation head plus only this
+  PR-linking registry/handoff evidence follow-up.
 
 ## Next task boundary
 
-Finish only this Implement task: commit, push, open a Draft PR for Issue #129,
-link its exact head here and in the registry, validate the evidence-only
-follow-up, push, and stop.
-
-The next fresh task must be Review mode for only the resulting REQ-PERF-001
-Draft PR. It must use an isolated read-only project `math_reviewer` because the
-change affects numerical assembly traversal and performance-sensitive
-evaluation. Do not repair production code or begin another requirement in
-that Review task.
+Start a fresh Review task for only REQ-PERF-001 Draft PR #130. It must use an
+isolated read-only project `math_reviewer` because the change affects numerical
+assembly traversal and performance-sensitive evaluation. Review the complete
+diff against `01b9fa5`, the requirement/dependency context, both accepted
+backend ADRs, the tests, benchmark evidence, allocation behavior, explicit
+threading, failure containment, memory accounting, and interface dispositions.
+Do not repair production code or begin another requirement in that Review
+task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #129
+- Draft implementation: GitHub PR #130
 - Requirement summary: `changes/REQ-PERF-001.md`
 - Benchmark and allocation evidence: `docs/benchmarks/REQ-PERF-001.md`
 - Production batch implementation: `crates/georbf/src/performance.rs`
