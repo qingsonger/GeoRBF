@@ -263,11 +263,57 @@ check, and both complete and repair whitespace checks. Draft CI run
 re-reviewed head `98a5572`. Ready-only Windows, Ubuntu, macOS, and complete
 benchmark-smoke CI remains unexecuted.
 
-PR #136 remains Draft and REQ-CONTOUR-002 remains `in_progress`. A fresh Review
-task must independently re-review exact repair head `6dee8e7`, determine
-whether CONTOUR002-REREV-006 is closed, record its evidence, push, and stop.
-That task must not repair production code, mark the PR Ready, merge it, or
-begin REQ-CONTOUR-003.
+## Independent re-review of CONTOUR002-REREV-006
+
+A third fresh isolated read-only project `math_reviewer` received only the
+bounded requirement and integrated dependency summary, Issue #135 acceptance
+criteria and exclusions, relevant scope, M8, architecture, user-guide, change,
+benchmark, and review records, the exact base-to-repair and focused repair
+diffs, finding CONTOUR002-REREV-006, and validation evidence. It inherited no
+Implement or Repair reasoning and made no repository or remote change.
+
+No P0--P3 finding was identified. CONTOUR002-REREV-006 is closed on exact
+implementation head `6dee8e73487b94b4c79a9d8b11206159814e8ba0`:
+
+- `IsolineError::Preparation` and `IsolineError::Evaluation` retain the
+  already-formed `FittedFieldEvaluationError<2>` inline. Moving that value
+  into the outer enum does not allocate.
+- `Error::source` borrows the same concrete inline value, preserving
+  downcasting and the fitted-field error's own nested source chain.
+- Both production `map_err` paths use the exact private preparation and
+  evaluation conversions exercised by the regression. The evaluation closure
+  captures only the copied query point and does not allocate.
+- The regression measures both exact conversions, observes zero allocation
+  calls, downcasts both sources to `FittedFieldEvaluationError<2>`, verifies
+  their retained variant evidence, and verifies the evaluation point.
+- Replacing `Box<T>` with inline `T` preserves the applicable `Send` and
+  `Sync` bounds and valid `Debug`, `Display`, and `Error` behavior. The repair
+  changes no released API and no formula, sign, dimension, topology,
+  cancellation, CPD/SPD, rank, regularization, Hessian, constraint, benchmark,
+  registry, adapter, or CI behavior.
+
+The isolated reviewer passed the exact allocation regression, all four
+internal isoline tests, the 10-test isoline integration suite, focused
+warning-denying Clippy, the focused isoline Rustdoc example, formatting, the
+58-requirement registry check, complete and repair whitespace checks, and
+release benchmark smoke with checksum `1.83299999999997817e4`.
+
+The parent Review task independently passed the 10-test isoline integration
+suite, all four internal isoline tests, all 45 `georbf` Rustdoc tests,
+warning-denying all-target and all-feature focused Clippy, formatting, the
+58-requirement registry check, whitespace checks, and release benchmark smoke
+with the same checksum. It verified that `6dee8e7..8ad5ac8` changes only this
+review record and `docs/progress/CURRENT.md`. No production, test, manifest,
+schema, benchmark, CI, registry, or build input changed after the exact
+implementation and standard-gate head, so the complete standard gate recorded
+for `6dee8e7` remains applicable and was not repeated.
+
+PR #136 remains Draft and REQ-CONTOUR-002 remains `in_progress`. Ready-head
+Windows, Ubuntu, macOS, and complete benchmark-smoke CI remains unexecuted. A
+fresh Review/integration task must verify the unchanged implementation, mark
+the PR Ready, wait for the complete Ready CI on that exact head, merge exactly
+once only if it is green, record truthful integration state, and stop without
+beginning REQ-CONTOUR-003.
 
 ## Verified behavior and residual risk
 

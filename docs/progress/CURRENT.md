@@ -6,8 +6,8 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required for
-  CONTOUR002-REREV-006
+- Mode: Review complete; clean independent re-review ready for a fresh
+  Review/integration task
 - Requirement: REQ-CONTOUR-002, two-dimensional isolines
 - Issue: #135
 - Branch: `codex/req-contour-002-isolines`
@@ -16,6 +16,8 @@ records, benchmark reports, Git, and GitHub.
 - Fresh re-reviewed head: `98a5572`
 - First repair implementation and standard-gate head: `9510b6c`
 - CONTOUR002-REREV-006 repair implementation and standard-gate head:
+  `6dee8e7`
+- CONTOUR002-REREV-006 independently re-reviewed implementation head:
   `6dee8e7`
 - Independent review: `docs/reviews/PR-136-INDEPENDENT-REVIEW.md`
 - Dependency: REQ-MODEL-001 is integrated
@@ -132,19 +134,40 @@ records, benchmark reports, Git, and GitHub.
 - Draft CI run 30097440898 passed the configured Ubuntu correctness gate on
   exact head `98a5572`. PR #136 remains Draft; no Ready Windows, Ubuntu, macOS,
   or complete benchmark-smoke CI is claimed.
+- A third fresh isolated `math_reviewer` independently re-reviewed exact
+  repair head `6dee8e7`, closed CONTOUR002-REREV-006, and found no new P0--P3
+  defect. Both production error conversions move the already-formed
+  `FittedFieldEvaluationError<2>` inline without allocating, and
+  `Error::source` retains the same concrete downcastable value and nested
+  source chain.
+- The reviewer passed the exact allocation regression, all 4 internal isoline
+  tests, the 10-test integration suite, focused warning-denying Clippy,
+  focused Rustdoc, formatting, the 58-requirement registry check, complete and
+  repair whitespace checks, and release benchmark smoke with unchanged
+  checksum `1.83299999999997817e4`.
+- The parent Review task independently passed the 10-test integration suite,
+  all 4 internal isoline tests, all 45 `georbf` Rustdoc tests,
+  warning-denying all-target and all-feature focused Clippy, formatting, the
+  58-requirement registry check, whitespace checks, and release benchmark
+  smoke with the same checksum.
+- `6dee8e7..8ad5ac8` changes only the review record and this bounded handoff.
+  No production, test, manifest, schema, benchmark, CI, registry, or build
+  input changed after exact implementation and standard-gate head `6dee8e7`,
+  so its complete standard gate remains applicable and was not repeated.
 
 ## Next task boundary
 
-Stop this Repair task after pushing its documentation-only evidence commit.
-The next fresh task must use Review mode for Draft PR #136 and independently
-re-review exact repair head `6dee8e7`. It must receive only the bounded
-requirement summary, dependency closure, normative documents, base-to-head
-diff, finding CONTOUR002-REREV-006, and validation evidence. Verify that both
-production conversions allocate nothing and retain the exact fitted-field
-source through `Error::source`, inspect the new regression, rerun focused
-checks, update the independent review and bounded handoff, commit and push the
-review evidence, then stop. Do not repair production code, mark the PR Ready,
-merge it, or begin REQ-CONTOUR-003.
+Stop this Review task after pushing its documentation-only evidence commit.
+The next fresh task must remain in Review mode for Draft PR #136 and perform
+the clean-re-review integration sequence. Confirm that branch changes after
+exact implementation and standard-gate head `6dee8e7` are review evidence
+only, synchronize the PR evidence, mark the PR Ready, and wait for the
+complete Windows, Ubuntu, macOS, and benchmark-smoke CI triggered on that
+exact Ready head. Merge exactly once only when that complete CI is green, then
+record truthful integration state through the repository workflow and stop.
+If the Ready head changes, CI fails, or a new review finding appears, do not
+merge; record the evidence and stop for the appropriate fresh task. Do not
+begin REQ-CONTOUR-003.
 
 ## Durable evidence
 
