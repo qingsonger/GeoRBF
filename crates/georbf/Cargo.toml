@@ -94,6 +94,10 @@ name = "parameter_tuning"
 harness = false
 
 [[bench]]
+name = "performance_baseline"
+harness = false
+
+[[bench]]
 name = "level_compilation"
 harness = false
 

@@ -42,6 +42,12 @@ use crate::problem_ir::{
 
 const SYMMETRY_TOLERANCE_FACTOR: f64 = 64.0;
 
+/// Fixed representer-block edge used by deterministic dense assembly.
+///
+/// Only upper-triangle blocks are traversed. Every kernel action is evaluated
+/// once and off-diagonal values are reflected into the symmetric position.
+pub const DENSE_ASSEMBLY_BLOCK_SIZE: usize = 32;
+
 /// Storage category used by fallible field-assembly allocation diagnostics.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum FieldAssemblyStorage {
@@ -191,8 +197,14 @@ impl Error for FieldLinearizationError {
 pub struct FieldAssemblyDiagnostics {
     /// Dimension of the square augmented system.
     pub system_dimension: usize,
+    /// Fixed representer-block edge used for kernel assembly.
+    pub assembly_block_size: usize,
+    /// Number of upper-triangle representer blocks traversed.
+    pub upper_triangle_blocks: usize,
     /// Number of kernel entries evaluated before symmetric reflection.
     pub kernel_entry_evaluations: usize,
+    /// Number of off-diagonal kernel entries filled by exact reflection.
+    pub reflected_kernel_entries: usize,
     /// Largest absolute entry in the augmented matrix.
     pub maximum_absolute_entry: f64,
     /// Maximum absolute asymmetry divided by the maximum absolute entry.
@@ -664,6 +676,23 @@ where
             )
             .and_then(|count| count.checked_div(2))
             .ok_or(FieldAssemblyError::CountOverflow)?;
+        let block_count = centers.div_ceil(DENSE_ASSEMBLY_BLOCK_SIZE);
+        let upper_triangle_blocks = block_count
+            .checked_mul(
+                block_count
+                    .checked_add(1)
+                    .ok_or(FieldAssemblyError::CountOverflow)?,
+            )
+            .and_then(|count| count.checked_div(2))
+            .ok_or(FieldAssemblyError::CountOverflow)?;
+        let reflected_kernel_entries = centers
+            .checked_mul(
+                centers
+                    .checked_sub(1)
+                    .ok_or(FieldAssemblyError::CountOverflow)?,
+            )
+            .and_then(|count| count.checked_div(2))
+            .ok_or(FieldAssemblyError::CountOverflow)?;
         let cpd_progress = match metadata.definiteness() {
             KernelDefiniteness::StrictlyPositiveDefinite => 0,
             KernelDefiniteness::ConditionallyPositiveDefinite { .. } => centers
@@ -683,27 +712,44 @@ where
         .map_err(FieldAssemblyError::Execution)?;
         let mut kernel_actions = try_zeroed(kernel_entries, FieldAssemblyStorage::KernelActions)?;
 
-        for row in 0..centers {
-            let observation = observation_at(&self.semantic, row).ok_or(
-                FieldAssemblyError::InvalidProblemState {
-                    observation_index: row,
-                },
-            )?;
-            for column in row..centers {
-                let center = &self.centers[column];
-                validate_capabilities(metadata, row, observation, column, center)?;
-                let value = observation
-                    .try_apply_kernel(center, &mut evaluator)
-                    .map_err(|source| FieldAssemblyError::KernelAction {
-                        observation_index: row,
-                        center_index: column,
-                        source,
-                    })?;
-                kernel_actions[row * centers + column] = value;
-                kernel_actions[column * centers + row] = value;
-                progress
-                    .advance(ExecutionStage::KernelAssembly)
-                    .map_err(FieldAssemblyError::Execution)?;
+        for block_row in 0..block_count {
+            let row_start = block_row * DENSE_ASSEMBLY_BLOCK_SIZE;
+            let row_end = row_start
+                .saturating_add(DENSE_ASSEMBLY_BLOCK_SIZE)
+                .min(centers);
+            for block_column in block_row..block_count {
+                let column_start = block_column * DENSE_ASSEMBLY_BLOCK_SIZE;
+                let column_end = column_start
+                    .saturating_add(DENSE_ASSEMBLY_BLOCK_SIZE)
+                    .min(centers);
+                for row in row_start..row_end {
+                    let observation = observation_at(&self.semantic, row).ok_or(
+                        FieldAssemblyError::InvalidProblemState {
+                            observation_index: row,
+                        },
+                    )?;
+                    let first_column = if block_row == block_column {
+                        row
+                    } else {
+                        column_start
+                    };
+                    for column in first_column..column_end {
+                        let center = &self.centers[column];
+                        validate_capabilities(metadata, row, observation, column, center)?;
+                        let value = observation
+                            .try_apply_kernel(center, &mut evaluator)
+                            .map_err(|source| FieldAssemblyError::KernelAction {
+                                observation_index: row,
+                                center_index: column,
+                                source,
+                            })?;
+                        kernel_actions[row * centers + column] = value;
+                        kernel_actions[column * centers + row] = value;
+                        progress
+                            .advance(ExecutionStage::KernelAssembly)
+                            .map_err(FieldAssemblyError::Execution)?;
+                    }
+                }
             }
         }
 
@@ -850,7 +896,13 @@ where
             }
         }
 
-        let diagnostics = symmetry_diagnostics(&dense, system_dimension, kernel_entry_evaluations);
+        let diagnostics = symmetry_diagnostics(
+            &dense,
+            system_dimension,
+            upper_triangle_blocks,
+            kernel_entry_evaluations,
+            reflected_kernel_entries,
+        );
         if diagnostics.normalized_asymmetry > diagnostics.symmetry_tolerance {
             return Err(FieldAssemblyError::NotSymmetric { diagnostics });
         }
@@ -1076,7 +1128,9 @@ fn test_allocation_attempt<E>(
 fn symmetry_diagnostics(
     matrix: &[f64],
     dimension: usize,
+    upper_triangle_blocks: usize,
     kernel_entry_evaluations: usize,
+    reflected_kernel_entries: usize,
 ) -> FieldAssemblyDiagnostics {
     let maximum_absolute_entry = matrix
         .iter()
@@ -1097,7 +1151,10 @@ fn symmetry_diagnostics(
     let dimension_scale = u32::try_from(dimension).map_or(f64::INFINITY, f64::from);
     FieldAssemblyDiagnostics {
         system_dimension: dimension,
+        assembly_block_size: DENSE_ASSEMBLY_BLOCK_SIZE,
+        upper_triangle_blocks,
         kernel_entry_evaluations,
+        reflected_kernel_entries,
         maximum_absolute_entry,
         normalized_asymmetry,
         symmetry_tolerance: SYMMETRY_TOLERANCE_FACTOR * dimension_scale * f64::EPSILON,

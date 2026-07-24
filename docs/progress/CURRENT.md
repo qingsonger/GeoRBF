@@ -6,74 +6,79 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Integration state / REQ-TUNE-001 complete
-- Requirement: REQ-TUNE-001, closed Issue #126
-- Implementation pull request: #127, squash-merged as `41ac2c3`
-- Integration-state branch: `codex/req-tune-001-integration-state`
-- Integration-state pull request: #128 (Draft)
-- Exact Ready head: `1bcd330`
-- Dependency: REQ-MODEL-001 is integrated
-- Registry status in this change: `integrated`
+- Mode: Review / clean fresh re-review; Ready transition pending
+- Requirement: REQ-PERF-001, dense and sparse performance baseline
+- Issue: #129
+- Branch: `codex/req-perf-001-performance-baseline`
+- Pull request: #130 (Draft; clean re-review authorizes Ready transition)
+- Repair head: `c5b5b8d`
+- Re-reviewed evidence head: `b295e9d`
+- Stable implementation gate head: `c5b5b8d`
+- Dependencies: REQ-SPARSE-001, REQ-CENTER-001, and REQ-TUNE-001 are integrated
+- Registry status: `in_progress`
 
-## Integration result
+## Fresh re-review result
 
-- An isolated read-only project `math_reviewer` reviewed base `4093c26`
-  through exact Repair evidence head `6b64350`.
-- TUNE001-REV-001 through TUNE001-REV-005 are independently closed.
-- The complete repaired PR diff has no remaining or new P0--P3 finding.
-- Exact Ready head `1bcd330` passed complete Windows, Ubuntu, and macOS CI run
-  30061378871, including every configured backend combination, benchmark
-  smoke, and requirement validation.
-- PR #127 squash-merged exactly once as `41ac2c3`; Issue #126 closed as
-  completed. Post-merge `main` CI run 30062398006 passed the same complete
-  three-platform gate on exact merge commit `41ac2c3`.
-- This isolated integration-state change updates only the registry, review
-  evidence, completed-history index, and bounded handoff. It changes no
-  production code, test, manifest, schema, CI, build input, API, numerical
-  behavior, dependency, tag, or release.
+An isolated read-only project `math_reviewer` reviewed the complete base
+`01b9fa5` through evidence head `b295e9d` and the focused repair
+`293bcd1..c5b5b8d`. It found no remaining or new P0--P3 issue and independently
+closed all four original findings:
 
-## Review validation
+- PERF001-REV-001: batch workspace capacity and logical memory now use the
+  complete atomic indexed-term count. A multi-term regression checks the
+  corrected estimate, pre-allocation limit rejection, and zero first-query
+  allocation with caller capacity already established.
+- PERF001-REV-002: every fallible batch-into exit clears caller output,
+  including incompatible workspaces and checked center-count overflow.
+- PERF001-REV-003: one-point sparse APIs use locality-scaled scratch, while
+  explicit reusable batch workspaces reserve the complete index capacity.
+- PERF001-REV-004: the dense block test records every real evaluator visit and
+  proves unique upper-triangle work in deterministic block order.
 
-- The isolated reviewer passed all 14 tuning integration tests, the isolated
-  zero-allocation ordering regression, the tuning rustdoc example, smoke plus
-  complete five-strategy release benchmarks, the 58-requirement registry
-  check, and the complete PR whitespace check.
-- Exact repair implementation head `ae570a5` passed the complete standard
-  local gate after the last production, test, and Rust documentation change:
-  format, warning-denying workspace/all-target/all-feature Clippy, all-feature
-  workspace tests, workspace doctests, and the 58-requirement registry check.
-- Repair Draft CI run 30060683399 passed its configured Ubuntu correctness job
-  on exact reviewed head `6b64350`; the Ready-only matrix was skipped by
-  design.
-- Exact Ready-head run 30061378871 and post-merge `main` run 30062398006 are
-  both green on Windows, Ubuntu, and macOS, including every configured
-  benchmark smoke.
-- The isolated integration-state tree must pass the complete local standard
-  gate and exact Ready-head CI before it merges.
+Complete original findings, repair mapping, independent truth, and validation
+evidence are in
+`docs/reviews/PR-130-INDEPENDENT-REVIEW.md`.
+
+## Validation state
+
+- Focused repair validation passed all eight performance tests, the
+  mixed-value/derivative sparse parity test, and release benchmark smoke with
+  unchanged deterministic center visits and checksums.
+- The fresh isolated re-review independently passed the same eight performance
+  tests, focused mixed value/derivative sparse parity test, release benchmark
+  smoke, and complete base-to-head whitespace check.
+- Exact stable implementation head `c5b5b8d` passed formatting, all-target and
+  all-feature Clippy with warnings denied, the complete all-feature workspace
+  test suite, all workspace Rustdoc tests, and the 58-requirement registry
+  check after the final production and test change.
+- The parent re-review task repeated that complete standard gate successfully
+  on exact evidence head `b295e9d`.
+- Draft CI run 30070320531 passed its Ubuntu correctness job on exact evidence
+  head `b295e9d`.
+- The Ready-only Windows, Ubuntu, and macOS benchmark matrix has not run on the
+  final re-review evidence head and is not claimed.
 
 ## Next task boundary
 
-Start a fresh Review task for only PR #128. Independently review the isolated
-four-file integration-state delta against `41ac2c3`; do not repair production
-code and do not begin another requirement. If no P0--P3 finding remains, mark
-PR #128 Ready, wait for exact-head Windows/Ubuntu/macOS and benchmark-smoke CI,
-merge exactly once only when green, and stop.
-
-Do not begin REQ-PERF-001 in the re-review task.
+Push this documentation-only clean re-review evidence, mark PR #130 Ready, and
+wait for the Windows, Ubuntu, and macOS correctness plus complete
+benchmark-smoke CI on that exact Ready head. Merge exactly once only if the
+whole matrix is green, then record truthful integration state through an
+isolated documentation-only change. Do not begin another requirement.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #126
-- Merged implementation: GitHub PR #127
-- Integration-state pull request: GitHub PR #128
-- Independent review and repair evidence:
-  `docs/reviews/PR-127-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-TUNE-001.md`
-- Numerical policy: `docs/architecture/SOLVER_POLICY.md`
-- Benchmark: `docs/benchmarks/REQ-TUNE-001.md`
-- Production implementation: `crates/georbf/src/tuning.rs`
-- Independent tests: `crates/georbf/tests/tuning.rs`
-- Release benchmark: `crates/georbf/benches/parameter_tuning.rs`
+- Acceptance criteria and exclusions: GitHub Issue #129
+- Draft implementation: GitHub PR #130
+- Independent review: `docs/reviews/PR-130-INDEPENDENT-REVIEW.md`
+- Requirement summary: `changes/REQ-PERF-001.md`
+- Benchmark and allocation evidence: `docs/benchmarks/REQ-PERF-001.md`
+- Production batch implementation: `crates/georbf/src/performance.rs`
+- Dense block assembly: `crates/georbf/src/field.rs`
+- Independent tests: `crates/georbf/tests/performance.rs`
+- Release benchmark: `crates/georbf/benches/performance_baseline.rs`
+- Dense backend policy: `docs/adr/ADR-0010-nalgebra-dense-factorization-backend.md`
+- Sparse backend policy: `docs/adr/ADR-0012-rstar-faer-compact-sparse-backends.md`
 
 ## Checks not yet available
 
