@@ -18,7 +18,12 @@
 //! preceded by a separate deterministic, rank-safe candidate center-selection
 //! step with all-representer, user-provided, farthest-point, residual-greedy,
 //! and power-greedy policies; selection returns indices and RRQR/SVD evidence
-//! without mutating constraints or fitting implicitly. Immutable fitted
+//! without mutating constraints or fitting implicitly. A separate bounded
+//! parameter-tuning core selects explicit length, support, regularization,
+//! axis-ratio, and influence-radius candidates by fixed, distance-heuristic,
+//! deterministic cross-validation, generalized-cross-validation, or
+//! power-function criteria, while caller-supplied evaluators retain ownership
+//! of fitting and failures. Immutable fitted
 //! fields have capability-gated original-coordinate value, gradient, and
 //! Hessian evaluation, plus stable source-aware structured error codes for adapter and
 //! orchestration boundaries, and caller-owned cancellation, deterministic
@@ -98,6 +103,7 @@ pub mod thickness;
 pub mod thickness_validation;
 pub mod transform;
 pub mod trend_controls;
+pub mod tuning;
 pub mod units;
 
 pub use anisotropy::{
@@ -257,5 +263,12 @@ pub use trend_controls::{
     TrendControlCompilationError, TrendControlDiagnostics, TrendControlOrientation,
     TrendControlPolicy, TrendControlPolicyError, TrendControlStorage, TrendDirectionSource,
     try_compile_local_trend_controls,
+};
+pub use tuning::{
+    CrossValidationEvidence, GeneralizedCrossValidationEvidence, NoopTuningEvaluator,
+    ParameterValueRole, PowerFunctionEvidence, TuningBounds, TuningCandidateDiagnostics,
+    TuningCriterion, TuningDiagnostics, TuningError, TuningEvaluationFailure, TuningEvaluator,
+    TuningFold, TuningParameter, TuningParameters, TuningProblem, TuningRange, TuningResult,
+    TuningScoreEvidence, TuningStorage, TuningStrategy,
 };
 pub use units::{AngleUnit, LengthUnit, UnitError};

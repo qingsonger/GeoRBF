@@ -6,120 +6,60 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Issue #123 handoff repair integrated; this branch records its
-  merge-stable integration state
-- Requirement: REQ-CENTER-001, closed Issue #120
-- Implementation pull request: #121, squash-merged as `474988b`
-- Integration-state pull request: #122, merged as `c40b97d`
-- Post-merge handoff repair: closed Issue #123, PR #124 squash-merged as
-  `2eb618b`
-- Handoff-repair exact Ready head: `ca9dacd`
-- Handoff-repair exact Ready-head CI: run 30049344424
-- Handoff-repair post-merge `main` CI: run 30050847919
-- Merge-stable handoff branch:
-  `codex/issue-123-center-handoff-integration-state`
-- Merge-stable handoff pull request: #125; consult GitHub for its live state
-- Dependencies: REQ-SOLVE-001 and REQ-MODEL-001 are integrated
-- Registry status: `integrated`
+- Mode: Review / REQ-TUNE-001 clean fresh re-review; Ready CI pending
+- Requirement: REQ-TUNE-001, deterministic parameter tuning
+- Issue: #126
+- Branch: `codex/req-tune-001-deterministic-tuning`
+- Pull request: #127 (Draft; clean re-review authorizes Ready transition)
+- Independently reviewed implementation head: `555157c`
+- Repair implementation head: `ae570a5`
+- Clean re-review evidence parent: `6b64350`
+- Dependency: REQ-MODEL-001 is integrated
+- Registry status: `in_progress`
 
-## Integration result
+## Fresh re-review outcome
 
-- An isolated read-only project `math_reviewer` reviewed base `aa128ed8`
-  through exact Repair head `75110a5`.
-- CENTER001-REV-001 through CENTER001-REV-004 are independently closed.
-- The complete repaired 13-file PR diff has no remaining or new P0--P3
-  finding.
-- Exact Ready head `4c9525f` passed complete Windows, Ubuntu, and macOS CI run
-  30013183746, including every configured backend combination, benchmark
-  smoke, and requirement validation.
-- PR #121 squash-merged exactly once as `474988b`; Issue #120 closed as
-  completed. Post-merge `main` CI run 30015158750 passed the same complete
-  three-platform gate on exact merge commit `474988b`.
-- Integration-state PR #122 exact Ready head `4f4e897` passed complete
-  Windows, Ubuntu, and macOS CI run 30017196433, including every configured
-  backend combination, benchmark smoke, and requirement validation.
-- PR #122 merged exactly once as `c40b97d`. Post-merge `main` CI run
-  30019137463 passed the same complete three-platform gate on that exact merge
-  commit.
-- Issue #123 corrected only the stale bounded handoff left by PR #122. PR #124
-  changes no production code, tests, manifests, schemas, CI, build inputs,
-  APIs, numerical behavior, dependencies, tags, releases, or the integrated
-  requirement registry.
-- A fresh Review task independently examined exact repair head `2790ac9`
-  against `main` at `c40b97d` and found no P0--P3 issue. A fresh isolated
-  `math_reviewer` then re-reviewed the evidence-only delta through exact final
-  head `ca9dacd` and likewise found no P0--P3 issue.
-- Exact Ready head `ca9dacd` passed complete Windows, Ubuntu, and macOS CI run
-  30049344424, including all configured backend combinations, benchmark smoke,
-  and requirement validation. PR #124 then squash-merged exactly once as
-  `2eb618b`; Issue #123 closed as completed.
-- Post-merge `main` CI run 30050847919 passed the same complete three-platform
-  gate on exact merge commit `2eb618b`.
-- This isolated follow-up changes only this bounded handoff. Its conditional
-  next-task boundary remains truthful while its pull request is open and after
-  that pull request merges.
+- An isolated read-only project `math_reviewer` reviewed exact evidence head
+  `6b64350` against base `4093c26`.
+- TUNE001-REV-001 through TUNE001-REV-005 are independently closed.
+- The complete repaired PR diff has no remaining or new P0--P3 finding.
 
 ## Review validation
 
-- The isolated reviewer and parent Review task independently passed all 13
-  center-selection tests, the center-selection rustdoc example, the
-  five-strategy release benchmark smoke, the 58-requirement registry check,
-  and the complete PR whitespace check.
-- The stable Repair tree passed the complete standard gate: format,
-  warning-denying workspace/all-target/all-feature Clippy, all-feature
+- The isolated reviewer passed all 14 tuning integration tests, the isolated
+  zero-allocation ordering regression, the tuning rustdoc example, smoke plus
+  complete five-strategy release benchmarks, the 58-requirement registry
+  check, and the complete PR whitespace check.
+- Exact repair implementation head `ae570a5` passed the complete standard
+  local gate after the last production, test, and Rust documentation change:
+  format, warning-denying workspace/all-target/all-feature Clippy, all-feature
   workspace tests, workspace doctests, and the 58-requirement registry check.
-- Draft CI run 30009925065 passed Ubuntu on exact Repair head `75110a5`.
-- Exact Ready-head run 30013183746 and post-merge `main` run 30015158750 are
-  both green on Windows, Ubuntu, and macOS, including every configured
-  benchmark smoke.
-- Integration-state exact Ready-head run 30017196433 and post-merge `main` run
-  30019137463 are both green on Windows, Ubuntu, and macOS, including every
-  configured benchmark smoke.
-- PR #124 Draft CI run 30020972952 passed the Ubuntu correctness gate on exact
-  reviewed repair head `2790ac9`; Draft CI run 30023689651 passed the complete
-  Ubuntu correctness job on exact evidence head `ca9dacd`.
-- Both `git diff --check c40b97d...ca9dacd` and
-  `git diff --check 2790ac9..ca9dacd` passed. The recorded complete local
-  standard gate remains applicable because that Review changed only Markdown
-  review and handoff evidence.
-- Exact Ready-head run 30049344424 and post-merge `main` run 30050847919 are
-  both green on Windows, Ubuntu, and macOS, including every configured
-  benchmark smoke.
+- Repair Draft CI run 30060683399 passed its configured Ubuntu correctness job
+  on exact reviewed head `6b64350`; the Ready-only matrix was skipped by
+  design.
+- Only Markdown review and bounded-handoff evidence follows implementation
+  head `ae570a5`, so its immutable complete gate remains applicable.
 
 ## Next task boundary
 
-Perform the mandatory preflight first.
+Push this documentation-only clean re-review evidence, mark PR #127 Ready, and
+wait for complete Windows/Ubuntu/macOS and every benchmark-smoke workload on
+that exact Ready head. Merge exactly once only if the whole matrix is green,
+then record truthful integration state through an isolated change.
 
-- If GitHub PR #125 is open, start a fresh Review and handle only that pull
-  request. Independently review its one-file
-  documentation-only delta against `2eb618b`. If no P0--P3 finding remains,
-  mark it Ready, wait for complete Windows, Ubuntu, and macOS benchmark-smoke
-  CI on that exact Ready head, and merge exactly once only when green.
-- If that pull request is already merged and no higher-priority Repair or
-  Review work exists, start a new Implement task for the single atomic
-  requirement returned by `cargo xtask requirements next`; at the time of this
-  handoff that command returns REQ-TUNE-001.
-
-Do not begin REQ-TUNE-001 in the integration-state Review task.
+Do not begin REQ-PERF-001 in the re-review task.
 
 ## Durable evidence
 
-- Acceptance criteria and exclusions: closed GitHub Issue #120
-- Merged implementation: GitHub PR #121
-- Merged integration state: GitHub PR #122
-- Post-merge handoff correction: GitHub Issue #123
-- Merged handoff repair: GitHub PR #124
-- Merge-stable handoff branch:
-  `codex/issue-123-center-handoff-integration-state`
-- Merge-stable handoff integration state: GitHub PR #125
-- Handoff repair review: `docs/reviews/PR-124-INDEPENDENT-REVIEW.md`
-- Independent review: `docs/reviews/PR-121-INDEPENDENT-REVIEW.md`
-- Requirement summary: `changes/REQ-CENTER-001.md`
-- Architecture: `docs/architecture/ARCHITECTURE.md`
+- Acceptance criteria and exclusions: GitHub Issue #126
+- Independent review and repair evidence:
+  `docs/reviews/PR-127-INDEPENDENT-REVIEW.md`
+- Requirement summary: `changes/REQ-TUNE-001.md`
 - Numerical policy: `docs/architecture/SOLVER_POLICY.md`
-- Benchmark: `docs/benchmarks/REQ-CENTER-001.md`
-- Production implementation: `crates/georbf/src/center_selection.rs`
-- Independent tests: `crates/georbf/tests/center_selection.rs`
+- Benchmark: `docs/benchmarks/REQ-TUNE-001.md`
+- Production implementation: `crates/georbf/src/tuning.rs`
+- Independent tests: `crates/georbf/tests/tuning.rs`
+- Release benchmark: `crates/georbf/benches/parameter_tuning.rs`
 
 ## Checks not yet available
 
