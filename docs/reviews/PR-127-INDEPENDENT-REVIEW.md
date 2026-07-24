@@ -6,9 +6,15 @@
 - Branch: `codex/req-tune-001-deterministic-tuning`
 - Base head: `4093c26590b6e25324c87103ef3d0f8223f2469c`
 - Reviewed head: `555157ce9f1ac356ac1c0fc13630ffe675e06a26`
+- Re-reviewed Repair evidence head:
+  `6b64350c659b00a8892e00ca83d501a421f3e386`
+- Stable Repair implementation gate head:
+  `ae570a5f936c8e133f80f4e132b0a9a6b91fd330`
 - Draft CI run: 30058923924
+- Repair Draft CI run: 30060683399
 - Review date: 2026-07-24
-- Result: changes required; two P1, two P2, and one P3 finding
+- Result: clean fresh re-review; TUNE001-REV-001 through TUNE001-REV-005
+  closed and no P0--P3 finding remains
 
 ## Scope and independence
 
@@ -216,3 +222,65 @@ validated implementation head. These are Repair claims, not an independent
 re-review. PR #127 remains Draft and REQ-TUNE-001 remains `in_progress`; a
 fresh isolated `math_reviewer` must verify the repairs and check for new P0--P3
 findings before any Ready transition.
+
+## Fresh independent re-review
+
+A new isolated read-only project `math_reviewer` independently reviewed exact
+Repair evidence head `6b64350c659b00a8892e00ca83d501a421f3e386`
+against base `4093c26590b6e25324c87103ef3d0f8223f2469c`. It received
+only the bounded requirement summary and integrated dependency closure, Issue
+#126 acceptance criteria and exclusions, the M7 plan, solver policy and
+ADR-0007, the original findings, Repair diff and evidence, tests, benchmark,
+CI wiring, registry entry, and complete base-to-head diff. It inherited no
+Implement or Repair reasoning and made no repository or remote change.
+
+The re-review closed every prior finding:
+
+- TUNE001-REV-001 is closed. The implementation evaluates canonical
+  `n * RSS / (n - effective_dof)^2`, validates its domain, and enforces one
+  common observation count. Independent regressions require the `n=4`,
+  `df=2`, `RSS=1` truth score of `1.0` and structured rejection of candidate
+  count mismatch.
+- TUNE001-REV-002 is closed. Distance scoring uses
+  `ln(value) - ln(target)` without forming an overflowing or underflowing
+  quotient, and reciprocal finite-extreme D=1 regressions pass.
+- TUNE001-REV-003 is closed. Cross-validation rejects fewer than two folds
+  before allocation or evaluator dispatch, retains `folds <= observations`,
+  and its regression observes zero evaluator calls for one fold.
+- TUNE001-REV-004 is closed. Candidate diagnostics retain each exact weighted
+  squared error and weight, and the three-fold unequal-weight regression
+  reconstructs `sum(weighted_squared_error) / sum(weight)`.
+- TUNE001-REV-005 is closed. Both deterministic total orderings use in-place
+  unstable sorting, and the pre-reserved 4096-entry regression observes zero
+  allocations for nearest-distance and fold-key ordering.
+
+The reviewer also checked formulae, signs, dimensions and units, finite
+physical bounds, deterministic folds and exact ties, evidence validation,
+failure propagation, allocation behavior, hidden regularization or fallback,
+D=1/D=2/D=3 bounds, interface dispositions, benchmark and CI wiring, and the
+registry state. It found no new P0, P1, P2, or P3 issue. SPD/CPD, polynomial,
+rank, infeasibility, and Hessian behavior remain with the existing evaluator
+and solver contracts and are unchanged.
+
+The isolated reviewer passed:
+
+- all 14 tuning integration tests;
+- the isolated zero-allocation ordering regression;
+- the tuning rustdoc example;
+- both smoke and complete 128-candidate five-strategy release benchmarks,
+  reproducing every documented checksum;
+- the 58-requirement registry check; and
+- the complete base-to-head whitespace check.
+
+Repair Draft CI run 30060683399 passed its configured Ubuntu correctness job on
+exact reviewed head `6b64350`; the Ready-only matrix was skipped as designed.
+Stable Repair implementation head `ae570a5` already passed the complete
+standard local gate after the last production and test change. The verified
+delta from that implementation head through this re-review evidence changes
+only this review record and the bounded handoff, so the immutable complete gate
+remains applicable.
+
+The fresh re-review is clean. PR #127 may enter the mandatory Ready -> exact-
+head Windows/Ubuntu/macOS plus every benchmark-smoke workload -> single merge
+-> isolated truthful integration-state sequence. REQ-TUNE-001 remains
+`in_progress` until that sequence completes.
