@@ -87,3 +87,15 @@ cargo bench -p georbf --bench fitted_field_evaluation
 
 The fixed workload and local baseline are recorded in
 `docs/benchmarks/REQ-MODEL-001.md`.
+
+`REQ-TUNE-001` adds a deterministic bounded-candidate workload covering fixed,
+median-nearest-neighbor distance, five-fold cross-validation, generalized-
+cross-validation, and worst-case power-function selection:
+
+```text
+cargo bench -p georbf --bench parameter_tuning -- --smoke
+cargo bench -p georbf --bench parameter_tuning
+```
+
+The explicit search space, evaluator evidence, seed, workload sizes, and local
+baseline are recorded in `docs/benchmarks/REQ-TUNE-001.md`.

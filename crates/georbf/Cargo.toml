@@ -90,6 +90,10 @@ name = "center_selection"
 harness = false
 
 [[bench]]
+name = "parameter_tuning"
+harness = false
+
+[[bench]]
 name = "level_compilation"
 harness = false
 

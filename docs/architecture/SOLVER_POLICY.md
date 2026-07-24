@@ -284,3 +284,39 @@ the caller's explicit memory limit. Deficiency, ambiguity, non-convergence,
 factorization rejection, nonfinite work, or an insufficient limit fails
 explicitly. No jitter, substitute diagonal, hidden regularization,
 pseudoinverse, candidate skipping, or factorization fallback is authorized.
+
+## Deterministic parameter tuning
+
+`REQ-TUNE-001` adds no solver or numerical dependency and does not fit a field
+implicitly. It accepts only an explicit, finite candidate set whose active
+kernel length, compact-support radius, explicit regularization, axis ratio, and
+local-control influence radius all have inclusive physical-domain bounds. A
+candidate must supply exactly the active bounded parameters. Duplicate and
+out-of-bound candidates fail before evaluation; a failed candidate evaluation
+rejects the complete search instead of being skipped.
+
+Fixed selection returns one exact caller index without evaluating alternatives.
+The distance heuristic computes each observation's stable Euclidean nearest-
+neighbor distance, takes their median, and minimizes the mean squared
+log-ratio for every active length, support-radius, and influence-radius value.
+Duplicate locations, nonrepresentable distances, or the absence of a
+length-like candidate parameter are explicit failures.
+
+Cross-validation constructs nonempty folds by sorting observation indices with
+an explicit-seed SplitMix64 key and assigning that order round-robin. It
+minimizes the total caller-reviewed weighted squared error divided by total
+weight while retaining each fold mean. Generalized cross-validation minimizes
+`RSS / (n - effective_dof)^2` only when `0 <= effective_dof < n`.
+Power-function tuning minimizes the caller-reviewed maximum nonnegative squared
+power over a positive sample count. These formulas, finite evidence, and
+observation counts are reviewed in the Rust core; the caller-owned evaluator
+performs the actual candidate fit or factorization and cannot request a
+criterion fallback.
+
+Candidate traversal and score reduction are stable. Exact minimum-score ties
+use keys derived only from the explicit seed and candidate index; no global
+random state exists. Diagnostics retain the criterion, seed, bounds, fold
+membership, every candidate score and criterion evidence, the selected index,
+and exact tie count. Tuning never mutates a `FieldProblem`, changes a hard
+constraint, invents regularization, adds jitter, uses a pseudoinverse, or
+changes solver policy.
