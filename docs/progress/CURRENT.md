@@ -6,12 +6,14 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement complete; Draft PR publication in progress
+- Mode: Review complete; Repair required
 - Requirement: REQ-CONTOUR-002, two-dimensional isolines
 - Issue: #135
 - Branch: `codex/req-contour-002-isolines`
 - Draft pull request: #136
+- Reviewed head: `2b93db4`
 - Stable implementation head: `4e766af`
+- Independent review: `docs/reviews/PR-136-INDEPENDENT-REVIEW.md`
 - Dependency: REQ-MODEL-001 is integrated
 - Registry status: `in_progress`
 - Base `main`: `6e622c7`; post-merge CI run 30092831813 passed Windows,
@@ -65,14 +67,34 @@ records, benchmark reports, Git, and GitHub.
   implementation tree passed formatting, all-target and all-feature workspace
   Clippy with warnings denied, the complete all-feature workspace test suite,
   all workspace Rustdoc tests, and the 58-requirement registry check.
+- The isolated `math_reviewer` found two P1 and three P2 defects:
+  - CONTOUR002-REV-001: value-tolerance endpoint acceptance can assign one
+    grid-vertex key to two distinct bracketed components.
+  - CONTOUR002-REV-002: duplicate edge records for exact grid corners reject
+    an ordinary two-unique-vertex square contour.
+  - CONTOUR002-REV-003: the final allowed bisection is not checked after it
+    first satisfies coordinate tolerance.
+  - CONTOUR002-REV-004: stable topology sorts can allocate outside the
+    structured allocation-failure path.
+  - CONTOUR002-REV-005: cancellation is checked after, but not immediately
+    before, each fitted-field value query.
+- On exact reviewed head `2b93db4`, the parent Review reran all seven focused
+  isoline integration tests and the focused Rustdoc example; they passed.
+  Draft CI run 30095419189 also passed its configured Ubuntu correctness gate.
+  This is not the complete Ready three-platform and benchmark-smoke gate.
+- No production, test, manifest, schema, benchmark, registry, CI, or build
+  input was changed during Review. The complete standard gate on immutable
+  implementation head `4e766af` therefore remains the latest full local gate.
 
 ## Next task boundary
 
-Stop this Implement task. The next fresh task must perform an isolated
-mathematical/numerical Review of only REQ-CONTOUR-002 and Draft PR #136,
-supplied only the requirement summary, dependency closure, normative
-documents, PR diff, and validation evidence. It must record findings without
-repairing production code in the same task. Do not begin REQ-CONTOUR-003.
+Stop this Review task. The next fresh task must use Repair mode and address
+only CONTOUR002-REV-001 through CONTOUR002-REV-005 in Draft PR #136. Reproduce
+each finding with the independent regression specified in the review record,
+implement the smallest complete repairs, rerun focused checks during
+development, run the complete standard checks after the final code change,
+update review evidence and this bounded handoff, commit, push, and stop for a
+fresh independent re-review. Do not begin REQ-CONTOUR-003.
 
 ## Durable evidence
 
@@ -84,6 +106,7 @@ repairing production code in the same task. Do not begin REQ-CONTOUR-003.
 - Requirement summary: `changes/REQ-CONTOUR-002.md`
 - Benchmark evidence: `docs/benchmarks/REQ-CONTOUR-002.md`
 - Release benchmark: `crates/georbf/benches/isolines.rs`
+- Independent review: `docs/reviews/PR-136-INDEPENDENT-REVIEW.md`
 
 ## Checks not yet available
 
