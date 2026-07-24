@@ -6,20 +6,21 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh isolated re-review required
+- Mode: Review / clean fresh re-review; Ready transition pending
 - Requirement: REQ-CONTOUR-001, one-dimensional level points
 - Issue: #132
 - Branch: `codex/req-contour-001-level-points`
-- Draft pull request: #133
-- Reviewed head: `323fcd9`
+- Pull request: #133 (Draft; clean re-review authorizes Ready transition)
+- Re-reviewed source head: `bc892c3`
 - Repair implementation head: `1280cd2`
 - Dependency: REQ-MODEL-001 is integrated
 - Registry status: `in_progress`
 
-## Repair result
+## Fresh re-review result
 
-Exact repair head `1280cd2c772d2e049eb1e28203077f711fb16036`
-addresses only the three confirmed PR #133 findings:
+An isolated read-only project `math_reviewer` reviewed the complete base
+`a3e89ee..bc892c3` and focused repair `323fcd9..1280cd2`. It found no
+remaining or new P0--P3 issue and independently closed all three findings:
 
 - CONTOUR001-REV-001: extraction rejects gradients that are only supported
   away from centers before evaluation, preventing a nondifferentiable center
@@ -30,7 +31,8 @@ addresses only the three confirmed PR #133 findings:
 - CONTOUR001-REV-003: independent transformed truth now checks
   original-coordinate derivative values and a negative-scale reflection.
 
-Complete counterexamples, repair details, and regression evidence are in
+Complete counterexamples, repair details, independent truth, and re-review
+evidence are in
 `docs/reviews/PR-133-INDEPENDENT-REVIEW.md`.
 
 ## Validation state
@@ -45,25 +47,20 @@ Complete counterexamples, repair details, and regression evidence are in
 - Exact repair implementation tree `1280cd2` passed the complete standard
   local gate: formatting, all-target/all-feature Clippy with warnings denied,
   all-feature workspace tests, workspace Rustdoc tests, and the registry check.
-- Draft CI run 30079007316 passed Ubuntu on pre-repair documentation head
-  `a101f65`. It is not repair validation. The Ready-only Windows, Ubuntu, macOS,
-  and benchmark-smoke matrix remains unexecuted and is not claimed.
+- The re-review confirmed `1280cd2..bc892c3` changes only the independent
+  review record and bounded handoff, so the immutable repair-head gate remains
+  applicable.
+- Draft CI run 30080017013 passed Ubuntu on exact source head `bc892c3`.
+- The Ready-only Windows, Ubuntu, macOS, and benchmark-smoke matrix remains
+  unexecuted and is not claimed.
 
 ## Next task boundary
 
-Start a fresh Review/re-review task for only PR #133 and REQ-CONTOUR-001. Give
-the isolated read-only `math_reviewer` the bounded requirement/dependency
-summary, normative documents, original findings, exact repair diff, tests,
-benchmark evidence, and validation results. It must independently confirm
-CONTOUR001-REV-001 through CONTOUR001-REV-003 are closed and inspect for new
-P0--P3 findings.
-
-If findings remain, record them and stop without repair. If no findings remain
-and the exact final head has a complete green local gate, the fresh Review task
-may follow the required integration sequence: mark PR #133 Ready, wait for the
-complete Windows/Ubuntu/macOS and benchmark-smoke CI on that exact Ready head,
-merge exactly once only when it is green, and then record truthful integration
-state. Do not begin REQ-CONTOUR-002.
+Validate and push this documentation-only clean re-review evidence, then mark
+PR #133 Ready. Wait for the complete Windows, Ubuntu, and macOS workspace and
+benchmark-smoke CI on that exact Ready head. Merge exactly once only if the
+whole matrix is green, then record truthful integration state through an
+isolated change. Do not begin REQ-CONTOUR-002.
 
 ## Durable evidence
 

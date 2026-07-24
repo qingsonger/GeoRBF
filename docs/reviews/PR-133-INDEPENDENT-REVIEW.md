@@ -10,10 +10,11 @@
   `b41e48229a3d2f0f8e02d26709dfdf6da9ac86e9`
 - Repair implementation head:
   `1280cd2c772d2e049eb1e28203077f711fb16036`
-- Draft CI run: 30077398167
+- Latest Draft CI run: 30080017013
 - Review date: 2026-07-24
 - Repair date: 2026-07-24
-- Result: repairs complete; fresh isolated re-review required
+- Re-review date: 2026-07-24
+- Result: clean fresh isolated re-review; exact Ready-head CI required
 
 ## Scope and independence
 
@@ -221,10 +222,50 @@ this Review task. `cargo-nextest`, `cargo-deny`, `cargo-audit`,
 fuzzing, mutation testing, API/ABI/schema snapshot checks, and local
 `actionlint` remain unavailable or assigned to later requirements.
 
-PR #133 must remain Draft and REQ-CONTOUR-001 remains `in_progress`. A fresh
-Repair task must address only CONTOUR001-REV-001 through
-CONTOUR001-REV-003, add the specified regressions, run focused checks and one
-complete stable-head standard gate after the last production or test change,
-update this record and the bounded handoff, push, and stop for another fresh
-independent re-review. This Review does not repair production code, mark the
-PR Ready, merge it, or begin REQ-CONTOUR-002.
+## Fresh isolated re-review
+
+A second fresh isolated read-only project `math_reviewer` received only the
+bounded requirement and integrated dependency summary, Issue #132 acceptance
+criteria and exclusions, the M8 plan, relevant architecture and mathematical
+contracts, complete base-to-evidence and focused repair diffs, original
+findings, tests, benchmark evidence, and validation state. It inherited no
+Implement or Repair reasoning and made no repository or remote change.
+
+The re-review found no remaining or new P0--P3 issue. It independently closed:
+
+- CONTOUR001-REV-001 because extraction requires gradient capability
+  `SupportedEverywhere` before scratch preparation or evaluation. The retained
+  Matérn-1/2 counterexample proves that the derivative sign reversal of
+  `exp(-abs(x))` across its nondifferentiable center cannot become stationary
+  evidence.
+- CONTOUR001-REV-002 because tolerance-small derivative nodes remain candidate
+  evidence, while diagnostic brackets require opposite neighboring signs or
+  an exactly zero, zero-width node. The complete CPD cubic regression preserves
+  the candidate at zero for `x^3 + epsilon*x` and correctly reports no bracket
+  because `3*x^2 + epsilon` is strictly positive.
+- CONTOUR001-REV-003 because the transformed truth now checks
+  original-coordinate derivatives `-1.5`, `+1.5`, and zero and independently
+  checks negative-scale reflection, root order, and derivative signs. These
+  values agree with the fitted-model `S^-T` chain rule.
+
+The reviewer also checked formulae, signs, dimensions and units, center limits,
+CPD polynomial completeness, bracketing and refinement, boundary, tangency and
+degenerate behavior, failure and no-partial-report semantics, deterministic
+work and progress, hidden regularization or refitting, interfaces,
+documentation, registry truth, and benchmark obligations. Higher-dimensional
+rotation invariance is inapplicable to this D=1 requirement; reflection is
+covered. No new P0--P3 finding was identified.
+
+The exact post-repair diff `1280cd2..bc892c3` changes only this review record
+and `docs/progress/CURRENT.md`. It changes no production code, test, manifest,
+schema, benchmark, registry, CI, or build input. The complete standard gate on
+immutable repair implementation head `1280cd2` therefore remains applicable.
+Draft CI run 30080017013 passed Ubuntu on exact pre-re-review evidence head
+`bc892c3e4e9b3c7ccf1aaa38c019c1be818eaf3b`.
+
+PR #133 and REQ-CONTOUR-001 remain Draft and `in_progress` until this clean
+re-review evidence is pushed. The required next sequence is to mark the exact
+evidence head Ready, wait for its complete Windows, Ubuntu, and macOS workspace
+and benchmark-smoke CI, merge exactly once only if the whole matrix is green,
+and then record truthful integration state in an isolated change. Do not begin
+REQ-CONTOUR-002.
