@@ -6,61 +6,67 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement
+- Mode: Review complete; Repair required
 - Requirement: REQ-TUNE-001, deterministic parameter tuning
 - Issue: #126
 - Branch: `codex/req-tune-001-deterministic-tuning`
 - Draft pull request: #127
+- Reviewed implementation head: `555157c`
 - Dependency: REQ-MODEL-001 is integrated
 - Registry status: `in_progress`
 
-## Implemented scope
+## Independent review result
 
-- Added a GeoRBF-owned `TuningProblem<D>` for D=1, D=2, and D=3 with explicit
-  finite candidates and inclusive physical-domain bounds for length, support
-  radius, regularization, axis ratio, and influence radius.
-- Implemented exact fixed selection, median-nearest-neighbor distance
-  selection, seeded deterministic cross-validation, generalized
-  cross-validation, and worst-case squared power-function selection.
-- Kept actual fitting behind a caller-owned `TuningEvaluator`. Evaluator
-  failure rejects the whole search; there is no candidate skipping, criterion
-  fallback, hidden regularization, jitter, or semantic-problem mutation.
-- Added complete criterion, seed, bound, fold, candidate-score, tie, and
-  criterion-evidence diagnostics.
-- Added independent strategy truth, known-optimum, deterministic-seed, bounds,
-  malformed-evidence, failure, and D=1/D=2/D=3 tests plus a runnable rustdoc
-  example.
-- Added a five-strategy release benchmark, Ready/main CI smoke wiring,
-  numerical-policy documentation, and the requirement change fragment.
+The fresh isolated read-only `math_reviewer` found five defects on exact head
+`555157c`:
+
+- P1 TUNE001-REV-001: GCV implements `RSS/(n-df)^2` instead of canonical
+  `n*RSS/(n-df)^2`, and no common candidate observation count is enforced.
+- P1 TUNE001-REV-002: `ln(value/target)` overflows or underflows for legal
+  extreme positive values even when the equivalent log difference is finite.
+- P2 TUNE001-REV-003: one-fold cross-validation leaves an empty training
+  complement and must fail before evaluator dispatch.
+- P2 TUNE001-REV-004: CV diagnostics retain only fold quotients, losing the
+  raw weighted squared errors and weights required to audit the total score.
+- P3 TUNE001-REV-005: stable sorting performs hidden allocations outside the
+  advertised structured allocation-failure path.
+
+No other P0--P3 finding was identified. The complete evidence, independent
+truth examples, exact lines, and required regressions are in
+`docs/reviews/PR-127-INDEPENDENT-REVIEW.md`.
 
 ## Validation state
 
-- Focused tuning integration tests pass: 11/11.
-- Focused tuning rustdoc passes: 1/1.
-- Focused warning-denying Clippy passes for the tuning test and benchmark.
-- The optimized 16-candidate benchmark smoke passes for all five strategies.
-- After the final production, test, manifest, CI, and registry change, the
-  stable tree passed the complete standard gate on 2026-07-24: format,
+- The isolated reviewer and parent Review task independently passed all 11
+  tuning integration tests, the tuning rustdoc example, the five-strategy
+  optimized benchmark smoke, the 58-requirement registry check, and the
+  complete PR whitespace check.
+- Draft CI run 30058923924 passed the Ubuntu correctness job on exact reviewed
+  head `555157c`. The Ready-only Windows, Ubuntu, and macOS benchmark matrix
+  was skipped as designed and is not claimed.
+- The stable implementation head passed the complete standard local gate after
+  the final production, test, manifest, CI, and registry change: format,
   warning-denying workspace/all-target/all-feature Clippy, all-feature
-  workspace tests, workspace doctests, and the 58-requirement registry check.
-- The final stable tree also passed the optimized five-strategy benchmark
-  smoke. The first gate attempt exposed one formatting delta and direct float
-  comparison; both were corrected before this complete clean rerun.
-- Mathematical/numerical independent Review remains a fresh next task after
-  this Implement task opens or updates the Draft PR.
+  workspace tests, workspace doctests, and registry validation.
+- This Review changes only Markdown review and bounded-handoff evidence, so the
+  immutable implementation-head gate remains applicable.
 
 ## Next task boundary
 
-Start a fresh independent Review of only REQ-TUNE-001 and Draft PR #127. It
-must use the isolated project `math_reviewer`, independently check scoring
-formulae, units, bounds, folds, seeded ties, evidence validation, hidden
-regularization, interface dispositions, tests, benchmark, and registry state,
-and record P0--P3 findings. It must not repair production code or start
-REQ-PERF-001.
+Start a fresh Repair task for only PR #127 findings TUNE001-REV-001 through
+TUNE001-REV-005. Reproduce each issue and add the specified regression before
+the smallest production repair. Run focused checks during iteration, then one
+complete standard workspace gate after the last production or test change.
+Update the review record and this bounded handoff, commit, push, and stop for a
+fresh independent re-review.
+
+Do not mark PR #127 Ready, merge it, change REQ-TUNE-001 to `integrated`, or
+begin REQ-PERF-001 in the Repair task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #126
+- Independent review: `docs/reviews/PR-127-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-TUNE-001.md`
 - Numerical policy: `docs/architecture/SOLVER_POLICY.md`
 - Benchmark: `docs/benchmarks/REQ-TUNE-001.md`
