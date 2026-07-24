@@ -284,3 +284,31 @@ The fresh re-review is clean. PR #127 may enter the mandatory Ready -> exact-
 head Windows/Ubuntu/macOS plus every benchmark-smoke workload -> single merge
 -> isolated truthful integration-state sequence. REQ-TUNE-001 remains
 `in_progress` until that sequence completes.
+
+## Integration evidence
+
+- Exact Ready evidence head:
+  `1bcd3306aa91a2397c5f51f16021aae717da6851`
+- Ready CI run: 30061378871
+- Squash merge: `41ac2c310b81e5b2e4a52f82546fe39a1fffa550`
+- Post-merge `main` CI run: 30062398006
+- Integration-state branch: `codex/req-tune-001-integration-state`
+- Integration-state pull request: #128
+
+Ready CI run 30061378871 passed the complete Windows, Ubuntu, and macOS
+workspace gate on exact Ready head `1bcd330`, including every configured
+backend combination, every benchmark-smoke workload, and requirement
+validation. PR #127 then squash-merged exactly once as `41ac2c3`; Issue #126
+closed as completed. Post-merge `main` CI run 30062398006 passed the same
+complete three-platform gate on exact merge commit `41ac2c3`.
+
+The isolated integration-state change updates only the requirement registry,
+this review evidence, the completed-history index, and the bounded handoff. It
+changes no production code, test, manifest, schema, CI, build input, public
+API, numerical behavior, dependency, tag, or release. The requirement may be
+recorded as `integrated` in this change because implementation, tests,
+documentation, applicable interfaces, diagnostics, benchmark obligations,
+independent review, exact Ready-head CI, the implementation merge, and
+post-merge `main` CI are complete. The integration-state pull request itself
+must still pass its complete local standard gate and exact Ready-head CI before
+it merges.
