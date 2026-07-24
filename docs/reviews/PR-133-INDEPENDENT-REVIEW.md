@@ -8,9 +8,12 @@
 - Reviewed head: `323fcd9821b775cc4a459f8745bd9b1be6267d2e`
 - Stable implementation gate head:
   `b41e48229a3d2f0f8e02d26709dfdf6da9ac86e9`
+- Repair implementation head:
+  `1280cd2c772d2e049eb1e28203077f711fb16036`
 - Draft CI run: 30077398167
 - Review date: 2026-07-24
-- Result: changes requested; one P1, one P2, and one P3 finding remain
+- Repair date: 2026-07-24
+- Result: repairs complete; fresh isolated re-review required
 
 ## Scope and independence
 
@@ -132,6 +135,49 @@ transformed test. A negative normalization scale should additionally cover
 reflection and derivative-sign behavior.
 
 No other P0, P1, P2, or P3 finding was identified.
+
+## Repair evidence
+
+Repair head `1280cd2c772d2e049eb1e28203077f711fb16036`
+addresses only CONTOUR001-REV-001 through CONTOUR001-REV-003:
+
+- CONTOUR001-REV-001: level-point extraction now requires the fitted gradient
+  capability to be `SupportedEverywhere` and returns
+  `UnsupportedGradientCapability` before the first fitted-field evaluation for
+  `SupportedAwayFromCenters`. The regression uses the retained Matérn-1/2
+  center-limited model, level one, domain `[-1, 2]`, one requested scan
+  interval, 64 refinements, and the review's exact `1e-6`, `1e-8`, and `1e-12`
+  tolerances. The center is not a scan node and no report is returned.
+- CONTOUR001-REV-002: a tolerance-small scan-node derivative remains public
+  stationary-candidate evidence, but it contributes a diagnostic bracket only
+  when its two neighbors actually have opposite derivative signs. An exactly
+  zero derivative can instead contribute a zero-width bracket. The new exact
+  CPD cubic regression reproduces `x^3 + epsilon*x` with complete degree-three
+  polynomial space, `epsilon = 1e-12`, and derivative tolerance `1e-10`; it
+  retains the candidate at zero and reports no stationary bracket.
+- CONTOUR001-REV-003: the transformed quadratic truth test now asserts
+  original-coordinate derivatives `-1.5`, `+1.5`, and zero. A second fit with
+  normalization scale `-2` verifies reflected coordinates, root ordering, and
+  derivative signs.
+
+Before the production repair, the focused contour test suite reproduced
+CONTOUR001-REV-001 and CONTOUR001-REV-002 as two failures. After the repair,
+all eight contour integration tests passed. The focused contour Rustdoc
+example passed, release benchmark smoke retained checksum
+`2.50500000000000000e2`, the 58-requirement registry check passed, and the
+complete standard gate passed on the exact repair implementation tree:
+
+- `cargo fmt --all -- --check`
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`
+- `cargo test --workspace --all-features`
+- `cargo test --doc --workspace`
+- `cargo xtask requirements check`
+
+The later handoff commit changes only this review record and
+`docs/progress/CURRENT.md`, so the immutable repair-head gate remains
+applicable. PR #133 remains Draft and REQ-CONTOUR-001 remains `in_progress`.
+Fresh isolated mathematical/numerical re-review must independently confirm
+that all three findings are closed and check for new P0--P3 defects.
 
 ## Independent truth and validation
 
