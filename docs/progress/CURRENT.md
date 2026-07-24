@@ -6,68 +6,67 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Implement
-- Requirement: REQ-PERF-001
+- Mode: Review complete; Repair required
+- Requirement: REQ-PERF-001, dense and sparse performance baseline
 - Issue: #129
 - Branch: `codex/req-perf-001-performance-baseline`
 - Draft pull request: #130
-- Stable implementation head: `236ec26`
+- Reviewed head: `293bcd1`
+- Stable implementation gate head: `236ec26`
 - Dependencies: REQ-SPARSE-001, REQ-CENTER-001, and REQ-TUNE-001 are integrated
-- Registry status in this change: `in_progress`
+- Registry status: `in_progress`
 
-## Implemented scope
+## Independent review result
 
-- Dense all-representer assembly uses deterministic fixed 32-by-32
-  upper-triangle blocks, evaluates each kernel pair once, reflects each
-  off-diagonal entry once, and records block and work-count evidence.
-- `FittedFieldEvaluationWorkspace<D>` supports allocation-stable reusable
-  serial value/gradient batches for D=1, D=2, and D=3.
-- `BatchEvaluationOptions` requires explicit nonzero worker and logical-memory
-  limits. Scoped workers own isolated scratch, use deterministic contiguous
-  ranges, preserve input order, and never configure a global thread pool.
-- Batch diagnostics record exact center visits and checked output, per-worker
-  workspace, total workspace, logical peak, and caller-limit bytes.
-- Sparse workspaces reserve complete center-index capacity before evaluation;
-  exact compact-support filtering therefore performs no per-query allocation.
-- `georbf.performance.v1` is a fixed CSV benchmark schema for dense and sparse
-  D=3 value/gradient batches at one, two, and four workers.
+The fresh isolated read-only `math_reviewer` found four defects on exact head
+`293bcd1`:
 
-## Validation evidence
+- P1 PERF001-REV-001: sparse workspace capacity uses retained centers, but the
+  R-tree yields atomic terms before center-ID deduplication. Multi-term centers
+  can therefore allocate during a query and exceed reported scratch bytes.
+- P2 PERF001-REV-002: `try_evaluate_batch_into` returns an incompatible-
+  workspace error before clearing previously populated caller output.
+- P2 PERF001-REV-003: the shared scratch constructor reserves all sparse
+  centers for ordinary one-point APIs, regressing local evaluation to
+  global-size allocation.
+- P3 PERF001-REV-004: the dense exact-work regression checks a closed-form
+  diagnostic and symmetry but never records actual evaluator visits.
 
-- Six independent performance integration tests pass: D=1/D=2/D=3 parity,
-  one/four-worker bit identity, exact cross-block upper-triangle counts and
-  symmetry, sparse locality, memory preflight, empty batches, workspace
-  compatibility, zero-allocation warmed reuse, and allocation-count
-  independence from query count.
-- Focused warning-denying all-target/all-feature Clippy passes.
-- The new release benchmark smoke passes and emits identical checksums at one,
-  two, and four workers for both dense and sparse workloads.
-- Four consecutive full local benchmark runs and their environment, ranges,
-  memory, center visits, checksums, and directional scaling are recorded in
-  `docs/benchmarks/REQ-PERF-001.md`.
-- The 58-requirement registry check passes.
-- After the last production and test change, the stable implementation tree
-  passed the complete standard local gate: format, warning-denying
-  workspace/all-target/all-feature Clippy, all-feature workspace tests,
-  workspace doctests, and the 58-requirement registry check.
-- Draft PR #130 contains that exact implementation head plus only this
-  PR-linking registry/handoff evidence follow-up.
+No other P0--P3 finding was identified. Complete scenarios, exact lines,
+independent truth, and required regressions are in
+`docs/reviews/PR-130-INDEPENDENT-REVIEW.md`.
+
+## Validation state
+
+- The isolated reviewer and parent Review task independently passed the focused
+  performance suite and release benchmark smoke. The parent also passed all
+  georbf Rustdoc tests, the 58-requirement registry check, and the complete PR
+  whitespace check.
+- Draft CI run 30067909616 passed Ubuntu on exact reviewed head `293bcd1`.
+  The Ready-only Windows, Ubuntu, and macOS benchmark matrix was skipped as
+  designed and is not claimed.
+- Stable implementation head `236ec26` passed the complete standard local gate
+  after the final production, test, manifest, CI, and registry change.
+- This Review changes only Markdown review and bounded-handoff evidence, so the
+  immutable implementation-head gate remains applicable.
 
 ## Next task boundary
 
-Start a fresh Review task for only REQ-PERF-001 Draft PR #130. It must use an
-isolated read-only project `math_reviewer` because the change affects numerical
-assembly traversal and performance-sensitive evaluation. Review the complete
-diff against `01b9fa5`, the requirement/dependency context, both accepted
-backend ADRs, the tests, benchmark evidence, allocation behavior, explicit
-threading, failure containment, memory accounting, and interface dispositions.
-Do not repair production code or begin another requirement in that Review
-task.
+Start a fresh Repair task for only PR #130 findings PERF001-REV-001 through
+PERF001-REV-004. Add the specified independent regressions before the smallest
+production repair. Run focused checks during iteration, then one complete
+standard workspace gate after the last production or test change. Update the
+review record and this bounded handoff, commit, push, and stop for a fresh
+isolated re-review.
+
+Do not mark PR #130 Ready, merge it, change REQ-PERF-001 to `integrated`, or
+begin another requirement in the Repair task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #129
 - Draft implementation: GitHub PR #130
+- Independent review: `docs/reviews/PR-130-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-PERF-001.md`
 - Benchmark and allocation evidence: `docs/benchmarks/REQ-PERF-001.md`
 - Production batch implementation: `crates/georbf/src/performance.rs`
