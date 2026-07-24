@@ -327,8 +327,8 @@ The isolated integration-state change updates only this review evidence,
 It changes no production code, test, manifest, schema, CI, build input, API,
 numerical behavior, dependency, tag, or release. REQ-CONTOUR-002 becomes
 truthfully `integrated` only when that isolated change itself merges after its
-complete exact-head gate. The isolated integration-state pull request is
-pending creation. No next requirement may begin here.
+complete exact-head gate. The isolated change is Draft PR #137. No next
+requirement may begin here.
 
 ## Verified behavior and residual risk
 

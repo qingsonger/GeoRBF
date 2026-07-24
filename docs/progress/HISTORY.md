@@ -50,7 +50,7 @@ available in Git history through commit `a2be099`.
 | REQ-TUNE-001 | #126 | #127 | #128 | `docs/reviews/PR-127-INDEPENDENT-REVIEW.md` |
 | REQ-PERF-001 | #129 | #130 | #131 | `docs/reviews/PR-130-INDEPENDENT-REVIEW.md` |
 | REQ-CONTOUR-001 | #132 | #133 | #134 | `docs/reviews/PR-133-INDEPENDENT-REVIEW.md` |
-| REQ-CONTOUR-002 | #135 | #136 | pending | `docs/reviews/PR-136-INDEPENDENT-REVIEW.md` |
+| REQ-CONTOUR-002 | #135 | #136 | #137 | `docs/reviews/PR-136-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,

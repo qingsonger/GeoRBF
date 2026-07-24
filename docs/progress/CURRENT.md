@@ -12,7 +12,8 @@ records, benchmark reports, Git, and GitHub.
 - Implementation branch: `codex/req-contour-002-isolines`
 - Implementation pull request: #136, squash-merged as `9bb075b`
 - Integration-state branch: `codex/req-contour-002-integration-state`
-- Integration-state pull request: pending creation
+- Integration-state pull request: #137 (Draft until the final exact-head gate
+  passes)
 - Exact implementation Ready head: `07061aa`
 - Final repair implementation and standard-gate head: `6dee8e7`
 - Dependency: REQ-MODEL-001 is integrated
@@ -51,13 +52,15 @@ behavior, dependency, tag, or release.
 - Ready run `30101363134` and post-merge `main` run `30103256581` each passed
   Windows, Ubuntu, and macOS correctness plus every benchmark smoke, including
   the two-dimensional isoline smoke.
-- The final standard local gate on the integration-state tree is pending.
+- After the PR-number evidence update, the final integration-state tree passed
+  formatting, warning-denying all-target and all-feature workspace Clippy, the
+  complete all-feature workspace test suite, all workspace Rustdoc tests, and
+  the 58-requirement registry check. Recording that result here changes only
+  this bounded evidence document, so the complete gate remains applicable.
 
 ## Next task boundary
 
-Complete the final standard local gate on the integration-state tree, commit
-and push it, and open its Draft pull request. Record the assigned pull-request
-number in this bounded handoff, the history index, and the review evidence.
+Commit and push this documentation-only final-gate evidence to Draft PR #137.
 Mark that pull request Ready, wait for exact-head Windows, Ubuntu, and macOS
 correctness plus complete benchmark-smoke CI, and merge only if green. Wait for
 the exact merge commit's post-merge three-platform CI and then stop. Do not
@@ -67,6 +70,7 @@ begin REQ-CONTOUR-003.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #135
 - Merged implementation: GitHub PR #136
+- Integration-state pull request: GitHub PR #137
 - Independent review and repairs:
   `docs/reviews/PR-136-INDEPENDENT-REVIEW.md`
 - Core implementation: `crates/georbf/src/contour/isoline.rs`
