@@ -293,7 +293,7 @@ head Windows/Ubuntu/macOS plus every benchmark-smoke workload -> single merge
 - Squash merge: `41ac2c310b81e5b2e4a52f82546fe39a1fffa550`
 - Post-merge `main` CI run: 30062398006
 - Integration-state branch: `codex/req-tune-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #128
 
 Ready CI run 30061378871 passed the complete Windows, Ubuntu, and macOS
 workspace gate on exact Ready head `1bcd330`, including every configured

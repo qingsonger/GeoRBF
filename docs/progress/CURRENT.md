@@ -10,7 +10,7 @@ records, benchmark reports, Git, and GitHub.
 - Requirement: REQ-TUNE-001, closed Issue #126
 - Implementation pull request: #127, squash-merged as `41ac2c3`
 - Integration-state branch: `codex/req-tune-001-integration-state`
-- Integration-state pull request: pending
+- Integration-state pull request: #128 (Draft)
 - Exact Ready head: `1bcd330`
 - Dependency: REQ-MODEL-001 is integrated
 - Registry status in this change: `integrated`
@@ -53,9 +53,11 @@ records, benchmark reports, Git, and GitHub.
 
 ## Next task boundary
 
-Create the isolated integration-state pull request, link its number in this
-handoff and completed-history index, and run the complete standard local gate
-on the final head. Keep that PR Draft and stop for a fresh independent Review.
+Start a fresh Review task for only PR #128. Independently review the isolated
+four-file integration-state delta against `41ac2c3`; do not repair production
+code and do not begin another requirement. If no P0--P3 finding remains, mark
+PR #128 Ready, wait for exact-head Windows/Ubuntu/macOS and benchmark-smoke CI,
+merge exactly once only when green, and stop.
 
 Do not begin REQ-PERF-001 in the re-review task.
 
@@ -63,7 +65,7 @@ Do not begin REQ-PERF-001 in the re-review task.
 
 - Acceptance criteria and exclusions: closed GitHub Issue #126
 - Merged implementation: GitHub PR #127
-- Integration-state pull request: pending
+- Integration-state pull request: GitHub PR #128
 - Independent review and repair evidence:
   `docs/reviews/PR-127-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-TUNE-001.md`
