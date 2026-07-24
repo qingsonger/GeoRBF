@@ -263,9 +263,24 @@ immutable repair implementation head `1280cd2` therefore remains applicable.
 Draft CI run 30080017013 passed Ubuntu on exact pre-re-review evidence head
 `bc892c3e4e9b3c7ccf1aaa38c019c1be818eaf3b`.
 
-PR #133 and REQ-CONTOUR-001 remain Draft and `in_progress` until this clean
-re-review evidence is pushed. The required next sequence is to mark the exact
-evidence head Ready, wait for its complete Windows, Ubuntu, and macOS workspace
-and benchmark-smoke CI, merge exactly once only if the whole matrix is green,
-and then record truthful integration state in an isolated change. Do not begin
-REQ-CONTOUR-002.
+## Ready CI and implementation merge
+
+Clean re-review evidence was committed and pushed as exact Ready head
+`25df6e97bad05ccd14ad94f6608ded3ae3a09cd0`. Ready CI run 30088526342 passed
+the complete Windows, Ubuntu, and macOS workspace jobs on that exact head.
+Every configured correctness check, backend feature combination, requirement
+validation, and benchmark smoke passed, including the one-dimensional
+level-point smoke on all three platforms.
+
+PR #133 was squash-merged exactly once as
+`2634a7d80bbccf30670bf4b1f179a950456631f2`; Issue #132 closed as completed.
+Post-merge `main` CI run 30089747253 passed the same complete Windows, Ubuntu,
+and macOS gate on exact merge commit `2634a7d`.
+
+The isolated integration-state change updates only this review evidence,
+`requirements/v1.yaml`, `docs/progress/HISTORY.md`, and the bounded handoff. It
+changes no production code, test, manifest, schema, CI, build input, API,
+numerical behavior, dependency, tag, or release. REQ-CONTOUR-001 becomes
+truthfully `integrated` only when that isolated change itself merges after its
+complete exact-head gate. The isolated change is Draft PR #134. No next
+requirement may begin here.
