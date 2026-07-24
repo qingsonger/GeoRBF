@@ -179,3 +179,40 @@ gate after the last production or test change, update this record and the
 bounded handoff, push, and stop for another fresh independent re-review. This
 Review does not repair production code, mark the PR ready, merge it, or begin
 REQ-PERF-001.
+
+## Repair evidence
+
+Repair implementation head `ae570a5f936c8e133f80f4e132b0a9a6b91fd330`
+addresses only TUNE001-REV-001 through TUNE001-REV-005:
+
+- TUNE001-REV-001: GCV now evaluates canonical
+  `n * RSS / (n - effective_dof)^2`; a structured mismatch rejects candidates
+  that report different observation counts. The truth score for `n=4`,
+  `df=2`, `RSS=1` is `1.0`, and a `100`-versus-`2` count regression rejects the
+  second candidate.
+- TUNE001-REV-002: distance scoring computes `ln(value) - ln(target)` without
+  forming an overflow- or underflow-prone quotient. D=1 regressions cover both
+  `MAX / MIN_POSITIVE` and its reciprocal.
+- TUNE001-REV-003: fold construction now rejects one fold before evaluator
+  dispatch, with a regression proving zero evaluator calls.
+- TUNE001-REV-004: candidate diagnostics retain each exact
+  `CrossValidationEvidence` pair. A three-fold unequal-weight regression
+  recomputes the reported score from raw weighted squared errors and weights.
+- TUNE001-REV-005: nearest-distance and seeded fold order use in-place unstable
+  sorting with deterministic total comparisons. An allocation-counter
+  regression over pre-reserved 4096-entry work vectors observes zero allocator
+  calls during either ordering.
+
+Focused validation passed all 14 tuning integration tests, the isolated
+ordering-allocation unit regression, warning-denying georbf all-target/all-
+feature Clippy, and both smoke and 128-candidate five-strategy release
+benchmarks. The exact implementation head then passed the complete standard
+gate: format, warning-denying workspace/all-target/all-feature Clippy,
+all-feature workspace tests, workspace doctests, the 58-requirement registry
+check, and the complete PR whitespace check.
+
+Only this Markdown repair evidence and the bounded handoff change after the
+validated implementation head. These are Repair claims, not an independent
+re-review. PR #127 remains Draft and REQ-TUNE-001 remains `in_progress`; a
+fresh isolated `math_reviewer` must verify the repairs and check for new P0--P3
+findings before any Ready transition.

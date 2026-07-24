@@ -6,67 +6,70 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Review complete; Repair required
+- Mode: Repair complete; fresh re-review required
 - Requirement: REQ-TUNE-001, deterministic parameter tuning
 - Issue: #126
 - Branch: `codex/req-tune-001-deterministic-tuning`
 - Draft pull request: #127
-- Reviewed implementation head: `555157c`
+- Independently reviewed implementation head: `555157c`
+- Repair implementation head: `ae570a5`
 - Dependency: REQ-MODEL-001 is integrated
 - Registry status: `in_progress`
 
-## Independent review result
+## Repair result
 
-The fresh isolated read-only `math_reviewer` found five defects on exact head
-`555157c`:
+The fresh Repair task addressed only independent findings TUNE001-REV-001
+through TUNE001-REV-005:
 
-- P1 TUNE001-REV-001: GCV implements `RSS/(n-df)^2` instead of canonical
-  `n*RSS/(n-df)^2`, and no common candidate observation count is enforced.
-- P1 TUNE001-REV-002: `ln(value/target)` overflows or underflows for legal
-  extreme positive values even when the equivalent log difference is finite.
-- P2 TUNE001-REV-003: one-fold cross-validation leaves an empty training
-  complement and must fail before evaluator dispatch.
-- P2 TUNE001-REV-004: CV diagnostics retain only fold quotients, losing the
-  raw weighted squared errors and weights required to audit the total score.
-- P3 TUNE001-REV-005: stable sorting performs hidden allocations outside the
-  advertised structured allocation-failure path.
+- GCV uses canonical `n * RSS / (n - effective_dof)^2` and rejects a
+  candidate observation-count mismatch explicitly.
+- Extreme positive distance ratios use a finite log difference without an
+  intermediate quotient.
+- Cross-validation requires `2 <= folds <= observations` before evaluator
+  dispatch.
+- CV diagnostics retain exact per-fold weighted squared errors and weights.
+- Nearest-distance and fold-order sorting is in-place, deterministic, and
+  allocation-free after work-vector reservation.
 
-No other P0--P3 finding was identified. The complete evidence, independent
-truth examples, exact lines, and required regressions are in
-`docs/reviews/PR-127-INDEPENDENT-REVIEW.md`.
+The required formula, extreme-scale, one-fold, unequal-weight evidence,
+common-count, and allocation-counting regressions are present. No other
+requirement, interface milestone, solver policy, or dependency changed.
 
 ## Validation state
 
-- The isolated reviewer and parent Review task independently passed all 11
-  tuning integration tests, the tuning rustdoc example, the five-strategy
-  optimized benchmark smoke, the 58-requirement registry check, and the
-  complete PR whitespace check.
-- Draft CI run 30058923924 passed the Ubuntu correctness job on exact reviewed
-  head `555157c`. The Ready-only Windows, Ubuntu, and macOS benchmark matrix
-  was skipped as designed and is not claimed.
-- The stable implementation head passed the complete standard local gate after
-  the final production, test, manifest, CI, and registry change: format,
-  warning-denying workspace/all-target/all-feature Clippy, all-feature
-  workspace tests, workspace doctests, and registry validation.
-- This Review changes only Markdown review and bounded-handoff evidence, so the
-  immutable implementation-head gate remains applicable.
+- Focused validation passed all 14 tuning integration tests, the isolated
+  zero-allocation ordering unit regression, warning-denying georbf all-target/
+  all-feature Clippy, and smoke plus complete five-strategy release benchmarks.
+- Exact repair implementation head `ae570a5` passed the complete standard
+  local gate after the last production, test, and Rust documentation change:
+  format, warning-denying workspace/all-target/all-feature Clippy, all-feature
+  workspace tests, workspace doctests, and the 58-requirement registry check.
+- The complete PR whitespace check also passed on that head.
+- Only Markdown review and bounded-handoff evidence follows the validated
+  implementation head, so its immutable complete gate remains applicable.
+- PR #127 remains Draft. The next task must inspect CI on the pushed repair
+  evidence head; no post-repair remote CI result is claimed here.
 
 ## Next task boundary
 
-Start a fresh Repair task for only PR #127 findings TUNE001-REV-001 through
-TUNE001-REV-005. Reproduce each issue and add the specified regression before
-the smallest production repair. Run focused checks during iteration, then one
-complete standard workspace gate after the last production or test change.
-Update the review record and this bounded handoff, commit, push, and stop for a
-fresh independent re-review.
+Start a fresh Review/re-review task for only PR #127. Supply an isolated
+read-only project `math_reviewer` with the bounded requirement context, original
+findings, repair diff, and validation evidence. Verify that TUNE001-REV-001
+through TUNE001-REV-005 are closed and check for new P0--P3 findings.
 
-Do not mark PR #127 Ready, merge it, change REQ-TUNE-001 to `integrated`, or
-begin REQ-PERF-001 in the Repair task.
+If any finding remains, record evidence and stop without repairing production
+code. If the re-review is clean, follow the mandatory integration sequence:
+mark PR #127 Ready, wait for complete Windows/Ubuntu/macOS and benchmark-smoke
+CI on that exact Ready head, merge exactly once only when it is green, and
+record truthful integration state. Then stop.
+
+Do not begin REQ-PERF-001 in the re-review task.
 
 ## Durable evidence
 
 - Acceptance criteria and exclusions: GitHub Issue #126
-- Independent review: `docs/reviews/PR-127-INDEPENDENT-REVIEW.md`
+- Independent review and repair evidence:
+  `docs/reviews/PR-127-INDEPENDENT-REVIEW.md`
 - Requirement summary: `changes/REQ-TUNE-001.md`
 - Numerical policy: `docs/architecture/SOLVER_POLICY.md`
 - Benchmark: `docs/benchmarks/REQ-TUNE-001.md`
