@@ -50,6 +50,7 @@ available in Git history through commit `a2be099`.
 | REQ-TUNE-001 | #126 | #127 | #128 | `docs/reviews/PR-127-INDEPENDENT-REVIEW.md` |
 | REQ-PERF-001 | #129 | #130 | #131 | `docs/reviews/PR-130-INDEPENDENT-REVIEW.md` |
 | REQ-CONTOUR-001 | #132 | #133 | #134 | `docs/reviews/PR-133-INDEPENDENT-REVIEW.md` |
+| REQ-CONTOUR-002 | #135 | #136 | pending | `docs/reviews/PR-136-INDEPENDENT-REVIEW.md` |
 
 The authoritative status and interface dispositions remain in
 `requirements/v1.yaml`. Requirement-sized summaries are in `changes/`,
@@ -76,6 +77,6 @@ integration-state change adds REQ-SPIKE-003 as the first integrated M7
 requirement, REQ-SPARSE-001 as the second, REQ-CENTER-001 as the third, and
 REQ-TUNE-001 as the fourth. This integration-state change adds REQ-PERF-001 as
 the fifth, completing M7. This integration-state change adds REQ-CONTOUR-001 as
-the first integrated M8 requirement. The next eligible atomic requirement must
-be selected by the registry in a fresh task after this integration-state pull
-request merges.
+the first integrated M8 requirement and REQ-CONTOUR-002 as the second. The next
+eligible atomic requirement must be selected by the registry in a fresh task
+after this integration-state pull request merges.

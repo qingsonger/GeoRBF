@@ -308,12 +308,27 @@ schema, benchmark, CI, registry, or build input changed after the exact
 implementation and standard-gate head, so the complete standard gate recorded
 for `6dee8e7` remains applicable and was not repeated.
 
-PR #136 remains Draft and REQ-CONTOUR-002 remains `in_progress`. Ready-head
-Windows, Ubuntu, macOS, and complete benchmark-smoke CI remains unexecuted. A
-fresh Review/integration task must verify the unchanged implementation, mark
-the PR Ready, wait for the complete Ready CI on that exact head, merge exactly
-once only if it is green, record truthful integration state, and stop without
-beginning REQ-CONTOUR-003.
+## Ready CI, implementation merge, and post-merge CI
+
+The clean re-review evidence was pushed as exact Ready head
+`07061aa6313bad091fc2c13fd7d94d682c4269bf`. Ready CI run `30101363134`
+passed the complete Windows, Ubuntu, and macOS workspace jobs on that exact
+head. Every configured correctness check, backend feature combination,
+requirement validation, and benchmark smoke passed, including the
+two-dimensional isoline smoke on all three platforms.
+
+PR #136 was squash-merged exactly once as
+`9bb075bcb1347913eeaf991cd4a8ec6f41df65c5`; Issue #135 closed as completed.
+Post-merge `main` CI run `30103256581` passed the same complete Windows,
+Ubuntu, and macOS gate on exact merge commit `9bb075b`.
+
+The isolated integration-state change updates only this review evidence,
+`requirements/v1.yaml`, `docs/progress/HISTORY.md`, and the bounded handoff.
+It changes no production code, test, manifest, schema, CI, build input, API,
+numerical behavior, dependency, tag, or release. REQ-CONTOUR-002 becomes
+truthfully `integrated` only when that isolated change itself merges after its
+complete exact-head gate. The isolated integration-state pull request is
+pending creation. No next requirement may begin here.
 
 ## Verified behavior and residual risk
 
