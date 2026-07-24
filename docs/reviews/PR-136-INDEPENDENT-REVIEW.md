@@ -6,14 +6,17 @@
 - Branch: `codex/req-contour-002-isolines`
 - Base head: `6e622c708be8a7d030213f29fc42ef4f9ce256ef`
 - Reviewed head: `2b93db4c7efce551601e45836ec43ff4a3c7f622`
+- Fresh re-reviewed head:
+  `98a5572001457ce8cedaac6180c9be2f43cb5900`
 - Stable implementation gate head:
   `4e766af`
 - Repair implementation and standard-gate head:
   `9510b6c`
-- Draft CI run: 30095419189
-- Review date: 2026-07-24
+- Draft CI runs: 30095419189, 30097440898
+- Review and re-review date: 2026-07-24
 - Repair date: 2026-07-24
-- Result: five findings repaired; fresh independent re-review required
+- Result: original five findings closed; new P2
+  CONTOUR002-REREV-006 requires Repair
 
 ## Scope and independence
 
@@ -178,6 +181,77 @@ After the final production and test change, the exact tree committed as
 This repair evidence is not an independent re-review and does not close the
 review contract by itself. PR #136 remains Draft until a fresh isolated
 reviewer confirms the repairs and checks for new P0--P3 findings.
+
+## Fresh independent re-review
+
+A second fresh isolated read-only project `math_reviewer` received only the
+bounded requirement and integrated dependency summary, Issue #135 acceptance
+criteria and exclusions, the M8 plan, relevant scope and architecture
+contracts, the complete base-to-head and focused repair diffs, original
+findings, tests, benchmark evidence, and validation state. It inherited no
+Implement or Repair reasoning and made no repository or remote change.
+
+The reviewer independently closed all five original findings:
+
+- CONTOUR002-REV-001 is closed because value-tolerance acceptance for a true
+  sign bracket now retains the crossed-edge identity, and the exact quadratic
+  regression proves two distinct components, four canonical vertices, and two
+  unique segments.
+- CONTOUR002-REV-002 is closed because square and simplex endpoints are
+  deduplicated by canonical key before topology classification, and the exact
+  affine corner regression proves one ordinary segment with both requested
+  boundary sides at each endpoint.
+- CONTOUR002-REV-003 is closed because the retained sign bracket is updated
+  before the coordinate-width test, and the regression proves both
+  final-iteration success and strictly wider evidence on exhaustion.
+- CONTOUR002-REV-004 is closed as originally scoped because both production
+  topology sorts are deterministic in-place unstable sorts with total tie
+  breakers, and the 4096-entry regression invokes those exact functions with
+  zero observed allocations.
+- CONTOUR002-REV-005 is closed because every fitted-value query passes through
+  a wrapper that checks cancellation immediately before invocation and
+  preserves post-query cancellation priority; the synchronized counter
+  regression proves both boundaries.
+
+### P2 CONTOUR002-REREV-006: fitted-field error propagation allocates infallibly
+
+`IsolineError::Preparation` and `IsolineError::Evaluation` store boxed sources
+at `crates/georbf/src/contour/isoline.rs:676-687`. Production constructs those
+boxes with `Box::new` at lines 922-926 and 931-935. Unlike the extractor's
+`try_vec` and `try_push` paths, `Box::new` does not return an allocation error.
+An allocation failure while forming a fitted scratch or evaluation diagnostic
+can therefore leave the structured `IsolineError::AllocationFailed`,
+source-preservation, and no-partial-report contract.
+
+Repair must remove the infallible diagnostic allocation while preserving the
+exact `FittedFieldEvaluationError<2>` through `Error::source`. An internal
+allocation-instrumented regression must exercise the same preparation and
+evaluation source conversions used by both production call sites, observe zero
+allocation calls, and verify the retained source.
+
+No P0, P1, additional P2, or P3 finding was identified. The reviewer
+independently rechecked the bilinear coefficients, interior saddle and
+`a - b*c/d` value, positive-connectivity pairings and exact tie, dimensions and
+scale normalization, bracket signs and endpoints, canonical identities, graph
+topology, original-coordinate evaluation, CPD/SPD neutrality, absence of
+hidden fitting or regularization, overflow, cancellation and progress,
+interface dispositions, registry truth, benchmark construction, and CI
+routing.
+
+The reviewer passed the 10-test isoline integration suite, all three private
+repair tests, the isoline Rustdoc example, release benchmark smoke with
+checksum `1.83299999999997817e4`, formatting, the 58-requirement registry
+check, and both complete and repair whitespace checks. Draft CI run
+30097440898 then passed the configured Ubuntu correctness gate on exact
+re-reviewed head `98a5572`. Ready-only Windows, Ubuntu, macOS, and complete
+benchmark-smoke CI remains unexecuted.
+
+PR #136 remains Draft and REQ-CONTOUR-002 remains `in_progress`. A fresh Repair
+task must address only CONTOUR002-REREV-006, add the required production-path
+regression, run the focused and final standard checks after the last code
+change, update the evidence and bounded handoff, push, and stop for another
+fresh independent re-review. This Review task does not repair production code,
+mark the PR Ready, merge it, or begin REQ-CONTOUR-003.
 
 ## Verified behavior and residual risk
 

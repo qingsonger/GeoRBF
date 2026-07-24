@@ -6,12 +6,13 @@ records, benchmark reports, Git, and GitHub.
 
 ## Active repository work
 
-- Mode: Repair complete; fresh independent re-review required
+- Mode: Review complete; Repair required for CONTOUR002-REREV-006
 - Requirement: REQ-CONTOUR-002, two-dimensional isolines
 - Issue: #135
 - Branch: `codex/req-contour-002-isolines`
 - Draft pull request: #136
 - Reviewed head: `2b93db4`
+- Fresh re-reviewed head: `98a5572`
 - Repair implementation and standard-gate head: `9510b6c`
 - Independent review: `docs/reviews/PR-136-INDEPENDENT-REVIEW.md`
 - Dependency: REQ-MODEL-001 is integrated
@@ -97,22 +98,35 @@ records, benchmark reports, Git, and GitHub.
   passed formatting, warning-denying all-target and all-feature workspace
   Clippy, the complete all-feature workspace test suite, all workspace Rustdoc
   tests, and the 58-requirement registry check.
-- The repair has not been independently re-reviewed. PR #136 remains Draft;
-  no Ready Windows, Ubuntu, macOS, or complete benchmark-smoke CI is claimed.
+- A fresh isolated `math_reviewer` re-reviewed exact head `98a5572`, closed
+  CONTOUR002-REV-001 through CONTOUR002-REV-005, and found no mathematical,
+  topology, cancellation, progress, interface, registry, benchmark, or CI
+  routing defect.
+- The same re-review found new P2 CONTOUR002-REREV-006: preparation and
+  evaluation error-source mappings use `Box::new`, so allocating the structured
+  diagnostic itself can fail outside the extractor's fallible allocation path.
+  Repair must preserve the exact fitted-field source without heap allocation
+  and add allocation-instrumented production-conversion regressions.
+- The reviewer passed the 10-test isoline suite, all 3 internal repair tests,
+  focused Rustdoc, release benchmark smoke with unchanged checksum, formatting,
+  the 58-requirement registry check, and complete and repair whitespace checks.
+- Draft CI run 30097440898 passed the configured Ubuntu correctness gate on
+  exact head `98a5572`. PR #136 remains Draft; no Ready Windows, Ubuntu, macOS,
+  or complete benchmark-smoke CI is claimed.
 
 ## Next task boundary
 
-Stop this Repair task after pushing the documentation-only handoff commit. The
-next fresh task must use Review/re-review mode for Draft PR #136. Supply a fresh
-isolated `math_reviewer` only the bounded requirement and dependency summary,
-normative documents, original five findings, focused repair diff
-`978a445..9510b6c`, complete PR diff, and validation evidence. It must
-independently confirm closure of CONTOUR002-REV-001 through
-CONTOUR002-REV-005 and check for new P0--P3 findings. If any finding remains,
-record it and stop without repair. If the re-review is clean, synchronize the
-review evidence, mark PR #136 Ready, wait for the complete exact-head Windows,
-Ubuntu, macOS, and benchmark-smoke CI, and merge exactly once only if green.
-Then record truthful integration state and stop. Do not begin REQ-CONTOUR-003.
+Stop this Review task after pushing its documentation-only evidence commit.
+The next fresh task must use Repair mode for Draft PR #136 and address only
+CONTOUR002-REREV-006. Replace the infallibly allocated preparation and
+evaluation error-source mapping while preserving the exact
+`FittedFieldEvaluationError<2>` through `Error::source`. Add
+allocation-instrumented regressions that exercise the same conversions as both
+production call sites and require zero allocations. Run focused checks during
+repair and one complete standard gate after the last production or test
+change, update the review evidence and bounded handoff, commit, push, and stop
+for another fresh independent re-review. Do not mark the PR Ready, merge it, or
+begin REQ-CONTOUR-003.
 
 ## Durable evidence
 
