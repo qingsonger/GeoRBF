@@ -73,6 +73,8 @@ pub enum ExecutionOperation {
     LevelPointExtraction,
     /// Two-dimensional fitted-field isoline extraction.
     IsolineExtraction,
+    /// Three-dimensional fitted-field isosurface extraction.
+    IsosurfaceExtraction,
 }
 
 impl fmt::Display for ExecutionOperation {
@@ -86,6 +88,7 @@ impl fmt::Display for ExecutionOperation {
             Self::SampledThicknessValidation => "sampled thickness validation",
             Self::LevelPointExtraction => "level-point extraction",
             Self::IsolineExtraction => "isoline extraction",
+            Self::IsosurfaceExtraction => "isosurface extraction",
         })
     }
 }
@@ -134,6 +137,8 @@ pub enum ExecutionStage {
     LevelPointEvaluation,
     /// One analytic fitted-field value evaluation for an isoline completed.
     IsolineEvaluation,
+    /// One analytic fitted-field value or value-gradient isosurface evaluation completed.
+    IsosurfaceEvaluation,
     /// The operation completed successfully.
     Completed,
 }

@@ -60,6 +60,10 @@
 //! squares, refines value-sign-change edge brackets, deduplicates canonical
 //! grid intersections, reconstructs open and closed polylines, and retains
 //! requested-domain evidence for every open endpoint.
+//! Three-dimensional isosurface extraction provides a conforming
+//! marching-simplices reference and a face-consistent regular-grid path,
+//! refines canonical crossings, validates indexed triangle topology, and
+//! orients every triangle with analytic original-coordinate gradient normals.
 //! Immutable multi-field projects retain independently fitted scalar fields in
 //! stable identifier order and expose validated reference-field inputs that
 //! delegate evaluation without adding topology or cross-field mathematics.
@@ -138,10 +142,14 @@ pub use contour::{
     IsolineBoundaryEndpoint, IsolineBoundarySide, IsolineCellPairing, IsolineDiagnostics,
     IsolineDomainAxis, IsolineError, IsolineMethod, IsolinePolyline, IsolineReport, IsolineRequest,
     IsolineRequestError, IsolineSettings, IsolineSettingsError, IsolineStorage, IsolineTolerance,
-    IsolineVertex, LevelPoint, LevelPointBound, LevelPointDiagnostics, LevelPointError,
-    LevelPointInterval, LevelPointKind, LevelPointRefinement, LevelPointReport, LevelPointRequest,
-    LevelPointRequestError, LevelPointSettings, LevelPointSettingsError, LevelPointStorage,
-    LevelPointTolerance, StationaryLevelPoint,
+    IsolineVertex, IsosurfaceAmbiguousFace, IsosurfaceBoundaryFace, IsosurfaceComponent,
+    IsosurfaceDiagnostics, IsosurfaceDomainAxis, IsosurfaceError, IsosurfaceFacePairing,
+    IsosurfaceMethod, IsosurfaceReport, IsosurfaceRequest, IsosurfaceRequestError,
+    IsosurfaceSettings, IsosurfaceSettingsError, IsosurfaceStorage, IsosurfaceTolerance,
+    IsosurfaceTriangle, IsosurfaceVertex, LevelPoint, LevelPointBound, LevelPointDiagnostics,
+    LevelPointError, LevelPointInterval, LevelPointKind, LevelPointRefinement, LevelPointReport,
+    LevelPointRequest, LevelPointRequestError, LevelPointSettings, LevelPointSettingsError,
+    LevelPointStorage, LevelPointTolerance, StationaryLevelPoint,
 };
 pub use convex::{
     ConvexBackendStatus, ConvexCertificateDiagnostics, ConvexConstraintDiagnostics,
