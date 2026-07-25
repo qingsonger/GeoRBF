@@ -260,6 +260,29 @@ performs no finite differences, fitting, coefficient repair, schema I/O, mesh
 export, or adapter-side mathematics; D=3 isosurfaces remain a separate atomic
 requirement.
 
+The three-dimensional isosurface layer consumes only an immutable
+`FittedField<3>`, a finite target level, a finite original-coordinate box, and
+explicit grid and refinement settings. Its marching-simplices reference path
+uses the globally conforming Freudenthal split into six tetrahedra per cube.
+Its regular-grid path intersects only the twelve cube edges, constructs
+surface loops from the six cube faces, and applies the same scale-normalized
+bilinear asymptotic decision on either side of every alternating-sign shared
+face. Exact endpoint hits and true sign brackets are retained; brackets use
+bounded bisection. Canonical global grid-vertex and grid-edge identities, not a
+spatial merge radius, deduplicate intersections. Analytic
+original-coordinate fitted gradients supply every unit vertex normal, and
+triangle winding is selected toward the positive-gradient side. Edge
+incidence must be one or two, adjacent triangle winding must oppose on shared
+edges, and every incidence-one edge must lie on the requested box. Returned
+components record closed/open status and requested-box faces. Exact
+target-level sampled edges, unsupported exact-vertex patterns, zero-gradient
+surface vertices, multiple disjoint cube-boundary loops with underdetermined
+interior connectivity, collapsed triangles, non-manifold edges, inconsistent
+winding, and interior boundary edges are structured failures. The finite grid
+is evidence, not a completeness proof against unseen sub-cell components.
+This layer performs no finite differences, refitting, coefficient repair,
+schema I/O, file export, mesh repair, or adapter-side mathematics.
+
 The project layer owns one or more independently fitted `FittedField<D>` values
 behind stable caller-controlled `FieldId` values. `GeoProject<D>` preserves
 insertion order, rejects duplicate identifiers, and performs deterministic

@@ -43,12 +43,20 @@ use crate::model::{FittedField, FittedFieldEvaluationError, FittedFieldOutput};
 use crate::problem_ir::ExecutionOptions;
 
 mod isoline;
+mod isosurface;
 
 pub use isoline::{
     IsolineAmbiguityDecider, IsolineAmbiguousCell, IsolineBoundaryEndpoint, IsolineBoundarySide,
     IsolineCellPairing, IsolineDiagnostics, IsolineDomainAxis, IsolineError, IsolineMethod,
     IsolinePolyline, IsolineReport, IsolineRequest, IsolineRequestError, IsolineSettings,
     IsolineSettingsError, IsolineStorage, IsolineTolerance, IsolineVertex,
+};
+pub use isosurface::{
+    IsosurfaceAmbiguousFace, IsosurfaceBoundaryFace, IsosurfaceComponent, IsosurfaceDiagnostics,
+    IsosurfaceDomainAxis, IsosurfaceError, IsosurfaceFacePairing, IsosurfaceMethod,
+    IsosurfaceReport, IsosurfaceRequest, IsosurfaceRequestError, IsosurfaceSettings,
+    IsosurfaceSettingsError, IsosurfaceStorage, IsosurfaceTolerance, IsosurfaceTriangle,
+    IsosurfaceVertex,
 };
 
 /// Explicit scan and bracket-refinement policy for one-dimensional level points.

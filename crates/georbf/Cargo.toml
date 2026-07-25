@@ -140,3 +140,7 @@ harness = false
 [[bench]]
 name = "isolines"
 harness = false
+
+[[bench]]
+name = "isosurfaces"
+harness = false
